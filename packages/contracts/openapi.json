@@ -260,10 +260,6 @@
   },
   "info": {
     "description": "Backend for **PathAble AI**, an accessibility-aware pedestrian routing project.\n\n**Phase 0 status.** This service currently exposes health and readiness endpoints only.\nThere is no routing, no pedestrian graph, no elevation data, and no machine learning\nbehind this API yet. Endpoints that compare a shortest pedestrian route against an\naccessibility-aware route do not exist and are not simulated.",
-    "license": {
-      "name": "Apache-2.0",
-      "url": "https://www.apache.org/licenses/LICENSE-2.0"
-    },
     "title": "PathAble AI API",
     "version": "0.1.0"
   },

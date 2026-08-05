@@ -100,4 +100,14 @@ class TestReadinessWithUnreachableDatabase:
 
         body = ReadinessResponse.model_validate(response.json())
         assert body.status == "not_ready"
-        assert body.checks.database.detail == "database unreachable"
+        assert body.checks.database.status == "unavailable"
+
+        # Either safe detail is correct here, and which one appears depends on the
+        # platform: a refused connection to a closed port resolves immediately on
+        # some systems and outlives the probe timeout on others. Both are failures
+        # that leak nothing, which is what this test exists to guarantee — pinning
+        # one string would make the suite fail for a reason that is not a defect.
+        assert body.checks.database.detail in {
+            "database unreachable",
+            "probe exceeded the configured readiness timeout",
+        }

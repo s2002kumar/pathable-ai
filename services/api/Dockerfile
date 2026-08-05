@@ -67,4 +67,9 @@ USER pathable
 EXPOSE 8000
 
 ENTRYPOINT ["/usr/local/bin/api-entrypoint.sh"]
-CMD ["uvicorn", "pathable_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Started through the package entry point rather than the uvicorn CLI so there is
+# a single supported startup path across Linux containers and native Windows
+# development. Host and port come from the validated settings (API_HOST/API_PORT),
+# which Compose supplies.
+CMD ["python", "-m", "pathable_api"]

@@ -16,12 +16,18 @@ from pathable_api import __version__
 from pathable_api.api.v1.router import api_router
 from pathable_api.core.config import Settings, get_settings
 from pathable_api.core.errors import register_exception_handlers
+from pathable_api.core.event_loop import configure_event_loop_policy
 from pathable_api.core.logging import configure_logging, get_logger
 from pathable_api.core.middleware import RequestContextMiddleware
 from pathable_api.core.request_context import REQUEST_ID_HEADER
 from pathable_api.db.session import Database, build_database
 
 logger = get_logger(__name__)
+
+# Deliberately at import time, not inside create_app(): uvicorn imports this
+# module before it creates the event loop, and the policy only affects loops
+# created afterwards. No-op off Windows. See core/event_loop.py.
+configure_event_loop_policy()
 
 API_DESCRIPTION = """
 Backend for **PathAble AI**, an accessibility-aware pedestrian routing project.
@@ -105,7 +111,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url="/redoc" if resolved.docs_enabled else None,
         openapi_url="/openapi.json",
         lifespan=_build_lifespan(resolved),
-        license_info={"name": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0"},
     )
 
     app.state.settings = resolved
