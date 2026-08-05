@@ -1,0 +1,20 @@
+pnpm-lock.yaml
+uv.lock
+node_modules/
+.next/
+dist/
+build/
+coverage/
+test-results/
+playwright-report/
+artifacts/
+
+# Generated from the backend OpenAPI document — never hand-formatted.
+#
+# These are byte-compared against a fresh generation by `pnpm contracts:check`.
+# Letting Prettier reformat them would make the drift check fail on every run.
+packages/contracts/openapi.json
+packages/contracts/src/generated/
+
+# Python is formatted by Ruff, not Prettier.
+*.py

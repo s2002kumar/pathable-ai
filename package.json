@@ -1,0 +1,37 @@
+{
+  "name": "pathable-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Accessibility-aware pedestrian routing — Phase 0 foundation",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@11.11.0",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "pnpm --filter @pathable/web dev",
+    "dev:api": "node scripts/uv.mjs run uvicorn pathable_api.main:app --reload --host 127.0.0.1 --port 8000",
+    "format": "prettier --write . && node scripts/uv.mjs run ruff format .",
+    "format:check": "prettier --check . && node scripts/uv.mjs run ruff format --check .",
+    "lint": "pnpm --filter @pathable/web lint && node scripts/uv.mjs run ruff check .",
+    "typecheck": "pnpm -r --if-present typecheck && node scripts/uv.mjs run mypy src tests",
+    "test": "pnpm run test:unit",
+    "test:unit": "pnpm --filter @pathable/web test:unit && node scripts/uv.mjs run pytest tests/unit",
+    "test:integration": "node scripts/uv.mjs run pytest tests/integration",
+    "test:e2e": "pnpm --filter @pathable/web test:e2e",
+    "contracts:generate": "node scripts/contracts.mjs generate",
+    "contracts:check": "node scripts/contracts.mjs check",
+    "build": "pnpm --filter @pathable/web build",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run contracts:check && pnpm run build",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:reset-db": "node scripts/reset-db.mjs"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  }
+}

@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Postinstall scripts are blocked by default; each one is an arbitrary-code-
+# execution point at install time. Only packages listed here may run them, and
+# every entry needs a reason.
+allowBuilds:
+  # Native module resolver used by eslint-plugin-import-x (via eslint-config-next).
+  # Without its build step, `pnpm lint` fails to resolve any import.
+  unrs-resolver: true

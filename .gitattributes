@@ -1,0 +1,18 @@
+# Normalise to LF in the repository. This matters because the founder develops on
+# Windows while containers and CI run Linux; CRLF in a shell script breaks the
+# container entrypoints with an opaque "no such file or directory" error.
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+*.png  binary
+*.jpg  binary
+*.webp binary
+*.ico  binary
+
+pnpm-lock.yaml linguist-generated=true
+uv.lock        linguist-generated=true
+packages/contracts/src/generated/** linguist-generated=true

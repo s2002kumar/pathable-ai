@@ -1,0 +1,51 @@
+# --- Environment -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.local
+
+# --- Node / pnpm -------------------------------------------------------------
+node_modules/
+.pnpm-store/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- Test output & artifacts -------------------------------------------------
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+artifacts/
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- Editors / OS ------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs --------------------------------------------------------------------
+*.log
+npm-debug.log*
+pnpm-debug.log*
