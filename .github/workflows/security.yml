@@ -1,0 +1,117 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so a newly disclosed advisory in an unchanged dependency is still
+    # found. Monday 06:00 UTC.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-dependencies:
+    name: Python dependency audit
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/api/uv.lock
+
+      - run: uv sync --frozen
+
+      - name: Audit installed packages against the OSV database
+        # pip-audit is run through uvx rather than added as a project dependency:
+        # an auditing tool has no business being importable by the application.
+        run: uv run --with pip-audit pip-audit --strict --progress-spinner off
+
+  node-dependencies:
+    name: pnpm dependency audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Fail on high or critical advisories
+        # Moderate and low findings are reported but do not block: a Phase 0
+        # foundation with no user data and no deployment does not benefit from a
+        # red build over a low-severity transitive advisory, and a permanently
+        # red pipeline teaches people to ignore it.
+        run: pnpm audit --audit-level high
+
+      - name: Report all advisories for visibility
+        if: always()
+        run: pnpm audit || true
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history: a credential committed and later deleted is still a
+          # leaked credential, and a shallow clone would not see it.
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+
+  env-example-hygiene:
+    name: .env.example contains no real secrets
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: No .env file is tracked
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env is tracked by git. It must be ignored."
+            exit 1
+          fi
+          tracked=$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$' || true)
+          if [ -n "$tracked" ]; then
+            echo "::error::Environment files are tracked: $tracked"
+            exit 1
+          fi
+          echo "No environment files tracked."
+
+      - name: NEXT_PUBLIC_ values are not secret-shaped
+        run: |
+          # Everything NEXT_PUBLIC_* is inlined into the browser bundle, so a
+          # token there is a published token.
+          if grep -nEi '^NEXT_PUBLIC_[A-Z0-9_]*(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)' .env.example; then
+            echo "::error::A NEXT_PUBLIC_ variable looks like a credential. It would ship to every visitor."
+            exit 1
+          fi
+          echo "No secret-shaped NEXT_PUBLIC_ variables."
+
+      - name: Placeholder credentials are clearly local-only
+        run: |
+          if grep -nE '^POSTGRES_PASSWORD=' .env.example | grep -vqE 'local_dev_only'; then
+            echo "::error::The example database password must be an obvious local-only placeholder."
+            exit 1
+          fi
+          echo "Example credentials are placeholders."
