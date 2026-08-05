@@ -1,0 +1,85 @@
+name: Bug report
+description: Something behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: PathAble is in **Phase 0**. There is no routing and no
+        machine learning yet, so "it did not give me a route" is expected
+        behaviour rather than a bug. See `docs/product/PHASES.md`.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened
+      description: What you observed, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. cp .env.example .env
+        2. docker compose up -d
+        3. Open http://localhost:3000
+        4. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Frontend (apps/web)
+        - Map / MapLibre
+        - Backend API (services/api)
+        - Database / migrations
+        - Contracts / OpenAPI
+        - Docker / Compose
+        - CI
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node, Python, Docker, browser. `docker compose version` and `node -v` help.
+      placeholder: |
+        OS: Windows 11
+        Node: 22.x
+        Python: 3.13
+        Browser: Chrome 140
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, request id, or screenshots
+      description: |
+        Every API error carries a `request_id` — please include it, it maps
+        directly to server logs. Redact anything sensitive.
+      render: shell
+
+  - type: checkboxes
+    id: accessibility
+    attributes:
+      label: Accessibility
+      options:
+        - label: This bug affects keyboard, screen-reader, contrast or zoom usability
+          required: false
+
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Before submitting
+      options:
+        - label: I have not included any secret, token or credential
+          required: true
