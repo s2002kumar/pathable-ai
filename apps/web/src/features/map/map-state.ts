@@ -16,7 +16,19 @@ export type MapStatus = {
 
 export const INITIAL_MAP_STATUS: MapStatus = { state: 'initialising', message: null };
 
-export const MAP_INIT_TIMEOUT_MS = 15_000;
+/**
+ * How long to wait for the map's first `load` before showing the fallback.
+ *
+ * 30s, not 15s. A real vector basemap has to fetch a style document, a sprite
+ * sheet, a glyph range and the initial tiles; 15s was comfortably exceeded by the
+ * production OpenFreeMap style on a software renderer, and would also be
+ * exceeded by a genuine user on a slow mobile connection. Showing "the map is
+ * unavailable" over a map that is merely still arriving is worse than waiting.
+ *
+ * This is a backstop, not the normal path: if `load` fires after the timeout the
+ * map recovers to `ready` on its own, because the load handler is not cancelled.
+ */
+export const MAP_INIT_TIMEOUT_MS = 30_000;
 
 export const MAP_ERROR_MESSAGE =
   'The map could not be loaded. This is usually a network problem or an unreachable ' +

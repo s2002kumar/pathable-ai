@@ -85,6 +85,29 @@ test.describe('application shell', () => {
     ).toBeVisible();
   });
 
+  test('the map container actually fills the map frame', async ({ page }) => {
+    // Regression cover. MapLibre applies `.maplibregl-map { position: relative }`
+    // to this element, which once overrode the absolute positioning and collapsed
+    // it to zero height. Nothing caught it: the frame's own background still
+    // showed, and a source-less style fires `load` at any size, so the lifecycle
+    // reported `ready` over a map that had never rendered a tile.
+    await page.goto('/');
+    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
+      timeout: 30_000,
+    });
+
+    const frame = await page.getByTestId('map-frame').boundingBox();
+    const container = await page.getByRole('region', { name: /interactive map/i }).boundingBox();
+
+    expect(frame).not.toBeNull();
+    expect(container).not.toBeNull();
+    if (frame === null || container === null) return;
+
+    expect(container.height).toBeGreaterThan(100);
+    expect(container.height).toBeGreaterThanOrEqual(frame.height - 4);
+    expect(container.width).toBeGreaterThanOrEqual(frame.width - 4);
+  });
+
   test('presents no routing controls', async ({ page }) => {
     await page.goto('/');
 

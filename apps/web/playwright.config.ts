@@ -25,10 +25,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  // Capped deliberately. Every test renders MapLibre through SwiftShader, which
-  // is software rasterisation and entirely CPU-bound — Playwright's default of
-  // one worker per two cores starves them and produces timeouts, not speed.
-  workers: 2,
+  // Serial, deliberately. Every test rasterises MapLibre through SwiftShader on
+  // the CPU, and once the map container was fixed to fill its frame there is
+  // substantially more of it to draw. Parallel workers starve each other and
+  // produce timeouts that look like product defects but are pure contention.
+  // Parallelism buys little here because the bottleneck is one shared CPU.
+  workers: 1,
   timeout: 60_000,
   // Generous because SwiftShader rasterises the map on the CPU: two workers on a
   // laptop can push a normally-instant assertion past a tight budget.
