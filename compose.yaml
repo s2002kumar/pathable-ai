@@ -1,0 +1,115 @@
+# PathAble AI — local development stack.
+#
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Ordinary `docker compose down` keeps the database volume. Deleting local data
+# is deliberate and separate: `docker compose down -v`.
+
+name: pathable-ai
+
+services:
+  db:
+    # Explicitly pinned. Never `latest` — an unannounced major PostgreSQL bump
+    # would silently break the volume format on someone's machine.
+    image: postgis/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pathable}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pathable_local_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-pathable}
+      # Deterministic collation so index ordering matches across machines.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      # Host port defaults to 5433: a natively installed PostgreSQL usually
+      # already owns 5432, and the bind failure it causes is not obvious.
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - pathable-db-data:/var/lib/postgresql/data
+    healthcheck:
+      # `-d` matters: without it pg_isready checks a database named after the
+      # user and reports healthy before the real database exists.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pathable} -d ${POSTGRES_DB:-pathable}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      # Must be 0.0.0.0 in a container, otherwise the published port reaches nothing.
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      # Service name and internal port — not DB_PORT, which is the host mapping.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pathable}:${POSTGRES_PASSWORD:-pathable_local_dev_only}@db:5432/${POSTGRES_DB:-pathable}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      READINESS_TIMEOUT_SECONDS: ${READINESS_TIMEOUT_SECONDS:-2.0}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      # Liveness, not readiness: the API is legitimately "up" while it waits for
+      # the database, and marking it unhealthy for that would be misleading.
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=3).status==200 else 1)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+      args:
+        # Next.js inlines NEXT_PUBLIC_* at build time, so these are build args
+        # rather than runtime environment. None of them may ever be a secret.
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+        NEXT_PUBLIC_MAP_STYLE_URL: ${NEXT_PUBLIC_MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/liberty}
+        NEXT_PUBLIC_PILOT_CENTER_LAT: ${NEXT_PUBLIC_PILOT_CENTER_LAT:-43.4668}
+        NEXT_PUBLIC_PILOT_CENTER_LON: ${NEXT_PUBLIC_PILOT_CENTER_LON:--80.5164}
+        NEXT_PUBLIC_PILOT_ZOOM: ${NEXT_PUBLIC_PILOT_ZOOM:-14}
+        NEXT_PUBLIC_PILOT_REGION_NAME: ${NEXT_PUBLIC_PILOT_REGION_NAME:-Waterloo, Ontario}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('node:http').get('http://127.0.0.1:3000/api/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  # Named, so `docker compose down` keeps the data and only `down -v` destroys it.
+  pathable-db-data:
+    name: pathable-db-data
