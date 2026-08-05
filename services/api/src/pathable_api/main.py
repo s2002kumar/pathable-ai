@@ -1,0 +1,131 @@
+"""FastAPI application factory.
+
+Phase 0 exposes health and readiness only. There is no routing engine, no
+pedestrian graph and no machine learning in this service — see docs/product/PHASES.md.
+"""
+
+from __future__ import annotations
+
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from pathable_api import __version__
+from pathable_api.api.v1.router import api_router
+from pathable_api.core.config import Settings, get_settings
+from pathable_api.core.errors import register_exception_handlers
+from pathable_api.core.logging import configure_logging, get_logger
+from pathable_api.core.middleware import RequestContextMiddleware
+from pathable_api.core.request_context import REQUEST_ID_HEADER
+from pathable_api.db.session import Database, build_database
+
+logger = get_logger(__name__)
+
+API_DESCRIPTION = """
+Backend for **PathAble AI**, an accessibility-aware pedestrian routing project.
+
+**Phase 0 status.** This service currently exposes health and readiness endpoints only.
+There is no routing, no pedestrian graph, no elevation data, and no machine learning
+behind this API yet. Endpoints that compare a shortest pedestrian route against an
+accessibility-aware route do not exist and are not simulated.
+""".strip()
+
+OPENAPI_TAGS = [
+    {
+        "name": "health",
+        "description": "Liveness and readiness probes used by Docker, CI and the web client.",
+    }
+]
+
+
+def _build_lifespan(
+    settings: Settings,
+) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
+    """Create the lifespan handler bound to a specific settings instance."""
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        logger.info(
+            "Starting PathAble API",
+            extra={
+                "environment": settings.environment,
+                "version": settings.app_version,
+                "database_target": settings.safe_database_target(),
+                "allowed_origins": list(settings.allowed_origins),
+            },
+        )
+
+        if settings.database_url:
+            app.state.database = build_database(settings)
+        else:
+            app.state.database = None
+            logger.warning(
+                "DATABASE_URL is not configured; readiness will report not_ready. "
+                "Liveness is unaffected."
+            )
+
+        try:
+            yield
+        finally:
+            database: Database | None = getattr(app.state, "database", None)
+            if database is not None:
+                await database.dispose()
+                logger.info("Database engine disposed")
+            logger.info("PathAble API stopped")
+
+    return lifespan
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    """Build the application.
+
+    Accepting an explicit ``settings`` keeps tests from having to mutate process
+    environment variables to exercise a different configuration.
+    """
+    resolved = settings or get_settings()
+
+    configure_logging(
+        level=resolved.log_level,
+        log_format=resolved.log_format,
+        service=resolved.service_name,
+        version=resolved.app_version,
+        environment=resolved.environment,
+    )
+
+    app = FastAPI(
+        title="PathAble AI API",
+        # The contract version is the package version, not the deployed build
+        # string, so the generated OpenAPI document stays byte-stable.
+        version=__version__,
+        description=API_DESCRIPTION,
+        openapi_tags=OPENAPI_TAGS,
+        docs_url="/docs" if resolved.docs_enabled else None,
+        redoc_url="/redoc" if resolved.docs_enabled else None,
+        openapi_url="/openapi.json",
+        lifespan=_build_lifespan(resolved),
+        license_info={"name": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0"},
+    )
+
+    app.state.settings = resolved
+
+    if resolved.allowed_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(resolved.allowed_origins),
+            allow_credentials=resolved.cors_allow_credentials,
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["Content-Type", REQUEST_ID_HEADER],
+            expose_headers=[REQUEST_ID_HEADER],
+            max_age=600,
+        )
+
+    app.add_middleware(RequestContextMiddleware)
+    register_exception_handlers(app)
+    app.include_router(api_router)
+
+    return app
+
+
+app = create_app()
