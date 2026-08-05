@@ -61,9 +61,7 @@ def write_openapi(destination: Path) -> Path:
     generates on Linux purely because of the host operating system.
     """
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(
-        serialise(build_openapi_document()), encoding="utf-8", newline="\n"
-    )
+    destination.write_text(serialise(build_openapi_document()), encoding="utf-8", newline="\n")
     return destination
 
 
