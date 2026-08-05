@@ -1,0 +1,162 @@
+/**
+ * Design tokens.
+ *
+ * Semantic names only at the point of use — components reference `--color-text`,
+ * never `--teal-700`. That is what makes the dark theme a token swap rather than a
+ * rewrite, and it is what will let a future high-contrast mode drop in.
+ *
+ * Contrast: every text/background pairing below meets WCAG 2.1 AA (4.5:1 for body
+ * text, 3:1 for large text and UI boundaries) in both themes.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* --- Type ------------------------------------------------------------- */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.6;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --tracking-wide: 0.02em;
+  --tracking-caps: 0.06em;
+
+  /* --- Space (4px base) -------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* --- Radius ------------------------------------------------------------ */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* --- Elevation --------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px rgb(9 30 34 / 8%);
+  --shadow-md: 0 4px 12px -2px rgb(9 30 34 / 12%), 0 2px 4px -2px rgb(9 30 34 / 8%);
+  --shadow-lg: 0 16px 40px -12px rgb(9 30 34 / 22%), 0 4px 12px -4px rgb(9 30 34 / 10%);
+
+  /* --- Motion ------------------------------------------------------------ */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+
+  /* --- Layout ------------------------------------------------------------ */
+  --header-height: 3.5rem;
+  --panel-width: 22.5rem;
+  --content-max: 78rem;
+
+  /* --- Colour: light ----------------------------------------------------- */
+  --color-canvas: #eef2f3;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f5f8f9;
+  --color-surface-overlay: rgb(255 255 255 / 94%);
+  --color-border: #d5dee1;
+  --color-border-strong: #b3c2c7;
+
+  --color-text: #10262b;
+  --color-text-muted: #4c5f65;
+  /* 5.9:1 on --color-surface and 5.6:1 on --color-surface-sunken. The lighter
+     #66787e this replaced measured 4.32:1 against the sunken surface, which fails
+     AA for the 12px labels that use it. Verified by the axe e2e scan. */
+  --color-text-subtle: #55676d;
+  --color-text-inverse: #f2f8f9;
+
+  --color-brand: #0b5c68;
+  --color-brand-strong: #084751;
+  --color-brand-soft: #e2f0f2;
+  --color-brand-border: #a8ccd2;
+
+  --color-focus: #0b5c68;
+
+  --color-ok-text: #17603a;
+  --color-ok-surface: #e3f4ea;
+  --color-ok-border: #9dcfb4;
+  --color-ok-dot: #1f8a4d;
+
+  --color-warn-text: #7a4b00;
+  --color-warn-surface: #fdf1dc;
+  --color-warn-border: #e4bf7f;
+  --color-warn-dot: #b87400;
+
+  --color-danger-text: #8f2323;
+  --color-danger-surface: #fbe8e8;
+  --color-danger-border: #e0a4a4;
+  --color-danger-dot: #bb3232;
+
+  --color-neutral-text: #4c5f65;
+  --color-neutral-surface: #eef2f3;
+  --color-neutral-border: #c9d4d7;
+  --color-neutral-dot: #7b8d93;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #060d0f;
+    --color-surface: #0f191c;
+    --color-surface-sunken: #0a1214;
+    --color-surface-overlay: rgb(15 25 28 / 94%);
+    --color-border: #23383d;
+    --color-border-strong: #35525a;
+
+    --color-text: #e9f2f3;
+    --color-text-muted: #a5babf;
+    --color-text-subtle: #8299a0;
+    --color-text-inverse: #08181c;
+
+    --color-brand: #5cc6d8;
+    --color-brand-strong: #8ddced;
+    --color-brand-soft: #123036;
+    --color-brand-border: #2c565f;
+
+    --color-focus: #7cd8e8;
+
+    --color-ok-text: #7fe0aa;
+    --color-ok-surface: #0e2a1c;
+    --color-ok-border: #2c6244;
+    --color-ok-dot: #4ecf88;
+
+    --color-warn-text: #f5c877;
+    --color-warn-surface: #2c2011;
+    --color-warn-border: #6a5127;
+    --color-warn-dot: #e0a33f;
+
+    --color-danger-text: #ffa9a9;
+    --color-danger-surface: #2e1414;
+    --color-danger-border: #6d3434;
+    --color-danger-dot: #e46767;
+
+    --color-neutral-text: #a5babf;
+    --color-neutral-surface: #162427;
+    --color-neutral-border: #2b4248;
+    --color-neutral-dot: #7e979d;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 50%);
+    --shadow-lg: 0 16px 40px -12px rgb(0 0 0 / 65%);
+  }
+}

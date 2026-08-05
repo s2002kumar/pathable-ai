@@ -1,0 +1,138 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* --- Mobile first --------------------------------------------------------
+ * The map stays the primary surface but does not consume the viewport, and the
+ * panel sits below it in normal document flow. Nothing overlaps, so the map's own
+ * controls can never sit on top of the written description.
+ */
+
+.workspace {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  /* Belt-and-braces against a stray wide child; the page never scrolls sideways. */
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.mapArea {
+  flex: 0 0 auto;
+  height: 58dvh;
+  min-height: 16rem;
+}
+
+.panelArea {
+  flex: 0 0 auto;
+}
+
+/* --- Desktop -------------------------------------------------------------
+ * The map fills the workspace and the panel floats over it as a card. The panel
+ * is anchored top-left, deliberately clear of MapLibre's own chrome: navigation
+ * top-right, scale bottom-left, attribution bottom-right.
+ */
+
+@media (min-width: 64rem) {
+  /* A definite height, not just a minimum. Every child of .workspace is absolutely
+     positioned, so its intrinsic height is zero; with an auto-height flex
+     container there is no free space to distribute and `flex-grow` can resolve to
+     nothing, collapsing the map to 0px. Pinning the shell height makes the
+     remaining space unambiguous. */
+  .shell {
+    height: 100dvh;
+  }
+
+  .workspace {
+    position: relative;
+    display: block;
+    padding: var(--space-4);
+    min-height: 0;
+  }
+
+  .mapArea {
+    position: absolute;
+    inset: var(--space-4);
+    height: auto;
+  }
+
+  /* Anchored top *and* bottom so the available height is definite. The card
+     itself is then sized by its content and capped at that height, which is what
+     lets a long description scroll inside the card instead of running off the
+     bottom of the viewport. `max-height: calc(100% - ...)` alone did not hold,
+     because a percentage max-height resolves against the containing block rather
+     than the space actually left over. */
+  .panelArea {
+    position: absolute;
+    top: var(--space-8);
+    bottom: var(--space-8);
+    left: var(--space-8);
+    z-index: 5;
+    width: var(--panel-width);
+    display: flex;
+    align-items: flex-start;
+    /* The strip itself is not interactive; only the card is. Otherwise the
+       invisible column would swallow drags meant for the map beside it. */
+    pointer-events: none;
+  }
+
+  .panelArea > * {
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    pointer-events: auto;
+  }
+}
+
+/* --- Configuration failure ------------------------------------------------ */
+
+.configError {
+  max-width: 44rem;
+  margin: var(--space-12) auto;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger-border);
+  border-left-width: 4px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.configErrorTitle {
+  font-size: var(--text-xl);
+  color: var(--color-danger-text);
+  margin-bottom: var(--space-3);
+}
+
+.configErrorBody {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.configErrorList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.configErrorItem {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.configErrorHint {
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+}

@@ -1,0 +1,17 @@
+{
+  "version": 8,
+  "name": "PathAble offline test style",
+  "metadata": {
+    "pathable:purpose": "Deterministic style for automated browser tests. Contains no sources and no remote references, so MapLibre reaches the 'load' event without any network request. Never use this outside tests — it renders no geography."
+  },
+  "sources": {},
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#dfe7e9"
+      }
+    }
+  ]
+}

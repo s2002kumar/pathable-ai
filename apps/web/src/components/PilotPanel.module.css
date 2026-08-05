@@ -1,0 +1,121 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--color-text-subtle);
+}
+
+.title {
+  font-size: var(--text-xl);
+  letter-spacing: -0.015em;
+  color: var(--color-text);
+}
+
+.body {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+
+.coords {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+/* --- Development status disclosure --------------------------------------- */
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-warn-surface);
+  border: 1px solid var(--color-warn-border);
+  border-radius: var(--radius-md);
+}
+
+.noticeHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-warn-text);
+}
+
+.noticeBody {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Phase 1 preview ------------------------------------------------------
+ * Presentational only. Nothing in here is focusable or clickable, because a
+ * control that looks live but does nothing is worse than no control.
+ */
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-surface-sunken);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.previewList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.previewItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.previewBullet {
+  flex: 0 0 auto;
+  width: 0.375rem;
+  height: 0.375rem;
+  margin-top: 0.5em;
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+}
+
+/* --- Attribution ---------------------------------------------------------- */
+
+.attribution {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+.attribution a {
+  color: var(--color-text-muted);
+}
