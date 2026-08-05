@@ -162,33 +162,43 @@ http://127.0.0.1:3000, with prefixed output and a single Ctrl+C to stop both.
 
 Run from the repository root.
 
-| Command                   | What it does                                                  |
-| ------------------------- | ------------------------------------------------------------- |
-| `pnpm bootstrap`          | Install everything: pnpm workspace, Python venv, Chromium     |
-| `pnpm dev`                | Run API and web together                                      |
-| `pnpm format`             | Prettier + Ruff format, writing changes                       |
-| `pnpm format:check`       | Verify formatting without writing                             |
-| `pnpm lint`               | ESLint + Ruff                                                 |
-| `pnpm typecheck`          | `tsc --noEmit` + mypy strict                                  |
-| `pnpm test`               | Unit tests, frontend and backend. No database required        |
-| `pnpm test:unit`          | Same as `pnpm test`                                           |
-| `pnpm test:integration`   | Backend tests against real PostGIS. **Requires the database** |
-| `pnpm test:e2e`           | Playwright + axe. No backend or internet required             |
-| `pnpm contracts:generate` | Regenerate `openapi.json` and the TypeScript contracts        |
-| `pnpm contracts:check`    | Fail if the committed contracts are stale                     |
-| `pnpm build`              | Next.js production build                                      |
-| `pnpm check`              | Everything above that does not need Docker, in order          |
-| `pnpm docker:up`          | `docker compose up --build -d`                                |
-| `pnpm docker:down`        | Stop the stack, **keeping** the database volume               |
-| `pnpm docker:logs`        | Follow logs from all services                                 |
-| `pnpm docker:reset-db`    | **Destroy** local database data, with confirmation            |
+| Command                   | What it does                                                                                                   |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `pnpm bootstrap`          | Install everything: pnpm workspace, Python venv, Chromium                                                      |
+| `pnpm dev`                | Run API and web together                                                                                       |
+| `pnpm format`             | Prettier + Ruff format, writing changes                                                                        |
+| `pnpm format:check`       | Verify formatting without writing                                                                              |
+| `pnpm lint`               | ESLint + Ruff                                                                                                  |
+| `pnpm typecheck`          | `tsc --noEmit` + mypy strict                                                                                   |
+| `pnpm test`               | Unit tests, frontend and backend. No database required                                                         |
+| `pnpm test:unit`          | Same as `pnpm test`                                                                                            |
+| `pnpm test:integration`   | Backend tests against real PostGIS. **Requires the database**                                                  |
+| `pnpm test:e2e`           | Playwright + axe. No backend or internet required                                                              |
+| `pnpm test:e2e:fullstack` | Browser → Next.js → FastAPI → PostGIS, **no stubs**. Needs a database                                          |
+| `pnpm contracts:generate` | Regenerate `openapi.json` and the TypeScript contracts                                                         |
+| `pnpm contracts:check`    | Fail if the committed contracts are stale                                                                      |
+| `pnpm build`              | Next.js production build                                                                                       |
+| `pnpm check`              | Fast gate: everything that needs no database or browser                                                        |
+| `pnpm check:full`         | Everything, including real PostGIS and browser tests. **Fails** rather than skipping if the database is absent |
+| `pnpm map:evidence`       | Manual: screenshot the map against the real tile provider. Not part of CI                                      |
+| `pnpm docker:up`          | `docker compose up --build -d`                                                                                 |
+| `pnpm docker:down`        | Stop the stack, **keeping** the database volume                                                                |
+| `pnpm docker:logs`        | Follow logs from all services                                                                                  |
+| `pnpm docker:reset-db`    | **Destroy** local database data, with confirmation                                                             |
 
 > `install` is `pnpm install` plus `uv sync` in `services/api`; `pnpm bootstrap`
 > runs both. It is not exposed as `pnpm install` because `install` is a reserved
 > npm lifecycle script name and defining it would make `pnpm install` recurse.
 
 Backend-only equivalents run from `services/api`: `uv run ruff check .`,
-`uv run mypy src tests`, `uv run pytest`, `uv run alembic upgrade head`.
+`uv run mypy src tests`, `uv run pytest`, `uv run alembic upgrade head`,
+`uv run python -m pathable_api`.
+
+> Start the API through `python -m pathable_api`, not the bare `uvicorn` CLI.
+> On Windows uvicorn selects an event loop that psycopg cannot use, and every
+> database connection fails while liveness still returns 200. The entry point
+> sets an explicit selector loop factory; see
+> [`services/api/src/pathable_api/core/event_loop.py`](services/api/src/pathable_api/core/event_loop.py).
 
 ---
 
@@ -263,12 +273,13 @@ pathable-ai/
 
 ## Testing
 
-| Suite               | Command                 | Needs                                     |
-| ------------------- | ----------------------- | ----------------------------------------- |
-| Backend unit        | `pnpm test:unit`        | nothing                                   |
-| Backend integration | `pnpm test:integration` | PostGIS (`docker compose up -d db`)       |
-| Frontend unit       | `pnpm test:unit`        | nothing                                   |
-| End-to-end + axe    | `pnpm test:e2e`         | Chromium; **no** backend, **no** internet |
+| Suite                | Command                   | Needs                                     |
+| -------------------- | ------------------------- | ----------------------------------------- |
+| Backend unit         | `pnpm test:unit`          | nothing                                   |
+| Backend integration  | `pnpm test:integration`   | PostGIS (`docker compose up -d db`)       |
+| Frontend unit        | `pnpm test:unit`          | nothing                                   |
+| End-to-end + axe     | `pnpm test:e2e`           | Chromium; **no** backend, **no** internet |
+| Full stack, no stubs | `pnpm test:e2e:fullstack` | Chromium + real API + real PostGIS        |
 
 Coverage floors are enforced: 85% on backend authored code, 80% on frontend
 authored code. Full detail, including what the accessibility tests do and do not
@@ -341,4 +352,11 @@ considerations — see the licensing document before relying on either.
 
 ## Licence
 
-[Apache-2.0](LICENSE).
+**No licence has been selected.** This is a private, unreleased project, and all
+rights are reserved by default. It is not open source and should not be described
+as such. See [`LICENSING.md`](LICENSING.md) — choosing a licence is a founder
+decision and a release-readiness item.
+
+Third-party obligations are unaffected: OpenStreetMap data remains ODbL and
+requires attribution, and dependency licences are recorded in
+[`docs/licensing/DATA_SOURCES.md`](docs/licensing/DATA_SOURCES.md).

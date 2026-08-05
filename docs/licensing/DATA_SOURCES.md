@@ -179,7 +179,12 @@ Not implemented. When they are:
 
 ## 8. Software licences
 
-PathAble is Apache-2.0. Key dependencies:
+**PathAble itself has no licence yet** — it is private and unreleased, and all
+rights are reserved by default. See [`../../LICENSING.md`](../../LICENSING.md).
+Do not describe the project as open source.
+
+The obligations below come from what PathAble _uses_ and apply regardless of what
+licence PathAble eventually adopts. Key dependencies:
 
 | Component                              | Licence                                                                   |
 | -------------------------------------- | ------------------------------------------------------------------------- |
