@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "PathAble AI backend — Phase 0 foundation (health, config, PostGIS baseline)"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-license = { text = "Apache-2.0" }
+# No licence has been selected; see LICENSING.md at the repository root. This is
+# a private, unreleased project and is not open source.
+license = { text = "LicenseRef-Proprietary-Unreleased" }
 dependencies = [
     "fastapi>=0.115.0,<0.200.0",
     "uvicorn[standard]>=0.34.0,<0.40.0",
@@ -20,11 +22,16 @@ Repository = "https://github.com/pathable-ai/pathable-ai"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.4,<9.0.0",
+    # >=9.0.3 for CVE-2025-71176 (PYSEC-2026-1845): pytest through 9.0.2 used a
+    # predictable /tmp/pytest-of-{user} path on UNIX, allowing a local user to
+    # cause a denial of service or possibly escalate. Found by pip-audit.
+    "pytest>=9.0.3,<10.0.0",
     "pytest-cov>=6.0.0,<8.0.0",
-    "pytest-asyncio>=0.25.0,<1.2.0",
-    # Starlette 1.3 deprecated the httpx 0.x TestClient backend in favour of
-    # httpx2; using the deprecated one raises under our `filterwarnings = error`.
+    "pytest-asyncio>=1.0.0,<2.0.0",
+    # Official successor to httpx: same author (Tom Christie), maintained by
+    # Pydantic, and declared by Starlette 1.3's own `full` extra. Dev-scope only,
+    # so it never reaches a container image or a production path.
+    # Provenance verified in docs/development/DEPENDENCY_DECISIONS.md.
     "httpx2>=2.9.1,<3.0.0",
     "mypy>=1.14.0,<2.0.0",
     "ruff>=0.9.0,<0.15.0",
