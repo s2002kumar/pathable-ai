@@ -32,7 +32,13 @@ const config = [
     },
   },
   {
-    files: ['tests/e2e/**/*.ts', 'src/test/**/*.ts', '**/*.test.ts', '**/*.test.tsx'],
+    files: [
+      'tests/e2e/**/*.ts',
+      'tests/fullstack/**/*.ts',
+      'src/test/**/*.ts',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+    ],
     rules: {
       'no-console': 'off',
     },

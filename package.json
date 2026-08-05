@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Accessibility-aware pedestrian routing — Phase 0 foundation",
-  "license": "Apache-2.0",
+  "license": "UNLICENSED",
   "packageManager": "pnpm@11.11.0",
   "engines": {
     "node": ">=20.11.0",
@@ -22,6 +22,9 @@
     "test:unit": "pnpm --filter @pathable/web test:unit && node scripts/uv.mjs run pytest tests/unit",
     "test:integration": "node scripts/uv.mjs run pytest tests/integration",
     "test:e2e": "pnpm --filter @pathable/web test:e2e",
+    "test:e2e:fullstack": "pnpm --filter @pathable/web test:e2e:fullstack",
+    "check:full": "node scripts/check-full.mjs",
+    "map:evidence": "node scripts/capture-map-evidence.mjs",
     "contracts:generate": "node scripts/contracts.mjs generate",
     "contracts:check": "node scripts/contracts.mjs check",
     "build": "pnpm --filter @pathable/web build",
