@@ -257,6 +257,69 @@ jobs:
             apps/web/artifacts/screenshots
           retention-days: 7
 
+  fullstack-e2e:
+    name: Frontend · full-stack browser tests (no stubs)
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: pathable
+          POSTGRES_PASSWORD: pathable_ci_only
+          POSTGRES_DB: pathable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pathable -d pathable"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql+psycopg://pathable:pathable_ci_only@localhost:5432/pathable
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/api/uv.lock
+
+      - run: pnpm install --frozen-lockfile
+      - run: uv sync --frozen
+        working-directory: services/api
+
+      - name: Apply migrations to the service database
+        run: uv run alembic upgrade head
+        working-directory: services/api
+
+      - name: Install Chromium
+        run: pnpm --filter @pathable/web exec playwright install --with-deps chromium
+
+      # Proves the frontend and backend actually agree. The default e2e suite
+      # stubs the API at the network layer, which is deterministic but says
+      # nothing about integration.
+      - name: Full-stack browser tests
+        run: pnpm --filter @pathable/web test:e2e:fullstack
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: playwright-report-fullstack
+          path: |
+            apps/web/playwright-report-fullstack
+            apps/web/test-results-fullstack
+          retention-days: 7
+
   # ---------------------------------------------------------------------------
   # Container images
   # ---------------------------------------------------------------------------

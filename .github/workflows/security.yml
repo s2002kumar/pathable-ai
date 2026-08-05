@@ -33,10 +33,17 @@ jobs:
 
       - run: uv sync --frozen
 
-      - name: Audit installed packages against the OSV database
-        # pip-audit is run through uvx rather than added as a project dependency:
-        # an auditing tool has no business being importable by the application.
-        run: uv run --with pip-audit pip-audit --strict --progress-spinner off
+      - name: Export the locked dependency set
+        # Auditing the exported lockfile rather than the installed environment:
+        # `pip-audit --strict` on the environment fails because pathable-api is a
+        # local project that will never exist on PyPI. --all-groups keeps dev
+        # dependencies (which is where httpx2 lives) in scope.
+        run: uv export --frozen --no-emit-project --no-hashes --all-groups -o requirements-audit.txt
+
+      - name: Audit against the OSV database
+        # pip-audit runs via --with rather than as a project dependency: an
+        # auditing tool has no business being importable by the application.
+        run: uv run --with pip-audit pip-audit -r requirements-audit.txt --strict --progress-spinner off
 
   node-dependencies:
     name: pnpm dependency audit
