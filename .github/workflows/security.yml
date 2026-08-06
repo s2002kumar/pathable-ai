@@ -116,10 +116,24 @@ jobs:
           # leaked credential, and a shallow clone would not see it.
           fetch-depth: 0
 
-      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+      # Run the pinned gitleaks image directly rather than the marketplace
+      # action. The action calls the GitHub API for PR commits and comment
+      # threads, which needs permissions this workflow deliberately does not
+      # grant — and none of that machinery contributes to the actual scan. The
+      # container scans the full history the same way it does locally.
+      - name: Scan the complete history
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            zricethezav/gitleaks:v8.30.1 \
+            git --no-banner --redact --log-opts="--all" \
+            --report-format sarif --report-path /repo/gitleaks.sarif .
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: gitleaks-report
+          path: gitleaks.sarif
+          retention-days: 7
 
   env-example-hygiene:
     name: .env.example contains no real secrets

@@ -31,13 +31,18 @@ class TestConfigureEventLoopPolicy:
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only behaviour")
     def test_selector_policy_is_active_on_windows(self) -> None:
-        configure_event_loop_policy()
+        # The `if` is for mypy, not for pytest: skipif is a runtime marker that
+        # type checking does not see, so on Linux mypy would reject
+        # `asyncio.WindowsSelectorEventLoopPolicy` as a missing attribute. A
+        # `sys.platform` comparison is something mypy narrows on.
+        if sys.platform == "win32":
+            configure_event_loop_policy()
 
-        # The concrete guarantee psycopg needs: not a Proactor loop.
-        assert isinstance(
-            asyncio.get_event_loop_policy(),
-            asyncio.WindowsSelectorEventLoopPolicy,
-        )
+            # The concrete guarantee psycopg needs: not a Proactor loop.
+            assert isinstance(
+                asyncio.get_event_loop_policy(),
+                asyncio.WindowsSelectorEventLoopPolicy,
+            )
 
     @pytest.mark.skipif(sys.platform == "win32", reason="non-Windows behaviour")
     def test_is_a_no_op_off_windows(self) -> None:

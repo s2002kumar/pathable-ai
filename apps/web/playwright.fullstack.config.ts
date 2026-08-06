@@ -121,7 +121,8 @@ function buildWebServers() {
       },
     },
     {
-      command: `pnpm exec next build && pnpm exec next start --port ${WEB_PORT}`,
+      // `pnpm run build` so the `prebuild` hook runs — see playwright.config.ts.
+      command: `pnpm run build && pnpm exec next start --port ${WEB_PORT}`,
       url: `${WEB_BASE_URL}/api/healthz`,
       reuseExistingServer: !process.env.CI,
       timeout: 240_000,

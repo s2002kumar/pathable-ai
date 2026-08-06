@@ -109,6 +109,15 @@ namespace_packages = true
 module = ["alembic.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# This module exists precisely to branch on the platform, and mypy only ever
+# analyses one. On Linux it correctly reports the Windows branches as
+# unreachable; on Windows it would say the same about the other side. The
+# unreachable code is the point, so the check is disabled for this one module
+# rather than globally.
+module = ["pathable_api.core.event_loop"]
+warn_unreachable = false
+
 # ---------------------------------------------------------------------------
 # pytest / coverage
 # ---------------------------------------------------------------------------

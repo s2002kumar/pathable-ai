@@ -73,9 +73,12 @@ export default defineConfig({
   ],
 
   webServer: {
-    // `next start` against a production build: the same artefact CI ships, and
-    // free of dev-mode double rendering that would muddy the map lifecycle tests.
-    command: `pnpm exec next build && pnpm exec next start --port ${WEB_PORT}`,
+    // `pnpm run build`, not `pnpm exec next build`: `exec` runs the binary
+    // directly and skips lifecycle scripts, so the `prebuild` hook that copies
+    // MapLibre's tile worker into public/ never runs. On a clean checkout that
+    // silently produces a build with no worker — the KI-1 failure — and CI
+    // caught exactly that.
+    command: `pnpm run build && pnpm exec next start --port ${WEB_PORT}`,
     url: `${BASE_URL}/api/healthz`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
