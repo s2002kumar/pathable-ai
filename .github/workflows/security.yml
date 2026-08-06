@@ -71,6 +71,41 @@ jobs:
         if: always()
         run: pnpm audit || true
 
+  container-images:
+    name: Container image scan
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: api
+            image: pathable-ai-api:ci
+            dockerfile: services/api/Dockerfile
+          - service: web
+            image: pathable-ai-web:ci
+            dockerfile: apps/web/Dockerfile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the ${{ matrix.service }} runtime image
+        run: docker build -f ${{ matrix.dockerfile }} --target runtime -t ${{ matrix.image }} .
+
+      # Scans the final runtime image, not a dependency manifest — the two differ,
+      # and the base image is where most findings live.
+      - name: Scan ${{ matrix.image }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ matrix.image }}
+          format: table
+          severity: HIGH,CRITICAL
+          scanners: vuln
+          # Fails only on findings that have an upstream fix. Debian base images
+          # routinely carry HIGH/CRITICAL advisories marked will_not_fix or
+          # fix_deferred; blocking on those would make this job permanently red
+          # and therefore ignored, without making anything safer.
+          ignore-unfixed: true
+          exit-code: "1"
+
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-24.04
