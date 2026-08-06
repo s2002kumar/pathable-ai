@@ -26,10 +26,29 @@ import { defineConfig, devices } from '@playwright/test';
 const API_PORT = Number(process.env.FULLSTACK_API_PORT ?? 8100);
 const WEB_PORT = Number(process.env.FULLSTACK_WEB_PORT ?? 3200);
 
-const API_BASE_URL = `http://127.0.0.1:${API_PORT}`;
-const WEB_BASE_URL = `http://127.0.0.1:${WEB_PORT}`;
+/**
+ * Two modes.
+ *
+ * By default Playwright starts the API and web server itself, against whatever
+ * database `DATABASE_URL` points at.
+ *
+ * Setting `FULLSTACK_TARGET=compose` instead points the browser at an
+ * already-running Compose stack, so the request path is
+ * `browser -> web container -> api container -> postgis container`. That is the
+ * only configuration that exercises Compose networking, the container
+ * entrypoint and the published ports, so it is what the Docker acceptance
+ * evidence uses.
+ */
+const againstCompose = process.env.FULLSTACK_TARGET === 'compose';
 
-if (!process.env.DATABASE_URL) {
+const API_BASE_URL = againstCompose
+  ? (process.env.FULLSTACK_API_URL ?? 'http://localhost:8000')
+  : `http://127.0.0.1:${API_PORT}`;
+const WEB_BASE_URL = againstCompose
+  ? (process.env.FULLSTACK_WEB_URL ?? 'http://localhost:3000')
+  : `http://127.0.0.1:${WEB_PORT}`;
+
+if (!againstCompose && !process.env.DATABASE_URL) {
   throw new Error(
     'DATABASE_URL is not set.\n\n' +
       'The full-stack suite runs against a real PostgreSQL/PostGIS database and will\n' +
@@ -74,18 +93,26 @@ export default defineConfig({
     },
   ],
 
-  webServer: [
+  // Against Compose the servers are already running in containers; Playwright
+  // must not start its own.
+  ...(againstCompose ? {} : { webServer: buildWebServers() }),
+});
+
+function buildWebServers() {
+  return [
     {
       // The real API, against the real database.
       command: `node ../../scripts/uv.mjs run python -m pathable_api`,
       url: `${API_BASE_URL}/api/v1/health/ready`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
-      stdout: 'pipe',
-      stderr: 'pipe',
+      stdout: 'pipe' as const,
+      stderr: 'pipe' as const,
       env: {
         ENVIRONMENT: 'test',
-        DATABASE_URL: process.env.DATABASE_URL,
+        // Guaranteed non-empty: this branch only runs when not targeting
+        // Compose, and that path asserts DATABASE_URL above.
+        DATABASE_URL: process.env.DATABASE_URL ?? '',
         ALLOWED_ORIGINS: WEB_BASE_URL,
         LOG_FORMAT: 'console',
         LOG_LEVEL: 'WARNING',
@@ -98,8 +125,8 @@ export default defineConfig({
       url: `${WEB_BASE_URL}/api/healthz`,
       reuseExistingServer: !process.env.CI,
       timeout: 240_000,
-      stdout: 'pipe',
-      stderr: 'pipe',
+      stdout: 'pipe' as const,
+      stderr: 'pipe' as const,
       env: {
         NODE_ENV: 'production',
         // The real API origin — not a closed port, and not a stub.
@@ -111,5 +138,5 @@ export default defineConfig({
         NEXT_PUBLIC_PILOT_REGION_NAME: 'Waterloo, Ontario',
       },
     },
-  ],
-});
+  ];
+}

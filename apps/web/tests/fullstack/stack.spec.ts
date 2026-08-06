@@ -49,8 +49,13 @@ test.describe('full stack', () => {
     if (readiness === undefined) return;
 
     expect(readiness.status).toBe(200);
-    expect(readiness.url).toContain('127.0.0.1:');
-    expect(readiness.url).not.toContain(new URL(page.url()).port);
+
+    // The response came from a genuinely different origin to the page — a real
+    // cross-origin call to the API, not something served by the web app. Asserted
+    // on origins rather than a hard-coded host, because the same suite runs
+    // against locally started servers and against the Compose stack.
+    expect(new URL(readiness.url).origin).not.toBe(new URL(page.url()).origin);
+    expect(readiness.url).toMatch(/^https?:\/\//);
 
     expect(readiness.body.status).toBe('ready');
     expect(readiness.body.service).toBe('pathable-api');
