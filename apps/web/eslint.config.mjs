@@ -10,8 +10,14 @@ const config = [
       '.next/**',
       'coverage/**',
       'test-results/**',
+      'test-results-fullstack/**',
       'playwright-report/**',
+      'playwright-report-fullstack/**',
       'next-env.d.ts',
+      // Vendored MapLibre worker, copied verbatim from node_modules by
+      // scripts/sync-maplibre-worker.mjs. Minified third-party code that we
+      // neither author nor edit.
+      'public/maplibre/**',
     ],
   },
   ...nextCoreWebVitals,

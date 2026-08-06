@@ -38,6 +38,10 @@ class FakeMap {
 }
 
 vi.mock('maplibre-gl', () => ({
+  // Required since the KI-1 fix: the hook configures the worker URL before
+  // constructing a Map. A mock without it throws.
+  setWorkerUrl: () => {},
+  getWorkerUrl: () => '',
   Map: FakeMap,
   NavigationControl: class NavigationControl {},
   ScaleControl: class ScaleControl {},

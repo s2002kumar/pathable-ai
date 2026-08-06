@@ -8,6 +8,7 @@ import {
   MAP_TIMEOUT_MESSAGE,
   type MapStatus,
 } from './map-state';
+import { configureMapLibreWorker, currentOrigin } from './worker-url';
 import { type WebGlSupport, detectWebGl } from './webgl';
 
 export type UseMapLibreOptions = {
@@ -73,6 +74,10 @@ export function useMapLibre({
       try {
         const maplibre = await import('maplibre-gl');
         if (cancelled) return;
+
+        // Must happen before the first Map is constructed. Without it the map
+        // renders nothing at all and reports no error — see worker-url.ts.
+        configureMapLibreWorker(maplibre, currentOrigin());
 
         const instance = new maplibre.Map({
           container,

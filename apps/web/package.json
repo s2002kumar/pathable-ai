@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync:maplibre": "node ../../scripts/sync-maplibre-worker.mjs",
+    "predev": "pnpm sync:maplibre",
     "dev": "next dev --port 3000",
+    "prebuild": "pnpm sync:maplibre",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

@@ -6,6 +6,9 @@
 
 # --- Node / pnpm -------------------------------------------------------------
 node_modules/
+# Copied from node_modules by scripts/sync-maplibre-worker.mjs on predev/prebuild.
+# Generated rather than committed so it cannot drift from the installed version.
+apps/web/public/maplibre/
 .pnpm-store/
 .next/
 out/

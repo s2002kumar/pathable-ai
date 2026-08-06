@@ -85,6 +85,21 @@ test.describe('application shell', () => {
     ).toBeVisible();
   });
 
+  test('serves the MapLibre worker from our own origin', async ({ request }) => {
+    // KI-1: MapLibre computes its worker URL from `import.meta.url` and yields an
+    // empty string once bundled, so `new Worker("")` loads the HTML page as the
+    // worker. The map then renders nothing, silently. The fix depends on this
+    // asset existing, and the deterministic style has no sources — so nothing
+    // else in this suite would notice if it went missing.
+    const response = await request.get('/maplibre/maplibre-gl-worker.mjs');
+
+    expect(response.status()).toBe(200);
+    expect(await response.text()).toContain('maplibre-gl-shared.mjs');
+
+    // The worker imports this sibling relatively; both must be served.
+    expect((await request.get('/maplibre/maplibre-gl-shared.mjs')).status()).toBe(200);
+  });
+
   test('the map container actually fills the map frame', async ({ page }) => {
     // Regression cover. MapLibre applies `.maplibregl-map { position: relative }`
     // to this element, which once overrode the absolute positioning and collapsed

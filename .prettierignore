@@ -16,5 +16,8 @@ artifacts/
 packages/contracts/openapi.json
 packages/contracts/src/generated/
 
+# Vendored MapLibre worker, copied verbatim from node_modules on prebuild.
+apps/web/public/maplibre/
+
 # Python is formatted by Ruff, not Prettier.
 *.py

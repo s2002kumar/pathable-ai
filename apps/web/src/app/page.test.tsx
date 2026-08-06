@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HomePage from './page';
 
 vi.mock('maplibre-gl', () => ({
+  // Required since the KI-1 fix: the hook configures the worker URL before
+  // constructing a Map. A mock without it throws.
+  setWorkerUrl: () => {},
+  getWorkerUrl: () => '',
   Map: class {
     on() {}
     addControl() {}
