@@ -36,6 +36,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY packages/contracts ./packages/contracts
 COPY apps/web ./apps/web
 
+# The web package's `prebuild` runs scripts/sync-maplibre-worker.mjs, which
+# copies MapLibre's tile worker into public/. Without it the build fails, and
+# without the worker the map silently renders nothing at all (see KI-1).
+COPY scripts ./scripts
+
 # NEXT_PUBLIC_* values are substituted into the client bundle at build time, so
 # they must be present now rather than at run time. None of them may be a secret:
 # everything below ships to every visitor's browser in plain text.
@@ -71,6 +76,17 @@ ENV NODE_ENV=production \
 
 RUN groupadd --gid 10001 pathable \
     && useradd --uid 10001 --gid 10001 --create-home --shell /usr/sbin/nologin pathable
+
+# npm and corepack are never used at runtime — the standalone server is started
+# directly with `node apps/web/server.js`. Removing them eliminates every
+# fixable HIGH/CRITICAL advisory Trivy reports against this image, all of which
+# come from npm's own bundled dependencies (tar, sigstore, ip-address, picomatch,
+# brace-expansion) rather than from anything PathAble depends on.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx \
+           /usr/local/bin/corepack
 
 # `output: 'standalone'` traces exactly the files the server needs. Static assets
 # and public/ are not traced and must be copied explicitly.
