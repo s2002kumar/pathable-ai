@@ -174,6 +174,37 @@ papered over with retries.
 
 ---
 
+## Manual real-basemap verification
+
+**CI deliberately cannot catch a broken basemap.** Every automated suite uses the
+source-less offline style so that a green build never depends on a third-party
+tile server. That style needs no tile worker and fires `load` regardless of
+whether tiles would render — which is precisely how KI-1 stayed hidden while the
+map drew nothing at all.
+
+So the real map is verified by hand, in a real browser, before any release:
+
+```bash
+docker compose up -d db          # or any real PostGIS
+pnpm map:evidence                 # builds with the real style and screenshots it
+```
+
+Then open the app in an ordinary browser and confirm:
+
+- [ ] Streets, water, parks and labels are drawn; Waterloo is recognisable
+- [ ] The network panel shows `.pbf` vector-tile requests returning 200
+- [ ] Attribution is visible on the map
+- [ ] Zoom buttons work, and dragging pans the map
+- [ ] Resizing the window keeps the map filling its frame
+- [ ] The console has no unexpected errors
+
+`pnpm map:evidence` reports tile counts, map state, attribution and console
+errors, and writes `apps/web/artifacts/screenshots/real-basemap-*.png`. It is a
+manual aid, never a CI job.
+
+> Headless Chromium with SwiftShader is **not** sufficient for this check. It can
+> render the offline style perfectly while a real vector basemap fails.
+
 ## Accessibility testing
 
 `@axe-core/playwright` scans the shell in both the ready and map-failure states,

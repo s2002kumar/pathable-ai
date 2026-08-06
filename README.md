@@ -181,10 +181,16 @@ Run from the repository root.
 | `pnpm check`              | Fast gate: everything that needs no database or browser                                                        |
 | `pnpm check:full`         | Everything, including real PostGIS and browser tests. **Fails** rather than skipping if the database is absent |
 | `pnpm map:evidence`       | Manual: screenshot the map against the real tile provider. Not part of CI                                      |
-| `pnpm docker:up`          | `docker compose up --build -d`                                                                                 |
-| `pnpm docker:down`        | Stop the stack, **keeping** the database volume                                                                |
-| `pnpm docker:logs`        | Follow logs from all services                                                                                  |
-| `pnpm docker:reset-db`    | **Destroy** local database data, with confirmation                                                             |
+
+> **The real basemap is verified by hand, not by CI.** Automated suites use a
+> source-less offline map style so a green build never depends on a third-party
+> tile server — which also means they cannot detect a broken basemap. See
+> [manual real-basemap verification](docs/development/TESTING.md#manual-real-basemap-verification)
+> and [KI-1](docs/development/KNOWN_ISSUES.md).
+> | `pnpm docker:up` | `docker compose up --build -d` |
+> | `pnpm docker:down` | Stop the stack, **keeping** the database volume |
+> | `pnpm docker:logs` | Follow logs from all services |
+> | `pnpm docker:reset-db` | **Destroy** local database data, with confirmation |
 
 > `install` is `pnpm install` plus `uv sync` in `services/api`; `pnpm bootstrap`
 > runs both. It is not exposed as `pnpm install` because `install` is a reserved

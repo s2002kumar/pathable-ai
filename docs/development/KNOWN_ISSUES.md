@@ -1,85 +1,127 @@
 # Known issues
 
-Open defects with reproduction steps and evidence. Fixed issues move to
-[`../../CHANGELOG.md`](../../CHANGELOG.md).
+Open defects with reproduction steps and evidence. Resolved issues stay here with
+their diagnosis, because the reasoning is usually more valuable than the fix.
 
 ---
 
-## KI-1 — The map does not render a real vector basemap
+## KI-1 — The map did not render a real vector basemap
 
-**Status:** Open · found 2026-08-05 during P0-A01 remediation · **blocks Phase 1**
+**Status: RESOLVED** · found 2026-08-05 · fixed 2026-08-06
 
 ### Symptom
 
-With the configured development style
-(`https://tiles.openfreemap.org/styles/liberty`), the map never finishes
-initialising. After 30 seconds the lifecycle times out and shows "The map is
-unavailable"; the written pilot description remains, so the page is still usable.
+With the real development style, the map never finished initialising and showed
+"The map is unavailable". The deterministic offline test style was unaffected, so
+every automated suite was green.
 
-The deterministic offline test style is unaffected, which is why the automated
-suites are green.
+### Root cause
 
-### Evidence
+MapLibre 6 runs tile parsing in a **separate module worker** and derives its URL
+from its own `import.meta.url`:
 
-Captured with `pnpm map:evidence` (see
-`apps/web/artifacts/screenshots/real-basemap-report.json`):
+```js
+let e = import.meta.url;
+if (!/^https?:/.test(e)) return ""; // <- here
+return new URL("./maplibre-gl-worker.mjs", e).href;
+```
 
-| Observation           | Value                                         |
-| --------------------- | --------------------------------------------- |
-| Style document        | HTTP 200                                      |
-| TileJSON (`/planet`)  | HTTP 200                                      |
-| Sprites               | HTTP 200 ×2                                   |
-| Glyphs                | **0 requests**                                |
-| Vector tiles (`.pbf`) | **0 requests**                                |
-| Console errors        | none from MapLibre                            |
-| `error` event         | never fired — the failure is the init timeout |
-| Web worker            | created successfully                          |
-| Map container size    | 1406×810 after the fix below (was 1406×0)     |
+Once MapLibre is bundled, `import.meta.url` is no longer an `http(s)` URL, so
+that returns an **empty string** and MapLibre calls `new Worker('')`. An empty
+worker URL resolves to the current document, so the browser starts a worker whose
+script is the HTML page. It loads, it never answers, and **nothing throws**.
 
-Reproduced identically in a production build and under `next dev`, at zoom 10
-and zoom 15, on desktop and mobile viewports.
+The result: the style document, TileJSON and sprites were all fetched
+successfully, then not one vector tile was ever requested, `style.load` never
+fired, and the console stayed clean.
 
-The provider is healthy: fetching a tile directly from the URL template in the
-TileJSON returns real data (a z10 tile is ~60 KB).
+Two things hid it:
 
-So MapLibre loads the style, the TileJSON and the sprites, and then requests no
-tiles at all — silently.
+- The map frame's own background still showed, so screenshots looked plausible.
+- The offline test style has **no sources**. With nothing to parse the worker is
+  never needed, so `load` fires anyway and the lifecycle reported `ready` over a
+  map that had never drawn a tile.
 
-### What has been ruled out
+### How it was found
 
-- **Provider outage.** Tiles are served correctly when fetched directly.
-- **Zero-size container.** This _was_ a real bug and is fixed — the container had
-  collapsed to zero height because MapLibre's `.maplibregl-map { position: relative }`
-  overrode our absolute positioning. Fixing it did not resolve the tile issue.
-- **Turbopack production bundling.** Reproduces under `next dev` too.
-- **Web worker failure.** A worker is created.
-- **Rendering cost / SwiftShader slowness.** No tiles are _requested_, so this is
-  upstream of rasterisation. Zoom 10 behaves the same as zoom 15.
+Controlled experiments, each isolating one variable:
 
-### Not yet ruled out
+| Experiment                                                 | Environment           | Vector tiles   | Result                            |
+| ---------------------------------------------------------- | --------------------- | -------------- | --------------------------------- |
+| **Control A** — official MapLibre demo style, minimal page | Chrome 150, real GPU  | **6, all 200** | `style.load`@993ms, `load`@1363ms |
+| **Control B** — OpenFreeMap style, minimal page            | Chrome 150, real GPU  | **8, all 200** | `style.load`@843ms, `load`@2911ms |
+| **Control C** — minimal page, unbundled MapLibre           | Chrome 150, real GPU  | works          | worker URL resolved correctly     |
+| Application, bundled by Next/Turbopack                     | Chrome 150 + headless | **0**          | worker URL was the page origin    |
 
-- A behaviour change or regression in **maplibre-gl 6.1.0**, which is a very new
-  major version. The obvious next experiment is to try the 5.x line.
-- Something specific to headless Chromium with SwiftShader that fails silently.
-  Verifying on a real browser with a GPU would settle this quickly and is the
-  cheapest next step.
+MapLibre 6.1.0, the OpenFreeMap style and the browser were therefore all fine.
+The single difference was the worker URL, and the empty-string branch above
+explains it exactly.
 
-### Impact
+The provider was independently confirmed healthy: a z10 tile fetched directly
+returns ~60 KB.
 
-Phase 0's stated scope is a map shell, and the shell, its lifecycle, its fallback
-and its accessible alternative all work. But a mapping product whose map does not
-draw is not shippable, and Phase 1 route rendering depends on this.
+### Fix
 
-### Suggested next steps
+Serve MapLibre's own worker chunk from our origin and pass an absolute URL to
+`setWorkerUrl()` before constructing any map.
 
-1. Open the app in a normal desktop browser with GPU acceleration and check
-   whether the basemap draws. One minute, and it splits the problem in half.
-2. If it fails there too, pin `maplibre-gl` to the latest 5.x and retest.
-3. If 5.x works, record the finding and a dependency decision; if not, build a
-   minimal standalone HTML reproduction against the same style and take it
-   upstream.
+- `scripts/sync-maplibre-worker.mjs` copies `maplibre-gl-worker.mjs` and the
+  `maplibre-gl-shared.mjs` it imports out of node_modules into
+  `apps/web/public/maplibre/`, on `predev` and `prebuild`. Generated rather than
+  committed, so it cannot drift from the installed version.
+- `src/features/map/worker-url.ts` resolves and applies the URL.
 
-### Workaround
+### Verification
 
-None needed for Phase 0. The offline test style keeps the automated suites
-meaningful, and the failure state is handled gracefully.
+Real application, real style, Chrome 150 with a real GPU
+(ANGLE / Intel Arc / D3D11):
+
+|                                    | Desktop                            | Mobile (Pixel 7) |
+| ---------------------------------- | ---------------------------------- | ---------------- |
+| Map state                          | `ready`                            | `ready`          |
+| Vector tiles on load               | 8, all HTTP 200                    | 4, all HTTP 200  |
+| Vector tiles after pan + zoom      | 20                                 | 11               |
+| Worker URL                         | `/maplibre/maplibre-gl-worker.mjs` | same             |
+| Attribution visible                | yes                                | yes              |
+| Pan / zoom                         | working                            | working          |
+| Container fills frame after resize | yes                                | n/a              |
+| Unexpected console errors          | none                               | none             |
+
+Screenshots: `apps/web/artifacts/screenshots/real-basemap-{desktop,mobile}.png`
+(default Waterloo view) and `…-after-interaction.png` (after pan and zoom).
+
+### Regression cover
+
+- `src/features/map/worker-url.test.ts` — the URL handed to MapLibre is always an
+  absolute `http(s)` URL and never an empty string.
+- `tests/e2e/app-shell.spec.ts` — the worker asset and its shared chunk are
+  actually served. Nothing else would notice if the sync script stopped running,
+  because the offline style needs no worker.
+
+### Standing risk
+
+CI still exercises the map with the source-less offline style, deliberately: a
+green build must not depend on a third-party tile server. **That means CI cannot
+catch a regression of this class.** Real-basemap rendering must be verified in a
+normal browser before any release — see
+[`TESTING.md`](TESTING.md#manual-real-basemap-verification).
+
+---
+
+## KI-2 — Docker has never been exercised on this machine
+
+**Status: Open** · environment limitation, not a code defect
+
+`com.docker.service` cannot be started without Windows administrator rights, and
+this development environment has none (`IsAdmin: False`). Docker images have
+never been built, the Compose stack has never started, and container health,
+networking, the migrate-on-start entrypoint and non-root runtime users are all
+unverified.
+
+Everything Docker would provide has been exercised natively instead: real
+PostgreSQL 17.6 + PostGIS 3.6.2, migrations, all integration tests, and a
+full-stack browser suite with no stubs. That is not a substitute for container
+verification.
+
+**Unblock:** launch Docker Desktop and approve the UAC prompt, then
+`docker info`, `docker compose build --pull`, `docker compose up -d`.

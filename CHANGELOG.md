@@ -10,7 +10,32 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **The map now renders a real vector basemap (KI-1).** MapLibre 6 loads its tile
+  worker as a separate module chunk and derives the URL from `import.meta.url`,
+  returning an **empty string** once bundled. `new Worker('')` resolves to the
+  HTML page, so the worker never answered: the style, TileJSON and sprites all
+  loaded, no vector tile was ever requested, and nothing threw. Fixed by serving
+  MapLibre's own worker from `/maplibre/` and passing an absolute URL to
+  `setWorkerUrl()`.
+
+  Verified in Chrome 150 with a real GPU: 20 vector tiles (all HTTP 200) on
+  desktop and 11 on mobile after pan and zoom, attribution visible, container
+  filling its frame after resize, no unexpected console errors, and a
+  recognisable Waterloo basemap in both screenshots.
+
+- Added an app icon, removing the only remaining `/favicon.ico` 404.
+
+### Added
+
+- `scripts/sync-maplibre-worker.mjs`, run on `predev`/`prebuild`, keeps the served
+  worker matched to the installed MapLibre version.
+- Regression cover for KI-1: unit tests pinning the absolute-URL property, and an
+  e2e check that the worker asset is actually served — nothing else would notice
+  it going missing, because the offline test style needs no worker.
+- Documented manual real-basemap verification, since CI deliberately cannot catch
+  a regression of this class.
 
 ---
 
