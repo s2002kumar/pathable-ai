@@ -5,6 +5,19 @@ packages:
 # Postinstall scripts are blocked by default; each one is an arbitrary-code-
 # execution point at install time. Only packages listed here may run them, and
 # every entry needs a reason.
+# Transitive dependency overrides.
+#
+# GHSA-5p4m-2wfm-xmqj (CVE-2026-59870): js-yaml < 4.3.1 has quadratic CPU
+# consumption resolving `!!omap`. It reaches us only through
+# openapi-typescript -> @redocly/openapi-core -> js-yaml, and
+# openapi-typescript is already on its latest release, so there is no version
+# bump that clears it. 4.3.1 is a patch release over the 4.3.0 we resolved,
+# and the contract drift check proves the generated output is unchanged.
+#
+# Remove this once @redocly/openapi-core ships a release depending on >= 4.3.1.
+overrides:
+  "js-yaml@>=4.0.0 <4.3.1": "^4.3.1"
+
 allowBuilds:
   # Native module resolver used by eslint-plugin-import-x (via eslint-config-next).
   # Without its build step, `pnpm lint` fails to resolve any import.
