@@ -206,3 +206,29 @@ would need a spatial index.
 
 **Fix when:** either the reported snap distances or the request latency stop being
 acceptable on a real city network.
+
+---
+
+## KI-5 — `unknown_data_fraction` may saturate on real OSM data
+
+**Status: Open, unverified** · 2026-08-12
+
+A route's `unknown_data_fraction` counts a segment if **any** routing-relevant
+attribute is unrecorded. `incline` is one of those attributes, and OpenStreetMap
+records it on very few ways.
+
+If that holds for Waterloo, nearly every real segment will count as having
+missing data and the figure will sit near 100% on every route — accurate, but
+useless as a signal, because a number that never varies cannot distinguish a
+well-surveyed route from a poorly surveyed one.
+
+This is **not confirmed**. It cannot be, until a real dataset can be ingested
+(see KI-3), and changing the measure against an unmeasured hypothesis would be
+guessing. The cost model itself is unaffected either way: the uncertainty penalty
+is per-attribute and per-metre, so it still discriminates between a segment
+missing one attribute and a segment missing four.
+
+**Check when:** the first real Waterloo dataset is ingested. If the fraction does
+saturate, the likely fix is to report the count of missing attributes per metre
+rather than a binary any-missing share — keeping the same underlying facts and
+making the headline number discriminate again.
