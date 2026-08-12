@@ -55,6 +55,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/routes/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Compare the shortest route with an accessibility-aware route
+         * @description Computes the shortest walking route and a route that respects the chosen mobility profile, and explains the difference using attributes recorded in OpenStreetMap. Either route may be absent — a profile with no possible route is a real answer, and the response says why. No part of the request is stored.
+         */
+        post: operations["compareRoutes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/routes/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List mobility profiles
+         * @description The profiles a client may offer, with the hard constraints each one applies. Constraint values are engineering judgement, not measurements of how people with these mobility aids actually travel.
+         */
+        get: operations["listMobilityProfiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -92,6 +132,127 @@ export interface components {
              * @example 9f1c2b7a4e5d4f0aa1b2c3d4e5f60718
              */
             request_id?: string | null;
+        };
+        /**
+         * CautionModel
+         * @description Something to weigh before relying on the route.
+         */
+        CautionModel: {
+            /** Code */
+            code: string;
+            /** Evidence */
+            evidence?: {
+                [key: string]: unknown;
+            };
+            /** Summary */
+            summary: string;
+        };
+        /**
+         * Coordinate
+         * @description A WGS84 position.
+         */
+        Coordinate: {
+            /**
+             * Latitude
+             * @description Degrees north of the equator.
+             */
+            latitude: number;
+            /**
+             * Longitude
+             * @description Degrees east of the prime meridian.
+             */
+            longitude: number;
+        };
+        /**
+         * CostComponentModel
+         * @description One contribution to a segment's cost.
+         */
+        CostComponentModel: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "distance" | "surface" | "smoothness" | "incline" | "steps" | "kerb" | "crossing" | "uncertainty";
+            /**
+             * Detail
+             * @description Plain-language reason, derived from recorded attributes.
+             */
+            detail: string;
+            /**
+             * Effective Metres
+             * @description Effective metres this contribution added.
+             */
+            effective_metres: number;
+        };
+        /**
+         * CustomProfileOptions
+         * @description Overrides for the ``custom`` profile.
+         *
+         *     Deliberately narrow. Exposing every cost weight would let a client build a
+         *     model nobody has reasoned about, and the resulting route would still carry
+         *     PathAble's name.
+         */
+        CustomProfileOptions: {
+            /**
+             * Avoid Rough Surface
+             * @description Treat gravel, dirt and cobblestone as impassable.
+             */
+            avoid_rough_surface?: boolean | null;
+            /**
+             * Base
+             * @description Preset the custom profile starts from.
+             * @default wheelchair
+             * @enum {string}
+             */
+            base: "wheelchair" | "walker" | "crutches" | "stroller" | "reduced_mobility";
+            /**
+             * Exclude Steps
+             * @description Treat stairways as impassable.
+             */
+            exclude_steps?: boolean | null;
+            /**
+             * Max Incline Percent
+             * @description Steepest recorded gradient to allow. Unrecorded gradients are never excluded.
+             */
+            max_incline_percent?: number | null;
+            /**
+             * Min Width M
+             * @description Narrowest recorded width to allow. Unrecorded widths are never excluded.
+             */
+            min_width_m?: number | null;
+        };
+        /**
+         * DatasetProvenance
+         * @description Which network answered this request.
+         */
+        DatasetProvenance: {
+            /**
+             * Acquired At
+             * @description When this dataset was obtained, ISO 8601.
+             */
+            acquired_at: string;
+            /**
+             * Attribution
+             * @description Required credit for the underlying map data.
+             * @example © OpenStreetMap contributors, ODbL 1.0
+             */
+            attribution: string;
+            /**
+             * Checksum
+             * @description Content hash of the dataset that produced this route.
+             */
+            checksum: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Region */
+            region: string;
+            /** Source Name */
+            source_name: string;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "osm" | "synthetic";
         };
         /**
          * DependencyCheck
@@ -136,6 +297,32 @@ export interface components {
             message: string;
         };
         /**
+         * ExplanationModel
+         * @description An evidence-backed statement about why the accessible route differs.
+         */
+        ExplanationModel: {
+            /** Code */
+            code: string;
+            /**
+             * Evidence
+             * @description The recorded values this statement was derived from.
+             */
+            evidence?: {
+                [key: string]: unknown;
+            };
+            /** Summary */
+            summary: string;
+        };
+        /**
+         * KerbType
+         * @description Kerb (curb) treatment where a path meets a road.
+         *
+         *     ``RAISED`` is the barrier case for wheeled mobility; ``LOWERED`` and ``FLUSH``
+         *     are the good cases; ``UNKNOWN`` is by far the most common in practice.
+         * @enum {string}
+         */
+        KerbType: "lowered" | "flush" | "raised" | "none" | "unknown";
+        /**
          * LivenessResponse
          * @description Process is running and able to serve HTTP.
          * @example {
@@ -163,6 +350,29 @@ export interface components {
              * @example 0.1.0
              */
             version: string;
+        };
+        /** MobilityProfileListResponse */
+        MobilityProfileListResponse: {
+            /** Profiles */
+            profiles: components["schemas"]["MobilityProfileModel"][];
+        };
+        /**
+         * MobilityProfileModel
+         * @description A profile a client can offer.
+         */
+        MobilityProfileModel: {
+            /** Description */
+            description: string;
+            /** Display Name */
+            display_name: string;
+            /** Excludes Steps */
+            excludes_steps: boolean;
+            /** Key */
+            key: string;
+            /** Max Incline Percent */
+            max_incline_percent: number | null;
+            /** Min Width M */
+            min_width_m: number | null;
         };
         /**
          * ReadinessChecks
@@ -220,6 +430,244 @@ export interface components {
              */
             version: string;
         };
+        /**
+         * RouteCompareRequest
+         * @description Ask for the shortest route and an accessibility-aware alternative.
+         * @example {
+         *       "destination": {
+         *         "latitude": 43.4723,
+         *         "longitude": -80.5204
+         *       },
+         *       "origin": {
+         *         "latitude": 43.4643,
+         *         "longitude": -80.5449
+         *       },
+         *       "profile": "wheelchair",
+         *       "region": "waterloo"
+         *     }
+         */
+        RouteCompareRequest: {
+            /** @description Only used when `profile` is `custom`; ignored otherwise. */
+            custom?: components["schemas"]["CustomProfileOptions"] | null;
+            destination: components["schemas"]["Coordinate"];
+            origin: components["schemas"]["Coordinate"];
+            /**
+             * Profile
+             * @description Mobility profile for the accessible route.
+             * @default wheelchair
+             * @enum {string}
+             */
+            profile: "wheelchair" | "walker" | "crutches" | "stroller" | "reduced_mobility" | "custom";
+            /**
+             * Region
+             * @description Pilot region slug.
+             * @default waterloo
+             */
+            region: string;
+        };
+        /**
+         * RouteCompareResponse
+         * @description The shortest route, the accessible route, and the difference between them.
+         */
+        RouteCompareResponse: {
+            /**
+             * Accessible Failure
+             * @description Why no route satisfies the chosen profile.
+             */
+            accessible_failure?: string | null;
+            /** @description Route meeting the chosen profile. Null when no such route exists. */
+            accessible_route?: components["schemas"]["RouteModel"] | null;
+            /** Cautions */
+            cautions: components["schemas"]["CautionModel"][];
+            dataset: components["schemas"]["DatasetProvenance"];
+            /** Explanations */
+            explanations: components["schemas"]["ExplanationModel"][];
+            /** Extra Distance Fraction */
+            extra_distance_fraction?: number | null;
+            /**
+             * Extra Distance M
+             * @description How much further the accessible route is.
+             */
+            extra_distance_m?: number | null;
+            /**
+             * Ml Predictions Used
+             * @description Always false. PathAble's routing is deterministic rules over recorded map attributes; no model prediction contributes to any cost or constraint.
+             * @default false
+             * @constant
+             */
+            ml_predictions_used: false;
+            /** Profile */
+            profile: string;
+            /** Profile Description */
+            profile_description: string;
+            /** Profile Display Name */
+            profile_display_name: string;
+            /**
+             * Standard Failure
+             * @description Why the shortest route could not be computed.
+             */
+            standard_failure?: string | null;
+            /** @description Shortest walking route. Null when none exists. */
+            standard_route?: components["schemas"]["RouteModel"] | null;
+        };
+        /**
+         * RouteModel
+         * @description A computed route.
+         */
+        RouteModel: {
+            /** Computation Ms */
+            computation_ms: number;
+            /**
+             * Coordinates
+             * @description [longitude, latitude] polyline for the whole route.
+             */
+            coordinates: [
+                number,
+                number
+            ][];
+            /** Crossing Count */
+            crossing_count: number;
+            destination: components["schemas"]["SnappedPointModel"];
+            /**
+             * Distance M
+             * @description Real ground distance.
+             */
+            distance_m: number;
+            /**
+             * Effective Distance M
+             * @description Distance weighted by this profile's cost model. Not a physical distance.
+             */
+            effective_distance_m: number;
+            /**
+             * Estimated Duration Seconds
+             * @description Rough planning estimate from distance and obstacle counts. Not measured, and not specific to any individual.
+             */
+            estimated_duration_seconds: number;
+            origin: components["schemas"]["SnappedPointModel"];
+            /**
+             * Profile
+             * @description Profile key this route was computed for.
+             */
+            profile: string;
+            /** Profile Display Name */
+            profile_display_name: string;
+            /** Segments */
+            segments: components["schemas"]["RouteSegmentModel"][];
+            /** Stairway Count */
+            stairway_count: number;
+            /** Steepest Incline Percent */
+            steepest_incline_percent: number | null;
+            /**
+             * Step Count
+             * @description Recorded steps across all stairways on this route.
+             */
+            step_count: number;
+            /**
+             * Unknown Data Fraction
+             * @description Share of this route's length whose accessibility attributes are unrecorded.
+             */
+            unknown_data_fraction: number;
+            /** Unknown Kerb Crossing Count */
+            unknown_kerb_crossing_count: number;
+        };
+        /**
+         * RouteSegmentModel
+         * @description One mapped segment as traversed by a route.
+         */
+        RouteSegmentModel: {
+            /**
+             * Coordinates
+             * @description [longitude, latitude] positions, oriented along travel.
+             */
+            coordinates: [
+                number,
+                number
+            ][];
+            /** Cost Components */
+            cost_components: components["schemas"]["CostComponentModel"][];
+            /**
+             * Edge Identity
+             * @description Stable identity of this segment within the dataset.
+             */
+            edge_identity: string;
+            /**
+             * Effective Metres
+             * @description What this segment cost the chosen profile, in effective metres.
+             */
+            effective_metres: number;
+            /** Highway */
+            highway?: string | null;
+            /**
+             * Incline Percent
+             * @description Recorded gradient. Null means unrecorded, not flat.
+             */
+            incline_percent?: number | null;
+            /** Is Crossing */
+            is_crossing: boolean;
+            kerb: components["schemas"]["KerbType"];
+            /** Length M */
+            length_m: number;
+            /**
+             * Name
+             * @description Street or path name, when OSM records one.
+             */
+            name?: string | null;
+            smoothness_class: components["schemas"]["SmoothnessClass"];
+            /** Step Count */
+            step_count?: number | null;
+            /** @description Whether this segment is a stairway. `unknown` means nobody has recorded it. */
+            steps: components["schemas"]["TriState"];
+            /**
+             * Surface
+             * @description Raw OSM surface value, if recorded.
+             */
+            surface?: string | null;
+            surface_class: components["schemas"]["SurfaceClass"];
+            /**
+             * Unknown Attributes
+             * @description Routing-relevant attributes nobody has recorded for this segment.
+             */
+            unknown_attributes: string[];
+        };
+        /**
+         * SmoothnessClass
+         * @description Coarse grouping of OSM `smoothness`.
+         * @enum {string}
+         */
+        SmoothnessClass: "excellent" | "good" | "intermediate" | "bad" | "unknown";
+        /**
+         * SnappedPointModel
+         * @description Where a requested coordinate joined the network.
+         */
+        SnappedPointModel: {
+            /**
+             * Distance M
+             * @description How far the requested point was from the nearest mapped path.
+             */
+            distance_m: number;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+        };
+        /**
+         * SurfaceClass
+         * @description Coarse surface grouping used by the cost model.
+         *
+         *     The raw OSM `surface` value is kept alongside this; the class exists so cost
+         *     policy is written against four cases rather than the ~40 values in the wild.
+         * @enum {string}
+         */
+        SurfaceClass: "paved" | "compacted" | "rough" | "unknown";
+        /**
+         * TriState
+         * @description Yes / no / unknown.
+         *
+         *     ``UNKNOWN`` is the default for every derived attribute. ``NO`` means there is
+         *     affirmative evidence of absence, not merely a missing tag.
+         * @enum {string}
+         */
+        TriState: "yes" | "no" | "unknown";
     };
     responses: never;
     parameters: never;
@@ -310,6 +758,91 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadinessResponse"];
+                };
+            };
+        };
+    };
+    compareRoutes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RouteCompareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RouteCompareResponse"];
+                };
+            };
+            /** @description The region has no active network dataset. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request could not be routed as given. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unexpected server error. Quote the request id when reporting. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    listMobilityProfiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MobilityProfileListResponse"];
+                };
+            };
+            /** @description The request did not match the expected schema. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error. Quote the request id when reporting. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };

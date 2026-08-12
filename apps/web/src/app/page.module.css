@@ -4,6 +4,47 @@
   min-height: 100dvh;
 }
 
+.main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* The one paragraph that explains what this page does, and the text alternative
+   the map region points at. Kept in normal flow above the map so it is the first
+   thing read, on every viewport. */
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 62rem;
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.pageTitle {
+  font-size: var(--text-2xl);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.instructions {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text-muted);
+}
+
+.attribution {
+  padding: 0 var(--space-4) var(--space-4);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--color-text-subtle);
+}
+
+.attribution a {
+  color: inherit;
+}
+
 /* --- Mobile first --------------------------------------------------------
  * The map stays the primary surface but does not consume the viewport, and the
  * panel sits below it in normal document flow. Nothing overlaps, so the map's own

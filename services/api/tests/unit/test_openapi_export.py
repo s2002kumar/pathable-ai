@@ -90,9 +90,7 @@ class TestDocumentContents:
         assert "LivenessResponse" in schemas
         assert "ReadinessResponse" in schemas
 
-    def test_states_that_no_machine_learning_is_involved(
-        self, document: dict[str, object]
-    ) -> None:
+    def test_states_that_no_machine_learning_is_involved(self, document: dict[str, object]) -> None:
         # The document is what an integrator reads before writing a client. If it
         # is silent about this, "AI" in the product name is the only signal they
         # have, and it points the wrong way.

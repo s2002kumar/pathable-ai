@@ -30,7 +30,7 @@ from pathable_api.geo.datasets import (
 from pathable_api.geo.enums import SourceType
 from pathable_api.geo.fixtures import load_synthetic_dataset
 from pathable_api.geo.models import DatasetVersion, PilotRegion
-from pathable_api.geo.osm import import_walk_network
+from pathable_api.geo.osm import OverpassUnreachableError, import_walk_network
 from pathable_api.geo.regions import PILOT_REGIONS, region_definition, seed_pilot_regions
 
 logger = get_logger(__name__)
@@ -77,6 +77,14 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Where to cache Overpass responses (default: OSMnx's own cache folder).",
+    )
+    osm.add_argument(
+        "--overpass-url",
+        default=None,
+        help=(
+            "Overpass endpoint to use, e.g. https://overpass.private.coffee/api. "
+            "Defaults to the first reachable public endpoint."
+        ),
     )
 
     synthetic = sources.add_parser(
@@ -165,12 +173,24 @@ async def _ingest_osm(database: Database, args: argparse.Namespace) -> int:
     # it touches a public service; holding a database transaction across it would
     # be rude to both.
     print(f"Downloading OpenStreetMap walk network for {definition.display_name}…")
-    result = import_walk_network(
-        definition.bounds,
-        region_slug=definition.slug,
-        cache_dir=args.cache_dir,
-        simplify=not args.no_simplify,
-    )
+    try:
+        result = import_walk_network(
+            definition.bounds,
+            region_slug=definition.slug,
+            cache_dir=args.cache_dir,
+            simplify=not args.no_simplify,
+            overpass_url=args.overpass_url,
+        )
+    except OverpassUnreachableError as error:
+        # Fail immediately and say so. The alternative — letting the request hang
+        # on an unreachable endpoint — burned an hour before this check existed.
+        print(f"error: {error}", file=sys.stderr)
+        print(
+            "Overpass is a donated public service and rate-limits aggressively. "
+            "Wait a few minutes, or pass --overpass-url to use another instance.",
+            file=sys.stderr,
+        )
+        return EXIT_FAILED
     print(f"Retrieved {result.payload.node_count} nodes, {result.payload.edge_count} edges.")
 
     async with database.session() as session:

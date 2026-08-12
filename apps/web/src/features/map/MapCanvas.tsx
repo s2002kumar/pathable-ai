@@ -2,9 +2,14 @@
 
 import { useId, useRef } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import type { Route } from '@pathable/contracts';
 import { MapStatusOverlay } from './MapStatusOverlay';
+import { useMapClick } from './useMapClick';
 import { useMapLibre } from './useMapLibre';
+import { useRouteLayers } from './useRouteLayers';
 import styles from './MapPanel.module.css';
+
+export type MapPoint = { readonly longitude: number; readonly latitude: number };
 
 export type MapCanvasProps = {
   readonly styleUrl: string;
@@ -15,6 +20,18 @@ export type MapCanvasProps = {
   readonly attribution: string;
   /** Text alternative describing the area, referenced by the map region. */
   readonly describedById?: string;
+
+  // --- Routing -----------------------------------------------------------
+  readonly standardRoute?: Route | null;
+  readonly accessibleRoute?: Route | null;
+  readonly origin?: MapPoint | null;
+  readonly destination?: MapPoint | null;
+  readonly showStandardRoute?: boolean;
+  /**
+   * Called with the clicked position. Absent when the map is decorative, which
+   * is what keeps this component usable outside the planner.
+   */
+  readonly onSelectPoint?: (position: MapPoint) => void;
 };
 
 /**
@@ -31,17 +48,26 @@ export function MapCanvas({
   regionName,
   attribution,
   describedById,
+  standardRoute = null,
+  accessibleRoute = null,
+  origin = null,
+  destination = null,
+  showStandardRoute = true,
+  onSelectPoint,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fallbackId = useId();
 
-  const status = useMapLibre({
+  const { status, map } = useMapLibre({
     containerRef,
     styleUrl,
     center: [centerLon, centerLat],
     zoom,
     attribution,
   });
+
+  useRouteLayers({ map, standardRoute, accessibleRoute, origin, destination, showStandardRoute });
+  useMapClick(map, onSelectPoint ?? noop);
 
   return (
     <div
@@ -64,6 +90,10 @@ export function MapCanvas({
       <MapStatusOverlay status={status} />
     </div>
   );
+}
+
+function noop(): void {
+  // The map is still clickable when no handler is supplied; it just does nothing.
 }
 
 export default MapCanvas;

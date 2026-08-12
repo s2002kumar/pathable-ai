@@ -40,8 +40,71 @@ export type DependencyState = DependencyCheck['status'];
 /** `'ready' | 'not_ready'`. */
 export type ReadinessState = ReadinessResponse['status'];
 
+// ---------------------------------------------------------------------------
+// Routing
+// ---------------------------------------------------------------------------
+
+/** `POST /api/v1/routes/compare` request body. */
+export type RouteCompareRequest = ApiSchemas['RouteCompareRequest'];
+
+/** The shortest route, the accessible route, and the difference between them. */
+export type RouteCompareResponse = ApiSchemas['RouteCompareResponse'];
+
+/** One computed route. */
+export type Route = ApiSchemas['RouteModel'];
+
+/** One mapped segment as traversed by a route. */
+export type RouteSegment = ApiSchemas['RouteSegmentModel'];
+
+/** One contribution to a segment's cost, with the reason that produced it. */
+export type CostComponent = ApiSchemas['CostComponentModel'];
+
+/** An evidence-backed statement about why the accessible route differs. */
+export type RouteExplanation = ApiSchemas['ExplanationModel'];
+
+/** Something to weigh before relying on a route. */
+export type RouteCaution = ApiSchemas['CautionModel'];
+
+/** Which dataset answered a request, and the attribution it requires. */
+export type DatasetProvenance = ApiSchemas['DatasetProvenance'];
+
+/** A mobility profile a client can offer. */
+export type MobilityProfile = ApiSchemas['MobilityProfileModel'];
+
+/** `GET /api/v1/routes/profiles`. */
+export type MobilityProfileListResponse = ApiSchemas['MobilityProfileListResponse'];
+
+/** Narrow overrides for the `custom` profile. */
+export type CustomProfileOptions = ApiSchemas['CustomProfileOptions'];
+
+/** A WGS84 position, `{ longitude, latitude }`. */
+export type Coordinate = ApiSchemas['Coordinate'];
+
+/** Which mobility profile the accessible route is computed for. */
+export type ProfileKey = RouteCompareRequest['profile'];
+
+/**
+ * `'yes' | 'no' | 'unknown'`.
+ *
+ * Not a boolean, and never coerce it to one. `unknown` means nobody has recorded
+ * this, which is a different claim from `no` — treating them alike is how a UI
+ * ends up telling somebody an unsurveyed path is step-free.
+ */
+export type TriState = RouteSegment['steps'];
+
+/** How coarse a segment's surface is, or `unknown`. */
+export type SurfaceClass = RouteSegment['surface_class'];
+
+/** How even a segment's surface is, or `unknown`. */
+export type SmoothnessClass = RouteSegment['smoothness_class'];
+
+/** What kind of kerb a crossing has, or `unknown`. */
+export type KerbType = RouteSegment['kerb'];
+
 /** Route paths, so callers cannot typo a URL that the contract does not define. */
 export const API_ROUTES = {
   liveness: '/api/v1/health/live',
   readiness: '/api/v1/health/ready',
+  compareRoutes: '/api/v1/routes/compare',
+  mobilityProfiles: '/api/v1/routes/profiles',
 } as const satisfies Record<string, keyof ApiPaths>;

@@ -65,6 +65,217 @@
         "title": "ApiErrorResponse",
         "type": "object"
       },
+      "CautionModel": {
+        "description": "Something to weigh before relying on the route.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "title": "Evidence",
+            "type": "object"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "summary"
+        ],
+        "title": "CautionModel",
+        "type": "object"
+      },
+      "Coordinate": {
+        "description": "A WGS84 position.",
+        "properties": {
+          "latitude": {
+            "description": "Degrees north of the equator.",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "description": "Degrees east of the prime meridian.",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "longitude",
+          "latitude"
+        ],
+        "title": "Coordinate",
+        "type": "object"
+      },
+      "CostComponentModel": {
+        "description": "One contribution to a segment's cost.",
+        "properties": {
+          "code": {
+            "enum": [
+              "distance",
+              "surface",
+              "smoothness",
+              "incline",
+              "steps",
+              "kerb",
+              "crossing",
+              "uncertainty"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "description": "Plain-language reason, derived from recorded attributes.",
+            "title": "Detail",
+            "type": "string"
+          },
+          "effective_metres": {
+            "description": "Effective metres this contribution added.",
+            "title": "Effective Metres",
+            "type": "number"
+          }
+        },
+        "required": [
+          "code",
+          "effective_metres",
+          "detail"
+        ],
+        "title": "CostComponentModel",
+        "type": "object"
+      },
+      "CustomProfileOptions": {
+        "description": "Overrides for the ``custom`` profile.\n\nDeliberately narrow. Exposing every cost weight would let a client build a\nmodel nobody has reasoned about, and the resulting route would still carry\nPathAble's name.",
+        "properties": {
+          "avoid_rough_surface": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Treat gravel, dirt and cobblestone as impassable.",
+            "title": "Avoid Rough Surface"
+          },
+          "base": {
+            "default": "wheelchair",
+            "description": "Preset the custom profile starts from.",
+            "enum": [
+              "wheelchair",
+              "walker",
+              "crutches",
+              "stroller",
+              "reduced_mobility"
+            ],
+            "title": "Base",
+            "type": "string"
+          },
+          "exclude_steps": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Treat stairways as impassable.",
+            "title": "Exclude Steps"
+          },
+          "max_incline_percent": {
+            "anyOf": [
+              {
+                "maximum": 45.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Steepest recorded gradient to allow. Unrecorded gradients are never excluded.",
+            "title": "Max Incline Percent"
+          },
+          "min_width_m": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Narrowest recorded width to allow. Unrecorded widths are never excluded.",
+            "title": "Min Width M"
+          }
+        },
+        "title": "CustomProfileOptions",
+        "type": "object"
+      },
+      "DatasetProvenance": {
+        "description": "Which network answered this request.",
+        "properties": {
+          "acquired_at": {
+            "description": "When this dataset was obtained, ISO 8601.",
+            "title": "Acquired At",
+            "type": "string"
+          },
+          "attribution": {
+            "description": "Required credit for the underlying map data.",
+            "examples": [
+              "© OpenStreetMap contributors, ODbL 1.0"
+            ],
+            "title": "Attribution",
+            "type": "string"
+          },
+          "checksum": {
+            "description": "Content hash of the dataset that produced this route.",
+            "title": "Checksum",
+            "type": "string"
+          },
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "source_name": {
+            "title": "Source Name",
+            "type": "string"
+          },
+          "source_type": {
+            "enum": [
+              "osm",
+              "synthetic"
+            ],
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "region",
+          "checksum",
+          "source_type",
+          "source_name",
+          "acquired_at",
+          "attribution"
+        ],
+        "title": "DatasetProvenance",
+        "type": "object"
+      },
       "DependencyCheck": {
         "description": "Outcome of probing one dependency.",
         "properties": {
@@ -135,6 +346,43 @@
         "title": "ErrorDetail",
         "type": "object"
       },
+      "ExplanationModel": {
+        "description": "An evidence-backed statement about why the accessible route differs.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "description": "The recorded values this statement was derived from.",
+            "title": "Evidence",
+            "type": "object"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "summary"
+        ],
+        "title": "ExplanationModel",
+        "type": "object"
+      },
+      "KerbType": {
+        "description": "Kerb (curb) treatment where a path meets a road.\n\n``RAISED`` is the barrier case for wheeled mobility; ``LOWERED`` and ``FLUSH``\nare the good cases; ``UNKNOWN`` is by far the most common in practice.",
+        "enum": [
+          "lowered",
+          "flush",
+          "raised",
+          "none",
+          "unknown"
+        ],
+        "title": "KerbType",
+        "type": "string"
+      },
       "LivenessResponse": {
         "description": "Process is running and able to serve HTTP.",
         "examples": [
@@ -174,6 +422,75 @@
           "version"
         ],
         "title": "LivenessResponse",
+        "type": "object"
+      },
+      "MobilityProfileListResponse": {
+        "properties": {
+          "profiles": {
+            "items": {
+              "$ref": "#/components/schemas/MobilityProfileModel"
+            },
+            "title": "Profiles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "profiles"
+        ],
+        "title": "MobilityProfileListResponse",
+        "type": "object"
+      },
+      "MobilityProfileModel": {
+        "description": "A profile a client can offer.",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "excludes_steps": {
+            "title": "Excludes Steps",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "max_incline_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Incline Percent"
+          },
+          "min_width_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Width M"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "description",
+          "excludes_steps",
+          "max_incline_percent",
+          "min_width_m"
+        ],
+        "title": "MobilityProfileModel",
         "type": "object"
       },
       "ReadinessChecks": {
@@ -255,11 +572,515 @@
         ],
         "title": "ReadinessResponse",
         "type": "object"
+      },
+      "RouteCompareRequest": {
+        "description": "Ask for the shortest route and an accessibility-aware alternative.",
+        "examples": [
+          {
+            "destination": {
+              "latitude": 43.4723,
+              "longitude": -80.5204
+            },
+            "origin": {
+              "latitude": 43.4643,
+              "longitude": -80.5449
+            },
+            "profile": "wheelchair",
+            "region": "waterloo"
+          }
+        ],
+        "properties": {
+          "custom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomProfileOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only used when `profile` is `custom`; ignored otherwise."
+          },
+          "destination": {
+            "$ref": "#/components/schemas/Coordinate"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Coordinate"
+          },
+          "profile": {
+            "default": "wheelchair",
+            "description": "Mobility profile for the accessible route.",
+            "enum": [
+              "wheelchair",
+              "walker",
+              "crutches",
+              "stroller",
+              "reduced_mobility",
+              "custom"
+            ],
+            "title": "Profile",
+            "type": "string"
+          },
+          "region": {
+            "default": "waterloo",
+            "description": "Pilot region slug.",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9-]+$",
+            "title": "Region",
+            "type": "string"
+          }
+        },
+        "required": [
+          "origin",
+          "destination"
+        ],
+        "title": "RouteCompareRequest",
+        "type": "object"
+      },
+      "RouteCompareResponse": {
+        "description": "The shortest route, the accessible route, and the difference between them.",
+        "properties": {
+          "accessible_failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why no route satisfies the chosen profile.",
+            "title": "Accessible Failure"
+          },
+          "accessible_route": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RouteModel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Route meeting the chosen profile. Null when no such route exists."
+          },
+          "cautions": {
+            "items": {
+              "$ref": "#/components/schemas/CautionModel"
+            },
+            "title": "Cautions",
+            "type": "array"
+          },
+          "dataset": {
+            "$ref": "#/components/schemas/DatasetProvenance"
+          },
+          "explanations": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationModel"
+            },
+            "title": "Explanations",
+            "type": "array"
+          },
+          "extra_distance_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Distance Fraction"
+          },
+          "extra_distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How much further the accessible route is.",
+            "title": "Extra Distance M"
+          },
+          "ml_predictions_used": {
+            "const": false,
+            "default": false,
+            "description": "Always false. PathAble's routing is deterministic rules over recorded map attributes; no model prediction contributes to any cost or constraint.",
+            "title": "Ml Predictions Used",
+            "type": "boolean"
+          },
+          "profile": {
+            "title": "Profile",
+            "type": "string"
+          },
+          "profile_description": {
+            "title": "Profile Description",
+            "type": "string"
+          },
+          "profile_display_name": {
+            "title": "Profile Display Name",
+            "type": "string"
+          },
+          "standard_failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the shortest route could not be computed.",
+            "title": "Standard Failure"
+          },
+          "standard_route": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RouteModel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Shortest walking route. Null when none exists."
+          }
+        },
+        "required": [
+          "profile",
+          "profile_display_name",
+          "profile_description",
+          "explanations",
+          "cautions",
+          "dataset"
+        ],
+        "title": "RouteCompareResponse",
+        "type": "object"
+      },
+      "RouteModel": {
+        "description": "A computed route.",
+        "properties": {
+          "computation_ms": {
+            "title": "Computation Ms",
+            "type": "number"
+          },
+          "coordinates": {
+            "description": "[longitude, latitude] polyline for the whole route.",
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "crossing_count": {
+            "title": "Crossing Count",
+            "type": "integer"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/SnappedPointModel"
+          },
+          "distance_m": {
+            "description": "Real ground distance.",
+            "title": "Distance M",
+            "type": "number"
+          },
+          "effective_distance_m": {
+            "description": "Distance weighted by this profile's cost model. Not a physical distance.",
+            "title": "Effective Distance M",
+            "type": "number"
+          },
+          "estimated_duration_seconds": {
+            "description": "Rough planning estimate from distance and obstacle counts. Not measured, and not specific to any individual.",
+            "title": "Estimated Duration Seconds",
+            "type": "number"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/SnappedPointModel"
+          },
+          "profile": {
+            "description": "Profile key this route was computed for.",
+            "title": "Profile",
+            "type": "string"
+          },
+          "profile_display_name": {
+            "title": "Profile Display Name",
+            "type": "string"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/RouteSegmentModel"
+            },
+            "title": "Segments",
+            "type": "array"
+          },
+          "stairway_count": {
+            "title": "Stairway Count",
+            "type": "integer"
+          },
+          "steepest_incline_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steepest Incline Percent"
+          },
+          "step_count": {
+            "description": "Recorded steps across all stairways on this route.",
+            "title": "Step Count",
+            "type": "integer"
+          },
+          "unknown_data_fraction": {
+            "description": "Share of this route's length whose accessibility attributes are unrecorded.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Unknown Data Fraction",
+            "type": "number"
+          },
+          "unknown_kerb_crossing_count": {
+            "title": "Unknown Kerb Crossing Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "profile",
+          "profile_display_name",
+          "distance_m",
+          "effective_distance_m",
+          "estimated_duration_seconds",
+          "coordinates",
+          "segments",
+          "origin",
+          "destination",
+          "stairway_count",
+          "step_count",
+          "crossing_count",
+          "unknown_kerb_crossing_count",
+          "steepest_incline_percent",
+          "unknown_data_fraction",
+          "computation_ms"
+        ],
+        "title": "RouteModel",
+        "type": "object"
+      },
+      "RouteSegmentModel": {
+        "description": "One mapped segment as traversed by a route.",
+        "properties": {
+          "coordinates": {
+            "description": "[longitude, latitude] positions, oriented along travel.",
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "cost_components": {
+            "items": {
+              "$ref": "#/components/schemas/CostComponentModel"
+            },
+            "title": "Cost Components",
+            "type": "array"
+          },
+          "edge_identity": {
+            "description": "Stable identity of this segment within the dataset.",
+            "title": "Edge Identity",
+            "type": "string"
+          },
+          "effective_metres": {
+            "description": "What this segment cost the chosen profile, in effective metres.",
+            "title": "Effective Metres",
+            "type": "number"
+          },
+          "highway": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highway"
+          },
+          "incline_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Recorded gradient. Null means unrecorded, not flat.",
+            "title": "Incline Percent"
+          },
+          "is_crossing": {
+            "title": "Is Crossing",
+            "type": "boolean"
+          },
+          "kerb": {
+            "$ref": "#/components/schemas/KerbType"
+          },
+          "length_m": {
+            "title": "Length M",
+            "type": "number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Street or path name, when OSM records one.",
+            "title": "Name"
+          },
+          "smoothness_class": {
+            "$ref": "#/components/schemas/SmoothnessClass"
+          },
+          "step_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Count"
+          },
+          "steps": {
+            "$ref": "#/components/schemas/TriState",
+            "description": "Whether this segment is a stairway. `unknown` means nobody has recorded it."
+          },
+          "surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Raw OSM surface value, if recorded.",
+            "title": "Surface"
+          },
+          "surface_class": {
+            "$ref": "#/components/schemas/SurfaceClass"
+          },
+          "unknown_attributes": {
+            "description": "Routing-relevant attributes nobody has recorded for this segment.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unknown Attributes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "edge_identity",
+          "length_m",
+          "effective_metres",
+          "coordinates",
+          "surface_class",
+          "smoothness_class",
+          "steps",
+          "kerb",
+          "is_crossing",
+          "unknown_attributes",
+          "cost_components"
+        ],
+        "title": "RouteSegmentModel",
+        "type": "object"
+      },
+      "SmoothnessClass": {
+        "description": "Coarse grouping of OSM `smoothness`.",
+        "enum": [
+          "excellent",
+          "good",
+          "intermediate",
+          "bad",
+          "unknown"
+        ],
+        "title": "SmoothnessClass",
+        "type": "string"
+      },
+      "SnappedPointModel": {
+        "description": "Where a requested coordinate joined the network.",
+        "properties": {
+          "distance_m": {
+            "description": "How far the requested point was from the nearest mapped path.",
+            "title": "Distance M",
+            "type": "number"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "longitude",
+          "latitude",
+          "distance_m"
+        ],
+        "title": "SnappedPointModel",
+        "type": "object"
+      },
+      "SurfaceClass": {
+        "description": "Coarse surface grouping used by the cost model.\n\nThe raw OSM `surface` value is kept alongside this; the class exists so cost\npolicy is written against four cases rather than the ~40 values in the wild.",
+        "enum": [
+          "paved",
+          "compacted",
+          "rough",
+          "unknown"
+        ],
+        "title": "SurfaceClass",
+        "type": "string"
+      },
+      "TriState": {
+        "description": "Yes / no / unknown.\n\n``UNKNOWN`` is the default for every derived attribute. ``NO`` means there is\naffirmative evidence of absence, not merely a missing tag.",
+        "enum": [
+          "yes",
+          "no",
+          "unknown"
+        ],
+        "title": "TriState",
+        "type": "string"
       }
     }
   },
   "info": {
-    "description": "Backend for **PathAble AI**, an accessibility-aware pedestrian routing project.\n\n**Phase 0 status.** This service currently exposes health and readiness endpoints only.\nThere is no routing, no pedestrian graph, no elevation data, and no machine learning\nbehind this API yet. Endpoints that compare a shortest pedestrian route against an\naccessibility-aware route do not exist and are not simulated.",
+    "description": "Backend for **PathAble AI**, an accessibility-aware pedestrian routing project.\n\nRouting compares the shortest walking route against a route that respects a chosen\nmobility profile, and explains the difference using attributes recorded in\nOpenStreetMap.\n\n**What this is not.** Every routing decision is a deterministic rule over recorded\nmap attributes. There is no machine learning, no model prediction and no inferred\naccessibility score anywhere in this service — `ml_predictions_used` is present on\nevery route response and is always `false`. Missing accessibility data is reported\nas `unknown`, never as evidence that a path is clear, and no route is a guarantee\nthat a journey is passable.\n\nMap data © OpenStreetMap contributors, ODbL 1.0.",
     "title": "PathAble AI API",
     "version": "0.1.0"
   },
@@ -358,12 +1179,106 @@
           "health"
         ]
       }
+    },
+    "/api/v1/routes/compare": {
+      "post": {
+        "description": "Computes the shortest walking route and a route that respects the chosen mobility profile, and explains the difference using attributes recorded in OpenStreetMap. Either route may be absent — a profile with no possible route is a real answer, and the response says why. No part of the request is stored.",
+        "operationId": "compareRoutes",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteCompareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteCompareResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "The region has no active network dataset."
+          },
+          "422": {
+            "description": "The request could not be routed as given."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error. Quote the request id when reporting."
+          }
+        },
+        "summary": "Compare the shortest route with an accessibility-aware route",
+        "tags": [
+          "routing"
+        ]
+      }
+    },
+    "/api/v1/routes/profiles": {
+      "get": {
+        "description": "The profiles a client may offer, with the hard constraints each one applies. Constraint values are engineering judgement, not measurements of how people with these mobility aids actually travel.",
+        "operationId": "listMobilityProfiles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobilityProfileListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "The request did not match the expected schema."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error. Quote the request id when reporting."
+          }
+        },
+        "summary": "List mobility profiles",
+        "tags": [
+          "routing"
+        ]
+      }
     }
   },
   "tags": [
     {
       "description": "Liveness and readiness probes used by Docker, CI and the web client.",
       "name": "health"
+    },
+    {
+      "description": "Accessibility-aware pedestrian routing over a versioned OpenStreetMap network. Requests are not persisted.",
+      "name": "routing"
     }
   ]
 }
