@@ -109,7 +109,20 @@ const steps = [
   ['TypeScript', () => run(pnpmCommand(['-r', '--if-present', 'typecheck']))],
   ['mypy', () => runUv(['run', 'mypy', 'src', 'tests'])],
   ['Backend unit tests', () => runUv(['run', 'pytest', 'tests/unit'])],
-  ['Backend integration tests (real PostGIS)', () => runUv(['run', 'pytest', 'tests/integration'])],
+  [
+    // The whole suite with the coverage floor, matching CI. Coverage is
+    // enforced here rather than on the unit step because DB-backed behaviour
+    // is deliberately tested against real PostGIS rather than a mock.
+    'Backend whole suite with coverage floor (real PostGIS)',
+    () =>
+      runUv([
+        'run',
+        'pytest',
+        '--cov=src/pathable_api',
+        '--cov-report=term-missing',
+        '--cov-fail-under=86',
+      ]),
+  ],
   ['Frontend unit tests', () => run(pnpmCommand(['--filter', '@pathable/web', 'test:unit']))],
   ['Contract drift', () => run(pnpmCommand(['run', 'contracts:check']))],
   ['Production build', () => run(pnpmCommand(['run', 'build']))],
