@@ -166,11 +166,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             max_age=600,
         )
 
-    app.add_middleware(RequestContextMiddleware)
-    # Added last, so it runs *first*: Starlette applies middleware in reverse
-    # registration order, and an oversized body should be refused before any
-    # other work — including correlation logging — happens on it.
+    # Starlette applies middleware in reverse registration order, so this pair
+    # runs context-first, size-limit-second. Correlation costs a UUID and no body
+    # read, and it means a 413 carries a request id the caller can quote — which
+    # a refusal with no way to report it does not.
     app.add_middleware(RequestSizeLimitMiddleware)
+    app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
     app.include_router(api_router)
 

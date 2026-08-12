@@ -54,3 +54,13 @@ class TestBodySizeLimit:
 
     def test_a_get_request_is_unaffected(self, client: TestClient) -> None:
         assert client.get("/api/v1/health/live").status_code == 200
+
+    def test_the_refusal_carries_a_request_id(self, client: TestClient) -> None:
+        # A refusal the caller cannot quote in a bug report is worse than one
+        # they can; correlation therefore runs outside this middleware.
+        response = client.post(
+            "/api/v1/geocode/search", json={"padding": "y" * (MAX_REQUEST_BODY_BYTES + 1)}
+        )
+
+        assert response.status_code == 413
+        assert response.json()["request_id"]

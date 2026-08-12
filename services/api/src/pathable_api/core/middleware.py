@@ -41,6 +41,10 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
     which is the cost this exists to avoid. Bounding those is the job of whatever
     reverse proxy eventually sits in front of this service, and is recorded in
     the threat model.
+
+    This sits *inside* the correlation middleware, so a 413 carries a request id.
+    Correlation costs a UUID and reads no body, and a refusal the caller cannot
+    quote in a report is worse than that.
     """
 
     def __init__(self, app: ASGIApp, *, max_bytes: int = MAX_REQUEST_BODY_BYTES) -> None:
