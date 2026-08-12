@@ -1,0 +1,369 @@
+{
+  "components": {
+    "schemas": {
+      "ApiErrorResponse": {
+        "description": "Uniform error envelope.",
+        "examples": [
+          {
+            "code": "not_found",
+            "message": "The requested resource does not exist.",
+            "request_id": "9f1c2b7a4e5d4f0aa1b2c3d4e5f60718"
+          }
+        ],
+        "properties": {
+          "code": {
+            "description": "Stable machine-readable error identifier. Safe to branch on; the human-readable 'message' is not.",
+            "examples": [
+              "internal_error"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Field-level problems. Populated for validation errors only.",
+            "title": "Details"
+          },
+          "message": {
+            "description": "Human-readable summary, safe to display. Never contains internals.",
+            "examples": [
+              "An unexpected error occurred."
+            ],
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Correlation id for this request; quote it when reporting a problem.",
+            "examples": [
+              "9f1c2b7a4e5d4f0aa1b2c3d4e5f60718"
+            ],
+            "title": "Request Id"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ApiErrorResponse",
+        "type": "object"
+      },
+      "DependencyCheck": {
+        "description": "Outcome of probing one dependency.",
+        "properties": {
+          "detail": {
+            "description": "Short, safe explanation. Never includes credentials, connection strings or stack traces.",
+            "examples": [
+              "connected"
+            ],
+            "title": "Detail",
+            "type": "string"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observed probe latency in milliseconds, when measured.",
+            "examples": [
+              4.21
+            ],
+            "title": "Latency Ms"
+          },
+          "status": {
+            "description": "Whether this dependency is usable.",
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "detail"
+        ],
+        "title": "DependencyCheck",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "description": "A single field-level problem, used for request-validation failures.",
+        "properties": {
+          "field": {
+            "description": "Dotted path to the offending input, e.g. 'body.origin.lat'.",
+            "examples": [
+              "query.zoom"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "description": "Human-readable explanation of why this input was rejected.",
+            "examples": [
+              "Input should be less than or equal to 22"
+            ],
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "LivenessResponse": {
+        "description": "Process is running and able to serve HTTP.",
+        "examples": [
+          {
+            "service": "pathable-api",
+            "status": "ok",
+            "version": "0.1.0"
+          }
+        ],
+        "properties": {
+          "service": {
+            "description": "Service identifier.",
+            "examples": [
+              "pathable-api"
+            ],
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "description": "Always 'ok'; a non-2xx status signals failure.",
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "description": "Deployed application version.",
+            "examples": [
+              "0.1.0"
+            ],
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "version"
+        ],
+        "title": "LivenessResponse",
+        "type": "object"
+      },
+      "ReadinessChecks": {
+        "description": "Per-dependency readiness results.",
+        "properties": {
+          "database": {
+            "$ref": "#/components/schemas/DependencyCheck",
+            "description": "PostgreSQL connectivity."
+          },
+          "postgis": {
+            "$ref": "#/components/schemas/DependencyCheck",
+            "description": "PostGIS extension availability."
+          }
+        },
+        "required": [
+          "database",
+          "postgis"
+        ],
+        "title": "ReadinessChecks",
+        "type": "object"
+      },
+      "ReadinessResponse": {
+        "description": "Aggregate readiness verdict.\n\nReturned with HTTP 200 when ``status`` is ``ready`` and HTTP 503 when it is\n``not_ready``; the body shape is identical either way so clients parse once.",
+        "examples": [
+          {
+            "checks": {
+              "database": {
+                "detail": "connected",
+                "latency_ms": 4.21,
+                "status": "ok"
+              },
+              "postgis": {
+                "detail": "postgis 3.4.2",
+                "latency_ms": 1.08,
+                "status": "ok"
+              }
+            },
+            "service": "pathable-api",
+            "status": "ready",
+            "version": "0.1.0"
+          }
+        ],
+        "properties": {
+          "checks": {
+            "$ref": "#/components/schemas/ReadinessChecks",
+            "description": "Individual dependency results."
+          },
+          "service": {
+            "description": "Service identifier.",
+            "examples": [
+              "pathable-api"
+            ],
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "description": "'ready' only when every dependency check succeeded.",
+            "enum": [
+              "ready",
+              "not_ready"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "description": "Deployed application version.",
+            "examples": [
+              "0.1.0"
+            ],
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "version",
+          "checks"
+        ],
+        "title": "ReadinessResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Backend for **PathAble AI**, an accessibility-aware pedestrian routing project.\n\n**Phase 0 status.** This service currently exposes health and readiness endpoints only.\nThere is no routing, no pedestrian graph, no elevation data, and no machine learning\nbehind this API yet. Endpoints that compare a shortest pedestrian route against an\naccessibility-aware route do not exist and are not simulated.",
+    "title": "PathAble AI API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/health/live": {
+      "get": {
+        "description": "Reports that the process is running and able to serve HTTP. Touches no dependency, so a database outage never causes an orchestrator to restart an otherwise healthy instance. Use /health/ready for traffic gating.",
+        "operationId": "getLiveness",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivenessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "The request did not match the expected schema."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error. Quote the request id when reporting."
+          }
+        },
+        "summary": "Liveness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "description": "Reports whether this instance should receive traffic. Probes PostgreSQL connectivity and PostGIS availability under a bounded timeout. Returns 200 when ready and 503 when not; the body shape is identical in both cases.",
+        "operationId": "getReadiness",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "The request did not match the expected schema."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error. Quote the request id when reporting."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "One or more dependencies are unavailable."
+          }
+        },
+        "summary": "Readiness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Liveness and readiness probes used by Docker, CI and the web client.",
+      "name": "health"
+    }
+  ]
+}

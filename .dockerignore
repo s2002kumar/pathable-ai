@@ -31,7 +31,11 @@ artifacts/
 
 docs
 **/*.md
+# Package READMEs must survive the exclusion above: hatchling reads
+# `readme = "README.md"` from services/api/pyproject.toml at build time, and a
+# bare `!README.md` only re-includes the one at the context root.
 !README.md
+!**/README.md
 
 **/.vscode
 **/.idea

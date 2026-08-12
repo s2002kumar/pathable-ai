@@ -20,16 +20,7 @@ const targets = [
   {
     name: 'api',
     command: resolveUv(),
-    args: [
-      'run',
-      'uvicorn',
-      'pathable_api.main:app',
-      '--reload',
-      '--host',
-      '127.0.0.1',
-      '--port',
-      '8000',
-    ],
+    args: ['run', 'python', '-m', 'pathable_api'],
     cwd: apiDir,
     shell: false,
   },

@@ -1,0 +1,74 @@
+name: Engineering task
+description: A unit of planned work
+labels: [task]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this is done.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      description: See docs/product/PHASES.md
+      options:
+        - Phase 0 — foundation
+        - Phase 0.5 — geospatial data foundation
+        - Phase 1 — route comparison
+        - Phase 2 — evidence and imagery
+        - Phase 3 — learned prediction
+        - Cross-cutting (tooling, CI, docs)
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: In scope
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Explicitly out of scope
+      description: |
+        Worth stating. Most scope creep in this project would take the form of
+        implementing a later phase early.
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] ...
+        - [ ] Tests accompany the behaviour change
+        - [ ] `pnpm check` passes
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: decisions
+    attributes:
+      label: Decisions this work may require
+      description: Anything ticked needs founder approval before it is implemented.
+      options:
+        - label: Introduces a financial cost
+        - label: Requires credentials or an external account
+        - label: Uses data or imagery with unresolved licensing
+        - label: Collects personal data
+        - label: Makes an accessibility or safety guarantee
+        - label: Would make the repository public or deploy it
+        - label: Selects an open-source licence
+
+  - type: checkboxes
+    id: honesty
+    attributes:
+      label: Honesty check
+      options:
+        - label: This work will not make the UI imply a capability that does not exist
+          required: true

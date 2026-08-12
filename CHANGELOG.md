@@ -1,0 +1,145 @@
+# Changelog
+
+Notable changes to PathAble AI. Format loosely follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
+[semantic versioning](https://semver.org/) once releases begin.
+
+This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
+
+---
+
+## [Unreleased]
+
+### Fixed
+
+- **The map now renders a real vector basemap (KI-1).** MapLibre 6 loads its tile
+  worker as a separate module chunk and derives the URL from `import.meta.url`,
+  returning an **empty string** once bundled. `new Worker('')` resolves to the
+  HTML page, so the worker never answered: the style, TileJSON and sprites all
+  loaded, no vector tile was ever requested, and nothing threw. Fixed by serving
+  MapLibre's own worker from `/maplibre/` and passing an absolute URL to
+  `setWorkerUrl()`.
+
+  Verified in Chrome 150 with a real GPU: 20 vector tiles (all HTTP 200) on
+  desktop and 11 on mobile after pan and zoom, attribution visible, container
+  filling its frame after resize, no unexpected console errors, and a
+  recognisable Waterloo basemap in both screenshots.
+
+- Added an app icon, removing the only remaining `/favicon.ico` 404.
+
+### Added
+
+- `scripts/sync-maplibre-worker.mjs`, run on `predev`/`prebuild`, keeps the served
+  worker matched to the installed MapLibre version.
+- Regression cover for KI-1: unit tests pinning the absolute-URL property, and an
+  e2e check that the worker asset is actually served — nothing else would notice
+  it going missing, because the offline test style needs no worker.
+- Documented manual real-basemap verification, since CI deliberately cannot catch
+  a regression of this class.
+
+---
+
+## [0.1.0-foundation] — 2026-08-05
+
+The Phase 0 engineering foundation. **There is no routing and no machine
+learning in this release**, and the interface says so. Nothing here should be
+used to plan a journey or to judge whether a route is accessible.
+
+### Added
+
+**Frontend**
+
+- Next.js 16 App Router shell with React 19 and strict TypeScript.
+- MapLibre GL map with configurable centre, zoom, style and region name;
+  Waterloo, Ontario as the default.
+- Four-state map lifecycle — initialising, ready, error, unsupported — published
+  on `data-map-state`, with a written pilot-area description as the accessible
+  equivalent of the map.
+- WebGL-absent fallback that explains itself in browser terms.
+- Backend status badge distinguishing online, degraded and unreachable.
+- Design tokens with light and dark themes, visible focus indicators, skip link
+  and reduced-motion support.
+- Configuration error page naming every invalid `NEXT_PUBLIC_*` variable.
+
+**Backend**
+
+- FastAPI service with validated configuration; production additionally requires
+  a database URL, explicit CORS origins, no wildcard origin and JSON logging.
+- `GET /api/v1/health/live` — no dependencies touched.
+- `GET /api/v1/health/ready` — probes PostgreSQL and PostGIS under a bounded
+  timeout, returning 200 or 503 with an identical body shape.
+- Structured JSON logging with request correlation ids.
+- A single sanitised error envelope; no traceback, DSN or driver message can
+  reach a client.
+- `python -m pathable_api` entry point.
+
+**Data**
+
+- PostgreSQL 17 + PostGIS 3.5 through Docker Compose, on a named volume.
+- Alembic baseline migration enabling PostGIS, with a working downgrade.
+
+**Contracts**
+
+- Deterministic OpenAPI export from the Pydantic models, generating committed
+  TypeScript consumed by the frontend, with a CI drift check.
+
+**Engineering**
+
+- Multi-stage Docker images running as a non-root user, with health checks and a
+  migrate-on-start entrypoint.
+- 168 backend unit tests, 15 PostGIS integration tests, 124 frontend unit tests,
+  54 deterministic browser tests and 5 full-stack browser tests.
+- GitHub Actions for CI and security, with every third-party action pinned to a
+  commit SHA, and Dependabot across four ecosystems.
+- `pnpm check` (fast) and `pnpm check:full` (includes real PostGIS and browser
+  tests, and fails rather than skipping when the database is absent).
+
+**Documentation**
+
+- PRD, phase definitions, architecture overview, data flow, future ML
+  architecture, seven ADRs, licensing, threat model, local setup and testing.
+
+### Fixed
+
+Found during P0-A01 remediation, once the integration and full-stack suites were
+actually executed rather than merely written:
+
+- **The map never rendered a real basemap.** The map container collapsed to zero
+  height because MapLibre's own `.maplibregl-map { position: relative }`
+  overrode the absolute positioning. The failure was invisible: the frame's
+  background still showed, and a source-less test style fires `load` at any size,
+  so the lifecycle reported `ready`. Now covered by a regression test asserting
+  the container fills the frame.
+- **The API could not reach a database on Windows.** psycopg 3 cannot run in
+  async mode on `ProactorEventLoop`, and uvicorn 0.36+ selects it explicitly via
+  a loop factory that ignores the asyncio policy. Every connection failed while
+  liveness kept returning 200, so the documented native-Windows development path
+  was unusable. Fixed by running the server with an explicit selector loop
+  factory.
+- **Alembic could not run under the test suite.** A missing `path_separator`
+  raised a `DeprecationWarning`, which `filterwarnings = error` turned into a
+  failure. It would also have mis-split Windows paths.
+- **`pytest` upgraded to ≥ 9.0.3** for CVE-2025-71176 (predictable
+  `/tmp/pytest-of-{user}` path), found by `pip-audit`.
+
+### Changed
+
+- **Removed the Apache-2.0 licence.** It was added by default without founder
+  approval. The project is private, unreleased and unlicensed; see
+  [`LICENSING.md`](LICENSING.md). Third-party obligations are unaffected.
+- Map initialisation timeout raised from 15s to 30s — a real vector basemap on a
+  slow connection legitimately exceeds 15s, and the map recovers on its own if
+  `load` arrives late.
+- `httpx` replaced by `httpx2` for the test client, after verifying provenance;
+  recorded in [`docs/development/DEPENDENCY_DECISIONS.md`](docs/development/DEPENDENCY_DECISIONS.md).
+
+### Known issues
+
+- **The map does not render a real vector basemap.** With the OpenFreeMap
+  development style, MapLibre 6.1.0 loads the style, TileJSON and sprites, then
+  requests no vector tiles and never fires `load`. Reproduced in both production
+  and dev builds, at zoom 10 and 15, with no console error. The provider is
+  healthy (a z10 tile returns 60 KB). Unresolved; the deterministic offline test
+  style is unaffected.
+- Docker images have never been built and the Compose stack has never been
+  started — the daemon was unavailable in the development environment.

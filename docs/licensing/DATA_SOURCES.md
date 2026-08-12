@@ -1,0 +1,213 @@
+# Data sources and licensing
+
+Status: Phase 0. The only external data the application touches today is map
+tiles. Everything else here is preparation for Phase 0.5 onward.
+
+> This document records engineering understanding of the licences involved. It is
+> **not legal advice**. Before any public deployment, and before any imagery is
+> ingested, the obligations below should be reviewed properly.
+
+---
+
+## 1. The distinction that matters most
+
+**OpenStreetMap _data_ and OpenStreetMap-_operated services_ are two separate
+things with two separate sets of rules.**
+
+|                                | OpenStreetMap data                    | OSMF-operated services                                                        |
+| ------------------------------ | ------------------------------------- | ----------------------------------------------------------------------------- |
+| What                           | The map database itself               | `tile.openstreetmap.org`, `nominatim.openstreetmap.org`                       |
+| Governed by                    | ODbL 1.0                              | The OSMF usage policies                                                       |
+| Cost                           | Free                                  | Free, donated, **rate-limited**                                               |
+| May an application rely on it? | Yes, with attribution and share-alike | **No** — the policies are explicit that these are not for application traffic |
+
+Conflating the two is the standard mistake. Being permitted to use OSM data does
+not permit using OSM's servers to deliver it.
+
+---
+
+## 2. OpenStreetMap data — ODbL 1.0
+
+**Licence:** [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/)
+
+Three obligations:
+
+1. **Attribution.** Credit "© OpenStreetMap contributors" visibly wherever the
+   data is shown.
+2. **Share-alike.** If a _derived database_ is publicly used, it must be offered
+   under ODbL. A pedestrian graph built from OSM is a derived database.
+3. **No technical restriction** on redistribution of the database.
+
+### What this means for PathAble
+
+- The Phase 0.5 pedestrian graph will be a **derived database**. If PathAble is
+  publicly deployed, that graph must be available under ODbL. This is a
+  deliberate consequence, not an accident — it should be treated as a
+  contribution back rather than an obligation to work around.
+- **Produced Works** — a rendered map image, or a route displayed to a user — do
+  not themselves have to be ODbL, but must carry attribution.
+- Mixing in an incompatibly licensed dataset could make the derived database
+  undistributable. **Every new dataset must be checked for ODbL compatibility
+  before ingestion.**
+
+### Current attribution
+
+- On the map: MapLibre `AttributionControl`, non-compact, always visible.
+- In the interface: the pilot panel's attribution line, linking to the OSM
+  copyright page.
+- In the repository: the README.
+
+---
+
+## 3. Tile provider
+
+### Currently configured (development only)
+
+`NEXT_PUBLIC_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty`
+
+[OpenFreeMap](https://openfreemap.org/) serves OSM-derived vector tiles with no
+account, no API key and no billing relationship. The style and software are open;
+the underlying data is OSM under ODbL.
+
+> **Not approved for production.** A free community service offers no
+> availability guarantee, no support relationship and no capacity commitment.
+> PathAble is intended to help people decide whether they can physically make a
+> journey; depending on an unguaranteed third party for that is a risk decision
+> the founder must take explicitly. See [ADR 0005](../adr/0005-map-and-geocoding-providers.md).
+
+### Explicitly not used
+
+| Provider                  | Why not                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `tile.openstreetmap.org`  | The [tile usage policy](https://operations.osmfoundation.org/policies/tiles/) prohibits application traffic.       |
+| Mapbox, Google Maps, HERE | Require an account, credentials and billing. Excluded by project rule; their terms also restrict derived-data use. |
+
+### For tests
+
+`apps/web/public/map-styles/offline-test-style.json` — one background layer, no
+sources, no network. **No test in this repository depends on a public tile
+server.**
+
+### Production options, unresolved
+
+1. **Self-host** (Planetiler + a tile server): full control, no third-party
+   dependency, real operational cost.
+2. **Continue with a free public service**: no cost, no guarantee.
+3. **A paid provider**: requires founder approval for cost and credentials.
+
+---
+
+## 4. Geocoding — Phase 1, undecided
+
+No geocoding exists today.
+
+| Option                                     | Licence                              | Viable?                                                                                                                   |
+| ------------------------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Public Nominatim                           | Data ODbL; service under OSMF policy | **No** for application traffic — the [usage policy](https://operations.osmfoundation.org/policies/nominatim/) is explicit |
+| Self-hosted Nominatim                      | ODbL data, GPL software              | Yes; heavy to operate                                                                                                     |
+| Self-hosted Photon                         | ODbL data, Apache-2.0 software       | Yes; lighter, good for autocomplete                                                                                       |
+| Local gazetteer from the pilot OSM extract | ODbL                                 | Yes; likely the pragmatic Phase 1 answer for a single city                                                                |
+| Google / Mapbox geocoding                  | Proprietary                          | No — cost, credentials, and terms restricting storage of results                                                          |
+
+Note the trap in proprietary geocoders: several forbid storing results, which is
+incompatible with caching an origin/destination pair — and caching is exactly
+what a routing product wants to do.
+
+---
+
+## 5. Elevation — Phase 0.5
+
+Required for grade, which is a first-order accessibility factor.
+
+| Source                                          | Licence                                  | Notes                                           |
+| ----------------------------------------------- | ---------------------------------------- | ----------------------------------------------- |
+| Canadian Digital Elevation Model (NRCan)        | Open Government Licence – Canada         | Attribution required; good national coverage    |
+| SRTM (NASA/USGS)                                | Public domain                            | ~30 m resolution; coarse for sidewalk grade     |
+| Copernicus DEM                                  | Free with attribution                    | ~30 m global                                    |
+| Municipal LiDAR (Waterloo / Region of Waterloo) | Varies — **must be checked per dataset** | Highest resolution; best fit if openly licensed |
+
+None ingested yet. Resolution matters: a 30 m DEM cannot resolve a kerb ramp, and
+using it as if it could would manufacture false precision.
+
+---
+
+## 6. Street imagery — Phase 2, blocked pending review
+
+**No imagery source has been selected. No imagery has been ingested. No imagery
+may be ingested without an explicit licensing review and founder approval.**
+
+This is the sharpest licensing risk in the project, because imagery licences
+differ enormously in whether they permit:
+
+- storing images,
+- deriving a dataset from them,
+- **training a model on them**,
+- publishing anything derived.
+
+| Candidate          | Licence                | Concern                                                                              |
+| ------------------ | ---------------------- | ------------------------------------------------------------------------------------ |
+| Mapillary          | CC BY-SA 4.0 (imagery) | Share-alike may extend to derived datasets; ownership by Meta means terms can change |
+| KartaView          | CC BY-SA 4.0           | Smaller coverage                                                                     |
+| Google Street View | Proprietary            | **Terms prohibit bulk download and ML training.** Not usable                         |
+| Bing Streetside    | Proprietary            | Same class of restriction                                                            |
+| Self-collected     | Ours                   | No licence issue; large effort; introduces privacy obligations (faces, plates)       |
+
+Two questions must be answered **before** any ingestion code is written:
+
+1. Does the licence permit training a model on the imagery?
+2. Does it impose share-alike on the resulting model or dataset?
+
+A wrong answer discovered after training means discarding the model.
+
+Self-collected imagery is not licence-free either: it captures people and
+vehicles, which brings PIPEDA obligations and a blurring requirement.
+
+---
+
+## 7. User-contributed reports — Phase 2
+
+Not implemented. When they are:
+
+- Contributors must be told, in plain language, what happens to their report.
+- The contribution licence must be settled before the first report is accepted —
+  retroactive relicensing is not possible.
+- Reports may be publishable as an ODbL-compatible derived database.
+- Reports must be storable **without identifying the reporter**. Location
+  observations tied to an identity are sensitive personal data.
+
+---
+
+## 8. Software licences
+
+**PathAble itself has no licence yet** — it is private and unreleased, and all
+rights are reserved by default. See [`../../LICENSING.md`](../../LICENSING.md).
+Do not describe the project as open source.
+
+The obligations below come from what PathAble _uses_ and apply regardless of what
+licence PathAble eventually adopts. Key dependencies:
+
+| Component                              | Licence                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------- |
+| MapLibre GL JS                         | BSD-3-Clause                                                              |
+| Next.js, React                         | MIT                                                                       |
+| FastAPI, Pydantic, SQLAlchemy, Alembic | MIT / BSD                                                                 |
+| psycopg 3                              | LGPL-3.0 (used unmodified as a library)                                   |
+| PostgreSQL                             | PostgreSQL Licence                                                        |
+| PostGIS                                | GPL-2.0-or-later (used as a database extension, not linked into our code) |
+
+PostGIS's GPL applies to PostGIS itself. Running queries against it does not make
+PathAble a derivative work. Bundling or modifying PostGIS would be a different
+question.
+
+---
+
+## 9. Checklist before any new data source
+
+- [ ] Licence identified and recorded, with a link
+- [ ] Compatible with ODbL if it will be combined with OSM-derived data
+- [ ] Attribution requirements known and implemented
+- [ ] Redistribution and share-alike implications understood
+- [ ] For imagery: **model training explicitly permitted**
+- [ ] Personal data implications assessed
+- [ ] Terms allow the volume and frequency intended
+- [ ] Founder approval obtained where cost, credentials or ambiguity are involved

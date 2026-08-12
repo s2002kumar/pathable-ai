@@ -1,0 +1,173 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so a newly disclosed advisory in an unchanged dependency is still
+    # found. Monday 06:00 UTC.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-dependencies:
+    name: Python dependency audit
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/api/uv.lock
+
+      - run: uv sync --frozen
+
+      - name: Export the locked dependency set
+        # Auditing the exported lockfile rather than the installed environment:
+        # `pip-audit --strict` on the environment fails because pathable-api is a
+        # local project that will never exist on PyPI. --all-groups keeps dev
+        # dependencies (which is where httpx2 lives) in scope.
+        run: uv export --frozen --no-emit-project --no-hashes --all-groups -o requirements-audit.txt
+
+      - name: Audit against the OSV database
+        # pip-audit runs via --with rather than as a project dependency: an
+        # auditing tool has no business being importable by the application.
+        run: uv run --with pip-audit pip-audit -r requirements-audit.txt --strict --progress-spinner off
+
+  node-dependencies:
+    name: pnpm dependency audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Fail on high or critical advisories
+        # Moderate and low findings are reported but do not block: a Phase 0
+        # foundation with no user data and no deployment does not benefit from a
+        # red build over a low-severity transitive advisory, and a permanently
+        # red pipeline teaches people to ignore it.
+        run: pnpm audit --audit-level high
+
+      - name: Report all advisories for visibility
+        if: always()
+        run: pnpm audit || true
+
+  container-images:
+    name: Container image scan
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: api
+            image: pathable-ai-api:ci
+            dockerfile: services/api/Dockerfile
+          - service: web
+            image: pathable-ai-web:ci
+            dockerfile: apps/web/Dockerfile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the ${{ matrix.service }} runtime image
+        run: docker build -f ${{ matrix.dockerfile }} --target runtime -t ${{ matrix.image }} .
+
+      # Scans the final runtime image, not a dependency manifest — the two differ,
+      # and the base image is where most findings live.
+      - name: Scan ${{ matrix.image }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ matrix.image }}
+          format: table
+          severity: HIGH,CRITICAL
+          scanners: vuln
+          # Fails only on findings that have an upstream fix. Debian base images
+          # routinely carry HIGH/CRITICAL advisories marked will_not_fix or
+          # fix_deferred; blocking on those would make this job permanently red
+          # and therefore ignored, without making anything safer.
+          ignore-unfixed: true
+          exit-code: "1"
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history: a credential committed and later deleted is still a
+          # leaked credential, and a shallow clone would not see it.
+          fetch-depth: 0
+
+      # Run the pinned gitleaks image directly rather than the marketplace
+      # action. The action calls the GitHub API for PR commits and comment
+      # threads, which needs permissions this workflow deliberately does not
+      # grant — and none of that machinery contributes to the actual scan. The
+      # container scans the full history the same way it does locally.
+      - name: Scan the complete history
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            zricethezav/gitleaks:v8.30.1 \
+            git --no-banner --redact --log-opts="--all" \
+            --report-format sarif --report-path /repo/gitleaks.sarif .
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: gitleaks-report
+          path: gitleaks.sarif
+          retention-days: 7
+
+  env-example-hygiene:
+    name: .env.example contains no real secrets
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: No .env file is tracked
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env is tracked by git. It must be ignored."
+            exit 1
+          fi
+          tracked=$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$' || true)
+          if [ -n "$tracked" ]; then
+            echo "::error::Environment files are tracked: $tracked"
+            exit 1
+          fi
+          echo "No environment files tracked."
+
+      - name: NEXT_PUBLIC_ values are not secret-shaped
+        run: |
+          # Everything NEXT_PUBLIC_* is inlined into the browser bundle, so a
+          # token there is a published token.
+          if grep -nEi '^NEXT_PUBLIC_[A-Z0-9_]*(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)' .env.example; then
+            echo "::error::A NEXT_PUBLIC_ variable looks like a credential. It would ship to every visitor."
+            exit 1
+          fi
+          echo "No secret-shaped NEXT_PUBLIC_ variables."
+
+      - name: Placeholder credentials are clearly local-only
+        run: |
+          if grep -nE '^POSTGRES_PASSWORD=' .env.example | grep -vqE 'local_dev_only'; then
+            echo "::error::The example database password must be an obvious local-only placeholder."
+            exit 1
+          fi
+          echo "Example credentials are placeholders."

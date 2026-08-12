@@ -1,0 +1,113 @@
+version: 2
+
+updates:
+  # --- GitHub Actions ------------------------------------------------------
+  # Actions are pinned to commit SHAs, so this is the only mechanism that will
+  # ever move them. Without it the pins quietly rot.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies
+      - github-actions
+
+  # --- JavaScript workspace -------------------------------------------------
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    commit-message:
+      prefix: "build"
+      prefix-development: "chore"
+    labels:
+      - dependencies
+      - javascript
+    groups:
+      # One PR per ecosystem rather than per package: these move in lockstep and
+      # reviewing them separately is busywork that gets rubber-stamped.
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+      next:
+        patterns:
+          - next
+          - eslint-config-next
+      testing:
+        patterns:
+          - vitest
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "@playwright/test"
+          - "@axe-core/*"
+          - jsdom
+      linting:
+        patterns:
+          - eslint
+          - prettier
+          - typescript
+
+  # --- Python ---------------------------------------------------------------
+  - package-ecosystem: uv
+    directory: /services/api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "build"
+      prefix-development: "chore"
+    labels:
+      - dependencies
+      - python
+    groups:
+      fastapi:
+        patterns:
+          - fastapi
+          - uvicorn
+          - starlette
+      pydantic:
+        patterns:
+          - pydantic
+          - pydantic-settings
+      database:
+        patterns:
+          - sqlalchemy
+          - psycopg
+          - alembic
+      tooling:
+        patterns:
+          - ruff
+          - mypy
+          - pytest
+          - pytest-*
+          - httpx2
+
+  # --- Container images -----------------------------------------------------
+  - package-ecosystem: docker
+    directories:
+      - /services/api
+      - /apps/web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build"
+    labels:
+      - dependencies
+      - docker
