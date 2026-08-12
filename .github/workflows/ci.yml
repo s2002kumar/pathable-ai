@@ -302,6 +302,13 @@ jobs:
         run: uv run alembic upgrade head
         working-directory: services/api
 
+      # Routing needs a network to route on. The synthetic fixture is used rather
+      # than a real OSM import so this job stays deterministic and never depends
+      # on a donated public service being reachable.
+      - name: Load the synthetic network
+        run: uv run pathable ingest synthetic
+        working-directory: services/api
+
       - name: Install Chromium
         run: pnpm --filter @pathable/web exec playwright install --with-deps chromium
 

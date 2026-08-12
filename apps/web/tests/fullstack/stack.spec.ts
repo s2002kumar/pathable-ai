@@ -11,6 +11,9 @@ import { expect, test } from '@playwright/test';
 
 const READINESS_PATH = '/api/v1/health/ready';
 
+/** Matches playwright.fullstack.config.ts, including its Compose override. */
+const API_BASE_URL = process.env.FULLSTACK_API_URL ?? 'http://127.0.0.1:8100';
+
 type ReadinessBody = {
   status: string;
   service: string;
@@ -66,9 +69,7 @@ test.describe('full stack', () => {
   test('readiness reports a genuine PostGIS version from the database', async ({ request }) => {
     // A stub would have to invent this string; the real database reports its own
     // installed extension version.
-    const response = await request.get(
-      `${process.env.FULLSTACK_API_URL ?? 'http://127.0.0.1:8100'}${READINESS_PATH}`,
-    );
+    const response = await request.get(`${API_BASE_URL}${READINESS_PATH}`);
 
     expect(response.status()).toBe(200);
     const body = (await response.json()) as ReadinessBody;
@@ -112,5 +113,65 @@ test.describe('full stack', () => {
     await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
     await expect(page.getByTestId('pilot-description')).toBeVisible();
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+  });
+});
+
+test.describe('routing, end to end', () => {
+  /**
+   * The only test that proves the *whole* chain agrees on routing.
+   *
+   * The default e2e suite stubs the comparison, so it says nothing about
+   * whether the server's real response satisfies the client's runtime
+   * validation. The contract drift check compares generated files, which is a
+   * different question again. This is browser → Next.js → FastAPI → PostGIS,
+   * over the synthetic network the CI job loads.
+   */
+  test('compares two real routes over the live backend', async ({ page }) => {
+    await page.goto('/?region=waterloo-synthetic');
+    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+
+    const response = await page.request.post(`${API_BASE_URL}/api/v1/routes/compare`, {
+      data: {
+        region: 'waterloo-synthetic',
+        origin: { longitude: -80.54, latitude: 43.47 },
+        destination: { longitude: -80.534, latitude: 43.47 },
+        profile: 'wheelchair',
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+
+    // The trade-off the product exists to show, computed by the real engine.
+    expect(body.standard_route.stairway_count).toBe(1);
+    expect(body.accessible_route.stairway_count).toBe(0);
+    expect(body.extra_distance_m).toBeGreaterThan(0);
+
+    // Never a prediction, and never a boolean where "nobody recorded this" is
+    // a possible answer.
+    expect(body.ml_predictions_used).toBe(false);
+    for (const segment of body.standard_route.segments) {
+      expect(['yes', 'no', 'unknown']).toContain(segment.steps);
+    }
+
+    // Attribution travels with the data, and synthetic data says what it is.
+    expect(body.dataset.source_type).toBe('synthetic');
+    expect(body.dataset.attribution).toMatch(/not a survey/i);
+  });
+
+  test('refuses a point that is nowhere near the network, with a reason', async ({ page }) => {
+    const response = await page.request.post(`${API_BASE_URL}/api/v1/routes/compare`, {
+      data: {
+        region: 'waterloo-synthetic',
+        origin: { longitude: -80.6, latitude: 43.4 },
+        destination: { longitude: -80.534, latitude: 43.47 },
+        profile: 'wheelchair',
+      },
+    });
+
+    expect(response.status()).toBe(422);
+    const body = await response.json();
+    expect(body.code).toBe('no_route');
+    expect(body.message).toMatch(/nearest mapped path/);
   });
 });
