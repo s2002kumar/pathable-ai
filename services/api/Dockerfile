@@ -5,7 +5,7 @@
 
 # uv is copied from its own published image rather than curl-installed, which
 # keeps the version explicit and avoids a network fetch inside the build.
-FROM ghcr.io/astral-sh/uv:0.12.1 AS uv
+FROM ghcr.io/astral-sh/uv:0.12.3 AS uv
 
 # -----------------------------------------------------------------------------
 # Builder — resolve and install dependencies into a self-contained virtualenv
