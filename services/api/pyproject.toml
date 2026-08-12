@@ -33,8 +33,8 @@ dev = [
     # so it never reaches a container image or a production path.
     # Provenance verified in docs/development/DEPENDENCY_DECISIONS.md.
     "httpx2>=2.9.1,<3.0.0",
-    "mypy>=1.14.0,<2.0.0",
-    "ruff>=0.9.0,<0.15.0",
+    "mypy>=2.3.0,<3.0.0",
+    "ruff>=0.16.2,<0.17.0",
 ]
 
 [build-system]
