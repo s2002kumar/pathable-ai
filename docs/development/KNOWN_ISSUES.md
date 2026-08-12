@@ -185,6 +185,13 @@ hanging.
 **Unblock:** wait for the block to lapse, then re-run the import. Use
 `--overpass-url` to point at another instance if needed.
 
+**If Overpass access stays unreliable**, the sanctioned channel for bulk OSM data
+is a pre-built extract rather than a live query, and both providers are reachable
+from here (checked 2026-08-12: `download.geofabrik.de` 200 in 0.9 s,
+`extract.bbbike.org` 200 in 1.0 s). That path needs a PBF reader — `pyrosm` or
+`osmium` — which is a dependency decision worth making deliberately rather than
+adding at the end of a batch, so it is recorded here instead of implemented.
+
 ---
 
 ## KI-4 — Origins snap to the nearest junction, not the nearest point on a path
