@@ -1,6 +1,7 @@
 'use client';
 
 import type { ProfileKey } from '@pathable/contracts';
+import { PlaceSearch } from '@/features/geocoding/PlaceSearch';
 import { RouteComparisonView } from './RouteComparisonView';
 import {
   type LngLat,
@@ -37,20 +38,28 @@ export type RoutePlannerProps = {
   readonly points: PlannerPoints;
   readonly profileKey: ProfileKey;
   readonly state: RouteRequestState;
+  readonly apiBaseUrl: string;
+  readonly region: string;
   readonly onProfileChange: (key: ProfileKey) => void;
   readonly onClearPoints: () => void;
   readonly onSwapPoints: () => void;
   readonly onRetry: () => void;
+  readonly onSelectPlace: (position: LngLat) => void;
+  readonly fetchImpl?: typeof fetch;
 };
 
 export function RoutePlanner({
   points,
   profileKey,
   state,
+  apiBaseUrl,
+  region,
   onProfileChange,
   onClearPoints,
   onSwapPoints,
   onRetry,
+  onSelectPlace,
+  fetchImpl,
 }: RoutePlannerProps) {
   return (
     <section className={styles.panel} aria-labelledby="route-planner-heading">
@@ -60,6 +69,13 @@ export function RoutePlanner({
           Compare routes
         </h2>
       </header>
+
+      <PlaceSearch
+        apiBaseUrl={apiBaseUrl}
+        region={region}
+        onSelect={onSelectPlace}
+        {...(fetchImpl ? { fetchImpl } : {})}
+      />
 
       <PointFields points={points} onClear={onClearPoints} onSwap={onSwapPoints} />
 

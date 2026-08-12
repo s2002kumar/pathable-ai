@@ -101,10 +101,14 @@ export function RouteWorkspace({
           points={points}
           profileKey={profileKey}
           state={state}
+          apiBaseUrl={apiBaseUrl}
+          region={region}
           onProfileChange={setProfileKey}
           onClearPoints={handleClear}
           onSwapPoints={handleSwap}
           onRetry={retry}
+          onSelectPlace={handleSelectPoint}
+          {...(fetchImpl ? { fetchImpl } : {})}
         />
       </div>
     </div>

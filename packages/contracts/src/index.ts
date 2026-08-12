@@ -101,10 +101,30 @@ export type SmoothnessClass = RouteSegment['smoothness_class'];
 /** What kind of kerb a crossing has, or `unknown`. */
 export type KerbType = RouteSegment['kerb'];
 
+// ---------------------------------------------------------------------------
+// Geocoding
+// ---------------------------------------------------------------------------
+
+/** `POST /api/v1/geocode/search` request body. */
+export type GeocodeRequest = ApiSchemas['GeocodeRequest'];
+
+/**
+ * Search results.
+ *
+ * `enabled: false` means no provider is configured — nothing was searched. That
+ * is a different answer from an empty `matches`, and a UI that collapses the two
+ * tells the user their query failed when it was never sent.
+ */
+export type GeocodeResponse = ApiSchemas['GeocodeResponse'];
+
+/** One candidate location. */
+export type GeocodeMatch = ApiSchemas['GeocodeMatch'];
+
 /** Route paths, so callers cannot typo a URL that the contract does not define. */
 export const API_ROUTES = {
   liveness: '/api/v1/health/live',
   readiness: '/api/v1/health/ready',
   compareRoutes: '/api/v1/routes/compare',
   mobilityProfiles: '/api/v1/routes/profiles',
+  searchPlaces: '/api/v1/geocode/search',
 } as const satisfies Record<string, keyof ApiPaths>;

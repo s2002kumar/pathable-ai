@@ -13,7 +13,13 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from pathable_api.core.config import Environment, LogFormat, LogLevel, Settings
+from pathable_api.core.config import (
+    Environment,
+    GeocodingProviderName,
+    LogFormat,
+    LogLevel,
+    Settings,
+)
 from pathable_api.main import create_app
 
 #: Every environment variable Settings reads. Cleared by the ``clean_env`` fixture
@@ -31,6 +37,8 @@ SETTINGS_ENV_VARS = (
     "DB_POOL_MAX_OVERFLOW",
     "LOG_LEVEL",
     "LOG_FORMAT",
+    "GEOCODING_PROVIDER",
+    "GEOCODING_CONTACT",
 )
 
 
@@ -70,6 +78,8 @@ def build_settings(
     readiness_timeout_seconds: float = 2.0,
     log_level: LogLevel = "WARNING",
     log_format: LogFormat = "console",
+    geocoding_provider: GeocodingProviderName = "none",
+    geocoding_contact: str = "",
 ) -> Settings:
     """Construct settings for a test, ignoring the ambient environment."""
     return Settings(
@@ -84,6 +94,8 @@ def build_settings(
         readiness_timeout_seconds=readiness_timeout_seconds,
         log_level=log_level,
         log_format=log_format,
+        geocoding_provider=geocoding_provider,
+        geocoding_contact=geocoding_contact,
     )
 
 

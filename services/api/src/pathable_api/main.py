@@ -21,6 +21,7 @@ from pathable_api.core.logging import configure_logging, get_logger
 from pathable_api.core.middleware import RequestContextMiddleware
 from pathable_api.core.request_context import REQUEST_ID_HEADER
 from pathable_api.db.session import Database, build_database
+from pathable_api.geo.geocoding import build_geocoder
 from pathable_api.routing.graph import GraphRepository
 
 logger = get_logger(__name__)
@@ -59,6 +60,13 @@ OPENAPI_TAGS = [
             "network. Requests are not persisted."
         ),
     },
+    {
+        "name": "geocoding",
+        "description": (
+            "Optional place-name search, restricted to a pilot region. Disabled unless a "
+            "provider is configured."
+        ),
+    },
 ]
 
 
@@ -82,6 +90,18 @@ def _build_lifespan(
         # One repository per application, so the loaded graph is shared across
         # requests instead of being rebuilt per call.
         app.state.graph_repository = GraphRepository()
+
+        # Built once so the geocoder's rate limiter is process-wide. One per
+        # request would let N concurrent requests each think they had a slot.
+        app.state.geocoder = build_geocoder(
+            settings.geocoding_provider,
+            contact=settings.geocoding_contact,
+            user_agent=f"{settings.service_name}/{settings.app_version}",
+        )
+        logger.info(
+            "Geocoding configured",
+            extra={"provider": app.state.geocoder.name, "enabled": app.state.geocoder.enabled},
+        )
 
         if settings.database_url:
             app.state.database = build_database(settings)

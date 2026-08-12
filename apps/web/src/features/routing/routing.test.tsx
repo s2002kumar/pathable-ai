@@ -101,10 +101,14 @@ function renderPlanner(overrides: Partial<Parameters<typeof RoutePlanner>[0]> = 
     points: { origin: ORIGIN, destination: DESTINATION },
     profileKey: 'wheelchair' as const,
     state: { status: 'success' as const, comparison: COMPARISON },
+    apiBaseUrl: 'http://api.test',
+    region: 'waterloo',
     onProfileChange: vi.fn(),
     onClearPoints: vi.fn(),
     onSwapPoints: vi.fn(),
     onRetry: vi.fn(),
+    onSelectPlace: vi.fn(),
+    fetchImpl: vi.fn() as unknown as typeof fetch,
     ...overrides,
   };
   return { ...render(<RoutePlanner {...props} />), props };

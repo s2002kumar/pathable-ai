@@ -19,6 +19,10 @@ dependencies = [
     "shapely>=2.0,<3.0",
     "networkx>=3.3,<4.0",
     "osmnx>=2.0,<3.0",
+    # Already present transitively via osmnx; declared explicitly because the
+    # geocoding provider imports it directly, and an undeclared import breaks
+    # the moment a transitive dependency changes.
+    "requests>=2.32,<3.0",
 ]
 
 [project.scripts]

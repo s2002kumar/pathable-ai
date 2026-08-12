@@ -371,6 +371,121 @@
         "title": "ExplanationModel",
         "type": "object"
       },
+      "GeocodeMatch": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the provider called this — a road, a building, a suburb.",
+            "title": "Category"
+          },
+          "label": {
+            "description": "Human-readable description, as the provider wrote it.",
+            "title": "Label",
+            "type": "string"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "label",
+          "longitude",
+          "latitude"
+        ],
+        "title": "GeocodeMatch",
+        "type": "object"
+      },
+      "GeocodeRequest": {
+        "description": "Look up a place name within a pilot region.",
+        "examples": [
+          {
+            "query": "Waterloo Public Square",
+            "region": "waterloo"
+          }
+        ],
+        "properties": {
+          "limit": {
+            "default": 5,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "query": {
+            "description": "Place name or address to look for.",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "region": {
+            "default": "waterloo",
+            "description": "Pilot region slug; results are restricted to its extent.",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9-]+$",
+            "title": "Region",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "GeocodeRequest",
+        "type": "object"
+      },
+      "GeocodeResponse": {
+        "properties": {
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Credit the provider's licence requires.",
+            "title": "Attribution"
+          },
+          "enabled": {
+            "description": "False when no geocoder is configured. An empty `matches` with `enabled: false` means nothing was searched, not that nothing was found.",
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/GeocodeMatch"
+            },
+            "title": "Matches",
+            "type": "array"
+          },
+          "provider": {
+            "description": "Which geocoder answered, or 'disabled'.",
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "enabled",
+          "matches"
+        ],
+        "title": "GeocodeResponse",
+        "type": "object"
+      },
       "KerbType": {
         "description": "Kerb (curb) treatment where a path meets a road.\n\n``RAISED`` is the barrier case for wheeled mobility; ``LOWERED`` and ``FLUSH``\nare the good cases; ``UNKNOWN`` is by far the most common in practice.",
         "enum": [
@@ -1086,6 +1201,64 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/geocode/search": {
+      "post": {
+        "description": "Searches for a place within a pilot region's extent. Submit-only: there is no as-you-type endpoint, because per-keystroke queries against a donated geocoding service are forbidden by its usage policy. Nothing about the request is stored.",
+        "operationId": "searchPlaces",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeocodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeocodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "The region does not exist."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "The request did not match the expected schema."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error. Quote the request id when reporting."
+          },
+          "503": {
+            "description": "The geocoding provider failed."
+          }
+        },
+        "summary": "Find coordinates for a place name",
+        "tags": [
+          "geocoding"
+        ]
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "description": "Reports that the process is running and able to serve HTTP. Touches no dependency, so a database outage never causes an orchestrator to restart an otherwise healthy instance. Use /health/ready for traffic gating.",
@@ -1279,6 +1452,10 @@
     {
       "description": "Accessibility-aware pedestrian routing over a versioned OpenStreetMap network. Requests are not persisted.",
       "name": "routing"
+    },
+    {
+      "description": "Optional place-name search, restricted to a pilot region. Disabled unless a provider is configured.",
+      "name": "geocoding"
     }
   ]
 }

@@ -15,6 +15,26 @@
  */
 
 export interface paths {
+    "/api/v1/geocode/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find coordinates for a place name
+         * @description Searches for a place within a pilot region's extent. Submit-only: there is no as-you-type endpoint, because per-keystroke queries against a donated geocoding service are forbidden by its usage policy. Nothing about the request is stored.
+         */
+        post: operations["searchPlaces"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/live": {
         parameters: {
             query?: never;
@@ -312,6 +332,69 @@ export interface components {
             };
             /** Summary */
             summary: string;
+        };
+        /** GeocodeMatch */
+        GeocodeMatch: {
+            /**
+             * Category
+             * @description What the provider called this — a road, a building, a suburb.
+             */
+            category?: string | null;
+            /**
+             * Label
+             * @description Human-readable description, as the provider wrote it.
+             */
+            label: string;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+        };
+        /**
+         * GeocodeRequest
+         * @description Look up a place name within a pilot region.
+         * @example {
+         *       "query": "Waterloo Public Square",
+         *       "region": "waterloo"
+         *     }
+         */
+        GeocodeRequest: {
+            /**
+             * Limit
+             * @default 5
+             */
+            limit: number;
+            /**
+             * Query
+             * @description Place name or address to look for.
+             */
+            query: string;
+            /**
+             * Region
+             * @description Pilot region slug; results are restricted to its extent.
+             * @default waterloo
+             */
+            region: string;
+        };
+        /** GeocodeResponse */
+        GeocodeResponse: {
+            /**
+             * Attribution
+             * @description Credit the provider's licence requires.
+             */
+            attribution?: string | null;
+            /**
+             * Enabled
+             * @description False when no geocoder is configured. An empty `matches` with `enabled: false` means nothing was searched, not that nothing was found.
+             */
+            enabled: boolean;
+            /** Matches */
+            matches: components["schemas"]["GeocodeMatch"][];
+            /**
+             * Provider
+             * @description Which geocoder answered, or 'disabled'.
+             */
+            provider: string;
         };
         /**
          * KerbType
@@ -677,6 +760,62 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    searchPlaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeocodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeocodeResponse"];
+                };
+            };
+            /** @description The region does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request did not match the expected schema. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error. Quote the request id when reporting. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The geocoding provider failed. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getLiveness: {
         parameters: {
             query?: never;
