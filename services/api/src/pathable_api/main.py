@@ -18,7 +18,7 @@ from pathable_api.core.config import Settings, get_settings
 from pathable_api.core.errors import register_exception_handlers
 from pathable_api.core.event_loop import configure_event_loop_policy
 from pathable_api.core.logging import configure_logging, get_logger
-from pathable_api.core.middleware import RequestContextMiddleware
+from pathable_api.core.middleware import RequestContextMiddleware, RequestSizeLimitMiddleware
 from pathable_api.core.request_context import REQUEST_ID_HEADER
 from pathable_api.db.session import Database, build_database
 from pathable_api.geo.geocoding import build_geocoder
@@ -167,6 +167,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     app.add_middleware(RequestContextMiddleware)
+    # Added last, so it runs *first*: Starlette applies middleware in reverse
+    # registration order, and an oversized body should be refused before any
+    # other work — including correlation logging — happens on it.
+    app.add_middleware(RequestSizeLimitMiddleware)
     register_exception_handlers(app)
     app.include_router(api_router)
 
