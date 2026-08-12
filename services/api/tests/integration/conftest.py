@@ -15,14 +15,17 @@ from __future__ import annotations
 import argparse
 import os
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import pytest
+import pytest_asyncio
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from pathable_api.core.config import Settings
 
@@ -100,3 +103,21 @@ def migrated_database_url(empty_database_url: str) -> str:
     """An empty database with every migration applied."""
     command.upgrade(alembic_config(empty_database_url), "head")
     return empty_database_url
+
+
+@pytest_asyncio.fixture
+async def db_session(migrated_database_url: str) -> AsyncIterator[AsyncSession]:
+    """An async session against a freshly migrated throwaway database.
+
+    Sessions are not rolled back at teardown — the database is dropped instead,
+    so tests can commit and then assert on what a *different* session sees. That
+    matters for the activation rules, which are enforced by database constraints
+    rather than by anything in the session's identity map.
+    """
+    engine = create_async_engine(migrated_database_url, poolclass=NullPool)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with factory() as session:
+            yield session
+    finally:
+        await engine.dispose()
