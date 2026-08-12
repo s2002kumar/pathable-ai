@@ -441,6 +441,7 @@ def _features_of(segment: RouteSegment) -> EdgeFeatures:
         incline_percent=segment.incline_percent,
         kerb=segment.kerb,
         is_crossing=segment.is_crossing,
+        width_m=segment.width_m,
     )
 
 

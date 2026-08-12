@@ -220,7 +220,7 @@ export async function stubRouteComparison(page: Page): Promise<void> {
     ];
     // A dogleg south then north, so the two routes are visibly different rather
     // than one line drawn on top of another.
-    const offset = (destination.latitude - origin.latitude) || 0.0008;
+    const offset = destination.latitude - origin.latitude || 0.0008;
     const detour: Array<[number, number]> = [
       [origin.longitude, origin.latitude],
       [

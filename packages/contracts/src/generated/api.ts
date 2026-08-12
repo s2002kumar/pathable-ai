@@ -711,6 +711,11 @@ export interface components {
              * @description Routing-relevant attributes nobody has recorded for this segment.
              */
             unknown_attributes: string[];
+            /**
+             * Width M
+             * @description Recorded width. Null means unrecorded, not narrow.
+             */
+            width_m?: number | null;
         };
         /**
          * SmoothnessClass

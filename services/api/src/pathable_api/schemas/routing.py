@@ -156,6 +156,9 @@ class RouteSegmentModel(BaseModel):
     )
     kerb: KerbType
     is_crossing: bool
+    width_m: float | None = Field(
+        default=None, description="Recorded width. Null means unrecorded, not narrow."
+    )
     unknown_attributes: list[str] = Field(
         description="Routing-relevant attributes nobody has recorded for this segment."
     )

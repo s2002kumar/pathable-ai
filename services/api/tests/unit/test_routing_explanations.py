@@ -263,3 +263,49 @@ class TestFeatureRoundTrip:
         assert stairs.step_count == 9
         assert stairs.kerb is KerbType.UNKNOWN
         assert stairs.surface_class is SurfaceClass.UNKNOWN
+
+
+class TestBlockingDiagnostics:
+    def test_a_width_that_blocked_the_profile_is_named(self) -> None:
+        # The diagnostic rebuilds features from route segments. Width used not to
+        # travel with them, so a route blocked by narrow paths reported every
+        # reason except the real one.
+        graph = build(
+            direct_tags={
+                "highway": "footway",
+                "width": "0.5",
+                "surface": "asphalt",
+                "smoothness": "good",
+                "incline": "0%",
+            },
+            detour_tags={
+                "highway": "footway",
+                "width": "0.5",
+                "surface": "asphalt",
+                "smoothness": "good",
+                "incline": "0%",
+            },
+        )
+
+        comparison = compare_routes(
+            graph, origin=WEST, destination=EAST, profile=get_profile("wheelchair")
+        )
+
+        assert comparison.accessible_route is None
+        caution = next(c for c in comparison.cautions if c.code == "no_accessible_route")
+        assert "too_narrow" in caution.evidence["reasons"]
+        assert caution.evidence["blocked_segments_on_shortest_route"] >= 1
+
+    def test_the_caution_gives_a_concrete_example(self) -> None:
+        graph = build(
+            direct_tags={"highway": "steps", "step_count": "20"},
+            detour_tags={"highway": "steps", "step_count": "20"},
+        )
+
+        comparison = compare_routes(
+            graph, origin=WEST, destination=EAST, profile=get_profile("wheelchair")
+        )
+
+        assert comparison.accessible_route is None
+        caution = next(c for c in comparison.cautions if c.code == "no_accessible_route")
+        assert any("stairway" in example for example in caution.evidence["examples"])

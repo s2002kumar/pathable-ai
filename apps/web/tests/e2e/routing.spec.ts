@@ -36,10 +36,7 @@ test.describe('route comparison', () => {
 
     await map.click({ position: { x: box.width * 0.65, y: box.height * 0.5 } });
 
-    await expect(page.getByTestId('route-status')).toHaveAttribute(
-      'data-route-state',
-      'success',
-    );
+    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
   });
 
   test('shows both routes with their own figures', async ({ page }) => {

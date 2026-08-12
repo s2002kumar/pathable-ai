@@ -17,7 +17,9 @@ test.describe('application shell', () => {
 
     const description = page.getByTestId('pilot-description');
     await expect(description).toBeVisible();
-    await expect(description).toContainText(/missing information is never treated as a clear path/i);
+    await expect(description).toContainText(
+      /missing information is never treated as a clear path/i,
+    );
     await expect(description).toContainText(/no route here is a guarantee/i);
   });
 

@@ -1116,6 +1116,18 @@
             },
             "title": "Unknown Attributes",
             "type": "array"
+          },
+          "width_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Recorded width. Null means unrecorded, not narrow.",
+            "title": "Width M"
           }
         },
         "required": [

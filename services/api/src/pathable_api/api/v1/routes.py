@@ -245,6 +245,7 @@ def _route_model(route: Route | None) -> RouteModel | None:
                 incline_percent=segment.incline_percent,
                 kerb=segment.kerb,
                 is_crossing=segment.is_crossing,
+                width_m=segment.width_m,
                 unknown_attributes=list(segment.unknown_attributes),
                 cost_components=[
                     CostComponentModel(

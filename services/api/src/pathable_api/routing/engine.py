@@ -114,6 +114,9 @@ class RouteSegment:
     incline_percent: float | None
     kerb: KerbType
     is_crossing: bool
+    #: Carried so a 'no route' diagnostic can report a width that blocked a
+    #: profile. Without it the reason list silently omits narrow segments.
+    width_m: float | None
     unknown_attributes: tuple[str, ...]
     cost_components: tuple[CostComponent, ...]
 
@@ -326,6 +329,7 @@ def _to_segment(
         incline_percent=features.incline_percent,
         kerb=features.kerb,
         is_crossing=features.is_crossing,
+        width_m=features.width_m,
         unknown_attributes=features.unknown_attributes,
         cost_components=cost.components,
     )
