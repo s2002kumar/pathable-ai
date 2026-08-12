@@ -21,6 +21,7 @@ from pathable_api.core.logging import configure_logging, get_logger
 from pathable_api.core.middleware import RequestContextMiddleware
 from pathable_api.core.request_context import REQUEST_ID_HEADER
 from pathable_api.db.session import Database, build_database
+from pathable_api.routing.graph import GraphRepository
 
 logger = get_logger(__name__)
 
@@ -32,17 +33,32 @@ configure_event_loop_policy()
 API_DESCRIPTION = """
 Backend for **PathAble AI**, an accessibility-aware pedestrian routing project.
 
-**Phase 0 status.** This service currently exposes health and readiness endpoints only.
-There is no routing, no pedestrian graph, no elevation data, and no machine learning
-behind this API yet. Endpoints that compare a shortest pedestrian route against an
-accessibility-aware route do not exist and are not simulated.
+Routing compares the shortest walking route against a route that respects a chosen
+mobility profile, and explains the difference using attributes recorded in
+OpenStreetMap.
+
+**What this is not.** Every routing decision is a deterministic rule over recorded
+map attributes. There is no machine learning, no model prediction and no inferred
+accessibility score anywhere in this service — `ml_predictions_used` is present on
+every route response and is always `false`. Missing accessibility data is reported
+as `unknown`, never as evidence that a path is clear, and no route is a guarantee
+that a journey is passable.
+
+Map data © OpenStreetMap contributors, ODbL 1.0.
 """.strip()
 
 OPENAPI_TAGS = [
     {
         "name": "health",
         "description": "Liveness and readiness probes used by Docker, CI and the web client.",
-    }
+    },
+    {
+        "name": "routing",
+        "description": (
+            "Accessibility-aware pedestrian routing over a versioned OpenStreetMap "
+            "network. Requests are not persisted."
+        ),
+    },
 ]
 
 
@@ -62,6 +78,10 @@ def _build_lifespan(
                 "allowed_origins": list(settings.allowed_origins),
             },
         )
+
+        # One repository per application, so the loaded graph is shared across
+        # requests instead of being rebuilt per call.
+        app.state.graph_repository = GraphRepository()
 
         if settings.database_url:
             app.state.database = build_database(settings)

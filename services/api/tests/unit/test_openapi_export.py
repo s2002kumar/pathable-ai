@@ -90,14 +90,40 @@ class TestDocumentContents:
         assert "LivenessResponse" in schemas
         assert "ReadinessResponse" in schemas
 
-    def test_states_the_phase_zero_limitation(self, document: dict[str, object]) -> None:
+    def test_states_that_no_machine_learning_is_involved(
+        self, document: dict[str, object]
+    ) -> None:
+        # The document is what an integrator reads before writing a client. If it
+        # is silent about this, "AI" in the product name is the only signal they
+        # have, and it points the wrong way.
         info = document["info"]
         assert isinstance(info, dict)
 
         description = info["description"]
         assert isinstance(description, str)
-        assert "no routing" in description.lower()
-        assert "machine learning" in description.lower()
+        assert "no machine learning" in description.lower()
+        assert "ml_predictions_used" in description
+
+    def test_states_that_missing_data_is_not_evidence_of_accessibility(
+        self, document: dict[str, object]
+    ) -> None:
+        info = document["info"]
+        assert isinstance(info, dict)
+        description = info["description"]
+        assert isinstance(description, str)
+
+        assert "unknown" in description.lower()
+
+    def test_the_route_response_carries_the_no_predictions_flag(
+        self, document: dict[str, object]
+    ) -> None:
+        components = document["components"]
+        assert isinstance(components, dict)
+
+        response = components["schemas"]["RouteCompareResponse"]
+        assert "ml_predictions_used" in response["properties"]
+        # Typed as a constant false, so a client cannot compile against a true.
+        assert response["properties"]["ml_predictions_used"]["const"] is False
 
     def test_contract_version_matches_the_package(self, document: dict[str, object]) -> None:
         info = document["info"]

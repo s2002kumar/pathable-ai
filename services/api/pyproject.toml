@@ -21,6 +21,9 @@ dependencies = [
     "osmnx>=2.0,<3.0",
 ]
 
+[project.scripts]
+pathable = "pathable_api.cli:main"
+
 [project.urls]
 Repository = "https://github.com/pathable-ai/pathable-ai"
 
@@ -40,6 +43,7 @@ dev = [
     "mypy>=1.14.0,<2.0.0",
     "ruff>=0.9.0,<0.15.0",
     "types-shapely>=2.1.0.20260728",
+    "types-networkx>=3.6.1.20260728",
 ]
 
 [build-system]
@@ -89,6 +93,10 @@ ignore = [
 # Tests legitimately use `assert`, and hard-coded local credentials are the point
 # of the integration fixtures.
 "tests/**/*.py" = ["S101", "S105", "S106", "S311"]
+# A command-line tool talks to the operator on stdout. Routing that through
+# the structured logger would put human-readable tables into log ingestion and
+# leave the terminal blank.
+"src/pathable_api/cli.py" = ["T20"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pathable_api"]

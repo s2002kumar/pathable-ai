@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from pathable_api.api.v1 import health
+from pathable_api.api.v1 import health, routes
 from pathable_api.schemas.errors import ApiErrorResponse
 
 API_V1_PREFIX = "/api/v1"
@@ -25,5 +25,6 @@ COMMON_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
 
 api_router = APIRouter(prefix=API_V1_PREFIX, responses=COMMON_ERROR_RESPONSES)
 api_router.include_router(health.router)
+api_router.include_router(routes.router)
 
 __all__ = ["API_V1_PREFIX", "COMMON_ERROR_RESPONSES", "api_router"]
