@@ -8,19 +8,21 @@ custom set of preferences — and compare the ordinary shortest walking route
 against a route chosen for accessibility. The pilot region is Waterloo, Ontario,
 but the geography is configuration rather than an assumption.
 
-> ## Current status: Phase 0 — foundation only
+> ## Current status: Phase 1 — routing works, and there is still no machine learning
 >
-> **There is no routing in this repository. There is no machine learning in this
-> repository.**
+> You can pick two points in the pilot region, choose a mobility profile, and get
+> a shortest walking route alongside one that respects that profile, with a
+> written explanation of the difference.
 >
-> What exists today is the engineering foundation: a Next.js application shell
-> with a working MapLibre map, a FastAPI service with validated configuration and
-> health endpoints, a PostGIS database with a migration baseline, generated
-> API contracts shared between the two, a Docker development environment, tests,
-> and CI.
+> **Every routing decision is a deterministic rule over attributes recorded in
+> OpenStreetMap.** There is no model, no prediction and no accessibility score
+> anywhere in this system. Every route response carries
+> `ml_predictions_used: false`, and it is typed as a literal `false` so a client
+> cannot compile against anything else.
 >
-> Nothing in this application should be used to plan a journey or to judge
-> whether a route is accessible. See [`docs/product/PHASES.md`](docs/product/PHASES.md).
+> **Missing data is reported as `unknown`, never as evidence that a path is
+> clear**, and no route here is a guarantee that a journey is passable. PathAble
+> advises; it does not certify. See [`docs/product/PHASES.md`](docs/product/PHASES.md).
 
 ---
 
@@ -32,6 +34,7 @@ can never drift from the code:
 ```bash
 pnpm --filter @pathable/web test:e2e
 # -> apps/web/artifacts/screenshots/
+#      desktop-chromium-route-comparison.png   both routes, drawn and described
 #      desktop-chromium-application.png
 #      desktop-chromium-map-loading.png
 #      desktop-chromium-map-failure.png
@@ -63,6 +66,11 @@ CI uploads the same files as the `playwright-report` artifact.
 The backend's Pydantic models are the single source of truth for the HTTP
 contract. They generate `openapi.json`, which generates the frontend's
 TypeScript types. CI fails if the committed output drifts.
+
+A network dataset is immutable once activated: ingestion writes a _new_ version,
+validates it, and swaps activation in one transaction. Routing loads the active
+dataset into memory once and caches it by dataset version id — which is why a
+cached graph can never go stale.
 
 More detail: [architecture overview](docs/architecture/OVERVIEW.md) ·
 [data flow](docs/architecture/DATA_FLOW.md) ·
@@ -155,6 +163,56 @@ pnpm dev
 
 `pnpm dev` runs the API on http://127.0.0.1:8000 and the web app on
 http://127.0.0.1:3000, with prefixed output and a single Ctrl+C to stop both.
+
+---
+
+## Loading a network
+
+Routing needs a network to route on. The `pathable` CLI lives in
+`services/api`; run it with `uv run` from there, or from the repository root
+with `node scripts/uv.mjs run pathable ...`.
+
+```bash
+cd services/api
+
+# Create the pilot regions the API knows about.
+uv run pathable regions seed
+
+# Import the real Waterloo pedestrian network from OpenStreetMap. Takes a few
+# minutes and caches the Overpass response, so a second run is quick.
+uv run pathable ingest osm --region waterloo
+
+# Or load the deterministic test fixture instead — a nine-node network built
+# around one stairway-versus-ramp comparison. Useful for development and for
+# demonstrating the product without touching a public service.
+# It is NOT Waterloo accessibility data and is loaded under its own region.
+uv run pathable ingest synthetic
+
+# What is live right now.
+uv run pathable datasets list
+```
+
+Ingestion never edits the live network. It writes a new dataset version,
+validates it, and swaps activation in one transaction — so a failed import
+cannot degrade what people are currently routing on, and rolling back is
+re-activating the previous version.
+
+Overpass is a donated public service with strict rate limits. PathAble checks
+that an endpoint is reachable before it starts, so an unreachable one fails in
+seconds with an explanation rather than hanging. Pass `--overpass-url` to use a
+different instance.
+
+### Measuring routing performance
+
+```bash
+uv run pathable benchmark route --region waterloo --samples 50
+uv run pathable benchmark route --grid 100 --samples 30   # synthetic lattice
+```
+
+Every figure it prints is a wall-clock measurement from that run on that
+machine. The `--grid` mode measures an in-memory lattice, which is _not a map of
+anywhere_ — it exists to characterise how routing scales with network size, and
+any number from it must be reported as such.
 
 ---
 

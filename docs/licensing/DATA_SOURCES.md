@@ -97,17 +97,40 @@ server.**
 
 ---
 
-## 4. Geocoding — Phase 1, undecided
+## 4. Geocoding — implemented, optional, and off by default
 
-No geocoding exists today.
+Place-name search exists behind a provider abstraction and is **disabled unless a
+deployment turns it on** (`GEOCODING_PROVIDER`). Choosing points on the map needs
+no geocoder, so search is a convenience rather than a dependency.
 
-| Option                                     | Licence                              | Viable?                                                                                                                   |
-| ------------------------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| Public Nominatim                           | Data ODbL; service under OSMF policy | **No** for application traffic — the [usage policy](https://operations.osmfoundation.org/policies/nominatim/) is explicit |
-| Self-hosted Nominatim                      | ODbL data, GPL software              | Yes; heavy to operate                                                                                                     |
-| Self-hosted Photon                         | ODbL data, Apache-2.0 software       | Yes; lighter, good for autocomplete                                                                                       |
-| Local gazetteer from the pilot OSM extract | ODbL                                 | Yes; likely the pragmatic Phase 1 answer for a single city                                                                |
-| Google / Mapbox geocoding                  | Proprietary                          | No — cost, credentials, and terms restricting storage of results                                                          |
+One provider is implemented: public Nominatim. This revises the Phase 0
+assessment below, which recorded a blanket "no" for it. The
+[usage policy](https://operations.osmfoundation.org/policies/nominatim/) does not
+forbid application traffic outright — it forbids **bulk** geocoding and
+**autocomplete**, and requires at most one request per second and an identifying
+User-Agent. PathAble's implementation is built to those terms:
+
+- one request per second, process-wide, enforced by a lock rather than by
+  convention;
+- **submit-only** — there is no as-you-type endpoint, and the UI does not search
+  on keystrokes;
+- every request carries a User-Agent naming the project and a contact address,
+  and startup fails if that contact is not configured;
+- searches are bounded to the pilot region's viewbox.
+
+**This is adequate for a pilot and not for public launch.** Real user traffic at
+any volume needs self-hosted Nominatim or Photon, or a local gazetteer built from
+the pilot extract. Attribution — "Search by Nominatim, © OpenStreetMap
+contributors, ODbL 1.0" — is returned with every result set so a client cannot
+display results without it.
+
+| Option                                     | Licence                              | Viable?                                                                                       |
+| ------------------------------------------ | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Public Nominatim                           | Data ODbL; service under OSMF policy | **For a pilot**, within the rate and identification terms above. Not for public launch volume |
+| Self-hosted Nominatim                      | ODbL data, GPL software              | Yes; heavy to operate                                                                         |
+| Self-hosted Photon                         | ODbL data, Apache-2.0 software       | Yes; lighter, good for autocomplete                                                           |
+| Local gazetteer from the pilot OSM extract | ODbL                                 | Yes; likely the pragmatic Phase 1 answer for a single city                                    |
+| Google / Mapbox geocoding                  | Proprietary                          | No — cost, credentials, and terms restricting storage of results                              |
 
 Note the trap in proprietary geocoders: several forbid storing results, which is
 incompatible with caching an origin/destination pair — and caching is exactly

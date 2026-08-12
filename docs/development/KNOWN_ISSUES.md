@@ -125,3 +125,84 @@ verification.
 
 **Unblock:** launch Docker Desktop and approve the UAC prompt, then
 `docker info`, `docker compose build --pull`, `docker compose up -d`.
+
+---
+
+## KI-3 — Overpass became unreachable from this network mid-session
+
+**Status: Open** · environment limitation, not a code defect · 2026-08-12
+
+### Symptom
+
+`pathable ingest osm --region waterloo` cannot reach any Overpass endpoint. TCP
+connections to every published address time out, while everything else on the
+same machine is fine:
+
+```
+200 0.5s https://api.openstreetmap.org/api/versions
+200 0.2s https://nominatim.openstreetmap.org/status
+200 0.3s https://tiles.openfreemap.org/styles/liberty
+200 0.3s https://github.com
+FAIL 30.0s https://overpass-api.de/api/status   ConnectTimeout
+```
+
+Overpass **was** reachable earlier in the same session — a status query and a
+POST to `/api/interpreter` both returned 200 in about a second. It then began
+returning `429 Too Many Requests` on every attempt, and shortly afterwards
+stopped accepting connections from this host altogether.
+
+### Diagnosis
+
+The 429s were earned. Diagnosing an unrelated fault (below) involved repeated
+requests in quick succession, which is exactly what Overpass's slot management
+exists to stop. The subsequent connection timeouts are consistent with a
+temporary block at the service, and are expected to lapse.
+
+### What this did and did not affect
+
+The ingestion path itself is implemented and its conversion logic is covered by
+tests, but **no real Waterloo dataset has been ingested on this machine**, so
+there are no measurements over real OSM data. Routing has been exercised against
+the synthetic fixture in PostGIS and characterised for scale against an in-memory
+lattice; neither is a substitute.
+
+### A real fix that came out of it
+
+OSMnx pins the Overpass hostname to a single IP for the duration of an import —
+it calls `socket.gethostbyname` once and patches `getaddrinfo` — so its
+rate-limit accounting and its query reach the same backend. Correct for slot
+management, but it means a round-robin name with one unreachable member is a coin
+flip, and losing it hangs the whole import until the request timeout. Observed
+here: `overpass-api.de` resolves to `162.55.144.139` (reachable at the time) and
+`65.109.112.52` (not, from this network), and an import that pinned the second
+stalled for over an hour before it was killed.
+
+`select_overpass_endpoint` now probes every address an endpoint resolves to and
+only accepts one where all of them answer, so whichever OSMnx pins will work. The
+CLI now fails in about fifteen seconds with an actionable message instead of
+hanging.
+
+**Unblock:** wait for the block to lapse, then re-run the import. Use
+`--overpass-url` to point at another instance if needed.
+
+---
+
+## KI-4 — Origins snap to the nearest junction, not the nearest point on a path
+
+**Status: Open** · known limitation, deliberate for the MVP
+
+A requested coordinate is matched to the nearest graph **node**. Splitting an edge
+at an arbitrary point means synthesising two half-edges with derived geometry and
+costs, which is real work that buys a bounded improvement — the error is capped by
+the distance between junctions.
+
+The consequence is visible rather than hidden: every route reports how far each
+endpoint was from where it actually joined the network, the API refuses a point
+more than 300 m from any mapped path, and the UI raises a caution past 50 m.
+
+Snapping is also a linear scan over node positions. At the ten-thousand-node
+scale measured so far it is a small share of a request; on a larger network it
+would need a spatial index.
+
+**Fix when:** either the reported snap distances or the request latency stop being
+acceptable on a real city network.

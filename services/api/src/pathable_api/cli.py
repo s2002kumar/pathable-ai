@@ -32,6 +32,9 @@ from pathable_api.geo.fixtures import load_synthetic_dataset
 from pathable_api.geo.models import DatasetVersion, PilotRegion
 from pathable_api.geo.osm import OverpassUnreachableError, import_walk_network
 from pathable_api.geo.regions import PILOT_REGIONS, region_definition, seed_pilot_regions
+from pathable_api.routing.benchmark import build_measurement_grid, measure
+from pathable_api.routing.graph import GraphRepository, graph_from_payload
+from pathable_api.routing.profiles import get_profile
 
 logger = get_logger(__name__)
 
@@ -92,6 +95,33 @@ def build_parser() -> argparse.ArgumentParser:
     )
     synthetic.add_argument("--no-activate", action="store_true")
 
+    benchmark = subcommands.add_parser(
+        "benchmark", help="Measure routing performance. Every number is a real timing."
+    )
+    benchmark_actions = benchmark.add_subparsers(dest="benchmark_command", required=True)
+    routes_bench = benchmark_actions.add_parser("route", help="Time route computation.")
+    routes_bench.add_argument(
+        "--region",
+        default=None,
+        help="Measure this region's active dataset. Omit to measure a synthetic grid instead.",
+    )
+    routes_bench.add_argument(
+        "--grid",
+        type=int,
+        default=None,
+        help=(
+            "Measure an in-memory NxN lattice of this size instead of a real dataset. "
+            "Not a map of anywhere; use it to characterise scaling, and label it as such."
+        ),
+    )
+    routes_bench.add_argument("--samples", type=int, default=50)
+    routes_bench.add_argument(
+        "--profile",
+        action="append",
+        default=None,
+        help="Profile to measure; repeatable. Defaults to standard and wheelchair.",
+    )
+
     datasets = subcommands.add_parser("datasets", help="Inspect dataset versions.")
     dataset_actions = datasets.add_subparsers(dest="dataset_command", required=True)
     listing = dataset_actions.add_parser("list", help="List dataset versions, newest first.")
@@ -138,6 +168,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _ingest_osm(database, args)
             case "ingest":
                 return await _ingest_synthetic(database, args)
+            case "benchmark":
+                return await _benchmark(database, args)
             case _:
                 return await _list_datasets(database, args)
     finally:
@@ -255,6 +287,39 @@ async def _list_datasets(database: Database, args: argparse.Namespace) -> int:
         print(
             f"{slug:<22}{dataset.status:<12}{dataset.node_count:>8}{dataset.edge_count:>8}  "
             f"{dataset.checksum[:12]:<14}{dataset.source_name}"
+        )
+    return EXIT_OK
+
+
+async def _benchmark(database: Database, args: argparse.Namespace) -> int:
+    profile_keys = args.profile or ["standard", "wheelchair"]
+    profiles = [get_profile(key) for key in profile_keys]
+
+    if args.grid is not None:
+        size = max(2, min(args.grid, 200))
+        payload = build_measurement_grid(size)
+        graph = graph_from_payload(payload, region_slug="synthetic-grid")
+        label = f"synthetic {size}x{size} grid (not a map of anywhere)"
+    elif args.region is not None:
+        repository = GraphRepository()
+        async with database.session() as session:
+            graph = await repository.active_graph(session, args.region)
+        label = f"{args.region} dataset {graph.checksum[:12]} (load {graph.load_seconds:.2f}s)"
+    else:
+        print("error: pass --region <slug> or --grid <size>.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+
+    report = measure(graph, profiles, samples=max(1, args.samples), dataset_label=label)
+
+    print(f"Dataset   {report.dataset}")
+    print(f"Nodes     {report.node_count}")
+    print(f"Segments  {report.segment_count}")
+    print()
+    print(f"{'PROFILE':<18}{'N':>5}{'FAIL':>6}{'p50 ms':>10}{'p95 ms':>10}{'max ms':>10}")
+    for summary in report.summaries:
+        print(
+            f"{summary.profile:<18}{summary.samples:>5}{summary.failures:>6}"
+            f"{summary.p50_ms:>10.2f}{summary.p95_ms:>10.2f}{summary.max_ms:>10.2f}"
         )
     return EXIT_OK
 
