@@ -93,8 +93,8 @@ test.describe('full stack', () => {
 
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'ready');
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
-    await expect(page.getByTestId('development-notice')).toContainText(/no routing/i);
-    await expect(page.getByRole('textbox')).toHaveCount(0);
+    await expect(page.getByRole('radiogroup', { name: /mobility profile/i })).toBeVisible();
+    await expect(page.getByTestId('map-legend')).toBeVisible();
   });
 
   test('the page stays usable when the backend becomes unavailable', async ({ page }) => {

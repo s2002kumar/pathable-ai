@@ -42,7 +42,7 @@ test.describe('backend status', () => {
     // degrade the badge and nothing else.
     await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
     await expect(page.getByTestId('pilot-description')).toBeVisible();
-    await expect(page.getByTestId('development-notice')).toBeVisible();
+    await expect(page.getByTestId('route-status')).toBeVisible();
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
       timeout: 20_000,
     });

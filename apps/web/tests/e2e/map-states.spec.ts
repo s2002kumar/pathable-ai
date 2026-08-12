@@ -54,7 +54,7 @@ test.describe('map lifecycle', () => {
       timeout: 20_000,
     });
     await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
-    await expect(page.getByTestId('development-notice')).toBeVisible();
+    await expect(page.getByTestId('route-status')).toBeVisible();
     await expect(page.getByTestId('attribution')).toBeVisible();
   });
 });
