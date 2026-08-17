@@ -8,18 +8,22 @@ actual behaviour rather than on a mock's.
 from __future__ import annotations
 
 import pytest
+from shapely.geometry import Point
 
 from pathable_api.geo.fixtures import NODES, build_synthetic_network
+from pathable_api.geo.geometry import geodesic_distance_m
 from pathable_api.routing.comparison import compare_routes
 from pathable_api.routing.engine import (
     MAX_REQUEST_SPAN_M,
     NoRouteFoundError,
     PointOffNetworkError,
     RequestTooLargeError,
+    RoutingError,
     compute_route,
 )
 from pathable_api.routing.graph import RoutableGraph, graph_from_payload
 from pathable_api.routing.profiles import STANDARD, get_profile
+from pathable_api.routing.search import Algorithm
 
 A = NODES["A"]
 D = NODES["D"]
@@ -53,28 +57,169 @@ class TestGraphConstruction:
         # still has one segment.
         assert graph.segment_count == build_synthetic_network().edge_count
 
-    def test_snapping_finds_the_nearest_node(self, graph: RoutableGraph) -> None:
-        snapped = graph.snap(A[0] + 0.00002, A[1])
+    def test_snapping_finds_the_nearest_point_on_a_segment(self, graph: RoutableGraph) -> None:
+        # Not the nearest junction. On a long block the junction can be a
+        # hundred metres from the door somebody actually asked about.
+        snap = graph.snap_to_edge(A[0] + 0.001, A[1] + 0.0003)
 
-        assert snapped is not None
-        assert snapped.node_id == "A"
-        assert snapped.distance_m < 5.0
+        assert snap is not None
+        assert 0.0 < snap.fraction < 1.0
+        assert snap.distance_m < 60.0
 
     def test_snapping_reports_the_distance_in_metres(self, graph: RoutableGraph) -> None:
-        # 0.0005 degrees of longitude at 43.47°N is about 40 m, not 0.0005.
-        snapped = graph.snap(A[0] + 0.0005, A[1])
+        # ~33 m north of the A-B line, which runs due east-west.
+        snap = graph.snap_to_edge(A[0] + 0.001, A[1] + 0.0003)
 
-        assert snapped is not None
-        assert snapped.node_id == "A"
-        assert 35.0 < snapped.distance_m < 45.0
+        assert snap is not None
+        assert 25.0 < snap.distance_m < 45.0
 
-    def test_snapping_picks_the_genuinely_nearest_node(self, graph: RoutableGraph) -> None:
-        # West of A the nearest junction is H, not the origin the caller had in
-        # mind — which is exactly why the distance is returned to the caller.
-        snapped = graph.snap(A[0] - 0.002, A[1])
+    def test_snapping_lands_on_the_endpoint_when_that_is_nearest(
+        self, graph: RoutableGraph
+    ) -> None:
+        snap = graph.snap_to_edge(A[0], A[1])
 
-        assert snapped is not None
-        assert snapped.node_id == "H"
+        assert snap is not None
+        assert snap.distance_m < 1.0
+
+    def test_the_spatial_index_covers_every_segment(self, graph: RoutableGraph) -> None:
+        assert len(graph.edge_index) == graph.segment_count
+
+
+class TestPartialSegments:
+    def test_a_route_can_start_part_way_along_a_segment(self, graph: RoutableGraph) -> None:
+        # A quarter of the way along A->B, which used to snap back to A and
+        # report a distance nobody would walk.
+        origin = (A[0] + 0.0005, A[1])
+        route = compute_route(graph, origin=origin, destination=D, profile=STANDARD)
+
+        assert route.origin.distance_m < 5.0
+        assert route.coordinates[0][0] == pytest.approx(origin[0], abs=1e-6)
+
+    def test_a_partial_segment_is_shorter_than_the_whole(self, graph: RoutableGraph) -> None:
+        from_start = compute_route(graph, origin=A, destination=D, profile=STANDARD)
+        from_midway = compute_route(
+            graph, origin=(A[0] + 0.001, A[1]), destination=D, profile=STANDARD
+        )
+
+        assert from_midway.distance_m < from_start.distance_m
+
+    def test_partial_costs_are_prorated_not_repeated(self, graph: RoutableGraph) -> None:
+        # Half a segment must cost about half, not the whole thing again.
+        whole = compute_route(graph, origin=A, destination=NODES["B"], profile=STANDARD)
+        half = compute_route(
+            graph, origin=(A[0] + 0.001, A[1]), destination=NODES["B"], profile=STANDARD
+        )
+
+        assert half.distance_m == pytest.approx(whole.distance_m / 2, rel=0.15)
+
+    def test_the_shared_graph_is_never_mutated_by_a_request(self, graph: RoutableGraph) -> None:
+        # The graph is cached per dataset version and shared across concurrent
+        # requests. A snap that mutated it would leak one user's origin into
+        # somebody else's route.
+        before_nodes = graph.node_count
+        before_edges = graph.graph.number_of_edges()
+
+        compute_route(graph, origin=(A[0] + 0.0005, A[1]), destination=D, profile=STANDARD)
+
+        assert graph.node_count == before_nodes
+        assert graph.graph.number_of_edges() == before_edges
+
+    def test_a_split_one_way_segment_stays_one_way(self) -> None:
+        # Half of a one-way passage is still one-way. The half running against
+        # the permitted direction must not appear.
+        payload = build_synthetic_network()
+        graph = graph_from_payload(payload)
+
+        # H -> A is a forward-only escalator; starting midway must still not
+        # allow travel toward H.
+        midpoint = ((H[0] + A[0]) / 2, (H[1] + A[1]) / 2)
+        with pytest.raises(NoRouteFoundError):
+            compute_route(graph, origin=midpoint, destination=H, profile=STANDARD)
+
+
+class TestAlgorithmEquivalence:
+    """A* must return the same optimal cost as Dijkstra, or the heuristic lies."""
+
+    @pytest.fixture
+    def pairs(self) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+        names = sorted(NODES)
+        return [
+            (NODES[first], NODES[second])
+            for index, first in enumerate(names)
+            for second in names[index + 1 :]
+        ]
+
+    @pytest.mark.parametrize(
+        "profile_key", ["standard", "wheelchair", "crutches", "reduced_mobility"]
+    )
+    def test_astar_matches_dijkstra_on_every_pair(
+        self,
+        graph: RoutableGraph,
+        pairs: list[tuple[tuple[float, float], tuple[float, float]]],
+        profile_key: str,
+    ) -> None:
+        profile = STANDARD if profile_key == "standard" else get_profile(profile_key)
+        compared = 0
+
+        for origin, destination in pairs:
+            dijkstra_route = _route_or_none(graph, origin, destination, profile, Algorithm.DIJKSTRA)
+            astar_route = _route_or_none(graph, origin, destination, profile, Algorithm.ASTAR)
+
+            # Reachability must agree: a heuristic cannot make a path exist or
+            # disappear, only change the order nodes are settled in.
+            assert (dijkstra_route is None) == (astar_route is None), (origin, destination)
+            if dijkstra_route is None or astar_route is None:
+                continue
+
+            compared += 1
+            assert astar_route.effective_distance_m == pytest.approx(
+                dijkstra_route.effective_distance_m, rel=1e-9
+            ), (origin, destination)
+
+        assert compared > 10, "the corpus stopped exercising the comparison"
+
+    def test_the_heuristic_never_exceeds_the_true_cost(self, graph: RoutableGraph) -> None:
+        # Admissibility, stated directly. Every edge costs at least its own
+        # length, so straight-line distance is a valid lower bound — and this
+        # breaks the moment somebody adds a discount to the cost model.
+        for profile_key in ("standard", "wheelchair"):
+            profile = STANDARD if profile_key == "standard" else get_profile(profile_key)
+            route = compute_route(graph, origin=A, destination=D, profile=profile)
+            straight_line = geodesic_distance_m(Point(*A), Point(*D))
+
+            assert straight_line <= route.effective_distance_m + 1e-6
+
+    def test_both_algorithms_are_reported_honestly(self, graph: RoutableGraph) -> None:
+        dijkstra = compute_route(
+            graph, origin=A, destination=D, profile=STANDARD, algorithm=Algorithm.DIJKSTRA
+        )
+        astar = compute_route(
+            graph, origin=A, destination=D, profile=STANDARD, algorithm=Algorithm.ASTAR
+        )
+
+        assert dijkstra.algorithm is Algorithm.DIJKSTRA
+        assert astar.algorithm is Algorithm.ASTAR
+        assert dijkstra.expanded_nodes > 0
+        assert astar.expanded_nodes > 0
+
+
+def _route_or_none(
+    graph: RoutableGraph,
+    origin: tuple[float, float],
+    destination: tuple[float, float],
+    profile: object,
+    algorithm: Algorithm,
+):
+    try:
+        return compute_route(
+            graph,
+            origin=origin,
+            destination=destination,
+            profile=profile,  # type: ignore[arg-type]
+            algorithm=algorithm,
+        )
+    except RoutingError:
+        return None
 
 
 class TestStandardRoute:

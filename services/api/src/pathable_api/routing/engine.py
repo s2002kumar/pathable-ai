@@ -16,11 +16,8 @@ from __future__ import annotations
 import time
 from collections.abc import Mapping
 from dataclasses import dataclass
-from itertools import pairwise
-from typing import Any, cast
 
-import networkx as nx
-from shapely.geometry import Point
+from shapely.geometry import LineString, Point
 
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.enums import KerbType, SmoothnessClass, SurfaceClass, TriState
@@ -28,6 +25,14 @@ from pathable_api.geo.geometry import geodesic_distance_m
 from pathable_api.routing.cost import BlockReason, CostComponent, EdgeCost, evaluate_edge
 from pathable_api.routing.graph import DirectedEdge, RoutableGraph, SnappedPoint
 from pathable_api.routing.profiles import MobilityProfile
+from pathable_api.routing.search import (
+    Algorithm,
+    NoPathError,
+    SearchLimitError,
+    SearchResult,
+    search,
+)
+from pathable_api.routing.snapping import EdgeSnap, prorate, split_geometry, virtual_node_id
 
 logger = get_logger(__name__)
 
@@ -38,7 +43,11 @@ MAX_REQUEST_SPAN_M = 15_000.0
 
 #: How far a requested coordinate may be from the nearest mapped path before we
 #: refuse rather than silently starting the route somewhere else.
-MAX_SNAP_DISTANCE_M = 300.0
+#:
+#: Lower than it used to need to be. Snapping now finds the nearest point *along*
+#: a segment rather than the nearest junction, so a genuine doorstep is metres
+#: away, and a large distance now means the request really is off-network.
+MAX_SNAP_DISTANCE_M = 150.0
 
 #: Ceiling on edge evaluations per search. Reached only by pathological requests;
 #: a normal cross-Waterloo route evaluates a small fraction of this.
@@ -135,6 +144,10 @@ class Route:
     origin: SnappedPoint
     destination: SnappedPoint
     computation_ms: float
+    #: Which search produced this route, and how much work it took. Reported so
+    #: a performance claim can be checked rather than believed.
+    algorithm: Algorithm = Algorithm.ASTAR
+    expanded_nodes: int = 0
 
     @property
     def segment_count(self) -> int:
@@ -190,10 +203,17 @@ def compute_route(
     origin: tuple[float, float],
     destination: tuple[float, float],
     profile: MobilityProfile,
+    algorithm: Algorithm = Algorithm.ASTAR,
 ) -> Route:
     """Find the best route between two coordinates for one profile.
 
     Coordinates are ``(longitude, latitude)``.
+
+    Both endpoints attach to the nearest point *along* a segment, not to the
+    nearest junction. Where that lands mid-segment, the segment is split for
+    this request only: the cached graph is shared between concurrent requests
+    and keyed on a dataset version that is supposed to be immutable, so it is
+    never mutated.
     """
     span = geodesic_distance_m(Point(*origin), Point(*destination))
     if span > MAX_REQUEST_SPAN_M:
@@ -203,12 +223,43 @@ def compute_route(
         )
         raise RequestTooLargeError(msg)
 
-    start = _snap_or_fail(graph, origin, "origin")
-    end = _snap_or_fail(graph, destination, "destination")
+    start_snap = _snap_or_fail(graph, origin, "origin")
+    end_snap = _snap_or_fail(graph, destination, "destination")
 
     started = time.perf_counter()
-    node_path = _shortest_path(graph, start.node_id, end.node_id, profile)
-    segments = _segments_for(graph, node_path, profile)
+    overlay = _Overlay(graph)
+    start_node = overlay.attach(start_snap, "origin")
+    goal_node = overlay.attach(end_snap, "destination")
+
+    goal_position = overlay.position(goal_node)
+
+    def heuristic(node: str) -> float:
+        # Straight-line metres to the goal. Admissible because every edge cost
+        # is at least its own length: accessibility contributions never subtract.
+        longitude, latitude = overlay.position(node)
+        return geodesic_distance_m(
+            Point(longitude, latitude), Point(goal_position[0], goal_position[1])
+        )
+
+    def weight(edge: DirectedEdge) -> float:
+        return _edge_cost(edge, profile).effective_metres
+
+    try:
+        found: SearchResult = search(
+            start_node,
+            goal_node,
+            neighbours=overlay.neighbours,
+            weight=weight,
+            heuristic=heuristic,
+            algorithm=algorithm,
+            max_expansions=MAX_EDGE_EVALUATIONS,
+        )
+    except NoPathError as error:
+        raise NoRouteFoundError(profile) from error
+    except SearchLimitError as error:
+        raise SearchLimitExceededError(str(error)) from error
+
+    segments = [_to_segment(edge, _edge_cost(edge, profile)) for edge in found.edges]
     elapsed_ms = (time.perf_counter() - started) * 1000.0
 
     distance_m = sum(segment.length_m for segment in segments)
@@ -222,86 +273,104 @@ def compute_route(
         estimated_duration_seconds=_estimate_duration(segments, profile),
         coordinates=_stitch(segments),
         segments=tuple(segments),
-        origin=start,
-        destination=end,
+        origin=_as_snapped_point(start_snap),
+        destination=_as_snapped_point(end_snap),
         computation_ms=elapsed_ms,
+        algorithm=found.algorithm,
+        expanded_nodes=found.expanded,
     )
 
 
-def _snap_or_fail(
-    graph: RoutableGraph, coordinate: tuple[float, float], label: str
-) -> SnappedPoint:
-    snapped = graph.snap(coordinate[0], coordinate[1])
+def _as_snapped_point(snap: EdgeSnap) -> SnappedPoint:
+    return SnappedPoint(
+        node_id=snap.node_id or snap.edge.identity,
+        longitude=snap.longitude,
+        latitude=snap.latitude,
+        distance_m=snap.distance_m,
+    )
+
+
+class _Overlay:
+    """Request-local additions to a shared, immutable graph.
+
+    Everything a snap introduces lives here: the virtual node, the two partial
+    segments it creates, and their positions. The underlying graph is only ever
+    read.
+    """
+
+    __slots__ = ("_adjacency", "_graph", "_positions")
+
+    def __init__(self, graph: RoutableGraph) -> None:
+        self._graph = graph
+        self._adjacency: dict[str, list[tuple[str, DirectedEdge]]] = {}
+        self._positions: dict[str, tuple[float, float]] = {}
+
+    def attach(self, snap: EdgeSnap, label: str) -> str:
+        """Introduce a snap point and return the node routing should use."""
+        if snap.is_on_node and snap.node_id is not None:
+            return snap.node_id
+
+        # Landing on an endpoint needs no split — the junction is already there.
+        if snap.fraction <= 1e-9:
+            return snap.edge.source_u
+        if snap.fraction >= 1.0 - 1e-9:
+            return snap.edge.source_v
+
+        node = virtual_node_id(label)
+        self._positions[node] = (snap.longitude, snap.latitude)
+
+        head_geometry, tail_geometry = split_geometry(snap.edge.geometry, snap.fraction)
+        edge = snap.edge
+
+        forward_head = DirectedEdge(edge=edge, features=edge.features, reversed=False)
+        forward_tail = DirectedEdge(edge=edge, features=edge.features, reversed=False)
+        backward_head = DirectedEdge(edge=edge, features=edge.features.reversed(), reversed=True)
+        backward_tail = DirectedEdge(edge=edge, features=edge.features.reversed(), reversed=True)
+
+        # Direction survives the split: half of a one-way segment is still
+        # one-way, and the half running against the permitted direction must
+        # never appear.
+        if edge.foot_forward:
+            # u -> node -> v
+            self._link(edge.source_u, node, prorate(forward_head, head_geometry))
+            self._link(node, edge.source_v, prorate(forward_tail, tail_geometry))
+        if edge.foot_backward:
+            # v -> node -> u
+            self._link(edge.source_v, node, prorate(backward_tail, _reverse(tail_geometry)))
+            self._link(node, edge.source_u, prorate(backward_head, _reverse(head_geometry)))
+
+        return node
+
+    def _link(self, source: str, target: str, edge: DirectedEdge) -> None:
+        self._adjacency.setdefault(source, []).append((target, edge))
+
+    def neighbours(self, node: str) -> list[tuple[str, DirectedEdge]]:
+        found = list(self._adjacency.get(node, ()))
+        graph = self._graph.graph
+        if node in graph:
+            for target, parallel in graph[node].items():
+                for data in parallel.values():
+                    found.append((str(target), data["edge"]))
+        return found
+
+    def position(self, node: str) -> tuple[float, float]:
+        known = self._positions.get(node)
+        if known is not None:
+            return known
+        return self._graph.node_positions.get(node, (0.0, 0.0))
+
+
+def _reverse(geometry: LineString) -> LineString:
+    return LineString(list(geometry.coords)[::-1])
+
+
+def _snap_or_fail(graph: RoutableGraph, coordinate: tuple[float, float], label: str) -> EdgeSnap:
+    snapped = graph.snap_to_edge(coordinate[0], coordinate[1])
     if snapped is None:
         raise PointOffNetworkError(label, float("inf"))
     if snapped.distance_m > MAX_SNAP_DISTANCE_M:
         raise PointOffNetworkError(label, snapped.distance_m)
     return snapped
-
-
-def _shortest_path(
-    graph: RoutableGraph, source: str, target: str, profile: MobilityProfile
-) -> list[str]:
-    if source == target:
-        return [source]
-
-    budget = _EvaluationBudget(MAX_EDGE_EVALUATIONS)
-
-    def weight(u: str, v: str, parallel: dict[int, dict[str, Any]]) -> float | None:
-        budget.spend()
-        best = min(
-            (_edge_cost(data["edge"], profile).effective_metres for data in parallel.values()),
-            default=float("inf"),
-        )
-        # Returning None tells NetworkX the edge does not exist for this search,
-        # which is exactly what a hard constraint means.
-        return None if best == float("inf") else best
-
-    try:
-        # NetworkX types `weight` for simple graphs; on a multigraph the callable
-        # receives the whole parallel-edge mapping, which the stubs do not model.
-        _, path = nx.bidirectional_dijkstra(
-            graph.graph,
-            source,
-            target,
-            weight=weight,  # type: ignore[arg-type]
-        )
-    except nx.NetworkXNoPath as error:
-        raise NoRouteFoundError(profile) from error
-    except nx.NodeNotFound as error:
-        raise NoRouteFoundError(profile) from error
-
-    return [str(node) for node in path]
-
-
-def _segments_for(
-    graph: RoutableGraph, node_path: list[str], profile: MobilityProfile
-) -> list[RouteSegment]:
-    segments: list[RouteSegment] = []
-
-    for u, v in pairwise(node_path):
-        # The stubs type an adjacency view's keys as node labels; on a multigraph
-        # the inner mapping is keyed by edge key, which is an int.
-        parallel = cast("dict[int, dict[str, Any]]", dict(graph.graph[u][v]))
-        chosen_key: int | None = None
-        chosen_cost: EdgeCost | None = None
-
-        for key in sorted(parallel):
-            edge: DirectedEdge = parallel[key]["edge"]
-            cost = _edge_cost(edge, profile)
-            if not cost.passable:
-                continue
-            if chosen_cost is None or cost.effective_metres < chosen_cost.effective_metres:
-                chosen_key, chosen_cost = key, cost
-
-        if chosen_key is None or chosen_cost is None:
-            # Only reachable if the graph changed under us mid-request, which the
-            # dataset-version cache key is designed to prevent.
-            raise NoRouteFoundError(profile)
-
-        segments.append(_to_segment(parallel[chosen_key]["edge"], chosen_cost))
-
-    return segments
 
 
 def _to_segment(edge: DirectedEdge, cost: EdgeCost) -> RouteSegment:
@@ -356,22 +425,6 @@ def _estimate_duration(segments: list[RouteSegment], profile: MobilityProfile) -
         if segment.is_crossing:
             seconds += _SECONDS_PER_CROSSING
     return seconds
-
-
-class _EvaluationBudget:
-    """Counts edge evaluations so one request cannot search forever."""
-
-    __slots__ = ("_limit", "_spent")
-
-    def __init__(self, limit: int) -> None:
-        self._limit = limit
-        self._spent = 0
-
-    def spend(self) -> None:
-        self._spent += 1
-        if self._spent > self._limit:
-            msg = f"Route search exceeded {self._limit} edge evaluations. Try a shorter journey."
-            raise SearchLimitExceededError(msg)
 
 
 def _edge_cost(edge: DirectedEdge, profile: MobilityProfile) -> EdgeCost:

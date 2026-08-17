@@ -17,7 +17,7 @@ import asyncio
 import time
 import uuid
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from networkx import MultiDiGraph
@@ -37,9 +37,9 @@ from pathable_api.geo.enums import (
     TriState,
 )
 from pathable_api.geo.features import EdgeFeatures
-from pathable_api.geo.geometry import geodesic_distance_m
 from pathable_api.geo.models import DatasetVersion, GraphEdge, GraphNode, PilotRegion
 from pathable_api.geo.network import NetworkPayload
+from pathable_api.routing.snapping import EdgeIndex, EdgeSnap
 
 logger = get_logger(__name__)
 
@@ -129,6 +129,10 @@ class RoutableGraph:
     #: two directed entries for every two-way segment.
     segment_count: int = 0
     load_seconds: float = 0.0
+    #: Built on first use and reused for the life of the dataset, which the
+    #: version-keyed cache already amortises across every request.
+    _edge_index: EdgeIndex | None = None
+    _segments: list[RoutableEdge] = field(default_factory=list)
 
     @property
     def node_count(self) -> int:
@@ -139,42 +143,16 @@ class RoutableGraph:
         edge: DirectedEdge = data["edge"]
         return edge
 
-    def snap(self, longitude: float, latitude: float) -> SnappedPoint | None:
-        """Find the graph node nearest to a requested coordinate.
+    @property
+    def edge_index(self) -> EdgeIndex:
+        """Spatial index over segment geometry, built lazily."""
+        if self._edge_index is None:
+            self._edge_index = EdgeIndex(self._segments)
+        return self._edge_index
 
-        Snapping to a *node* rather than to the nearest point along an edge is a
-        deliberate MVP simplification: splitting an edge at an arbitrary point
-        means rebuilding geometry and costs for two synthetic half-edges, and the
-        error it avoids is bounded by the distance between junctions. The
-        distance is returned so callers can show it and refuse when it is large,
-        rather than silently starting the route somewhere else.
-        """
-        if not self.node_positions:
-            return None
-
-        origin = Point(longitude, latitude)
-        best_node: str | None = None
-        best_distance = float("inf")
-
-        # A degree-space prefilter before the geodesic computation: the geodesic
-        # call is ~40x more expensive, and running it on 40,000 nodes per request
-        # would dominate the response time.
-        for node_id, (node_lon, node_lat) in self.node_positions.items():
-            rough = (node_lon - longitude) ** 2 + (node_lat - latitude) ** 2
-            if rough < best_distance:
-                best_distance = rough
-                best_node = node_id
-
-        if best_node is None:
-            return None
-
-        node_lon, node_lat = self.node_positions[best_node]
-        return SnappedPoint(
-            node_id=best_node,
-            longitude=node_lon,
-            latitude=node_lat,
-            distance_m=geodesic_distance_m(origin, Point(node_lon, node_lat)),
-        )
+    def snap_to_edge(self, longitude: float, latitude: float) -> EdgeSnap | None:
+        """Nearest point along any segment — the honest place to start a route."""
+        return self.edge_index.nearest(longitude, latitude)
 
 
 class NoActiveDatasetError(RuntimeError):
@@ -260,9 +238,11 @@ async def load_graph(
         )
     )
     segment_count = 0
+    segments: list[RoutableEdge] = []
     for row, geometry_wkt in edge_rows:
         edge = _to_routable_edge(row, geometry_wkt)
         _add_edge(graph, edge)
+        segments.append(edge)
         segment_count += 1
 
     elapsed = time.perf_counter() - started
@@ -285,6 +265,7 @@ async def load_graph(
         node_positions=positions,
         segment_count=segment_count,
         load_seconds=elapsed,
+        _segments=segments,
     )
 
 
@@ -302,6 +283,7 @@ def graph_from_payload(
     """
     graph: MultiDiGraph[str] = MultiDiGraph()
     positions: dict[str, tuple[float, float]] = {}
+    segments: list[RoutableEdge] = []
 
     for node in payload.nodes:
         positions[node.source_node_id] = (node.longitude, node.latitude)
@@ -321,6 +303,7 @@ def graph_from_payload(
             foot_backward=edge.direction.backward,
         )
         _add_edge(graph, routable)
+        segments.append(routable)
 
     return RoutableGraph(
         dataset_id=dataset_id or uuid.uuid4(),
@@ -329,6 +312,7 @@ def graph_from_payload(
         graph=graph,
         node_positions=positions,
         segment_count=payload.edge_count,
+        _segments=segments,
     )
 
 
