@@ -28,6 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.datasets import get_active_dataset
+from pathable_api.geo.directionality import Conveying
 from pathable_api.geo.enums import (
     AccessValue,
     KerbType,
@@ -50,7 +51,7 @@ _CACHE_CAPACITY = 2
 
 @dataclass(frozen=True, slots=True)
 class RoutableEdge:
-    """One segment, with everything routing needs and nothing it does not."""
+    """One physical segment, described along its own ``source_u -> source_v``."""
 
     edge_id: uuid.UUID
     source_u: str
@@ -60,10 +61,45 @@ class RoutableEdge:
     geometry: LineString
     features: EdgeFeatures
     name: str | None
+    foot_forward: bool = True
+    foot_backward: bool = True
 
     @property
     def identity(self) -> str:
         return f"{self.source_u}->{self.source_v}#{self.edge_key}"
+
+
+@dataclass(frozen=True, slots=True)
+class DirectedEdge:
+    """One physical segment as travelled one particular way.
+
+    The oriented features are computed once at graph-build time rather than per
+    evaluation. Dijkstra touches an edge many times, and flipping an incline
+    sign in the inner loop would allocate on every touch — but getting the sign
+    wrong would send somebody up a ramp the router believed went down, so it
+    cannot simply be skipped either.
+    """
+
+    edge: RoutableEdge
+    features: EdgeFeatures
+    reversed: bool
+
+    @property
+    def length_m(self) -> float:
+        return self.edge.length_m
+
+    @property
+    def identity(self) -> str:
+        return self.edge.identity
+
+    @property
+    def name(self) -> str | None:
+        return self.edge.name
+
+    def coordinates(self) -> tuple[tuple[float, float], ...]:
+        """Geometry oriented along travel."""
+        positions = tuple((float(x), float(y)) for x, y, *_ in self.edge.geometry.coords)
+        return tuple(reversed(positions)) if self.reversed else positions
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,9 +134,9 @@ class RoutableGraph:
     def node_count(self) -> int:
         return int(self.graph.number_of_nodes())
 
-    def edge_between(self, u: str, v: str, key: int) -> RoutableEdge:
+    def edge_between(self, u: str, v: str, key: int) -> DirectedEdge:
         data: dict[str, Any] = self.graph.edges[u, v, key]
-        edge: RoutableEdge = data["edge"]
+        edge: DirectedEdge = data["edge"]
         return edge
 
     def snap(self, longitude: float, latitude: float) -> SnappedPoint | None:
@@ -226,7 +262,7 @@ async def load_graph(
     segment_count = 0
     for row, geometry_wkt in edge_rows:
         edge = _to_routable_edge(row, geometry_wkt)
-        _add_edge(graph, edge, directed=bool(row.directed))
+        _add_edge(graph, edge)
         segment_count += 1
 
     elapsed = time.perf_counter() - started
@@ -281,8 +317,10 @@ def graph_from_payload(
             geometry=edge.geometry,
             features=edge.features,
             name=_name_of(edge.features.raw_tags),
+            foot_forward=edge.direction.forward,
+            foot_backward=edge.direction.backward,
         )
-        _add_edge(graph, routable, directed=edge.directed)
+        _add_edge(graph, routable)
 
     return RoutableGraph(
         dataset_id=dataset_id or uuid.uuid4(),
@@ -294,20 +332,28 @@ def graph_from_payload(
     )
 
 
-def _add_edge(graph: MultiDiGraph[str], edge: RoutableEdge, *, directed: bool) -> None:
-    """Insert a segment into the directed graph.
+def _add_edge(graph: MultiDiGraph[str], edge: RoutableEdge) -> None:
+    """Insert a segment into the directed graph, once per walkable direction.
 
-    The graph is directed so that one-way passages are represented honestly. A
-    two-way segment becomes two directed entries sharing one `RoutableEdge`
-    object, so the attributes and the identity stay single-sourced and only the
-    adjacency is duplicated.
-
-    OSM walk networks are entirely two-way — pedestrian travel ignores vehicle
-    one-way restrictions — so in practice every OSM edge takes the second branch.
+    Both entries share one `RoutableEdge`, so identity and geometry stay
+    single-sourced; only the adjacency and the *orientation* of the features
+    differ. The reverse entry carries features whose incline sign is flipped,
+    which is the whole reason the graph is directed rather than undirected.
     """
-    graph.add_edge(edge.source_u, edge.source_v, key=edge.edge_key, edge=edge)
-    if not directed:
-        graph.add_edge(edge.source_v, edge.source_u, key=edge.edge_key, edge=edge)
+    if edge.foot_forward:
+        graph.add_edge(
+            edge.source_u,
+            edge.source_v,
+            key=edge.edge_key,
+            edge=DirectedEdge(edge=edge, features=edge.features, reversed=False),
+        )
+    if edge.foot_backward:
+        graph.add_edge(
+            edge.source_v,
+            edge.source_u,
+            key=edge.edge_key,
+            edge=DirectedEdge(edge=edge, features=edge.features.reversed(), reversed=True),
+        )
 
 
 def _name_of(raw_tags: dict[str, Any]) -> str | None:
@@ -350,7 +396,16 @@ def _to_routable_edge(row: GraphEdge, geometry_wkt: str) -> RoutableEdge:
             bridge=TriState(row.bridge),
             tunnel=TriState(row.tunnel),
             width_m=row.width_m,
+            tactile_paving=TriState(row.tactile_paving),
+            kerb_from_node=bool(row.kerb_from_node),
+            derived_grade_percent=row.derived_grade_percent,
+            conveying=Conveying(row.conveying),
+            conflicting_attributes=tuple(row.conflicting_attributes or ()),
+            vehicle_oneway_ignored=bool(row.vehicle_oneway_ignored),
+            ambiguous_direction=bool(row.ambiguous_direction),
             raw_tags=raw_tags,
         ),
         name=str(name) if isinstance(name, str) else None,
+        foot_forward=bool(row.foot_forward),
+        foot_backward=bool(row.foot_backward),
     )

@@ -13,9 +13,16 @@ documented at :func:`normalise_steps`.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from collections.abc import Sequence
+from dataclasses import dataclass, field, replace
 from typing import Any
 
+from pathable_api.geo.directionality import (
+    Conveying,
+    normalise_conveying,
+    normalise_foot_direction,
+    vehicle_oneway_is_ignored,
+)
 from pathable_api.geo.enums import (
     AccessValue,
     KerbType,
@@ -110,18 +117,93 @@ _WALKABLE_HIGHWAYS = {
     "platform",
 }
 
+#: Surface values ordered best-to-worst for wheeled mobility. Used to resolve a
+#: merged segment that carries several surfaces: the rough part is still there.
+_SURFACE_RANKING: tuple[str, ...] = (
+    "asphalt",
+    "concrete",
+    "paved",
+    "concrete:plates",
+    "concrete:lanes",
+    "paving_stones",
+    "metal",
+    "wood",
+    "rubber",
+    "tartan",
+    "acrylic",
+    "chipseal",
+    "compacted",
+    "fine_gravel",
+    "gravel_turf",
+    "sett",
+    "cobblestone:flattened",
+    "cobblestone",
+    "pebblestone",
+    "grass_paver",
+    "unpaved",
+    "gravel",
+    "woodchips",
+    "ground",
+    "dirt",
+    "earth",
+    "grass",
+    "rock",
+    "sand",
+    "mud",
+)
+
+#: Smoothness values ordered best-to-worst, matching the OSM scale.
+_SMOOTHNESS_RANKING: tuple[str, ...] = (
+    "excellent",
+    "good",
+    "intermediate",
+    "bad",
+    "very_bad",
+    "horrible",
+    "very_horrible",
+    "impassable",
+)
+
+#: Kerb values ordered best-to-worst for a wheeled user.
+_KERB_RANKING: tuple[str, ...] = ("flush", "lowered", "rolled", "no", "raised")
+
 _INCLINE_PATTERN = re.compile(r"^(?P<sign>[-+]?)(?P<value>\d+(?:\.\d+)?)\s*%$")
 _INCLINE_RATIO = re.compile(
     r"^(?P<sign>[-+]?)(?P<rise>\d+(?:\.\d+)?)\s*/\s*(?P<run>\d+(?:\.\d+)?)$"
 )
 
 
+def all_values(raw: Any) -> tuple[str, ...]:
+    """Every distinct lowercase value a tag carries, in source order.
+
+    OSMnx yields a list when several source ways were merged into one edge, which
+    means the merged segment genuinely has two different answers.
+    """
+    if raw is None:
+        return ()
+    if isinstance(raw, list):
+        seen: list[str] = []
+        for item in raw:
+            for value in all_values(item):
+                if value not in seen:
+                    seen.append(value)
+        return tuple(seen)
+    text = str(raw).strip().lower()
+    return (text,) if text else ()
+
+
+def is_conflicted(raw: Any) -> bool:
+    """True when a merged segment carries more than one value for a tag."""
+    return len(all_values(raw)) > 1
+
+
 def first_value(raw: Any) -> str | None:
     """Collapse an OSM tag value to a single lowercase string.
 
-    OSMnx yields a list when several source ways were merged into one edge. A
-    list means the source disagrees with itself, so the first value is taken and
-    the raw tags remain available for anyone who needs the full picture.
+    Only for attributes where disagreement is not route-critical. Anything that
+    decides whether a person can pass must go through a conflict-aware
+    normaliser instead — see `worst_of`, which resolves conservatively rather
+    than letting whichever way happened to be listed first decide.
     """
     if raw is None:
         return None
@@ -133,6 +215,32 @@ def first_value(raw: Any) -> str | None:
         return None
     text = str(raw).strip().lower()
     return text or None
+
+
+def worst_of(raw: Any, ranking: Sequence[str]) -> tuple[str | None, bool]:
+    """Resolve a possibly-conflicting tag to its least favourable value.
+
+    Returns ``(value, conflicted)``. When a merged segment says both ``paved``
+    and ``gravel``, the honest answer for somebody deciding whether they can get
+    through is ``gravel`` — the segment really does contain some. "First value
+    wins" would make the answer depend on which way the merge happened to run.
+
+    ``ranking`` runs best-to-worst; values outside it are treated as worse than
+    anything known, because an unrecognised value is not evidence of quality.
+    """
+    values = all_values(raw)
+    if not values:
+        return None, False
+    if len(values) == 1:
+        return values[0], False
+
+    def rank(value: str) -> int:
+        try:
+            return ranking.index(value)
+        except ValueError:
+            return len(ranking)
+
+    return max(values, key=rank), True
 
 
 def _boolean_tag(raw: Any) -> TriState:
@@ -184,8 +292,8 @@ def normalise_steps(tags: dict[str, Any]) -> tuple[TriState, int | None]:
 
 
 def normalise_surface(raw: Any) -> tuple[str | None, SurfaceClass]:
-    """Return the raw surface value and its coarse class."""
-    value = first_value(raw)
+    """Return the surface value and its coarse class, resolved conservatively."""
+    value, _conflicted = worst_of(raw, _SURFACE_RANKING)
     if value is None:
         return None, SurfaceClass.UNKNOWN
     if value in _PAVED_SURFACES:
@@ -199,7 +307,7 @@ def normalise_surface(raw: Any) -> tuple[str | None, SurfaceClass]:
 
 
 def normalise_smoothness(raw: Any) -> tuple[str | None, SmoothnessClass]:
-    value = first_value(raw)
+    value, _conflicted = worst_of(raw, _SMOOTHNESS_RANKING)
     if value is None:
         return None, SmoothnessClass.UNKNOWN
     return value, _SMOOTHNESS_CLASSES.get(value, SmoothnessClass.UNKNOWN)
@@ -233,7 +341,9 @@ def normalise_incline(raw: Any) -> float | None:
 
 
 def normalise_kerb(tags: dict[str, Any]) -> KerbType:
-    value = first_value(tags.get("kerb")) or first_value(tags.get("curb"))
+    """Resolve a kerb value, taking the worst when a merged segment disagrees."""
+    raw = tags.get("kerb") if tags.get("kerb") is not None else tags.get("curb")
+    value, _conflicted = worst_of(raw, _KERB_RANKING)
     if value is None:
         return KerbType.UNKNOWN
     return _KERB_VALUES.get(value, KerbType.UNKNOWN)
@@ -279,12 +389,84 @@ class EdgeFeatures:
     sidewalk: str | None = None
     is_crossing: bool = False
     crossing_type: str | None = None
+    tactile_paving: TriState = TriState.UNKNOWN
+    #: True when the kerb came from an OSM node rather than the crossing way.
+    #: Both are real evidence; a route explanation should be able to say which.
+    kerb_from_node: bool = False
     lit: TriState = TriState.UNKNOWN
     indoor: TriState = TriState.UNKNOWN
     bridge: TriState = TriState.UNKNOWN
     tunnel: TriState = TriState.UNKNOWN
     width_m: float | None = None
+
+    # --- Direction-dependent ----------------------------------------------
+    #: Grade derived from elevation, signed for the direction of travel.
+    #: Kept separate from `incline_percent` so an OSM-reported incline and a
+    #: value we computed never overwrite one another.
+    derived_grade_percent: float | None = None
+    conveying: Conveying = Conveying.NONE
+
+    # --- Source quality ----------------------------------------------------
+    #: Route-critical tags where a merged segment carried more than one value.
+    #: Resolved conservatively; recorded so a surprising cost can be explained.
+    conflicting_attributes: tuple[str, ...] = ()
+    #: A plain `oneway` existed and was deliberately not applied to foot travel.
+    vehicle_oneway_ignored: bool = False
+    #: Directionality was stated in a way that could not be read. The segment
+    #: stays passable and the doubt is surfaced rather than silently resolved.
+    ambiguous_direction: bool = False
+
     raw_tags: dict[str, Any] = field(default_factory=dict)
+
+    def reversed(self) -> EdgeFeatures:
+        """The same physical segment, described for travel the other way.
+
+        Only direction-dependent facts change. A 6% climb is a 6% descent from
+        the other end, and treating the stored sign as absolute is how a router
+        sends a wheelchair user up a ramp it believes goes down.
+        """
+        return replace(
+            self,
+            incline_percent=(None if self.incline_percent is None else -self.incline_percent),
+            derived_grade_percent=(
+                None if self.derived_grade_percent is None else -self.derived_grade_percent
+            ),
+            conveying=self.conveying.reversed(),
+        )
+
+    @property
+    def effective_grade_percent(self) -> float | None:
+        """The grade to route on, preferring what the map actually says.
+
+        An OSM `incline` is somebody's assertion about this specific path.
+        Elevation-derived grade is our inference from a terrain model that knows
+        nothing about the path — useful where the map is silent, but it should
+        not overrule a surveyor.
+        """
+        if self.incline_percent is not None:
+            return self.incline_percent
+        return self.derived_grade_percent
+
+    @property
+    def grade_source(self) -> str | None:
+        """Where `effective_grade_percent` came from, or None when unknown."""
+        if self.incline_percent is not None:
+            return "osm_incline"
+        if self.derived_grade_percent is not None:
+            return "derived_elevation"
+        return None
+
+    @property
+    def grade_disagreement_percent(self) -> float | None:
+        """How far the derived grade sits from the mapped one, when both exist.
+
+        Surfaced as a diagnostic rather than resolved: a large disagreement
+        usually means the elevation model is too coarse for the path, or the
+        incline tag is wrong, and both are worth a human knowing.
+        """
+        if self.incline_percent is None or self.derived_grade_percent is None:
+            return None
+        return self.derived_grade_percent - self.incline_percent
 
     @property
     def unknown_attributes(self) -> tuple[str, ...]:
@@ -299,7 +481,7 @@ class EdgeFeatures:
             missing.append("surface")
         if self.smoothness_class is SmoothnessClass.UNKNOWN:
             missing.append("smoothness")
-        if self.incline_percent is None:
+        if self.effective_grade_percent is None:
             missing.append("incline")
         if self.is_crossing and self.kerb is KerbType.UNKNOWN:
             missing.append("kerb")
@@ -315,6 +497,28 @@ def normalise_edge(tags: dict[str, Any]) -> EdgeFeatures:
     surface, surface_class = normalise_surface(tags.get("surface"))
     smoothness, smoothness_class = normalise_smoothness(tags.get("smoothness"))
     crossing_type = first_value(tags.get("crossing"))
+    direction = normalise_foot_direction(tags)
+
+    # `highway=footway` + `footway=crossing` is the standard way to map a road
+    # crossing, and it is far more common than `highway=crossing`. Missing it
+    # meant every kerb mapped on a crossing node had nothing to attach to.
+    footway_kind = first_value(tags.get("footway"))
+    cycleway_kind = first_value(tags.get("cycleway"))
+    is_crossing = (
+        highway == "crossing"
+        or footway_kind == "crossing"
+        or cycleway_kind == "crossing"
+        or crossing_type is not None
+    )
+
+    # Route-critical tags where the source disagreed with itself. Each was
+    # resolved to its least favourable value; recording which ones lets a
+    # surprising cost be explained instead of merely suffered.
+    conflicting = tuple(
+        name
+        for name in ("surface", "smoothness", "incline", "width", "kerb", "foot", "access")
+        if is_conflicted(tags.get(name))
+    )
 
     return EdgeFeatures(
         highway=highway,
@@ -329,12 +533,17 @@ def normalise_edge(tags: dict[str, Any]) -> EdgeFeatures:
         incline_percent=normalise_incline(tags.get("incline")),
         kerb=normalise_kerb(tags),
         sidewalk=first_value(tags.get("sidewalk")),
-        is_crossing=highway == "crossing" or crossing_type is not None,
+        is_crossing=is_crossing,
         crossing_type=crossing_type,
+        tactile_paving=_boolean_tag(tags.get("tactile_paving")),
         lit=_boolean_tag(tags.get("lit")),
         indoor=_boolean_tag(tags.get("indoor")),
         bridge=_boolean_tag(tags.get("bridge")),
         tunnel=_boolean_tag(tags.get("tunnel")),
         width_m=_positive_float(tags.get("width")),
+        conveying=normalise_conveying(tags),
+        conflicting_attributes=conflicting,
+        vehicle_oneway_ignored=vehicle_oneway_is_ignored(tags) is TriState.YES,
+        ambiguous_direction=direction.ambiguous,
         raw_tags={key: value for key, value in tags.items() if value is not None},
     )

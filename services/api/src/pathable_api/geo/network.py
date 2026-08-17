@@ -13,6 +13,7 @@ from typing import Any
 from shapely.geometry import LineString, Point
 
 from pathable_api.geo.checksum import dataset_checksum
+from pathable_api.geo.directionality import TWO_WAY, FootDirection
 from pathable_api.geo.features import EdgeFeatures
 from pathable_api.geo.geometry import geodesic_length_m
 
@@ -40,8 +41,15 @@ class NetworkEdge:
     geometry: LineString
     features: EdgeFeatures
     source_way_id: str | None = None
-    directed: bool = False
+    #: Which directions a person may walk. Two-way by default; a restriction
+    #: only ever comes from a foot-specific tag.
+    direction: FootDirection = TWO_WAY
     length_m: float | None = None
+
+    @property
+    def directed(self) -> bool:
+        """True when the segment is walkable one way only."""
+        return self.direction.is_one_way
 
     @property
     def length(self) -> float:
@@ -65,6 +73,12 @@ class NetworkEdge:
             ("kerb", features.kerb.value),
             ("is_crossing", int(features.is_crossing)),
             ("width_m", features.width_m),
+            # Directionality is part of what the network *is*: a segment that
+            # became one-way is a different network, and the checksum has to
+            # notice.
+            ("foot_forward", int(self.direction.forward)),
+            ("foot_backward", int(self.direction.backward)),
+            ("conveying", features.conveying.value),
         ]
 
 

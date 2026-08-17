@@ -42,6 +42,35 @@ These are not style preferences. They are what makes the product safe to use.
 - The two routing errors are not symmetric: telling someone a blocked path is
   passable is far worse than the reverse. Cost policy should reflect that.
 
+## The gates
+
+Gate A–E are the governing product outcomes. Each is defensible only on real
+data, and none of them is complete because its code exists.
+
+- **Gate A — real geospatial system.** A real regional OSM network, ingested from
+  more than one acquisition path, with **elevation** as a required component and
+  derived grade kept distinguishable from OSM-reported incline.
+- **Gate B — defensible deterministic routing.** Dijkstra is the correctness
+  baseline and **A\* is required** alongside it; the two must be proven to agree
+  on optimal cost. Real route evaluation, real performance measurement and
+  manual geometry inspection are part of the gate, not extras.
+- **Gate C — evidence.** User reports and imagery, gated on a licensing review
+  that must happen before any ingestion.
+- **Gate D — learned prediction.** Requires **geographic hold-out** (never a
+  random split), **calibration**, a **rollback path**, and predictions that
+  actually change an edge's cost — a model that exists but changes no route has
+  not reached this gate.
+- **Gate E — production.** Requires observability, load testing, and recovery
+  that has actually been exercised rather than documented.
+
+**Evidence freshness is first-class.** Every routing-relevant fact carries where
+it came from and when. A two-year-old observation is not a current fact, and a
+route must be able to say so.
+
+**External validation and the recruiter/research artifacts are completion
+requirements**, not optional polish — the work is not finished until somebody
+outside this repository can evaluate it.
+
 ## Implementation approach
 
 - **Bias hard toward working implementation.** A route that computes beats
@@ -81,6 +110,9 @@ Protect behaviour, not coverage percentages.
 - Never fabricate history, contributors, reviews or activity.
 - Never force-push published work without explicit justification.
 - The repository stays private until the founder decides otherwise.
+- **No `Co-Authored-By: Claude` trailers and no "Generated with Claude Code"
+  footers** in commits, PRs or issues unless the founder asks for them. This is
+  the founder's work history, not a promotional surface.
 
 ## Documentation
 
@@ -116,6 +148,6 @@ from a previous commit.
 
 ## Current state
 
-Phase 0 foundation merged and tagged `v0.1.0-foundation`. See
-`docs/product/PHASES.md` for what exists and — more importantly — what
-deliberately does not.
+Phase 0 foundation merged and tagged `v0.1.0-foundation`. Gate A+B work is on
+`feature/p1-usable-routing-mvp`. See `docs/product/PHASES.md` for what exists
+and — more importantly — what deliberately does not.

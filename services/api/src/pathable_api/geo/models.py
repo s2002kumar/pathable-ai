@@ -230,6 +230,12 @@ class GraphNode(TimestampMixin, Base):
     #: Elevation is deliberately absent rather than zero-filled. Inventing it
     #: would make grade look known when nothing has measured it.
     elevation_m: Mapped[float | None] = mapped_column(Float)
+    #: Where the elevation came from, so a derived grade can be traced back to a
+    #: dataset and a resolution rather than appearing as a bare number.
+    elevation_source: Mapped[str | None] = mapped_column(String(64))
+    elevation_dataset: Mapped[str | None] = mapped_column(String(120))
+    elevation_resolution_m: Mapped[float | None] = mapped_column(Float)
+    elevation_acquired_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
     raw_tags: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
@@ -277,7 +283,21 @@ class GraphEdge(TimestampMixin, Base):
         Geometry("LINESTRING", srid=SRID, spatial_index=False), nullable=False
     )
     length_m: Mapped[float] = mapped_column(Float, nullable=False)
-    directed: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    # --- Pedestrian directionality ----------------------------------------
+    # Two booleans rather than one `directed` flag, because "one-way" is not a
+    # property of a segment on its own: it matters *which* way. Both default to
+    # true — a restriction only ever comes from a foot-specific tag, never from
+    # a vehicle `oneway`.
+    foot_forward: Mapped[bool] = mapped_column(nullable=False, default=True)
+    foot_backward: Mapped[bool] = mapped_column(nullable=False, default=True)
+    #: Which tag produced a restriction, for explaining a surprising route.
+    direction_reason: Mapped[str | None] = mapped_column(String(200))
+    #: Direction was stated in a way that could not be read; kept passable.
+    ambiguous_direction: Mapped[bool] = mapped_column(nullable=False, default=False)
+    #: A plain `oneway` existed and was deliberately not applied to foot travel.
+    vehicle_oneway_ignored: Mapped[bool] = mapped_column(nullable=False, default=False)
+    conveying: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
 
     # --- Deterministic normalised attributes ------------------------------
     highway: Mapped[str | None] = mapped_column(String(48))
@@ -306,6 +326,20 @@ class GraphEdge(TimestampMixin, Base):
     sidewalk: Mapped[str | None] = mapped_column(String(32))
     is_crossing: Mapped[bool] = mapped_column(nullable=False, default=False)
     crossing_type: Mapped[str | None] = mapped_column(String(32))
+    tactile_paving: Mapped[TriState] = mapped_column(
+        String(8), nullable=False, default=TriState.UNKNOWN
+    )
+    #: True when the kerb came from an OSM node rather than the crossing way.
+    kerb_from_node: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    #: Grade computed from elevation, signed along `source_u -> source_v`. Kept
+    #: separate from `incline_percent` so a surveyor's assertion and our
+    #: inference from a terrain model never overwrite one another.
+    derived_grade_percent: Mapped[float | None] = mapped_column(Float)
+
+    #: Route-critical tags where the source disagreed with itself, resolved
+    #: conservatively. Recorded so a surprising cost can be explained.
+    conflicting_attributes: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
 
     lit: Mapped[TriState] = mapped_column(String(8), nullable=False, default=TriState.UNKNOWN)
     indoor: Mapped[TriState] = mapped_column(String(8), nullable=False, default=TriState.UNKNOWN)
@@ -335,6 +369,11 @@ class GraphEdge(TimestampMixin, Base):
         _enum_check("surface_class", SurfaceClass, "edge_surface_class"),
         _enum_check("smoothness_class", SmoothnessClass, "edge_smoothness_class"),
         _enum_check("kerb", KerbType, "edge_kerb"),
+        _enum_check("tactile_paving", TriState, "edge_tactile_paving"),
+        CheckConstraint(
+            "foot_forward OR foot_backward",
+            name="edge_walkable_in_some_direction",
+        ),
         Index("ix_graph_edges_geometry", "geometry", postgresql_using="gist"),
         Index("ix_graph_edges_dataset", "dataset_version_id"),
         Index("ix_graph_edges_from_node", "from_node_id"),

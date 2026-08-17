@@ -252,7 +252,7 @@ class TestSyntheticFixture:
         assert by_identity[("B", "E")].features.foot_access is AccessValue.NO
 
     def test_every_node_it_references_exists(self) -> None:
-        referenced = {name for u, v, _, _ in EDGES for name in (u, v)}
+        referenced = {name for u, v, _ in EDGES for name in (u, v)}
         assert referenced <= set(NODES)
 
     def test_bounds_are_reported_over_the_whole_network(self) -> None:

@@ -30,6 +30,7 @@ from shapely.geometry import LineString, Point
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.geo.datasets import IngestionResult, ingest_network
+from pathable_api.geo.directionality import normalise_foot_direction
 from pathable_api.geo.enums import SourceType
 from pathable_api.geo.features import normalise_edge
 from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload
@@ -54,15 +55,15 @@ NODES: Final[dict[str, tuple[float, float]]] = {
     "H": (-80.54100, 43.47000),  # reachable only via a one-way passage
 }
 
-#: (u, v, directed, tags). Tags are written the way OpenStreetMap writes them and
-#: pushed through the real normaliser, so the fixture exercises the same code
-#: path an OSM import does — including the absences.
-EDGES: Final[tuple[tuple[str, str, bool, dict[str, Any]], ...]] = (
+#: (u, v, tags). Tags are written the way OpenStreetMap writes them and pushed
+#: through the real normaliser — including directionality, which is derived from
+#: the tags rather than declared separately, so the fixture exercises exactly the
+#: code path an OSM import does.
+EDGES: Final[tuple[tuple[str, str, dict[str, Any]], ...]] = (
     # --- The direct corridor ---------------------------------------------
     (
         "A",
         "B",
-        False,
         {
             "highway": "footway",
             "surface": "asphalt",
@@ -70,13 +71,15 @@ EDGES: Final[tuple[tuple[str, str, bool, dict[str, Any]], ...]] = (
             "lit": "yes",
             "incline": "0%",
             "width": "2.5",
+            # A vehicle one-way restriction. It must NOT restrict walking, and a
+            # regression test asserts this segment stays traversable both ways.
+            "oneway": "yes",
         },
     ),
     # The barrier the whole product exists to route around.
     (
         "B",
         "C",
-        False,
         {
             "highway": "steps",
             "step_count": "14",
@@ -91,14 +94,12 @@ EDGES: Final[tuple[tuple[str, str, bool, dict[str, Any]], ...]] = (
     (
         "C",
         "D",
-        False,
         {"highway": "footway", "footway": "crossing", "crossing": "unmarked", "surface": "asphalt"},
     ),
     # --- The step-free bypass --------------------------------------------
     (
         "B",
         "F",
-        False,
         {
             "highway": "footway",
             "surface": "concrete",
@@ -111,7 +112,6 @@ EDGES: Final[tuple[tuple[str, str, bool, dict[str, Any]], ...]] = (
     (
         "F",
         "C",
-        False,
         {
             "highway": "footway",
             "surface": "concrete",
@@ -124,7 +124,6 @@ EDGES: Final[tuple[tuple[str, str, bool, dict[str, Any]], ...]] = (
     (
         "C",
         "E",
-        False,
         {
             "highway": "footway",
             "footway": "crossing",
@@ -139,7 +138,6 @@ EDGES: Final[tuple[tuple[str, str, bool, dict[str, Any]], ...]] = (
     (
         "E",
         "D",
-        False,
         {
             "highway": "footway",
             "surface": "asphalt",
@@ -153,30 +151,33 @@ EDGES: Final[tuple[tuple[str, str, bool, dict[str, Any]], ...]] = (
     (
         "A",
         "G",
-        False,
         {"highway": "path", "surface": "gravel", "smoothness": "bad", "incline": "2%"},
     ),
     (
         "G",
         "B",
-        False,
         {"highway": "path", "surface": "gravel", "smoothness": "very_bad", "incline": "12%"},
     ),
     # --- Wholly untagged: every derived attribute must come out unknown ---
-    ("A", "U", False, {}),
-    ("U", "B", False, {}),
-    # --- One-way passage: H is reachable, but you cannot walk back out ----
+    ("A", "U", {}),
+    ("U", "B", {}),
+    # --- A genuinely one-way passage on foot: an escalator ----------------
+    # `oneway:foot`, not `oneway`. H is reachable, but you cannot walk back out.
     (
         "H",
         "A",
-        True,
-        {"highway": "footway", "oneway": "yes", "surface": "paving_stones", "smoothness": "good"},
+        {
+            "highway": "steps",
+            "conveying": "forward",
+            "oneway:foot": "yes",
+            "step_count": "22",
+            "surface": "metal",
+        },
     ),
     # --- Explicitly prohibited: no profile may ever use this --------------
     (
         "B",
         "E",
-        False,
         {"highway": "service", "foot": "no", "access": "private", "surface": "asphalt"},
     ),
 )
@@ -190,7 +191,7 @@ def build_synthetic_network() -> NetworkPayload:
     ]
 
     edges = []
-    for index, (u, v, directed, tags) in enumerate(EDGES):
+    for index, (u, v, tags) in enumerate(EDGES):
         edges.append(
             NetworkEdge(
                 source_u=u,
@@ -199,7 +200,8 @@ def build_synthetic_network() -> NetworkPayload:
                 geometry=LineString([NODES[u], NODES[v]]),
                 features=normalise_edge(tags),
                 source_way_id=f"synthetic-{index:03d}",
-                directed=directed,
+                # Derived from the tags, exactly as a real import derives it.
+                direction=normalise_foot_direction(tags),
             )
         )
 

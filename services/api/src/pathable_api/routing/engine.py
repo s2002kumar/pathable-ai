@@ -26,7 +26,7 @@ from pathable_api.core.logging import get_logger
 from pathable_api.geo.enums import KerbType, SmoothnessClass, SurfaceClass, TriState
 from pathable_api.geo.geometry import geodesic_distance_m
 from pathable_api.routing.cost import BlockReason, CostComponent, EdgeCost, evaluate_edge
-from pathable_api.routing.graph import RoutableEdge, RoutableGraph, SnappedPoint
+from pathable_api.routing.graph import DirectedEdge, RoutableGraph, SnappedPoint
 from pathable_api.routing.profiles import MobilityProfile
 
 logger = get_logger(__name__)
@@ -287,7 +287,7 @@ def _segments_for(
         chosen_cost: EdgeCost | None = None
 
         for key in sorted(parallel):
-            edge: RoutableEdge = parallel[key]["edge"]
+            edge: DirectedEdge = parallel[key]["edge"]
             cost = _edge_cost(edge, profile)
             if not cost.passable:
                 continue
@@ -299,20 +299,14 @@ def _segments_for(
             # dataset-version cache key is designed to prevent.
             raise NoRouteFoundError(profile)
 
-        edge = parallel[chosen_key]["edge"]
-        segments.append(_to_segment(edge, chosen_cost, oriented_from=u, graph=graph))
+        segments.append(_to_segment(parallel[chosen_key]["edge"], chosen_cost))
 
     return segments
 
 
-def _to_segment(
-    edge: RoutableEdge, cost: EdgeCost, *, oriented_from: str, graph: RoutableGraph
-) -> RouteSegment:
-    coordinates = tuple((float(x), float(y)) for x, y, *_ in edge.geometry.coords)
-    # Stored geometry runs source_u → source_v; a route may traverse it either way.
-    if edge.source_u != oriented_from:
-        coordinates = tuple(reversed(coordinates))
-
+def _to_segment(edge: DirectedEdge, cost: EdgeCost) -> RouteSegment:
+    # Geometry and features both already point along travel.
+    coordinates = edge.coordinates()
     features = edge.features
     return RouteSegment(
         edge_identity=edge.identity,
@@ -380,10 +374,15 @@ class _EvaluationBudget:
             raise SearchLimitExceededError(msg)
 
 
-def _edge_cost(edge: RoutableEdge, profile: MobilityProfile) -> EdgeCost:
+def _edge_cost(edge: DirectedEdge, profile: MobilityProfile) -> EdgeCost:
+    """Cost this segment *in the direction of travel*.
+
+    `edge.features` is already oriented, which is what makes an uphill climb
+    cost more than the same slope going down.
+    """
     return evaluate_edge(edge.features, edge.length_m, profile)
 
 
-def blocked_reason_for(edge: RoutableEdge, profile: MobilityProfile) -> BlockReason | None:
+def blocked_reason_for(edge: DirectedEdge, profile: MobilityProfile) -> BlockReason | None:
     """Why this profile cannot use a segment, if it cannot. Used by diagnostics."""
     return _edge_cost(edge, profile).blocked_reason

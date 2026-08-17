@@ -27,12 +27,14 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import osmnx as ox
-from networkx import MultiDiGraph, MultiGraph
+from networkx import MultiDiGraph
 from shapely.geometry import LineString, Point
 
 from pathable_api.core.logging import get_logger
+from pathable_api.geo.directionality import normalise_foot_direction
 from pathable_api.geo.features import normalise_edge
 from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload
+from pathable_api.geo.node_evidence import apply_to_crossing, read_node_evidence
 
 logger = get_logger(__name__)
 
@@ -193,6 +195,48 @@ def configure_osmnx(cache_dir: Path | None = None, *, overpass_url: str | None =
         ox.settings.cache_folder = str(cache_dir)
 
 
+#: Node tags that make a junction worth keeping through simplification.
+#: A kerb node collapsed into the middle of a merged way stops being attributable
+#: to the crossing it belongs to, which is the whole point of reading it.
+ACCESSIBILITY_NODE_ATTRS: tuple[str, ...] = (
+    "barrier",
+    "kerb",
+    "crossing",
+    "highway",
+    "tactile_paving",
+    "wheelchair",
+)
+
+#: Way attributes that make two adjacent segments genuinely different for
+#: somebody deciding whether they can get through. Simplification must not merge
+#: across a change in any of these: a 200 m "footway" that is asphalt for 150 m
+#: and gravel for 50 m is not a footway you can describe with one surface.
+ACCESSIBILITY_EDGE_ATTRS: tuple[str, ...] = (
+    "highway",
+    "surface",
+    "smoothness",
+    "incline",
+    "width",
+    "kerb",
+    "crossing",
+    "footway",
+    "tactile_paving",
+    "wheelchair",
+    "foot",
+    "access",
+    "step_count",
+    "ramp",
+    "handrail",
+    "conveying",
+    "oneway:foot",
+    "foot:forward",
+    "foot:backward",
+    "indoor",
+    "tunnel",
+    "bridge",
+)
+
+
 def download_walk_network(
     bounds: tuple[float, float, float, float],
     *,
@@ -204,73 +248,151 @@ def download_walk_network(
 
     ``network_type="walk"`` is what makes this a pedestrian network rather than a
     road network: OSMnx excludes motorways and includes footpaths, steps and
-    crossings, and treats every way as bidirectional because pedestrian travel
-    ignores vehicle one-way restrictions.
+    crossings.
+
+    Simplification is done here rather than left to OSMnx's default because the
+    default merges any chain of degree-2 nodes regardless of what changes along
+    it. That is right for vehicle routing and wrong for this product: it erases
+    exactly the transitions — surface changing, a kerb node, a crossing — that
+    decide whether a journey is possible.
     """
     configure_osmnx(cache_dir, overpass_url=overpass_url)
     logger.info("Requesting OSM walk network", extra={"bounds": list(bounds)})
     graph: MultiDiGraph[int] = ox.graph.graph_from_bbox(
         bbox=bounds,
         network_type="walk",
-        simplify=simplify,
+        # Always fetched unsimplified; we simplify below with accessibility rules.
+        simplify=False,
         # Keep every component. Discarding the smaller ones would silently delete
         # real footpaths that happen not to connect to the largest island, and
         # "no route found" is a more honest answer than a route that ignores them.
         retain_all=True,
         truncate_by_edge=True,
     )
+    if simplify:
+        graph = simplify_preserving_accessibility(graph)
     return graph
+
+
+def simplify_preserving_accessibility(graph: MultiDiGraph[int]) -> MultiDiGraph[int]:
+    """Collapse interstitial geometry without erasing accessibility transitions.
+
+    Two guards, and they do different jobs:
+
+    * ``node_attrs_include`` keeps a node as a real junction when it carries
+      accessibility evidence, so a kerb stays attached to the crossing it is on.
+    * ``edge_attrs_differ`` refuses to merge two segments whose accessibility
+      attributes differ, so a surface change stays a boundary rather than
+      becoming a list of two surfaces on one edge.
+    """
+    before_nodes = graph.number_of_nodes()
+    simplified: MultiDiGraph[int] = ox.simplification.simplify_graph(
+        graph,
+        node_attrs_include=ACCESSIBILITY_NODE_ATTRS,
+        edge_attrs_differ=ACCESSIBILITY_EDGE_ATTRS,
+    )
+    logger.info(
+        "Simplified while preserving accessibility transitions",
+        extra={
+            "nodes_before": before_nodes,
+            "nodes_after": simplified.number_of_nodes(),
+            "edges_after": simplified.number_of_edges(),
+        },
+    )
+    return simplified
 
 
 def graph_to_payload(graph: MultiDiGraph[int]) -> NetworkPayload:
     """Convert an OSMnx graph into PathAble's source-neutral network payload.
 
-    The graph is collapsed to undirected first. OSMnx models a two-way footway as
-    two directed edges; keeping both would double the edge count and make the
-    dataset checksum depend on OSMnx's internal direction bookkeeping rather than
-    on the network itself.
-    """
-    undirected: MultiGraph[int] = ox.convert.to_undirected(graph)
+    One **physical segment** per source way, carrying which directions a person
+    may walk along it — not an undirected collapse.
 
-    nodes: list[NetworkNode] = []
-    for node_id, data in undirected.nodes(data=True):
-        nodes.append(
-            NetworkNode(
-                source_node_id=str(node_id),
-                geometry=Point(float(data["x"]), float(data["y"])),
-                raw_tags=_clean_tags(data, drop={"x", "y", "street_count"}),
-            )
+    Collapsing would be simpler and would destroy two things. It throws away the
+    only evidence that an escalator runs one way, and it makes the stored
+    ``incline`` sign meaningless: the sign is relative to the way's node order,
+    so it survives only if that order does.
+    """
+    node_evidence = {
+        str(node_id): evidence
+        for node_id, data in graph.nodes(data=True)
+        if (evidence := read_node_evidence(_clean_tags(data, drop={"x", "y"}))).is_informative
+    }
+
+    nodes = [
+        NetworkNode(
+            source_node_id=str(node_id),
+            geometry=Point(float(data["x"]), float(data["y"])),
+            raw_tags=_clean_tags(data, drop={"x", "y", "street_count"}),
         )
+        for node_id, data in graph.nodes(data=True)
+    ]
 
     edges: list[NetworkEdge] = []
-    for u, v, key, data in undirected.edges(keys=True, data=True):
+    seen: set[tuple[str, str, int]] = set()
+
+    for u, v, key, data in graph.edges(keys=True, data=True):
+        # OSMnx emits both directions of a two-way way, the second flagged
+        # `reversed`. Taking it as a separate segment would double the network
+        # and flip the incline sign on half of it.
+        if _is_reverse_copy(data) and _has_forward_twin(graph, u, v):
+            continue
+
+        identity = (str(u), str(v), int(key))
+        if identity in seen:
+            continue
+        seen.add(identity)
+
         geometry = data.get("geometry")
         if not isinstance(geometry, LineString):
             # Unsimplified straight segments carry no geometry of their own.
             geometry = LineString(
                 [
-                    (undirected.nodes[u]["x"], undirected.nodes[u]["y"]),
-                    (undirected.nodes[v]["x"], undirected.nodes[v]["y"]),
+                    (graph.nodes[u]["x"], graph.nodes[u]["y"]),
+                    (graph.nodes[v]["x"], graph.nodes[v]["y"]),
                 ]
             )
 
-        tags = _clean_tags(data, drop={"geometry", "length", "osmid", "reversed", "oneway"})
+        # `oneway` stays in the tag set now: it is read, deliberately not applied
+        # to foot travel, and reported so a route can say the restriction existed.
+        tags = _clean_tags(data, drop={"geometry", "length", "osmid", "reversed"})
+        features = apply_to_crossing(
+            normalise_edge(tags),
+            node_evidence.get(str(u)),
+            node_evidence.get(str(v)),
+        )
+
         edges.append(
             NetworkEdge(
                 source_u=str(u),
                 source_v=str(v),
                 edge_key=int(key),
                 geometry=geometry,
-                features=normalise_edge(tags),
+                features=features,
                 source_way_id=_first_osmid(data.get("osmid")),
-                # OSMnx's walk network is bidirectional by construction: vehicle
-                # one-way restrictions do not apply to people on foot.
-                directed=False,
+                direction=normalise_foot_direction(tags),
                 length_m=_positive_length(data.get("length")),
             )
         )
 
     return NetworkPayload(nodes=nodes, edges=edges)
+
+
+def _is_reverse_copy(data: dict[str, Any]) -> bool:
+    """True when OSMnx generated this edge as the reverse of a source way."""
+    flag = data.get("reversed")
+    if isinstance(flag, list):
+        # A merged edge whose members disagree. Treat it as forward and let the
+        # duplicate guard decide, rather than dropping a real connection.
+        return bool(flag) and all(bool(item) for item in flag)
+    return bool(flag)
+
+
+def _has_forward_twin(graph: MultiDiGraph[int], u: int, v: int) -> bool:
+    """Whether the same pair also appears in its original direction."""
+    if not graph.has_edge(v, u):
+        return False
+    return any(not _is_reverse_copy(data) for data in graph[v][u].values())
 
 
 def import_walk_network(
