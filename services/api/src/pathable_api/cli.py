@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import datetime as dt
+import json
 import sys
 import time
 import uuid
@@ -23,6 +24,7 @@ from pathable_api.core.config import ConfigurationError, get_settings
 from pathable_api.core.event_loop import selector_loop_factory
 from pathable_api.core.logging import configure_logging, get_logger
 from pathable_api.db.session import Database, build_database
+from pathable_api.geo.coverage import build_coverage_report, render
 from pathable_api.geo.datasets import (
     DatasetLifecycleError,
     DatasetValidationError,
@@ -40,8 +42,10 @@ from pathable_api.geo.osm import OverpassUnreachableError, import_walk_network
 from pathable_api.geo.pbf import import_from_pbf
 from pathable_api.geo.regions import PILOT_REGIONS, region_definition, seed_pilot_regions
 from pathable_api.routing.benchmark import build_measurement_grid, measure
+from pathable_api.routing.evaluation import as_records, compare_algorithms, evaluate
 from pathable_api.routing.graph import GraphRepository, graph_from_payload
 from pathable_api.routing.profiles import get_profile
+from pathable_api.routing.waterloo_cases import WATERLOO_CASES
 
 logger = get_logger(__name__)
 
@@ -179,6 +183,31 @@ def build_parser() -> argparse.ArgumentParser:
     )
     apply_command.add_argument("--batch-size", type=int, default=2000)
 
+    evaluate_command = subcommands.add_parser(
+        "evaluate", help="Route a fixed corpus of real journeys and report every outcome."
+    )
+    evaluate_command.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    evaluate_command.add_argument(
+        "--profile", default="wheelchair", help="Profile to compare against the standard one."
+    )
+    evaluate_command.add_argument("--json", default=None, help="Write the full results here.")
+    evaluate_command.add_argument(
+        "--algorithms",
+        action="store_true",
+        help="Also time Dijkstra against A* on every case.",
+    )
+
+    coverage = subcommands.add_parser(
+        "coverage", help="Report what the map records about a region, category by category."
+    )
+    coverage.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    coverage.add_argument("--dataset", default=None, help="Defaults to the active dataset.")
+    coverage.add_argument("--json", default=None, help="Also write the report to this path.")
+
     datasets = subcommands.add_parser("datasets", help="Inspect dataset versions.")
     dataset_actions = datasets.add_subparsers(dest="dataset_command", required=True)
     listing = dataset_actions.add_parser("list", help="List dataset versions, newest first.")
@@ -229,6 +258,10 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _ingest_synthetic(database, args)
             case "elevation":
                 return await _apply_elevation(database, args)
+            case "coverage":
+                return await _coverage(database, args)
+            case "evaluate":
+                return await _evaluate(database, args)
             case "benchmark":
                 return await _benchmark(database, args)
             case _:
@@ -418,6 +451,90 @@ async def _apply_elevation(database: Database, args: argparse.Namespace) -> int:
         print(line)
     if provider.attribution:
         print(f"  attribution {provider.attribution}")
+    return EXIT_OK
+
+
+async def _evaluate(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    baseline = get_profile("standard")
+    try:
+        subject = get_profile(args.profile)
+    except KeyError:
+        print(f"error: unknown profile {args.profile!r}.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+
+    repository = GraphRepository()
+    async with database.session() as session:
+        graph = await repository.active_graph(session, definition.slug)
+
+    print(
+        f"{definition.display_name}: {graph.node_count} nodes, "
+        f"{graph.segment_count} segments (loaded in {graph.load_seconds:.2f}s)"
+    )
+    print(f"Routing {len(WATERLOO_CASES)} cases: standard vs {subject.display_name}\n")
+
+    comparisons = evaluate(graph, cases=WATERLOO_CASES, baseline=baseline, subject=subject)
+    changed = sum(1 for entry in comparisons if entry.route_changed)
+    unroutable = sum(1 for entry in comparisons if not entry.subject.routed)
+
+    for entry in comparisons:
+        marker = "changed" if entry.route_changed else "same   "
+        detour = "" if entry.detour_m is None else f"{entry.detour_m:+8.1f} m"
+        print(f"  [{marker}] {entry.case:<32} {detour:>12}  {entry.reason()}")
+
+    print(
+        f"\n{changed}/{len(comparisons)} routes changed; "
+        f"{unroutable}/{len(comparisons)} had no route for {subject.display_name}."
+    )
+
+    payload: dict[str, object] = {
+        "region": definition.slug,
+        "dataset_checksum": graph.checksum,
+        "baseline_profile": baseline.key,
+        "subject_profile": subject.key,
+        "cases": as_records(comparisons),
+    }
+
+    if args.algorithms:
+        print("\nDijkstra vs A* (median of 3 runs each):")
+        timings = compare_algorithms(graph, cases=WATERLOO_CASES, profile=subject)
+        for timing in timings:
+            agreement = "same cost" if timing.costs_agree else "DIFFERENT COST"
+            print(
+                f"  {timing.case:<32} dijkstra {timing.dijkstra_ms:7.2f} ms "
+                f"({timing.dijkstra_expanded:>6} expanded)  "
+                f"astar {timing.astar_ms:7.2f} ms ({timing.astar_expanded:>6} expanded)  "
+                f"{agreement}"
+            )
+        payload["algorithms"] = [vars(timing) for timing in timings]
+
+    if args.json:
+        Path(args.json).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        print(f"\nWrote {args.json}")
+    return EXIT_OK
+
+
+async def _coverage(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    async with database.session() as session:
+        region = await require_region(session, definition.slug)
+        if args.dataset:
+            dataset = await session.get(DatasetVersion, uuid.UUID(args.dataset))
+        else:
+            dataset = await get_active_dataset(session, region.id)
+        if dataset is None:
+            print(f"error: no dataset found for {definition.slug}.", file=sys.stderr)
+            return EXIT_FAILED
+
+        report = await build_coverage_report(
+            session, dataset=dataset, region=definition.display_name
+        )
+
+    for line in render(report):
+        print(line)
+    if args.json:
+        Path(args.json).write_text(json.dumps(report.as_dict(), indent=2), encoding="utf-8")
+        print(f"\nWrote {args.json}")
     return EXIT_OK
 
 
