@@ -70,6 +70,7 @@ class NetworkEdge:
             ("surface_class", features.surface_class.value),
             ("smoothness_class", features.smoothness_class.value),
             ("incline_percent", features.incline_percent),
+            ("incline_direction", features.incline_direction.value),
             ("kerb", features.kerb.value),
             ("is_crossing", int(features.is_crossing)),
             ("width_m", features.width_m),

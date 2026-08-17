@@ -33,6 +33,7 @@ from pathable_api.db.base import Base
 from pathable_api.geo.enums import (
     AccessValue,
     DatasetStatus,
+    InclineDirection,
     IngestionStatus,
     KerbType,
     SmoothnessClass,
@@ -321,6 +322,12 @@ class GraphEdge(TimestampMixin, Base):
     )
 
     incline_percent: Mapped[float | None] = mapped_column(Float)
+    #: Direction of a slope the source described without a number. About 85% of
+    #: OSM's incline tagging is `up`/`down`, so dropping it for want of a
+    #: magnitude discarded most of the mapped slope in the network.
+    incline_direction: Mapped[InclineDirection] = mapped_column(
+        String(8), nullable=False, default=InclineDirection.UNKNOWN
+    )
     kerb: Mapped[KerbType] = mapped_column(String(16), nullable=False, default=KerbType.UNKNOWN)
 
     sidewalk: Mapped[str | None] = mapped_column(String(32))

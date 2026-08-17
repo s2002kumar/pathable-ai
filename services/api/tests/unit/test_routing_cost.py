@@ -393,10 +393,12 @@ class TestFeatureClassesUsedByTheModel:
 
     def test_kerb_types_are_stable(self) -> None:
         assert {member.value for member in KerbType} == {
-            "lowered",
-            "flush",
-            "raised",
             "none",
+            "flush",
+            "lowered",
+            "rolled",
+            "present_unknown",
+            "raised",
             "unknown",
         }
 

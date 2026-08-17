@@ -190,7 +190,12 @@ WHEELCHAIR = MobilityProfile(
     incline_penalty_per_percent=0.55,
     comfortable_incline_percent=2.0,
     uncertainty_penalty_per_attribute=0.30,
-    kerb_penalty_m={KerbType.RAISED: 400.0, KerbType.UNKNOWN: 90.0},
+    kerb_penalty_m={
+        KerbType.RAISED: 400.0,
+        KerbType.PRESENT_UNKNOWN: 160.0,
+        KerbType.ROLLED: 300.0,
+        KerbType.UNKNOWN: 90.0,
+    },
     crossing_penalty_m=25.0,
 )
 
@@ -217,7 +222,12 @@ WALKER = MobilityProfile(
     incline_penalty_per_percent=0.45,
     comfortable_incline_percent=2.5,
     uncertainty_penalty_per_attribute=0.25,
-    kerb_penalty_m={KerbType.RAISED: 200.0, KerbType.UNKNOWN: 60.0},
+    kerb_penalty_m={
+        KerbType.RAISED: 200.0,
+        KerbType.PRESENT_UNKNOWN: 100.0,
+        KerbType.ROLLED: 140.0,
+        KerbType.UNKNOWN: 60.0,
+    },
     crossing_penalty_m=20.0,
 )
 
@@ -245,7 +255,12 @@ CRUTCHES = MobilityProfile(
     # on a needless detour — but each step is real effort.
     step_penalty_m=60.0,
     per_step_penalty_m=12.0,
-    kerb_penalty_m={KerbType.RAISED: 40.0, KerbType.UNKNOWN: 20.0},
+    kerb_penalty_m={
+        KerbType.RAISED: 40.0,
+        KerbType.PRESENT_UNKNOWN: 28.0,
+        KerbType.ROLLED: 25.0,
+        KerbType.UNKNOWN: 20.0,
+    },
     crossing_penalty_m=15.0,
 )
 
@@ -269,7 +284,12 @@ STROLLER = MobilityProfile(
     incline_penalty_per_percent=0.3,
     comfortable_incline_percent=4.0,
     uncertainty_penalty_per_attribute=0.15,
-    kerb_penalty_m={KerbType.RAISED: 120.0, KerbType.UNKNOWN: 40.0},
+    kerb_penalty_m={
+        KerbType.RAISED: 120.0,
+        KerbType.PRESENT_UNKNOWN: 65.0,
+        KerbType.ROLLED: 90.0,
+        KerbType.UNKNOWN: 40.0,
+    },
     crossing_penalty_m=15.0,
 )
 
@@ -288,7 +308,12 @@ REDUCED_MOBILITY = MobilityProfile(
     uncertainty_penalty_per_attribute=0.12,
     step_penalty_m=40.0,
     per_step_penalty_m=6.0,
-    kerb_penalty_m={KerbType.RAISED: 30.0, KerbType.UNKNOWN: 12.0},
+    kerb_penalty_m={
+        KerbType.RAISED: 30.0,
+        KerbType.PRESENT_UNKNOWN: 20.0,
+        KerbType.ROLLED: 18.0,
+        KerbType.UNKNOWN: 12.0,
+    },
     crossing_penalty_m=10.0,
 )
 

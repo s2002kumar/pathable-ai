@@ -24,27 +24,38 @@ from typing import Any
 from pathable_api.geo.enums import KerbType, TriState
 from pathable_api.geo.features import EdgeFeatures, first_value, worst_of
 
-#: Node kerb values, best-to-worst, for conservative resolution.
-NODE_KERB_RANKING: tuple[str, ...] = ("flush", "lowered", "rolled", "no", "raised")
+#: How bad each kerb kind is for a wheeled user. Used to pick the worse of two
+#: endpoints: a crossing dropped at one end and raised at the other is not a
+#: dropped-kerb crossing.
+#:
+#: `PRESENT_UNKNOWN` sits above `ROLLED` deliberately: "there is a kerb here of
+#: unrecorded height" could be a 15 cm step, so it must not be cheaper than a
+#: known-traversable one, and it must be worse than the `UNKNOWN` of a node that
+#: says nothing at all.
+_KERB_SEVERITY: dict[KerbType, int] = {
+    KerbType.NONE: 0,
+    KerbType.FLUSH: 1,
+    KerbType.LOWERED: 2,
+    KerbType.UNKNOWN: 3,
+    KerbType.ROLLED: 4,
+    KerbType.PRESENT_UNKNOWN: 5,
+    KerbType.RAISED: 6,
+}
 
 _NODE_KERB_VALUES: dict[str, KerbType] = {
     "flush": KerbType.FLUSH,
     "lowered": KerbType.LOWERED,
-    "rolled": KerbType.LOWERED,
+    "rolled": KerbType.ROLLED,
     "raised": KerbType.RAISED,
     "no": KerbType.NONE,
+    "yes": KerbType.PRESENT_UNKNOWN,
 }
 
-#: How bad each kerb kind is for a wheeled user. Used to pick the worse of two
-#: endpoints: a crossing dropped at one end and raised at the other is not a
-#: dropped-kerb crossing.
-_KERB_SEVERITY: dict[KerbType, int] = {
-    KerbType.FLUSH: 0,
-    KerbType.LOWERED: 1,
-    KerbType.NONE: 2,
-    KerbType.UNKNOWN: 3,
-    KerbType.RAISED: 4,
-}
+#: Node kerb values, best-to-worst, derived from the severity table above so the
+#: two orderings cannot drift apart.
+NODE_KERB_RANKING: tuple[str, ...] = tuple(
+    sorted(_NODE_KERB_VALUES, key=lambda value: _KERB_SEVERITY[_NODE_KERB_VALUES[value]])
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +88,12 @@ def read_node_evidence(tags: dict[str, Any]) -> NodeEvidence:
     kerb = KerbType.UNKNOWN
     if kerb_value is not None:
         kerb = _NODE_KERB_VALUES.get(kerb_value, KerbType.UNKNOWN)
+    elif barrier == "kerb":
+        # `barrier=kerb` asserts a kerb exists; `kerb=*` is what states its
+        # height. Calling this RAISED would invent a barrier and calling it
+        # FLUSH would invent a ramp — but calling it UNKNOWN threw away the one
+        # thing the mapper did tell us, which is that something is there.
+        kerb = KerbType.PRESENT_UNKNOWN
 
     return NodeEvidence(
         kerb=kerb,

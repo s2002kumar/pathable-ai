@@ -31,6 +31,7 @@ from pathable_api.geo.datasets import get_active_dataset
 from pathable_api.geo.directionality import Conveying
 from pathable_api.geo.enums import (
     AccessValue,
+    InclineDirection,
     KerbType,
     SmoothnessClass,
     SurfaceClass,
@@ -371,6 +372,7 @@ def _to_routable_edge(row: GraphEdge, geometry_wkt: str) -> RoutableEdge:
             smoothness=row.smoothness,
             smoothness_class=SmoothnessClass(row.smoothness_class),
             incline_percent=row.incline_percent,
+            incline_direction=InclineDirection(row.incline_direction),
             kerb=KerbType(row.kerb),
             sidewalk=row.sidewalk,
             is_crossing=row.is_crossing,

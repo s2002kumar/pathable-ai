@@ -105,6 +105,13 @@ def _value(raw: Any) -> str | None:
     return text or None
 
 
+#: The only `highway` values where a bare `oneway` binds pedestrians. Key:oneway
+#: states the carve-out explicitly, and GraphHopper's foot parser implements the
+#: same one. Everywhere else `oneway` is about vehicles and must not restrict
+#: walking — that is the rule this exception exists against.
+_FOOT_BINDING_ONEWAY: frozenset[str] = frozenset({"steps", "via_ferrata"})
+
+
 def normalise_conveying(tags: dict[str, Any]) -> Conveying:
     """Read ``conveying`` — an escalator physically runs one way."""
     value = _value(tags.get("conveying"))
@@ -135,20 +142,21 @@ def normalise_foot_direction(tags: dict[str, Any]) -> FootDirection:
     reasons: list[str] = []
     ambiguous = False
 
-    # --- conveying: a physical constraint, not a legal one -----------------
-    conveying = normalise_conveying(tags)
-    if conveying is Conveying.FORWARD:
-        backward = False
-        reasons.append("conveying=forward")
-    elif conveying is Conveying.BACKWARD:
-        forward = False
-        reasons.append("conveying=backward")
-    elif conveying is Conveying.UNKNOWN_DIRECTION:
-        # Something moves here and we do not know which way. Refusing both
-        # directions would delete a real connection; refusing neither is the
-        # permissive default, and the ambiguity is recorded.
-        ambiguous = True
-        reasons.append("conveying without a direction")
+    # --- bare `oneway`, on the few ways where it does bind pedestrians -----
+    # Key:oneway carves these out explicitly: "On highway=steps and
+    # highway=via_ferrata, the tag oneway=* can safely be interpreted as applying
+    # to pedestrians." Ignoring it here routed people the wrong way up a one-way
+    # staircase — counterflow on stairs, which is precisely the wrong direction
+    # of error for this product.
+    highway = _value(tags.get("highway"))
+    if highway in _FOOT_BINDING_ONEWAY:
+        oneway = _value(tags.get("oneway"))
+        if oneway in _REVERSED:
+            forward, backward = False, True
+            reasons.append(f"oneway=-1 on {highway}")
+        elif oneway is not None and oneway in _ALLOW:
+            forward, backward = True, False
+            reasons.append(f"oneway=yes on {highway}")
 
     # --- oneway:foot -------------------------------------------------------
     oneway_foot = _value(tags.get("oneway:foot"))
@@ -186,6 +194,27 @@ def normalise_foot_direction(tags: dict[str, Any]) -> FootDirection:
         else:
             ambiguous = True
             reasons.append(f"unreadable {tag}={value!r}")
+
+    # --- conveying: a physical constraint, not a legal one -----------------
+    # Applied after the access tags, because a moving walkway carries you one way
+    # whatever the access tags permit. The one exception is an explicit
+    # `oneway:foot=no`, which OSRM also lets override conveying — somebody has
+    # looked and stated it is usable both ways.
+    conveying = normalise_conveying(tags)
+    conveying_overridden = _value(tags.get("oneway:foot")) in _DENY
+    if not conveying_overridden:
+        if conveying is Conveying.FORWARD:
+            backward = False
+            reasons.append("conveying=forward")
+        elif conveying is Conveying.BACKWARD:
+            forward = False
+            reasons.append("conveying=backward")
+    if conveying is Conveying.UNKNOWN_DIRECTION:
+        # Something moves here and we do not know which way. Refusing both
+        # directions would delete a real connection; refusing neither is the
+        # permissive default, and the ambiguity is recorded.
+        ambiguous = True
+        reasons.append("conveying without a direction")
 
     # A segment nobody may walk either way is almost always a tagging mistake
     # rather than a wall. Keep it passable and flag it: access tags and the cost

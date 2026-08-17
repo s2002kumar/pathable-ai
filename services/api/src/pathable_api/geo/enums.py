@@ -86,15 +86,51 @@ class SmoothnessClass(StrEnum):
 class KerbType(StrEnum):
     """Kerb (curb) treatment where a path meets a road.
 
-    ``RAISED`` is the barrier case for wheeled mobility; ``LOWERED`` and ``FLUSH``
-    are the good cases; ``UNKNOWN`` is by far the most common in practice.
+    Ordered best to worst for a wheeled user: ``NONE`` (the mapper states there
+    is no kerb at all) is the best case, then ``FLUSH``, then ``LOWERED``.
+
+    ``ROLLED`` is its own tier rather than a kind of lowered kerb. The OSM wiki
+    is explicit that a rolled kerb is "traversable by large wheeled vehicles,
+    such as cars and bicycles, but not wheelchairs" — folding it into ``LOWERED``
+    priced a wheelchair barrier at zero.
+
+    ``PRESENT_UNKNOWN`` is "a kerb is definitely here, nobody recorded its
+    height" — a `barrier=kerb` node or `kerb=yes`. That is strictly stronger
+    evidence than ``UNKNOWN``, which means nothing was mapped at all, and the two
+    should not cost the same.
     """
 
-    LOWERED = "lowered"
-    FLUSH = "flush"
-    RAISED = "raised"
     NONE = "none"
+    FLUSH = "flush"
+    LOWERED = "lowered"
+    ROLLED = "rolled"
+    PRESENT_UNKNOWN = "present_unknown"
+    RAISED = "raised"
     UNKNOWN = "unknown"
+
+
+class InclineDirection(StrEnum):
+    """Which way a slope runs, when the source gave direction but no magnitude.
+
+    `incline=up` and `incline=down` are about 85% of all incline tagging in
+    OpenStreetMap. Discarding them because they carry no percentage throws away
+    five of every six mapped slopes — and direction alone is the actionable fact
+    for a wheelchair user, who needs to know whether the ramp ahead climbs.
+
+    The sign convention is OSM's own: ``UP`` means rising in the direction of the
+    way, so reversing traversal swaps it, exactly as a numeric incline negates.
+    """
+
+    UP = "up"
+    DOWN = "down"
+    UNKNOWN = "unknown"
+
+    def reversed(self) -> InclineDirection:
+        if self is InclineDirection.UP:
+            return InclineDirection.DOWN
+        if self is InclineDirection.DOWN:
+            return InclineDirection.UP
+        return self
 
 
 class DatasetStatus(StrEnum):

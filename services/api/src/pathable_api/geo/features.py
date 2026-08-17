@@ -12,6 +12,7 @@ documented at :func:`normalise_steps`.
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
@@ -25,6 +26,7 @@ from pathable_api.geo.directionality import (
 )
 from pathable_api.geo.enums import (
     AccessValue,
+    InclineDirection,
     KerbType,
     SmoothnessClass,
     SurfaceClass,
@@ -91,8 +93,11 @@ _KERB_VALUES = {
     "lowered": KerbType.LOWERED,
     "flush": KerbType.FLUSH,
     "raised": KerbType.RAISED,
-    "rolled": KerbType.LOWERED,
+    "rolled": KerbType.ROLLED,
     "no": KerbType.NONE,
+    # "Some sort of kerb is present, but it can't or hasn't yet been determined
+    # whether it is raised, lowered, flush, etc." — Key:kerb.
+    "yes": KerbType.PRESENT_UNKNOWN,
 }
 
 #: `highway` values that are genuine walkable ways. Used by normalise_steps to
@@ -165,9 +170,18 @@ _SMOOTHNESS_RANKING: tuple[str, ...] = (
 )
 
 #: Kerb values ordered best-to-worst for a wheeled user.
-_KERB_RANKING: tuple[str, ...] = ("flush", "lowered", "rolled", "no", "raised")
+#: Kerb values best-to-worst, so a merged segment resolves to the worse one.
+#: `no` leads because "no kerb is present" is the best possible case — it was
+#: previously ranked below `lowered`, which made an explicit "there is no kerb
+#: here" lose to a kerb.
+_KERB_RANKING: tuple[str, ...] = ("no", "flush", "lowered", "rolled", "yes", "raised")
 
-_INCLINE_PATTERN = re.compile(r"^(?P<sign>[-+]?)(?P<value>\d+(?:\.\d+)?)\s*%$")
+#: A percentage, with the `%` optional: `incline=10` is used ~5,000 times and
+#: means the same thing.
+_INCLINE_PATTERN = re.compile(r"^(?P<sign>[-+]?)(?P<value>\d+(?:\.\d+)?)\s*%?$")
+
+#: Degrees, which the wiki documents alongside percent: gradient = tan(angle).
+_INCLINE_DEGREES = re.compile(r"^(?P<sign>[-+]?)(?P<value>\d+(?:\.\d+)?)\s*(?:°|deg)$")
 _INCLINE_RATIO = re.compile(
     r"^(?P<sign>[-+]?)(?P<rise>\d+(?:\.\d+)?)\s*/\s*(?P<run>\d+(?:\.\d+)?)$"
 )
@@ -313,16 +327,42 @@ def normalise_smoothness(raw: Any) -> tuple[str | None, SmoothnessClass]:
     return value, _SMOOTHNESS_CLASSES.get(value, SmoothnessClass.UNKNOWN)
 
 
+def normalise_incline_direction(raw: Any) -> InclineDirection:
+    """Read the direction of a slope, which most incline tags give and no more.
+
+    ``up``/``down`` are ~85% of incline tagging. They are kept as direction and
+    never converted to a number — see :func:`normalise_incline`.
+    """
+    value = first_value(raw)
+    if value is None:
+        return InclineDirection.UNKNOWN
+    if value == "up":
+        return InclineDirection.UP
+    if value == "down":
+        return InclineDirection.DOWN
+
+    percent = normalise_incline(raw)
+    if percent is None or percent == 0:
+        return InclineDirection.UNKNOWN
+    return InclineDirection.UP if percent > 0 else InclineDirection.DOWN
+
+
 def normalise_incline(raw: Any) -> float | None:
     """Parse an incline tag into a signed percentage.
 
-    ``up``/``down`` carry direction but no magnitude, so they yield ``None``:
-    a direction without a gradient cannot be costed, and guessing a number would
-    manufacture precision the source never provided.
+    ``up``/``down`` carry direction but no magnitude, so they yield ``None``
+    here: guessing a number would manufacture precision the source never
+    provided. The direction they do carry is not lost — it is read by
+    :func:`normalise_incline_direction` into a separate field.
     """
     value = first_value(raw)
     if value is None:
         return None
+
+    degrees = _INCLINE_DEGREES.match(value)
+    if degrees:
+        magnitude = math.tan(math.radians(float(degrees.group("value")))) * 100.0
+        return -magnitude if degrees.group("sign") == "-" else magnitude
 
     match = _INCLINE_PATTERN.match(value)
     if match:
@@ -385,6 +425,10 @@ class EdgeFeatures:
     smoothness: str | None = None
     smoothness_class: SmoothnessClass = SmoothnessClass.UNKNOWN
     incline_percent: float | None = None
+    #: Direction of a slope the source described without a number (`incline=up`).
+    #: Carried separately because it is real evidence — most of OSM's incline
+    #: tagging is exactly this — but must never be turned into a percentage.
+    incline_direction: InclineDirection = InclineDirection.UNKNOWN
     kerb: KerbType = KerbType.UNKNOWN
     sidewalk: str | None = None
     is_crossing: bool = False
@@ -428,6 +472,7 @@ class EdgeFeatures:
         return replace(
             self,
             incline_percent=(None if self.incline_percent is None else -self.incline_percent),
+            incline_direction=self.incline_direction.reversed(),
             derived_grade_percent=(
                 None if self.derived_grade_percent is None else -self.derived_grade_percent
             ),
@@ -504,11 +549,15 @@ def normalise_edge(tags: dict[str, Any]) -> EdgeFeatures:
     # meant every kerb mapped on a crossing node had nothing to attach to.
     footway_kind = first_value(tags.get("footway"))
     cycleway_kind = first_value(tags.get("cycleway"))
+    # `crossing=no` means "definitely no crossing possible/legal" and
+    # `crossing=separate` means the crossing is mapped as its own element. Both
+    # were being read as *evidence of* a crossing, which inverted the tag and
+    # charged a crossing penalty on a segment the mapper marked as not one.
     is_crossing = (
         highway == "crossing"
         or footway_kind == "crossing"
         or cycleway_kind == "crossing"
-        or crossing_type is not None
+        or crossing_type not in (None, "no", "separate")
     )
 
     # Route-critical tags where the source disagreed with itself. Each was
@@ -531,6 +580,7 @@ def normalise_edge(tags: dict[str, Any]) -> EdgeFeatures:
         smoothness=smoothness,
         smoothness_class=smoothness_class,
         incline_percent=normalise_incline(tags.get("incline")),
+        incline_direction=normalise_incline_direction(tags.get("incline")),
         kerb=normalise_kerb(tags),
         sidewalk=first_value(tags.get("sidewalk")),
         is_crossing=is_crossing,

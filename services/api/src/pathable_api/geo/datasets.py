@@ -314,6 +314,7 @@ async def _persist_nodes_and_edges(
                 "smoothness": features.smoothness,
                 "smoothness_class": features.smoothness_class.value,
                 "incline_percent": features.incline_percent,
+                "incline_direction": features.incline_direction.value,
                 "kerb": features.kerb.value,
                 "sidewalk": features.sidewalk,
                 "is_crossing": features.is_crossing,

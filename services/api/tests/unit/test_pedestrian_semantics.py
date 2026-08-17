@@ -233,13 +233,18 @@ class TestNodeLevelKerbEvidence:
         assert evidence.kerb is KerbType.LOWERED
         assert evidence.is_informative
 
-    def test_barrier_kerb_without_a_kind_is_unknown_not_raised(self) -> None:
+    def test_barrier_kerb_without_a_kind_is_present_but_unmeasured(self) -> None:
         # Something is there and nobody said whether it is dropped. Calling it
-        # raised invents a barrier; calling it flush invents a ramp.
+        # raised invents a barrier; calling it flush invents a ramp. But calling
+        # it UNKNOWN — the state meaning "nothing was mapped here" — threw away
+        # the one thing the mapper did say, which is that a kerb exists.
         evidence = read_node_evidence({"barrier": "kerb"})
 
-        assert evidence.kerb is KerbType.UNKNOWN
-        assert evidence.is_informative  # the barrier itself is still worth knowing
+        assert evidence.kerb is KerbType.PRESENT_UNKNOWN
+        assert evidence.is_informative
+
+    def test_a_stated_height_still_beats_the_bare_barrier(self) -> None:
+        assert read_node_evidence({"barrier": "kerb", "kerb": "lowered"}).kerb is KerbType.LOWERED
 
     def test_an_ordinary_node_carries_nothing(self) -> None:
         assert read_node_evidence({"x": 1, "y": 2}).is_informative is False

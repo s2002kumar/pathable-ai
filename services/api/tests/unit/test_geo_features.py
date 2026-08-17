@@ -204,8 +204,21 @@ class TestKerbAliases:
     def test_american_spelling_is_accepted(self) -> None:
         assert normalise_kerb({"curb": "lowered"}) is KerbType.LOWERED
 
-    def test_rolled_counts_as_lowered(self) -> None:
-        assert normalise_kerb({"kerb": "rolled"}) is KerbType.LOWERED
+    def test_rolled_is_its_own_tier_not_a_lowered_kerb(self) -> None:
+        # Regression: `rolled` was folded into LOWERED, which is priced at zero
+        # for every profile. The OSM wiki is explicit that a rolled kerb is
+        # traversable by cars and bicycles "but not wheelchairs" — collapsing it
+        # made a wheelchair barrier free.
+        assert normalise_kerb({"kerb": "rolled"}) is KerbType.ROLLED
+
+    def test_no_kerb_is_the_best_case_not_a_middling_one(self) -> None:
+        # Regression: "no" was ranked below "lowered", so an explicit "there is
+        # no kerb here" lost to a kerb when a merged segment disagreed.
+        assert normalise_kerb({"kerb": "no"}) is KerbType.NONE
+        assert normalise_kerb({"kerb": ["no", "lowered"]}) is KerbType.LOWERED
+
+    def test_a_kerb_of_unrecorded_height_is_not_nothing(self) -> None:
+        assert normalise_kerb({"kerb": "yes"}) is KerbType.PRESENT_UNKNOWN
 
     def test_unrecognised_kerb_value_is_unknown(self) -> None:
         assert normalise_kerb({"kerb": "wibbly"}) is KerbType.UNKNOWN
