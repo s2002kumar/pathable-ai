@@ -13,6 +13,7 @@ import asyncio
 import datetime as dt
 import sys
 import time
+import uuid
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -26,9 +27,12 @@ from pathable_api.geo.datasets import (
     DatasetLifecycleError,
     DatasetValidationError,
     IngestionResult,
+    get_active_dataset,
     ingest_network,
     require_region,
 )
+from pathable_api.geo.elevation import build_provider
+from pathable_api.geo.elevation_apply import apply_elevation, summarise
 from pathable_api.geo.enums import SourceType
 from pathable_api.geo.fixtures import load_synthetic_dataset
 from pathable_api.geo.models import DatasetVersion, PilotRegion
@@ -153,6 +157,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="Profile to measure; repeatable. Defaults to standard and wheelchair.",
     )
 
+    elevation = subcommands.add_parser(
+        "elevation", help="Sample elevation for a dataset and derive segment grade."
+    )
+    elevation_actions = elevation.add_subparsers(dest="elevation_command", required=True)
+    apply_command = elevation_actions.add_parser(
+        "apply", help="Sample elevation for the active dataset of a region."
+    )
+    apply_command.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    apply_command.add_argument(
+        "--provider",
+        default="hrdem",
+        help="Elevation source: hrdem (1 m LiDAR, Canada), opentopodata (30 m), none.",
+    )
+    apply_command.add_argument(
+        "--dataset",
+        default=None,
+        help="Dataset id. Defaults to the region's active dataset.",
+    )
+    apply_command.add_argument("--batch-size", type=int, default=2000)
+
     datasets = subcommands.add_parser("datasets", help="Inspect dataset versions.")
     dataset_actions = datasets.add_subparsers(dest="dataset_command", required=True)
     listing = dataset_actions.add_parser("list", help="List dataset versions, newest first.")
@@ -201,6 +227,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _ingest_pbf(database, args)
             case "ingest":
                 return await _ingest_synthetic(database, args)
+            case "elevation":
+                return await _apply_elevation(database, args)
             case "benchmark":
                 return await _benchmark(database, args)
             case _:
@@ -346,6 +374,50 @@ async def _ingest_pbf(database: Database, args: argparse.Namespace) -> int:
     _report(ingestion, definition.display_name)
     print(f"  source     {result.configuration['file_name']}")
     print(f"  sha256     {result.file_sha256}")
+    return EXIT_OK
+
+
+async def _apply_elevation(database: Database, args: argparse.Namespace) -> int:
+    try:
+        provider = build_provider(args.provider)
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+    if not provider.enabled:
+        print("error: elevation provider is disabled; pass --provider.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+
+    definition = region_definition(args.region)
+    async with database.session() as session:
+        region = await require_region(session, definition.slug)
+        if args.dataset:
+            dataset = await session.get(DatasetVersion, uuid.UUID(args.dataset))
+        else:
+            dataset = await get_active_dataset(session, region.id)
+        if dataset is None:
+            print(f"error: no dataset found for {definition.slug}.", file=sys.stderr)
+            return EXIT_FAILED
+
+        print(
+            f"Sampling {provider.name} ({provider.dataset}) "
+            f"for {definition.display_name} dataset {dataset.id}..."
+        )
+        run = await apply_elevation(
+            session, dataset=dataset, provider=provider, batch_size=args.batch_size
+        )
+        # The run belongs to the dataset's record: a grade without the sampling
+        # that produced it cannot be judged or reproduced later.
+        dataset.ingestion_configuration = {
+            **(dataset.ingestion_configuration or {}),
+            "elevation": run.metadata,
+        }
+        await session.commit()
+
+    print(f"Sampled in {run.duration_seconds:.1f}s.")
+    for line in summarise(run):
+        print(line)
+    if provider.attribution:
+        print(f"  attribution {provider.attribution}")
     return EXIT_OK
 
 

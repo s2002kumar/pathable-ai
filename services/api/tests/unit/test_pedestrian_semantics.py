@@ -112,7 +112,8 @@ class TestConveying:
         # directions would delete a real connection.
         direction = normalise_foot_direction({"highway": "steps", "conveying": "yes"})
 
-        assert direction.forward and direction.backward
+        assert direction.forward is True
+        assert direction.backward is True
         assert direction.ambiguous is True
 
     def test_reversing_a_conveyor_swaps_its_direction(self) -> None:
@@ -124,7 +125,8 @@ class TestAmbiguityStaysPermissive:
     def test_an_unreadable_value_does_not_create_a_barrier(self) -> None:
         direction = normalise_foot_direction({"oneway:foot": "probably"})
 
-        assert direction.forward and direction.backward
+        assert direction.forward is True
+        assert direction.backward is True
         assert direction.ambiguous is True
 
     def test_denying_both_directions_is_treated_as_a_tagging_mistake(self) -> None:

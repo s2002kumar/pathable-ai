@@ -124,6 +124,12 @@ explicit_package_bases = true
 namespace_packages = true
 
 [[tool.mypy.overrides]]
+# rasterio ships no py.typed marker and no stubs exist. It is used in exactly one
+# module, behind a narrow wrapper that returns plain floats.
+module = ["rasterio.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 # Alembic ships partial stubs; its generated env module is not worth strictening.
 module = ["alembic.*"]
 ignore_missing_imports = true

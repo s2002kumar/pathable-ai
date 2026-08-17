@@ -121,7 +121,8 @@ class TestInterpretation:
             edge for edge in payload.edges if (edge.source_u, edge.source_v) == ("2", "3")
         )
 
-        assert residential.direction.forward and residential.direction.backward
+        assert residential.direction.forward is True
+        assert residential.direction.backward is True
         assert residential.features.vehicle_oneway_ignored is True
 
     def test_a_conveying_escalator_is_one_way(self, extract: Path) -> None:
