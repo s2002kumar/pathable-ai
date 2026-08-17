@@ -45,6 +45,7 @@ class CostCode(StrEnum):
     STEPS = "steps"
     KERB = "kerb"
     CROSSING = "crossing"
+    WIDTH = "width"
     UNCERTAINTY = "uncertainty"
 
 
@@ -95,6 +96,7 @@ def evaluate_edge(features: EdgeFeatures, length_m: float, profile: MobilityProf
         CostComponent(CostCode.DISTANCE, length_m, f"{length_m:.0f} m of path")
     ]
     components.extend(_surface_cost(features, length_m, profile))
+    components.extend(_guidance_cost(features, length_m, profile))
     components.extend(_incline_cost(features, length_m, profile))
     components.extend(_steps_cost(features, profile))
     components.extend(_kerb_cost(features, profile))
@@ -115,47 +117,59 @@ def _hard_constraint(
 ) -> tuple[BlockReason, str] | None:
     """Return why this segment is unusable, or None if it is usable.
 
-    Every check here fires on *asserted* facts only. A missing tag never excludes
-    a segment: doing so would delete most of the network, and the places with the
-    least data are the least surveyed, not the least accessible.
+    Two rules govern everything here.
+
+    **Only declared limits exclude.** A preset saying wheelchair users generally
+    prefer gradients under 8% is a preference, not a claim about the physical
+    world — plenty of people using a chair get up an 11% ramp, and telling them
+    their journey is impossible because a default said so is both wrong and
+    disempowering. So a preset expresses itself through cost; only
+    `profile.hard_limits`, which the traveller set or an explicitly documented
+    preset default carries, removes anything.
+
+    **Absence never excludes.** Every check fires on an asserted fact. A missing
+    width, gradient or surface leaves the segment in the graph: excluding it
+    would delete most of the network, and it would delete precisely the parts
+    nobody has surveyed.
     """
+    # Legal prohibition, not preference: this applies to every profile including
+    # the plain shortest-distance baseline.
     if features.foot_access.is_prohibited or features.general_access.is_prohibited:
         return BlockReason.FOOT_PROHIBITED, "Pedestrian access is not permitted here."
 
-    if profile.exclude_steps and features.steps is TriState.YES:
+    limits = profile.hard_limits
+
+    if limits.exclude_steps and features.steps is TriState.YES:
         count = f" ({features.step_count} steps)" if features.step_count else ""
         return BlockReason.STEPS, f"This segment is a stairway{count}."
 
-    if profile.max_incline_percent is not None and features.incline_percent is not None:
-        gradient = abs(features.incline_percent)
-        if gradient > profile.max_incline_percent:
+    if limits.max_incline_percent is not None:
+        gradient = features.effective_grade_percent
+        # Only the climb is disqualifying. Rolling *down* a 12% slope is a
+        # different experience from hauling up it, and excluding both would
+        # remove a segment in a direction that was never the problem.
+        if gradient is not None and gradient > limits.max_incline_percent:
             return (
                 BlockReason.TOO_STEEP,
-                f"The recorded gradient is {gradient:.0f}%, above the "
-                f"{profile.max_incline_percent:.0f}% limit for this profile.",
+                f"The recorded gradient is {gradient:.0f}% uphill, above the "
+                f"{limits.max_incline_percent:.0f}% you set.",
             )
 
     if (
-        profile.min_width_m is not None
+        limits.min_width_m is not None
         and features.width_m is not None
-        and features.width_m < profile.min_width_m
+        and features.width_m < limits.min_width_m
     ):
         return (
             BlockReason.TOO_NARROW,
             f"The recorded width is {features.width_m:.2f} m, below the "
-            f"{profile.min_width_m:.2f} m this profile needs.",
+            f"{limits.min_width_m:.2f} m you need.",
         )
 
-    if features.surface_class in profile.excluded_surface_classes:
+    if limits.exclude_rough_surface and features.surface_class is SurfaceClass.ROUGH:
         return (
             BlockReason.SURFACE_EXCLUDED,
-            f"The surface is recorded as {features.surface or features.surface_class}.",
-        )
-
-    if features.smoothness_class in profile.excluded_smoothness_classes:
-        return (
-            BlockReason.SMOOTHNESS_EXCLUDED,
-            f"The surface condition is recorded as {features.smoothness or 'bad'}.",
+            f"The surface is recorded as {features.surface or 'unpaved'}.",
         )
 
     return None
@@ -200,15 +214,58 @@ def _surface_cost(
     return components
 
 
+def _guidance_cost(
+    features: EdgeFeatures, length_m: float, profile: MobilityProfile
+) -> list[CostComponent]:
+    """Cost for thresholds a preset cares about but does not forbid.
+
+    Deliberately steep. A route will take almost any alternative rather than a
+    segment past these thresholds — and will still offer it, with the reason
+    attached, when the alternative is no route at all. That is the difference
+    between advising somebody and deciding for them.
+    """
+    components: list[CostComponent] = []
+
+    gradient = features.effective_grade_percent
+    if profile.steep_incline_percent is not None and gradient is not None:
+        excess = gradient - profile.steep_incline_percent
+        if excess > 0:
+            components.append(
+                CostComponent(
+                    CostCode.INCLINE,
+                    length_m * excess * profile.guidance_penalty_factor,
+                    f"{gradient:.0f}% uphill, steeper than the {profile.steep_incline_percent:.0f}% "
+                    f"this profile prefers.",
+                )
+            )
+
+    if (
+        profile.narrow_width_m is not None
+        and features.width_m is not None
+        and features.width_m < profile.narrow_width_m
+    ):
+        shortfall_cm = (profile.narrow_width_m - features.width_m) * 100.0
+        components.append(
+            CostComponent(
+                CostCode.WIDTH,
+                length_m * shortfall_cm * 0.1 * profile.guidance_penalty_factor,
+                f"{features.width_m:.2f} m wide, narrower than the "
+                f"{profile.narrow_width_m:.2f} m this profile prefers.",
+            )
+        )
+
+    return components
+
+
 def _incline_cost(
     features: EdgeFeatures, length_m: float, profile: MobilityProfile
 ) -> list[CostComponent]:
-    if features.incline_percent is None or not profile.incline_penalty_per_percent:
+    gradient = features.effective_grade_percent
+    if gradient is None or not profile.incline_penalty_per_percent:
         return []
 
-    # Only the climb is penalised. Going down a 6% ramp is not the same
-    # experience as going up one, and the model should not pretend it is.
-    gradient = features.incline_percent
+    # Only the climb is penalised heavily. Going down a 6% ramp is not the
+    # same experience as going up one, and the model should not pretend it is.
     excess = abs(gradient) - profile.comfortable_incline_percent
     if excess <= 0:
         return []

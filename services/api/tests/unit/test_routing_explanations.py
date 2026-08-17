@@ -19,7 +19,7 @@ from pathable_api.geo.features import normalise_edge
 from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload
 from pathable_api.routing.comparison import compare_routes
 from pathable_api.routing.graph import RoutableGraph, graph_from_payload
-from pathable_api.routing.profiles import STANDARD, get_profile
+from pathable_api.routing.profiles import STANDARD, build_custom_profile, get_profile
 
 # A corridor with two parallel middle links, so a profile can pick either.
 #   A ---- B ==== C ---- D
@@ -287,9 +287,10 @@ class TestBlockingDiagnostics:
             },
         )
 
-        comparison = compare_routes(
-            graph, origin=WEST, destination=EAST, profile=get_profile("wheelchair")
-        )
+        # A *declared* minimum width, not a preset threshold: only what the
+        # traveller states about themselves may make a journey impossible.
+        profile = build_custom_profile(base="wheelchair", min_width_m=0.9)
+        comparison = compare_routes(graph, origin=WEST, destination=EAST, profile=profile)
 
         assert comparison.accessible_route is None
         caution = next(c for c in comparison.cautions if c.code == "no_accessible_route")

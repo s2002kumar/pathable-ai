@@ -23,6 +23,7 @@ dependencies = [
     # geocoding provider imports it directly, and an undeclared import breaks
     # the moment a transitive dependency changes.
     "requests>=2.32,<3.0",
+    "osmium>=4.3,<5.0",
 ]
 
 [project.scripts]

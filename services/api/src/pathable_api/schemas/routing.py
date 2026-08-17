@@ -123,7 +123,15 @@ class CostComponentModel(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     code: Literal[
-        "distance", "surface", "smoothness", "incline", "steps", "kerb", "crossing", "uncertainty"
+        "distance",
+        "surface",
+        "smoothness",
+        "incline",
+        "steps",
+        "kerb",
+        "crossing",
+        "width",
+        "uncertainty",
     ]
     effective_metres: float = Field(description="Effective metres this contribution added.")
     detail: str = Field(description="Plain-language reason, derived from recorded attributes.")
@@ -281,6 +289,12 @@ class RouteCompareResponse(BaseModel):
     explanations: list[ExplanationModel]
     cautions: list[CautionModel]
     dataset: DatasetProvenance
+    routing_policy_version: int = Field(
+        description=(
+            "Which cost and constraint policy produced this route. Bumped whenever a "
+            "change would move a route, so two results can be compared meaningfully."
+        )
+    )
     ml_predictions_used: Literal[False] = Field(
         default=False,
         description=(
@@ -298,9 +312,31 @@ class MobilityProfileModel(BaseModel):
     key: str
     display_name: str
     description: str
-    excludes_steps: bool
-    max_incline_percent: float | None
-    min_width_m: float | None
+    excludes_steps: bool = Field(
+        description="Whether stairways are excluded outright for this profile."
+    )
+    max_incline_percent: float | None = Field(
+        default=None,
+        description=(
+            "A hard limit: recorded gradients above this are excluded. Null for every "
+            "preset — a preset expresses gradient as preference, not impossibility."
+        ),
+    )
+    min_width_m: float | None = Field(
+        default=None, description="A hard limit: recorded widths below this are excluded."
+    )
+    prefers_gradient_under_percent: float | None = Field(
+        default=None,
+        description=(
+            "Guidance, not a limit. Steeper segments cost far more but remain available "
+            "when the only alternative is no route."
+        ),
+    )
+    prefers_width_over_m: float | None = Field(default=None, description="Guidance, not a limit.")
+    hard_requirements: list[str] = Field(
+        default_factory=list,
+        description="Plain statements of what this traveller cannot use. Empty when nothing is excluded.",
+    )
 
 
 class MobilityProfileListResponse(BaseModel):

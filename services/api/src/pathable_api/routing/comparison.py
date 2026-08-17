@@ -180,7 +180,7 @@ def _explain_stairs(
         detail = "the step counts are not recorded"
 
     stairway_word = "stairway" if len(stairways) == 1 else "stairways"
-    verb = "Avoids" if profile.exclude_steps else "Routes around"
+    verb = "Avoids" if profile.hard_limits.exclude_steps else "Routes around"
     return [
         Explanation(
             code="avoids_stairs",

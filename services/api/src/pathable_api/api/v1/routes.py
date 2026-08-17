@@ -25,6 +25,7 @@ from pathable_api.routing.engine import Route
 from pathable_api.routing.graph import GraphRepository, NoActiveDatasetError
 from pathable_api.routing.profiles import (
     PROFILES,
+    ROUTING_POLICY_VERSION,
     SELECTABLE_PROFILE_KEYS,
     MobilityProfile,
     build_custom_profile,
@@ -187,9 +188,12 @@ def _profile_model(profile: MobilityProfile) -> MobilityProfileModel:
         key=profile.key,
         display_name=profile.display_name,
         description=profile.description,
-        excludes_steps=profile.exclude_steps,
-        max_incline_percent=profile.max_incline_percent,
-        min_width_m=profile.min_width_m,
+        excludes_steps=profile.hard_limits.exclude_steps,
+        max_incline_percent=profile.hard_limits.max_incline_percent,
+        min_width_m=profile.hard_limits.min_width_m,
+        prefers_gradient_under_percent=profile.steep_incline_percent,
+        prefers_width_over_m=profile.narrow_width_m,
+        hard_requirements=list(profile.hard_limits.describe()),
     )
 
 
@@ -215,6 +219,7 @@ def _to_response(
             for item in comparison.cautions
         ],
         dataset=provenance,
+        routing_policy_version=ROUTING_POLICY_VERSION,
     )
 
 
