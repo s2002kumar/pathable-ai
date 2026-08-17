@@ -218,6 +218,22 @@ class RouteModel(BaseModel):
         le=1.0,
         description="Share of this route's length whose accessibility attributes are unrecorded.",
     )
+    evidence_coverage: dict[str, float] = Field(
+        default_factory=dict,
+        description=(
+            "Share of this route with no record, per category (surface, smoothness, gradient, "
+            "width, kerb). Kerb is measured over crossings only, since it is a fact about "
+            "crossings. Reported per category because one combined figure cannot be acted on."
+        ),
+    )
+    gradient_source: str | None = Field(
+        default=None,
+        description=(
+            "Where gradient information came from: 'osm_incline' (recorded by a mapper), "
+            "'derived_elevation' (inferred from a terrain model), 'mixed', or null when the "
+            "route has no gradient information at all."
+        ),
+    )
     computation_ms: float
 
 

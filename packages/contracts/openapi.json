@@ -126,6 +126,7 @@
               "steps",
               "kerb",
               "crossing",
+              "width",
               "uncertainty"
             ],
             "title": "Code",
@@ -487,12 +488,14 @@
         "type": "object"
       },
       "KerbType": {
-        "description": "Kerb (curb) treatment where a path meets a road.\n\n``RAISED`` is the barrier case for wheeled mobility; ``LOWERED`` and ``FLUSH``\nare the good cases; ``UNKNOWN`` is by far the most common in practice.",
+        "description": "Kerb (curb) treatment where a path meets a road.\n\nOrdered best to worst for a wheeled user: ``NONE`` (the mapper states there\nis no kerb at all) is the best case, then ``FLUSH``, then ``LOWERED``.\n\n``ROLLED`` is its own tier rather than a kind of lowered kerb. The OSM wiki\nis explicit that a rolled kerb is \"traversable by large wheeled vehicles,\nsuch as cars and bicycles, but not wheelchairs\" — folding it into ``LOWERED``\npriced a wheelchair barrier at zero.\n\n``PRESENT_UNKNOWN`` is \"a kerb is definitely here, nobody recorded its\nheight\" — a `barrier=kerb` node or `kerb=yes`. That is strictly stronger\nevidence than ``UNKNOWN``, which means nothing was mapped at all, and the two\nshould not cost the same.",
         "enum": [
-          "lowered",
-          "flush",
-          "raised",
           "none",
+          "flush",
+          "lowered",
+          "rolled",
+          "present_unknown",
+          "raised",
           "unknown"
         ],
         "title": "KerbType",
@@ -567,8 +570,17 @@
             "type": "string"
           },
           "excludes_steps": {
+            "description": "Whether stairways are excluded outright for this profile.",
             "title": "Excludes Steps",
             "type": "boolean"
+          },
+          "hard_requirements": {
+            "description": "Plain statements of what this traveller cannot use. Empty when nothing is excluded.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Hard Requirements",
+            "type": "array"
           },
           "key": {
             "title": "Key",
@@ -583,6 +595,7 @@
                 "type": "null"
               }
             ],
+            "description": "A hard limit: recorded gradients above this are excluded. Null for every preset — a preset expresses gradient as preference, not impossibility.",
             "title": "Max Incline Percent"
           },
           "min_width_m": {
@@ -594,16 +607,39 @@
                 "type": "null"
               }
             ],
+            "description": "A hard limit: recorded widths below this are excluded.",
             "title": "Min Width M"
+          },
+          "prefers_gradient_under_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Guidance, not a limit. Steeper segments cost far more but remain available when the only alternative is no route.",
+            "title": "Prefers Gradient Under Percent"
+          },
+          "prefers_width_over_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Guidance, not a limit.",
+            "title": "Prefers Width Over M"
           }
         },
         "required": [
           "key",
           "display_name",
           "description",
-          "excludes_steps",
-          "max_incline_percent",
-          "min_width_m"
+          "excludes_steps"
         ],
         "title": "MobilityProfileModel",
         "type": "object"
@@ -838,6 +874,11 @@
             "title": "Profile Display Name",
             "type": "string"
           },
+          "routing_policy_version": {
+            "description": "Which cost and constraint policy produced this route. Bumped whenever a change would move a route, so two results can be compared meaningfully.",
+            "title": "Routing Policy Version",
+            "type": "integer"
+          },
           "standard_failure": {
             "anyOf": [
               {
@@ -868,7 +909,8 @@
           "profile_description",
           "explanations",
           "cautions",
-          "dataset"
+          "dataset",
+          "routing_policy_version"
         ],
         "title": "RouteCompareResponse",
         "type": "object"
@@ -919,6 +961,26 @@
             "description": "Rough planning estimate from distance and obstacle counts. Not measured, and not specific to any individual.",
             "title": "Estimated Duration Seconds",
             "type": "number"
+          },
+          "evidence_coverage": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Share of this route with no record, per category (surface, smoothness, gradient, width, kerb). Kerb is measured over crossings only, since it is a fact about crossings. Reported per category because one combined figure cannot be acted on.",
+            "title": "Evidence Coverage",
+            "type": "object"
+          },
+          "gradient_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where gradient information came from: 'osm_incline' (recorded by a mapper), 'derived_elevation' (inferred from a terrain model), 'mixed', or null when the route has no gradient information at all.",
+            "title": "Gradient Source"
           },
           "origin": {
             "$ref": "#/components/schemas/SnappedPointModel"

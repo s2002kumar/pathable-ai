@@ -121,6 +121,10 @@ class RouteSegment:
     steps: TriState
     step_count: int | None
     incline_percent: float | None
+    #: Grade inferred from a terrain model. Kept apart from `incline_percent`
+    #: all the way to the interface, because "somebody measured this path" and
+    #: "we inferred it from the ground beneath it" are different claims.
+    derived_grade_percent: float | None
     kerb: KerbType
     is_crossing: bool
     #: Carried so a 'no route' diagnostic can report a width that blocked a
@@ -195,6 +199,68 @@ class Route:
         if self.distance_m <= 0:
             return 0.0
         return min(1.0, self.length_with_unknown_data_m / self.distance_m)
+
+    @property
+    def evidence_coverage(self) -> dict[str, float]:
+        """Share of this route's length with no record, per category.
+
+        One number for "missing accessibility data" cannot be acted on: a route
+        missing every surface tag and one missing every gradient are the same
+        percentage and completely different journeys. Reported per category so
+        the interface can say which fact is absent rather than how much is.
+        """
+        if self.distance_m <= 0:
+            return {}
+
+        missing = {
+            "surface": 0.0,
+            "smoothness": 0.0,
+            "gradient": 0.0,
+            "width": 0.0,
+            "kerb": 0.0,
+        }
+        crossing_length = 0.0
+        for segment in self.segments:
+            if segment.surface_class is SurfaceClass.UNKNOWN:
+                missing["surface"] += segment.length_m
+            if segment.smoothness_class is SmoothnessClass.UNKNOWN:
+                missing["smoothness"] += segment.length_m
+            if segment.incline_percent is None and segment.derived_grade_percent is None:
+                missing["gradient"] += segment.length_m
+            if segment.width_m is None:
+                missing["width"] += segment.length_m
+            if segment.is_crossing:
+                crossing_length += segment.length_m
+                if segment.kerb is KerbType.UNKNOWN:
+                    missing["kerb"] += segment.length_m
+
+        coverage = {
+            name: min(1.0, value / self.distance_m)
+            for name, value in missing.items()
+            if name != "kerb"
+        }
+        # Kerb is only a fact about crossings, so it is measured over crossings.
+        # Against the whole route it would always look excellent.
+        coverage["kerb"] = min(1.0, missing["kerb"] / crossing_length) if crossing_length else 0.0
+        return coverage
+
+    @property
+    def gradient_source(self) -> str | None:
+        """Where this route's gradient information came from, if anywhere.
+
+        A gradient a surveyor recorded and one a terrain model inferred are
+        different kinds of claim, and the interface has to be able to say which
+        it is showing.
+        """
+        has_osm = any(segment.incline_percent is not None for segment in self.segments)
+        has_derived = any(segment.derived_grade_percent is not None for segment in self.segments)
+        if has_osm and has_derived:
+            return "mixed"
+        if has_osm:
+            return "osm_incline"
+        if has_derived:
+            return "derived_elevation"
+        return None
 
 
 def compute_route(
@@ -390,6 +456,7 @@ def _to_segment(edge: DirectedEdge, cost: EdgeCost) -> RouteSegment:
         steps=features.steps,
         step_count=features.step_count,
         incline_percent=features.incline_percent,
+        derived_grade_percent=features.derived_grade_percent,
         kerb=features.kerb,
         is_crossing=features.is_crossing,
         width_m=features.width_m,

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { RouteCompareResponse } from '@pathable/contracts';
+import { RouteComparisonView } from './RouteComparisonView';
 import { RoutePlanner } from './RoutePlanner';
 import { RouteWorkspace } from './RouteWorkspace';
 import { compareRoutes } from './compare-routes';
@@ -44,6 +45,8 @@ function buildRoute(overrides: Record<string, unknown> = {}) {
     unknown_kerb_crossing_count: 0,
     steepest_incline_percent: 4,
     unknown_data_fraction: 0.31,
+    evidence_coverage: { surface: 0.38, smoothness: 0.72, gradient: 0.01, width: 0.9, kerb: 0.5 },
+    gradient_source: 'derived_elevation',
     computation_ms: 8,
     ...overrides,
   };
@@ -402,5 +405,38 @@ describe('RouteWorkspace', () => {
     render(<RouteWorkspace {...config} fetchImpl={vi.fn() as unknown as typeof fetch} />);
 
     expect(screen.getByTestId('map-legend')).toBeInTheDocument();
+  });
+});
+
+describe('evidence gaps', () => {
+  it('names which fact is missing rather than reporting one combined figure', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    // "Surface data is missing for 38% of this route" is actionable; a single
+    // uncertainty number is not — two routes missing entirely different things
+    // produce the same figure.
+    expect(screen.getByText(/Surface data is missing for 38% of this route/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Surface condition is missing for 72% of this route/),
+    ).toBeInTheDocument();
+  });
+
+  it('does not clutter the answer with gaps too small to act on', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    expect(screen.queryByText(/Gradient data is missing/)).not.toBeInTheDocument();
+  });
+
+  it('says a gradient was inferred from terrain rather than recorded on the path', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    expect(screen.getByText(/estimated from an elevation model/)).toBeInTheDocument();
+    expect(screen.getByText(/cannot see a ramp or a step/)).toBeInTheDocument();
+  });
+
+  it('does not let a missing record read as evidence the path is clear', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    expect(screen.getByText(/It means nobody has recorded it/)).toBeInTheDocument();
   });
 });

@@ -278,6 +278,10 @@ def _route_model(route: Route | None) -> RouteModel | None:
         crossing_count=route.crossing_count,
         unknown_kerb_crossing_count=route.unknown_kerb_crossing_count,
         steepest_incline_percent=route.steepest_incline_percent,
+        evidence_coverage={
+            name: round(value, 4) for name, value in route.evidence_coverage.items()
+        },
+        gradient_source=route.gradient_source,
         unknown_data_fraction=round(route.unknown_data_fraction, 3),
         computation_ms=round(route.computation_ms, 2),
     )

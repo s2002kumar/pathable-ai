@@ -192,7 +192,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "distance" | "surface" | "smoothness" | "incline" | "steps" | "kerb" | "crossing" | "uncertainty";
+            code: "distance" | "surface" | "smoothness" | "incline" | "steps" | "kerb" | "crossing" | "width" | "uncertainty";
             /**
              * Detail
              * @description Plain-language reason, derived from recorded attributes.
@@ -400,11 +400,21 @@ export interface components {
          * KerbType
          * @description Kerb (curb) treatment where a path meets a road.
          *
-         *     ``RAISED`` is the barrier case for wheeled mobility; ``LOWERED`` and ``FLUSH``
-         *     are the good cases; ``UNKNOWN`` is by far the most common in practice.
+         *     Ordered best to worst for a wheeled user: ``NONE`` (the mapper states there
+         *     is no kerb at all) is the best case, then ``FLUSH``, then ``LOWERED``.
+         *
+         *     ``ROLLED`` is its own tier rather than a kind of lowered kerb. The OSM wiki
+         *     is explicit that a rolled kerb is "traversable by large wheeled vehicles,
+         *     such as cars and bicycles, but not wheelchairs" — folding it into ``LOWERED``
+         *     priced a wheelchair barrier at zero.
+         *
+         *     ``PRESENT_UNKNOWN`` is "a kerb is definitely here, nobody recorded its
+         *     height" — a `barrier=kerb` node or `kerb=yes`. That is strictly stronger
+         *     evidence than ``UNKNOWN``, which means nothing was mapped at all, and the two
+         *     should not cost the same.
          * @enum {string}
          */
-        KerbType: "lowered" | "flush" | "raised" | "none" | "unknown";
+        KerbType: "none" | "flush" | "lowered" | "rolled" | "present_unknown" | "raised" | "unknown";
         /**
          * LivenessResponse
          * @description Process is running and able to serve HTTP.
@@ -448,14 +458,38 @@ export interface components {
             description: string;
             /** Display Name */
             display_name: string;
-            /** Excludes Steps */
+            /**
+             * Excludes Steps
+             * @description Whether stairways are excluded outright for this profile.
+             */
             excludes_steps: boolean;
+            /**
+             * Hard Requirements
+             * @description Plain statements of what this traveller cannot use. Empty when nothing is excluded.
+             */
+            hard_requirements?: string[];
             /** Key */
             key: string;
-            /** Max Incline Percent */
-            max_incline_percent: number | null;
-            /** Min Width M */
-            min_width_m: number | null;
+            /**
+             * Max Incline Percent
+             * @description A hard limit: recorded gradients above this are excluded. Null for every preset — a preset expresses gradient as preference, not impossibility.
+             */
+            max_incline_percent?: number | null;
+            /**
+             * Min Width M
+             * @description A hard limit: recorded widths below this are excluded.
+             */
+            min_width_m?: number | null;
+            /**
+             * Prefers Gradient Under Percent
+             * @description Guidance, not a limit. Steeper segments cost far more but remain available when the only alternative is no route.
+             */
+            prefers_gradient_under_percent?: number | null;
+            /**
+             * Prefers Width Over M
+             * @description Guidance, not a limit.
+             */
+            prefers_width_over_m?: number | null;
         };
         /**
          * ReadinessChecks
@@ -586,6 +620,11 @@ export interface components {
             /** Profile Display Name */
             profile_display_name: string;
             /**
+             * Routing Policy Version
+             * @description Which cost and constraint policy produced this route. Bumped whenever a change would move a route, so two results can be compared meaningfully.
+             */
+            routing_policy_version: number;
+            /**
              * Standard Failure
              * @description Why the shortest route could not be computed.
              */
@@ -626,6 +665,18 @@ export interface components {
              * @description Rough planning estimate from distance and obstacle counts. Not measured, and not specific to any individual.
              */
             estimated_duration_seconds: number;
+            /**
+             * Evidence Coverage
+             * @description Share of this route with no record, per category (surface, smoothness, gradient, width, kerb). Kerb is measured over crossings only, since it is a fact about crossings. Reported per category because one combined figure cannot be acted on.
+             */
+            evidence_coverage?: {
+                [key: string]: number;
+            };
+            /**
+             * Gradient Source
+             * @description Where gradient information came from: 'osm_incline' (recorded by a mapper), 'derived_elevation' (inferred from a terrain model), 'mixed', or null when the route has no gradient information at all.
+             */
+            gradient_source?: string | null;
             origin: components["schemas"]["SnappedPointModel"];
             /**
              * Profile

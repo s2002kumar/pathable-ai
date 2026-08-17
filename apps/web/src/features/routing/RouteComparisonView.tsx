@@ -161,6 +161,81 @@ function RouteCard({
   );
 }
 
+/** How each missing category reads in a sentence, singular to the user's concern. */
+const GAP_LABELS: Readonly<Record<string, string>> = {
+  surface: 'Surface data is missing',
+  smoothness: 'Surface condition is missing',
+  gradient: 'Gradient data is missing',
+  width: 'Path width is missing',
+  kerb: 'Kerb information is missing',
+};
+
+/** Below this, naming the gap is noise rather than information. */
+const GAP_THRESHOLD = 0.05;
+
+/**
+ * What the map does not say about this route, one category at a time.
+ *
+ * "Surface data is missing for 38% of this route" tells somebody what to expect
+ * and what to check. A single combined uncertainty figure does not: a route
+ * missing every surface tag and one missing every gradient produce the same
+ * number and are completely different journeys.
+ */
+function EvidenceGaps({ route }: { readonly route: Route | null }) {
+  if (route === null) return null;
+
+  const gaps = Object.entries(route.evidence_coverage ?? {})
+    .filter(([category, share]) => share >= GAP_THRESHOLD && category in GAP_LABELS)
+    .sort(([, a], [, b]) => b - a);
+
+  if (gaps.length === 0) return null;
+
+  return (
+    <section className={styles.section} aria-labelledby="route-gaps-heading">
+      <h3 className={styles.sectionHeading} id="route-gaps-heading">
+        What the map does not say
+      </h3>
+      <ul className={styles.cautionList}>
+        {gaps.map(([category, share]) => (
+          <li className={styles.caution} key={category}>
+            {GAP_LABELS[category]} for {Math.round(share * 100)}% of this route
+            {category === 'kerb' ? "'s crossings" : ''}.
+          </li>
+        ))}
+      </ul>
+      <p className={styles.hint}>
+        Missing information is not a sign that a path is clear. It means nobody has recorded it.
+      </p>
+    </section>
+  );
+}
+
+/** Whether a gradient was measured on the path or inferred from the terrain. */
+function GradientProvenance({ route }: { readonly route: Route | null }) {
+  if (route === null || route.steepest_incline_percent === null) return null;
+
+  switch (route.gradient_source) {
+    case 'derived_elevation':
+      return (
+        <p className={styles.hint}>
+          Gradient is estimated from an elevation model of the ground, not surveyed on the path
+          itself, so it cannot see a ramp or a step.
+        </p>
+      );
+    case 'mixed':
+      return (
+        <p className={styles.hint}>
+          Some gradients here are recorded in OpenStreetMap; the rest are estimated from an
+          elevation model of the ground.
+        </p>
+      );
+    case 'osm_incline':
+      return <p className={styles.hint}>Gradient is as recorded in OpenStreetMap.</p>;
+    default:
+      return null;
+  }
+}
+
 /**
  * What the route actually contains.
  *
@@ -169,8 +244,6 @@ function RouteCard({
  */
 function ObstacleBreakdown({ route }: { readonly route: Route | null }) {
   if (route === null) return null;
-
-  const dataPercent = Math.round(route.unknown_data_fraction * 100);
 
   return (
     <section className={styles.section} aria-labelledby="route-detail-heading">
@@ -194,11 +267,9 @@ function ObstacleBreakdown({ route }: { readonly route: Route | null }) {
               : `${Math.abs(route.steepest_incline_percent).toFixed(0)}%`}
           </dd>
         </div>
-        <div className={styles.stat}>
-          <dt>Length with missing accessibility data</dt>
-          <dd>{dataPercent}%</dd>
-        </div>
       </dl>
+      <GradientProvenance route={route} />
+      <EvidenceGaps route={route} />
     </section>
   );
 }
