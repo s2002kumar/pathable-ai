@@ -24,6 +24,7 @@ dependencies = [
     # the moment a transitive dependency changes.
     "requests>=2.32,<3.0",
     "osmium>=4.3,<5.0",
+    "rasterio>=1.5.1",
 ]
 
 [project.scripts]

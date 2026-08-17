@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import datetime as dt
 import sys
+import time
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -31,6 +33,7 @@ from pathable_api.geo.enums import SourceType
 from pathable_api.geo.fixtures import load_synthetic_dataset
 from pathable_api.geo.models import DatasetVersion, PilotRegion
 from pathable_api.geo.osm import OverpassUnreachableError, import_walk_network
+from pathable_api.geo.pbf import import_from_pbf
 from pathable_api.geo.regions import PILOT_REGIONS, region_definition, seed_pilot_regions
 from pathable_api.routing.benchmark import build_measurement_grid, measure
 from pathable_api.routing.graph import GraphRepository, graph_from_payload
@@ -89,6 +92,34 @@ def build_parser() -> argparse.ArgumentParser:
             "Defaults to the first reachable public endpoint."
         ),
     )
+
+    pbf = sources.add_parser(
+        "pbf",
+        help="Import from a local OpenStreetMap extract, with no live service.",
+    )
+    pbf.add_argument(
+        "--region",
+        required=True,
+        choices=[definition.slug for definition in PILOT_REGIONS],
+        help="Pilot region to clip the extract to.",
+    )
+    pbf.add_argument(
+        "--file",
+        required=True,
+        type=Path,
+        help="Path to a .osm.pbf extract, e.g. from download.geofabrik.de.",
+    )
+    pbf.add_argument(
+        "--provider",
+        default="geofabrik",
+        help="Who published the extract. Recorded with the dataset.",
+    )
+    pbf.add_argument(
+        "--source-timestamp",
+        default=None,
+        help="When the extract was produced (ISO 8601), from the provider's own listing.",
+    )
+    pbf.add_argument("--no-activate", action="store_true")
 
     synthetic = sources.add_parser(
         "synthetic", help="Load the deterministic test fixture (not real data)."
@@ -166,6 +197,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _list_regions(database)
             case "ingest" if args.source == "osm":
                 return await _ingest_osm(database, args)
+            case "ingest" if args.source == "pbf":
+                return await _ingest_pbf(database, args)
             case "ingest":
                 return await _ingest_synthetic(database, args)
             case "benchmark":
@@ -248,6 +281,71 @@ async def _ingest_osm(database: Database, args: argparse.Namespace) -> int:
         await session.commit()
 
     _report(ingestion, definition.display_name)
+    return EXIT_OK
+
+
+async def _ingest_pbf(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    path = Path(args.file)
+    if not path.is_file():
+        print(f"error: {path} does not exist.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+
+    source_timestamp: dt.datetime | None = None
+    if args.source_timestamp:
+        try:
+            source_timestamp = dt.datetime.fromisoformat(args.source_timestamp)
+        except ValueError:
+            print("error: --source-timestamp must be ISO 8601.", file=sys.stderr)
+            return EXIT_MISCONFIGURED
+        if source_timestamp.tzinfo is None:
+            source_timestamp = source_timestamp.replace(tzinfo=dt.UTC)
+
+    size_mb = path.stat().st_size / (1024 * 1024)
+    print(f"Reading {path.name} ({size_mb:.0f} MB) for {definition.display_name}...")
+
+    started = time.perf_counter()
+    result = import_from_pbf(
+        path,
+        definition.bounds,
+        region_slug=definition.slug,
+        provider=args.provider,
+        source_timestamp=source_timestamp,
+    )
+    read_seconds = time.perf_counter() - started
+    print(
+        f"Read {result.payload.node_count} nodes, {result.payload.edge_count} segments "
+        f"in {read_seconds:.1f}s."
+    )
+
+    async with database.session() as session:
+        region = await require_region(session, definition.slug)
+        try:
+            ingestion = await ingest_network(
+                session,
+                region=region,
+                payload=result.payload,
+                source_type=SourceType.OSM,
+                source_name=f"openstreetmap-pbf:{definition.slug}",
+                ingestion_configuration={
+                    **result.configuration,
+                    "read_seconds": round(read_seconds, 2),
+                },
+                source_timestamp=source_timestamp or result.retrieved_at,
+                declared_bounds=definition.bounds,
+                activate=not args.no_activate,
+            )
+        except DatasetValidationError as error:
+            await session.rollback()
+            print(f"error: {error}", file=sys.stderr)
+            for finding in error.report.errors[:10]:
+                print(f"  {finding.code}: {finding.message}", file=sys.stderr)
+            return EXIT_FAILED
+        await session.commit()
+
+    _report(ingestion, definition.display_name)
+    print(f"  source     {result.configuration['file_name']}")
+    print(f"  sha256     {result.file_sha256}")
     return EXIT_OK
 
 
