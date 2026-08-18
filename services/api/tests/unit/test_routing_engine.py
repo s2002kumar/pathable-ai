@@ -7,6 +7,8 @@ actual behaviour rather than on a mock's.
 
 from __future__ import annotations
 
+from itertools import pairwise
+
 import pytest
 from shapely.geometry import Point
 
@@ -84,6 +86,64 @@ class TestGraphConstruction:
 
     def test_the_spatial_index_covers_every_segment(self, graph: RoutableGraph) -> None:
         assert len(graph.edge_index) == graph.segment_count
+
+
+class TestTheDrawnRouteIsContinuous:
+    """The polyline must be walkable as drawn, not merely correct in total.
+
+    Regression: partial segments created by a snap were stored already reversed
+    *and* marked as reversed, so the geometry was flipped twice and the piece was
+    drawn backwards. On the real Waterloo network this put gaps of up to 93 m in
+    12 of 19 routes and ended one of them 15 m from the point the user chose —
+    while the reported distance stayed plausible, so nothing else caught it.
+    """
+
+    def _seams(self, route: object) -> list[float]:
+        segments = route.segments  # type: ignore[attr-defined]
+        return [
+            geodesic_distance_m(Point(*first.coordinates[-1]), Point(*second.coordinates[0]))
+            for first, second in pairwise(segments)
+        ]
+
+    def test_segments_meet_where_they_are_drawn(self, graph: RoutableGraph) -> None:
+        origin = (A[0] + 0.0005, A[1])
+        destination = (D[0] - 0.0005, D[1])
+        route = compute_route(graph, origin=origin, destination=destination, profile=STANDARD)
+
+        assert max(self._seams(route), default=0.0) < 1.0
+
+    def test_it_holds_when_the_route_runs_against_the_stored_direction(
+        self, graph: RoutableGraph
+    ) -> None:
+        # The reverse traversal is the case the bug lived in: forward-only
+        # routes drew correctly, so testing one direction proved nothing.
+        origin = (D[0] - 0.0005, D[1])
+        destination = (A[0] + 0.0005, A[1])
+        route = compute_route(graph, origin=origin, destination=destination, profile=STANDARD)
+
+        assert max(self._seams(route), default=0.0) < 1.0
+
+    def test_the_route_ends_where_the_traveller_was_snapped(self, graph: RoutableGraph) -> None:
+        origin = (A[0] + 0.0005, A[1])
+        destination = (D[0] - 0.0005, D[1])
+        route = compute_route(graph, origin=origin, destination=destination, profile=STANDARD)
+
+        start = Point(*route.coordinates[0])
+        end = Point(*route.coordinates[-1])
+        assert geodesic_distance_m(start, route.origin.point) < 1.0
+        assert geodesic_distance_m(end, route.destination.point) < 1.0
+
+    def test_the_drawn_length_matches_the_reported_distance(self, graph: RoutableGraph) -> None:
+        # A backwards piece inflates what is drawn without changing what is
+        # reported, so comparing the two is what makes the failure visible.
+        origin = (A[0] + 0.0005, A[1])
+        destination = (D[0] - 0.0005, D[1])
+        route = compute_route(graph, origin=origin, destination=destination, profile=STANDARD)
+
+        drawn = sum(
+            geodesic_distance_m(Point(*a), Point(*b)) for a, b in pairwise(route.coordinates)
+        )
+        assert drawn == pytest.approx(route.distance_m, rel=0.02)
 
 
 class TestPartialSegments:

@@ -17,7 +17,7 @@ import time
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from shapely.geometry import LineString, Point
+from shapely.geometry import Point
 
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.enums import KerbType, SmoothnessClass, SurfaceClass, TriState
@@ -401,9 +401,15 @@ class _Overlay:
             self._link(edge.source_u, node, prorate(forward_head, head_geometry))
             self._link(node, edge.source_v, prorate(forward_tail, tail_geometry))
         if edge.foot_backward:
-            # v -> node -> u
-            self._link(edge.source_v, node, prorate(backward_tail, _reverse(tail_geometry)))
-            self._link(node, edge.source_u, prorate(backward_head, _reverse(head_geometry)))
+            # v -> node -> u. The halves are stored in `source_u -> source_v`
+            # order, exactly as a whole segment's geometry is, because a
+            # DirectedEdge marked `reversed` flips its own geometry when asked
+            # for travel-oriented coordinates. Reversing here as well flipped it
+            # twice and drew the piece backwards — which put a gap of up to 93 m
+            # in a route's polyline and made it end somewhere the user never
+            # chose.
+            self._link(edge.source_v, node, prorate(backward_tail, tail_geometry))
+            self._link(node, edge.source_u, prorate(backward_head, head_geometry))
 
         return node
 
@@ -424,10 +430,6 @@ class _Overlay:
         if known is not None:
             return known
         return self._graph.node_positions.get(node, (0.0, 0.0))
-
-
-def _reverse(geometry: LineString) -> LineString:
-    return LineString(list(geometry.coords)[::-1])
 
 
 def _snap_or_fail(
