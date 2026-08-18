@@ -429,7 +429,13 @@ async def _apply_elevation(database: Database, args: argparse.Namespace) -> int:
 
     definition = region_definition(args.region)
     async with database.session() as session:
-        region = await require_region(session, definition.slug)
+        # An unseeded region is an operator mistake, not a crash. Reporting it
+        # as a traceback tells somebody scripting an import nothing useful.
+        try:
+            region = await require_region(session, definition.slug)
+        except DatasetLifecycleError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
         if args.dataset:
             dataset = await session.get(DatasetVersion, uuid.UUID(args.dataset))
         else:
@@ -531,7 +537,13 @@ async def _evaluate(database: Database, args: argparse.Namespace) -> int:
 async def _coverage(database: Database, args: argparse.Namespace) -> int:
     definition = region_definition(args.region)
     async with database.session() as session:
-        region = await require_region(session, definition.slug)
+        # An unseeded region is an operator mistake, not a crash. Reporting it
+        # as a traceback tells somebody scripting an import nothing useful.
+        try:
+            region = await require_region(session, definition.slug)
+        except DatasetLifecycleError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
         if args.dataset:
             dataset = await session.get(DatasetVersion, uuid.UUID(args.dataset))
         else:

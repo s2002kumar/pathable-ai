@@ -61,9 +61,34 @@ network is the one carrying the least information, which exactly inverts what
 somebody needs from the product.
 
 The penalty scales with length because a 500 m unsurveyed path is a bigger gamble
-than a 20 m one. Every route also reports the share of its length that has
-missing data, and the UI says plainly that missing data is not evidence a path is
-clear.
+than a 20 m one. Every route also reports what is missing, and the UI says
+plainly that missing data is not evidence a path is clear.
+
+**Measured on real data (2026-08-17).** The concern with this penalty was that it
+was calibrated on a synthetic fixture where missing data was the exception, and
+would saturate on a real extract where it is the norm — applying roughly
+uniformly, cancelling out of every comparison, and inflating every effective
+distance while distinguishing nothing.
+
+Ablated over the twenty-journey Waterloo corpus on the 180,554-segment dataset:
+
+| Variant                              | Routes changed | Median cost / real distance |
+| ------------------------------------ | -------------- | --------------------------- |
+| Penalties as shipped                 | —              | 1.56×                       |
+| No penalty for a missing gradient    | 3 / 20         | 1.52×                       |
+| No penalty for missing data at all   | 3 / 20         | 1.52×                       |
+
+The penalty is **not** saturated: it still changes the route on 3 of 20 real
+journeys. But removing only the gradient term has exactly the same effect as
+removing every term, so on this data the gradient penalty is doing all the work
+and the others are along for the ride. That is worth knowing before tuning any
+of them, and it is why elevation mattered: gradient was recorded on 46 of
+180,554 segments before HRDEM sampling and is derivable on 97,131 after.
+
+The per-route figure reported to users changed as a result of this work. One
+combined "missing data" percentage was replaced by per-category shares, because
+a route missing every surface tag and one missing every gradient produce the same
+number and are completely different journeys.
 
 ### The standard route is the same engine with a zero-penalty profile
 

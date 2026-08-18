@@ -87,7 +87,13 @@ class TestProfileListing:
 
         assert profiles["wheelchair"]["excludes_steps"] is True
         assert profiles["crutches"]["excludes_steps"] is False
-        assert profiles["wheelchair"]["max_incline_percent"] is not None
+
+        # A preset must not claim a generic threshold is a physical impossibility.
+        # The wheelchair profile excludes known stairs — a real, visible
+        # constraint — but its 8% gradient preference is guidance that makes a
+        # steep segment expensive, not a limit that deletes it from the map.
+        # Only a limit the user declared themselves becomes a hard exclusion.
+        assert profiles["wheelchair"]["max_incline_percent"] is None
 
 
 class TestCompare:

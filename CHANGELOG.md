@@ -10,6 +10,36 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ## [Unreleased]
 
+### Added
+
+- **A real Waterloo network, ingested from a published extract.** 155,714 nodes
+  and 180,554 physical segments (361,108 routable directed edges, 3,363.7 km) read
+  from Geofabrik's Ontario extract, whose published MD5 matched the download
+  exactly. `pathable ingest pbf` reads a local `.osm.pbf` with pyosmium and
+  normalises it through the identical functions the Overpass path uses, so a
+  route cannot change because of how the data arrived.
+- **Elevation, from NRCan HRDEM 1 m LiDAR.** Chosen by measurement rather than
+  availability: over 50 m segments a 30 m global model has RMSE 4.06 percentage
+  points against a true median grade of 1.78%, so its error exceeds the signal.
+  100% of nodes now carry an elevation with full provenance; gradient is known
+  for 53.8% of segments, against 0.03% from OpenStreetMap alone.
+- **A\* alongside Dijkstra.** Identical cost on all 19 routable journeys of the
+  Waterloo corpus, expanding 1,970 nodes at the median against Dijkstra's 7,409.
+  Wall-clock is a wash at this scale — 200.6 ms against 197.7 ms at p50 — so A\*
+  is not presented as faster.
+- **Data-coverage and route-evaluation reporting.** `pathable coverage` counts
+  each accessibility category separately and refuses to combine them into a
+  score; `pathable evaluate` routes a fixed corpus of twenty real journeys and
+  reports every outcome, including the ones where nothing changed.
+
+### Changed
+
+- **The route panel says which fact is missing, not how much is.** "Length with
+  missing accessibility data: 38%" is replaced by per-category sentences such as
+  "Surface data is missing for 38% of this route", because two routes missing
+  completely different things produced the same number. A route also now says
+  whether its gradient was recorded by a mapper or inferred from a terrain model.
+
 ### Fixed
 
 - **The map now renders a real vector basemap (KI-1).** MapLibre 6 loads its tile
