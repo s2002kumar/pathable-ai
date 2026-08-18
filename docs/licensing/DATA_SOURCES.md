@@ -138,19 +138,57 @@ what a routing product wants to do.
 
 ---
 
-## 5. Elevation — Phase 0.5
+## 5. Elevation — selected and implemented
 
 Required for grade, which is a first-order accessibility factor.
 
-| Source                                          | Licence                                  | Notes                                           |
-| ----------------------------------------------- | ---------------------------------------- | ----------------------------------------------- |
-| Canadian Digital Elevation Model (NRCan)        | Open Government Licence – Canada         | Attribution required; good national coverage    |
-| SRTM (NASA/USGS)                                | Public domain                            | ~30 m resolution; coarse for sidewalk grade     |
-| Copernicus DEM                                  | Free with attribution                    | ~30 m global                                    |
-| Municipal LiDAR (Waterloo / Region of Waterloo) | Varies — **must be checked per dataset** | Highest resolution; best fit if openly licensed |
+**Selected: NRCan HRDEM (CanElevation), 1 m LiDAR bare-earth DTM.**
 
-None ingested yet. Resolution matters: a 30 m DEM cannot resolve a kerb ramp, and
-using it as if it could would manufacture false precision.
+| Source                                  | Licence                                  | Status                                                                    |
+| --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------- |
+| **NRCan HRDEM / CanElevation**          | **Open Government Licence – Canada**     | **In use.** 1 m LiDAR; commercial use and redistribution permitted        |
+| Ontario DTM (Lidar-Derived)             | Open Government Licence – Ontario        | Same underlying survey, clumsier access path. Useful as a cross-check     |
+| OpenTopoData (SRTM / ASTER)             | MIT software; source data public domain  | Implemented as a fallback for areas HRDEM does not cover                  |
+| Copernicus DEM GLO-30                   | Free with attribution (ESA COP-DEM)      | Not used — 30 m, and a DSM, so it includes buildings and trees            |
+| Open-Elevation                          | **No published licence or terms**        | Rejected. Also ~175 m effective cell, measured                            |
+| Municipal LiDAR (Region of Waterloo)    | Varies — **must be checked per dataset** | Not needed; HRDEM already covers the pilot area at 1 m                    |
+
+### Why not a 30 m global model
+
+Resolution is not a detail here. Grade error was measured against the 1 m LiDAR
+over 400 randomly placed segments per length in the Waterloo study area:
+
+| Segment length | 30 m bare earth | Copernicus GLO-30 |
+| -------------- | --------------- | ----------------- |
+| 20 m           | RMSE 3.01 pp    | RMSE 5.91 pp      |
+| 50 m           | RMSE 1.63 pp    | RMSE 4.06 pp      |
+| 100 m          | RMSE 0.75 pp    | RMSE 2.23 pp      |
+
+The true median grade over 50 m in this area is 1.78%. **A 30 m global model's
+error is larger than the signal.** Classified against the 5% running-slope
+threshold ADA and AODA use, GLO-30 got 86% of 50 m segments right — and the 18
+segments it wrongly called acceptable are exactly the error this product must
+not make.
+
+### Obligations
+
+- **Attribution, on every surface showing a derived grade:** _"Contains
+  information licensed under the Open Government Licence – Canada."_
+- OGL-Canada permits commercial use, redistribution and adaptation, royalty-free
+  and in perpetuity, so it does not conflict with ODbL share-alike on the
+  derived pedestrian database.
+- The 898 GB mosaic is **not** redistributed or stored. It is read in place from
+  NRCan's public S3 bucket by byte range; only the sampled elevations for the
+  pilot region are stored, each with its source, dataset, resolution and
+  acquisition time.
+
+### What it still cannot do
+
+HRDEM is a **bare-earth** model. It describes the ground, not the path laid on
+it, so it cannot see a ramp, a step, a boardwalk or a bridge deck. A grade
+derived from it is therefore never allowed to overwrite an `incline` recorded by
+a mapper, and where the two disagree the disagreement is surfaced rather than
+resolved. This limitation is stated to the user, not just recorded here.
 
 ---
 

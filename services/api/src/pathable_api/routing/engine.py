@@ -23,7 +23,7 @@ from pathable_api.core.logging import get_logger
 from pathable_api.geo.enums import KerbType, SmoothnessClass, SurfaceClass, TriState
 from pathable_api.geo.geometry import geodesic_distance_m
 from pathable_api.routing.cost import BlockReason, CostComponent, EdgeCost, evaluate_edge
-from pathable_api.routing.graph import DirectedEdge, RoutableGraph, SnappedPoint
+from pathable_api.routing.graph import DirectedEdge, RoutableEdge, RoutableGraph, SnappedPoint
 from pathable_api.routing.profiles import MobilityProfile
 from pathable_api.routing.search import (
     Algorithm,
@@ -289,8 +289,8 @@ def compute_route(
         )
         raise RequestTooLargeError(msg)
 
-    start_snap = _snap_or_fail(graph, origin, "origin")
-    end_snap = _snap_or_fail(graph, destination, "destination")
+    start_snap = _snap_or_fail(graph, origin, "origin", profile)
+    end_snap = _snap_or_fail(graph, destination, "destination", profile)
 
     started = time.perf_counter()
     overlay = _Overlay(graph)
@@ -430,8 +430,26 @@ def _reverse(geometry: LineString) -> LineString:
     return LineString(list(geometry.coords)[::-1])
 
 
-def _snap_or_fail(graph: RoutableGraph, coordinate: tuple[float, float], label: str) -> EdgeSnap:
-    snapped = graph.snap_to_edge(coordinate[0], coordinate[1])
+def _snap_or_fail(
+    graph: RoutableGraph,
+    coordinate: tuple[float, float],
+    label: str,
+    profile: MobilityProfile,
+) -> EdgeSnap:
+    """Attach a requested point to a segment this profile can actually walk.
+
+    Snapping to the geometrically nearest segment regardless of the profile
+    produced a real failure on the Waterloo network: a point in Waterloo Park
+    landed 12 m onto a `foot=no` cycleway, so every route to it failed while a
+    walkable path sat metres further away. The nearest line to somebody's finger
+    is not necessarily a line they are allowed on.
+    """
+    snapped = graph.snap_to_edge(
+        coordinate[0],
+        coordinate[1],
+        accept=lambda edge: _usable_for(edge, profile),
+        max_distance_m=MAX_SNAP_DISTANCE_M,
+    )
     if snapped is None:
         raise PointOffNetworkError(label, float("inf"))
     if snapped.distance_m > MAX_SNAP_DISTANCE_M:
@@ -506,3 +524,24 @@ def _edge_cost(edge: DirectedEdge, profile: MobilityProfile) -> EdgeCost:
 def blocked_reason_for(edge: DirectedEdge, profile: MobilityProfile) -> BlockReason | None:
     """Why this profile cannot use a segment, if it cannot. Used by diagnostics."""
     return _edge_cost(edge, profile).blocked_reason
+
+
+def _usable_for(edge: RoutableEdge, profile: MobilityProfile) -> bool:
+    """Whether a route for this profile could traverse a segment either way.
+
+    A segment is acceptable to snap to if it is walkable in at least one
+    direction. Requiring both would refuse a legitimate one-way path; requiring
+    neither is what caused a park to become unreachable.
+    """
+    return any(
+        _edge_cost(directed, profile).blocked_reason is None for directed in _both_directions(edge)
+    )
+
+
+def _both_directions(edge: RoutableEdge) -> tuple[DirectedEdge, ...]:
+    directions: list[DirectedEdge] = []
+    if edge.foot_forward:
+        directions.append(DirectedEdge(edge=edge, features=edge.features, reversed=False))
+    if edge.foot_backward:
+        directions.append(DirectedEdge(edge=edge, features=edge.features.reversed(), reversed=True))
+    return tuple(directions)

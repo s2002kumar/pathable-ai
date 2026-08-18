@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from geoalchemy2.functions import ST_X, ST_Y
-from sqlalchemy import bindparam, select, update
+from sqlalchemy import Table, bindparam, inspect, select, update
 
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.elevation import (
@@ -48,6 +48,12 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from pathable_api.geo.elevation import ElevationProvider
 
 logger = get_logger(__name__)
+
+#: The underlying tables. Statements are built against these rather than the
+#: mapped classes so SQLAlchemy treats an executemany as a plain Core update
+#: rather than an ORM bulk-update-by-primary-key.
+_NODES: Table = inspect(GraphNode).local_table  # type: ignore[assignment]
+_EDGES: Table = inspect(GraphEdge).local_table  # type: ignore[assignment]
 
 #: Points per provider call. Large enough that a remote read amortises its setup,
 #: small enough that a failure loses a bounded amount of work.
@@ -182,8 +188,12 @@ async def _write_node_elevations(
 
     # One executemany rather than a statement per node: this runs over six-figure
     # node counts, and a round trip each would dominate the sampling itself.
+    # Against the table rather than the mapped class: the ORM reads an
+    # executemany over an entity as "bulk update by primary key" and demands the
+    # key be named `id` in every row. This is a plain Core statement over
+    # untracked rows, which is exactly what it is.
     await session.execute(
-        update(GraphNode).where(GraphNode.id == bindparam("node_pk")),
+        update(_NODES).where(_NODES.c.id == bindparam("node_pk")),
         payload,
     )
 
@@ -233,7 +243,7 @@ async def _derive_edge_grades(
 
     if updates:
         await session.execute(
-            update(GraphEdge).where(GraphEdge.id == bindparam("edge_pk")),
+            update(_EDGES).where(_EDGES.c.id == bindparam("edge_pk")),
             updates,
         )
 

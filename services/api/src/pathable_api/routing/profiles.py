@@ -140,6 +140,11 @@ class MobilityProfile:
     #: takes almost any alternative, small enough that "almost any" is not
     #: "none at all".
     guidance_penalty_factor: float = 6.0
+    #: Attributes whose absence this profile does not charge for. Exists so the
+    #: unknown-data penalty can be ablated on real data without editing the cost
+    #: model — the question "is this term still doing anything" has to be
+    #: answerable by measurement rather than by argument.
+    ignore_unknown_attributes: tuple[str, ...] = ()
 
     @property
     def is_standard(self) -> bool:

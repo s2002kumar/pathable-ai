@@ -41,6 +41,7 @@ from pathable_api.geo.models import DatasetVersion, PilotRegion
 from pathable_api.geo.osm import OverpassUnreachableError, import_walk_network
 from pathable_api.geo.pbf import import_from_pbf
 from pathable_api.geo.regions import PILOT_REGIONS, region_definition, seed_pilot_regions
+from pathable_api.routing.ablation import run_ablation, summarise_ablation
 from pathable_api.routing.benchmark import build_measurement_grid, measure
 from pathable_api.routing.evaluation import as_records, compare_algorithms, evaluate
 from pathable_api.routing.graph import GraphRepository, graph_from_payload
@@ -197,6 +198,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--algorithms",
         action="store_true",
         help="Also time Dijkstra against A* on every case.",
+    )
+    evaluate_command.add_argument(
+        "--ablate",
+        action="store_true",
+        help="Also route without the unknown-data penalties, to see what they buy.",
     )
 
     coverage = subcommands.add_parser(
@@ -507,6 +513,13 @@ async def _evaluate(database: Database, args: argparse.Namespace) -> int:
                 f"{agreement}"
             )
         payload["algorithms"] = [vars(timing) for timing in timings]
+
+    if args.ablate:
+        print()
+        rows = run_ablation(graph, cases=WATERLOO_CASES, profile=subject)
+        for line in summarise_ablation(rows, subject):
+            print(line)
+        payload["ablation"] = [{"case": row.case, "distances": row.distances()} for row in rows]
 
     if args.json:
         Path(args.json).write_text(json.dumps(payload, indent=2), encoding="utf-8")

@@ -358,9 +358,8 @@ def _uncertainty_cost(
 
     # Surface and smoothness already contribute through their own unknown-class
     # penalties; counting them again here would double-charge the same gap.
-    counted = tuple(
-        attribute for attribute in missing if attribute not in {"surface", "smoothness"}
-    )
+    excluded = {"surface", "smoothness", *profile.ignore_unknown_attributes}
+    counted = tuple(attribute for attribute in missing if attribute not in excluded)
     if not counted:
         return []
 

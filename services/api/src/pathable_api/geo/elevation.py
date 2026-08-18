@@ -64,7 +64,7 @@ import math
 import os
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 import requests
 
@@ -210,7 +210,7 @@ class HrdemProvider:
         self.dataset = dataset
         self.resolution_m = resolution_m
         self._url = url
-        self._dataset_handle: object | None = None
+        self._dataset_handle: Any = None
 
     async def sample(self, points: Sequence[tuple[float, float]]) -> list[ElevationSample]:
         if not points:
@@ -235,28 +235,63 @@ class HrdemProvider:
             for (longitude, latitude), value in zip(points, values, strict=True)
         ]
 
+    def _open(self) -> Any:
+        """The COG, opened once and kept open.
+
+        Re-opening per batch would throw away GDAL's block cache, which is the
+        only thing making six-figure point counts practical: the blocks covering
+        a city are fetched once and then answered from memory.
+        """
+        if self._dataset_handle is None:
+            import rasterio
+
+            _configure_gdal()
+            self._dataset_handle = rasterio.open(f"/vsicurl/{self._url}")
+        return self._dataset_handle
+
+    def close(self) -> None:
+        """Release the remote handle. Safe to call more than once."""
+        if self._dataset_handle is not None:
+            self._dataset_handle.close()
+            self._dataset_handle = None
+
     def _sample_sync(self, points: list[tuple[float, float]]) -> list[float | None]:
-        import rasterio
         from rasterio.warp import transform
 
-        _configure_gdal()
-        with rasterio.open(f"/vsicurl/{self._url}") as handle:
-            xs, ys = transform(
-                "EPSG:4326", handle.crs, [p[0] for p in points], [p[1] for p in points]
-            )
-            nodata = handle.nodata
-            values: list[float | None] = []
-            for row in handle.sample(list(zip(xs, ys, strict=True))):
-                raw = float(row[0])
-                # nodata is the model saying it has no coverage here. Writing it
-                # through as a number would put a -32767 m sidewalk in the
-                # database and a nonsense grade on the segments touching it.
-                if (nodata is not None and math.isclose(raw, float(nodata))) or not math.isfinite(
-                    raw
-                ):
-                    values.append(None)
-                else:
-                    values.append(raw)
+        handle = self._open()
+        xs, ys = transform(
+            "EPSG:4326",
+            handle.crs,
+            [point[0] for point in points],
+            [point[1] for point in points],
+        )
+        projected = list(zip(xs, ys, strict=True))
+
+        # Sample in spatial order, then put each answer back where it belongs.
+        # Random access over a remote raster re-fetches the same blocks again and
+        # again; walking them in order touches each one about once.
+        order = sorted(
+            range(len(projected)),
+            key=lambda index: (projected[index][1], projected[index][0]),
+        )
+        nodata = handle.nodata
+
+        # Default is None, so anything the model cannot answer stays unknown
+        # rather than becoming a number.
+        values: list[float | None] = [None] * len(projected)
+        for index, row in zip(
+            order,
+            handle.sample([projected[index] for index in order]),
+            strict=True,
+        ):
+            raw = float(row[0])
+            # nodata is the model saying it has no coverage here. Writing it
+            # through would put a -32767 m sidewalk in the database and a
+            # nonsense grade on every segment touching it.
+            if nodata is not None and math.isclose(raw, float(nodata)):
+                continue
+            if math.isfinite(raw):
+                values[index] = raw
         return values
 
 

@@ -32,6 +32,8 @@ from shapely.strtree import STRtree
 from pathable_api.geo.geometry import geodesic_distance_m, geodesic_length_m
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pathable_api.routing.graph import DirectedEdge, RoutableEdge
 
 #: Identifies the temporary node a snap introduces. Prefixed so it can never
@@ -82,9 +84,24 @@ class EdgeIndex:
         return len(self._edges)
 
     def nearest(
-        self, longitude: float, latitude: float, *, candidates: int = 12
+        self,
+        longitude: float,
+        latitude: float,
+        *,
+        candidates: int = 12,
+        accept: Callable[[RoutableEdge], bool] | None = None,
+        max_distance_m: float | None = None,
     ) -> EdgeSnap | None:
-        """Find the closest point on any segment to a requested coordinate.
+        """Closest point on any usable segment to a requested coordinate.
+
+        ``accept`` decides what "usable" means, and it is not optional in
+        practice. Snapping to the geometrically nearest segment regardless of
+        whether the traveller may use it produced a real failure on the Waterloo
+        network: a point in Waterloo Park landed 12 m away on a `foot=no`
+        cycleway, which is correctly closed to pedestrians, so every route to
+        that point failed — while a walkable path sat a few metres further on.
+        "No route exists" and "the nearest line to your finger is a cycleway"
+        are very different answers, and only one of them is true.
 
         The index ranks by planar degree distance, which is not metres and is
         mildly wrong at this latitude — a degree of longitude is about 73% of a
@@ -95,20 +112,55 @@ class EdgeIndex:
             return None
 
         point = Point(longitude, latitude)
-        indices = self._tree.query_nearest(
-            point, max_distance=None, return_distance=False, all_matches=True, exclusive=False
-        )
-        shortlist = [int(index) for index in indices][:candidates]
+        shortlist = self._shortlist(point, candidates=candidates, filtered=accept is not None)
         if not shortlist:
             return None
 
         best: EdgeSnap | None = None
         for index in shortlist:
             edge = self._edges[index]
+            if accept is not None and not accept(edge):
+                continue
             snap = _project_onto(edge, point)
+            if max_distance_m is not None and snap.distance_m > max_distance_m:
+                continue
             if best is None or snap.distance_m < best.distance_m:
                 best = snap
         return best
+
+    def _shortlist(self, point: Point, *, candidates: int, filtered: bool) -> list[int]:
+        """Candidate segment indices, nearest first.
+
+        Without a filter the tree's own nearest query is enough. With one, the
+        nearest few may all be unusable, so a radius search is needed to reach
+        past them — bounded, so a point genuinely off the network still fails
+        rather than dragging in the whole city.
+        """
+        if not filtered:
+            indices = self._tree.query_nearest(  # type: ignore[union-attr]
+                point, max_distance=None, return_distance=False, all_matches=True, exclusive=False
+            )
+            return [int(index) for index in indices][:candidates]
+
+        for radius_m in _SEARCH_RADII_M:
+            # Degrees, using the shorter of the two axes at this latitude so the
+            # window is never smaller than the distance asked for.
+            radius = radius_m / _METRES_PER_DEGREE_LONGITUDE
+            found = self._tree.query(point.buffer(radius))  # type: ignore[union-attr]
+            indices = [int(index) for index in found]
+            if indices:
+                return indices
+        return []
+
+
+#: Widening windows for a filtered search. Most points resolve in the first, and
+#: the last is the point at which "there is nothing walkable near here" is the
+#: honest answer rather than a reason to keep looking.
+_SEARCH_RADII_M: tuple[float, ...] = (60.0, 200.0, 500.0)
+
+#: A degree of longitude at the pilot latitude, in metres. Deliberately the
+#: smaller of the two axes so a radius in degrees never under-covers.
+_METRES_PER_DEGREE_LONGITUDE = 80_000.0
 
 
 def _project_onto(edge: RoutableEdge, point: Point) -> EdgeSnap:

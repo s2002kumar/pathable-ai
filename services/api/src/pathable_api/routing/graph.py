@@ -17,6 +17,7 @@ import asyncio
 import time
 import uuid
 from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -151,9 +152,23 @@ class RoutableGraph:
             self._edge_index = EdgeIndex(self._segments)
         return self._edge_index
 
-    def snap_to_edge(self, longitude: float, latitude: float) -> EdgeSnap | None:
-        """Nearest point along any segment — the honest place to start a route."""
-        return self.edge_index.nearest(longitude, latitude)
+    def snap_to_edge(
+        self,
+        longitude: float,
+        latitude: float,
+        *,
+        accept: Callable[[RoutableEdge], bool] | None = None,
+        max_distance_m: float | None = None,
+    ) -> EdgeSnap | None:
+        """Nearest usable point along any segment — where a route honestly starts.
+
+        ``accept`` lets a caller refuse a segment the traveller may not use. Not
+        passing it means "any segment will do", which is only correct for
+        diagnostics.
+        """
+        return self.edge_index.nearest(
+            longitude, latitude, accept=accept, max_distance_m=max_distance_m
+        )
 
 
 class NoActiveDatasetError(RuntimeError):
