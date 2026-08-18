@@ -1,58 +1,58 @@
 {
   "postgis_spatial_query": {
     "n": 20,
-    "min_ms": 2.182,
-    "p50_ms": 6.856,
-    "p95_ms": 75.475,
-    "max_ms": 75.475
+    "min_ms": 2.411,
+    "p50_ms": 7.151,
+    "p95_ms": 89.899,
+    "max_ms": 89.899
   },
   "stored_nodes": 155732,
   "graph_load": {
-    "seconds": 83.78,
+    "seconds": 97.46,
     "nodes": 155714,
     "segments": 180554,
-    "peak_python_heap_mb": 1317.8
+    "peak_python_heap_mb": 1317.9
   },
   "spatial_index_build": {
-    "seconds": 0.122,
+    "seconds": 0.159,
     "segments": 180554
   },
   "snap_unfiltered": {
     "n": 120,
-    "min_ms": 0.085,
-    "p50_ms": 0.108,
-    "p95_ms": 0.291,
-    "max_ms": 13.454
+    "min_ms": 0.046,
+    "p50_ms": 0.06,
+    "p95_ms": 0.192,
+    "max_ms": 8.96
   },
   "snap_profile_filtered": {
     "n": 120,
-    "min_ms": 0.07,
-    "p50_ms": 0.134,
-    "p95_ms": 3.303,
-    "max_ms": 8.85
+    "min_ms": 0.069,
+    "p50_ms": 0.176,
+    "p95_ms": 2.572,
+    "max_ms": 12.194
   },
   "route_dijkstra": {
     "n": 38,
-    "min_ms": 22.152,
-    "p50_ms": 197.688,
-    "p95_ms": 1039.89,
-    "max_ms": 1104.519,
+    "min_ms": 19.539,
+    "p50_ms": 212.779,
+    "p95_ms": 1156.259,
+    "max_ms": 1343.937,
     "median_expanded_nodes": 7409
   },
   "route_astar": {
     "n": 38,
-    "min_ms": 26.17,
-    "p50_ms": 200.599,
-    "p95_ms": 1473.229,
-    "max_ms": 1551.921,
+    "min_ms": 37.097,
+    "p50_ms": 195.033,
+    "p95_ms": 1541.001,
+    "max_ms": 1680.412,
     "median_expanded_nodes": 1970
   },
   "route_serialisation": {
     "n": 20,
-    "min_ms": 2.11,
-    "p50_ms": 2.928,
-    "p95_ms": 8.151,
-    "max_ms": 8.151,
+    "min_ms": 0.982,
+    "p50_ms": 1.796,
+    "p95_ms": 15.285,
+    "max_ms": 15.285,
     "response_bytes": 65164,
     "segments": 95
   }

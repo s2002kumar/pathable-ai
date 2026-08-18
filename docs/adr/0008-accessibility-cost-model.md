@@ -74,9 +74,9 @@ Ablated over the twenty-journey Waterloo corpus on the 180,554-segment dataset:
 
 | Variant                            | Routes changed | Median cost / real distance |
 | ---------------------------------- | -------------- | --------------------------- |
-| Penalties as shipped               | —              | 1.56×                       |
-| No penalty for a missing gradient  | 3 / 20         | 1.52×                       |
-| No penalty for missing data at all | 3 / 20         | 1.52×                       |
+| Penalties as shipped               | —              | 1.55×                       |
+| No penalty for a missing gradient  | 3 / 20         | 1.51×                       |
+| No penalty for missing data at all | 3 / 20         | 1.51×                       |
 
 The penalty is **not** saturated: it still changes the route on 3 of 20 real
 journeys. But removing only the gradient term has exactly the same effect as

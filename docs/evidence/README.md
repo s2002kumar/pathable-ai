@@ -21,12 +21,13 @@ from a run that actually happened; nothing is estimated or projected.
 
 ## Files
 
-| File                        | What it is                                                                                                                                                                                                   |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `waterloo-coverage.json`    | What OpenStreetMap records for the region, per category. Produced by `pathable coverage --region waterloo`.                                                                                                  |
-| `waterloo-routes.json`      | Twenty real journeys under the standard and wheelchair profiles, plus the Dijkstra/A\* comparison and the unknown-penalty ablation. Produced by `pathable evaluate --region waterloo --algorithms --ablate`. |
-| `waterloo-performance.json` | Latency, memory and throughput measured on this machine.                                                                                                                                                     |
-| `screenshots/`              | The real product answering from this dataset.                                                                                                                                                                |
+| File                                | What it is                                                                                                                                                                                                   |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `waterloo-coverage.json`            | What OpenStreetMap records for the region, per category. Produced by `pathable coverage --region waterloo`.                                                                                                  |
+| `waterloo-routes.json`              | Twenty real journeys under the standard and wheelchair profiles, plus the Dijkstra/A\* comparison and the unknown-penalty ablation. Produced by `pathable evaluate --region waterloo --algorithms --ablate`. |
+| `waterloo-performance.json`         | Latency, memory and throughput measured on this machine.                                                                                                                                                     |
+| `waterloo-geometry-inspection.json` | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                |
+| `screenshots/`                      | The real product answering from this dataset.                                                                                                                                                                |
 
 ---
 
@@ -44,6 +45,9 @@ synthetic fixture would be a picture of nothing.
 | `04-route-difference.png`                   | A journey where the accessible route differs measurably                                                        |
 | `05-missing-evidence.png`                   | A journey where the map is substantially silent                                                                |
 | `06-snapped-away-from-the-chosen-point.png` | The snapping caution: the route begins at the nearest mapped path, some distance from the point the user chose |
+
+Screenshots were re-captured after the geometry fix below, so every line shown
+is continuous.
 
 **A gap worth naming.** §18 of the task card asks for a screenshot of a genuine
 no-route case. There is a real one — `conestoga-to-rim-park` in
@@ -81,3 +85,12 @@ cancels the saving at this scale in this implementation.
 **The unknown-data penalty is not saturated, but it is doing one job.** Removing
 it changes 3 of 20 routes; removing only the missing-gradient term changes the
 same 3. See ADR 0008.
+
+**Inspecting geometry found a bug nothing else would have.** 12 of the 19
+routable journeys drew a discontinuous polyline — gaps of up to 93 m — and one
+ended 15 m from the point the user chose, while the _reported_ distance stayed
+plausible throughout. A snap-split segment was stored reversed and also marked
+reversed, so it was flipped twice and drawn backwards. All 19 are now continuous,
+end where the traveller was snapped, and draw a length matching what they report.
+That is the whole argument for §16 of the task card: a number can look right
+while the thing on the screen is wrong.
