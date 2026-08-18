@@ -21,3 +21,8 @@ apps/web/public/maplibre/
 
 # Python is formatted by Ruff, not Prettier.
 *.py
+
+# Measurement output, written by `pathable coverage`, `pathable evaluate` and the
+# geometry inspection. Reformatting it would put a diff in every regeneration
+# and the numbers are the point, not the layout.
+docs/evidence/*.json
