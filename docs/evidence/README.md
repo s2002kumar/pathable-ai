@@ -5,28 +5,28 @@ from a run that actually happened; nothing is estimated or projected.
 
 **Dataset under test**
 
-| | |
-| --- | --- |
-| Dataset | `51585450-8ff5-409d-a02e-66d5a3c5e260` |
-| PathAble checksum | `51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906` |
-| Source | Geofabrik `ontario-latest.osm.pbf`, 969,572,077 bytes |
-| Source SHA-256 | `cee90e3725139c41ef939f726730b4dfb6fd45e624d2797dac4be38a69145ef3` |
-| Publisher MD5 | `77f4f43c811a9161f4bf0ecae42ebaab` — matched the publisher's own listing |
-| Extract timestamp | 2026-08-16T23:08:23Z |
-| Ingested | 2026-08-17 |
-| Size | 155,714 nodes · 180,554 physical segments · 361,108 directed edges · 3,363.7 km |
-| Elevation | NRCan HRDEM `hrdem-mosaic-1m-dtm`, 1 m LiDAR, sampled 2026-08-17 |
+|                   |                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------- |
+| Dataset           | `51585450-8ff5-409d-a02e-66d5a3c5e260`                                          |
+| PathAble checksum | `51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906`              |
+| Source            | Geofabrik `ontario-latest.osm.pbf`, 969,572,077 bytes                           |
+| Source SHA-256    | `cee90e3725139c41ef939f726730b4dfb6fd45e624d2797dac4be38a69145ef3`              |
+| Publisher MD5     | `77f4f43c811a9161f4bf0ecae42ebaab` — matched the publisher's own listing        |
+| Extract timestamp | 2026-08-16T23:08:23Z                                                            |
+| Ingested          | 2026-08-17                                                                      |
+| Size              | 155,714 nodes · 180,554 physical segments · 361,108 directed edges · 3,363.7 km |
+| Elevation         | NRCan HRDEM `hrdem-mosaic-1m-dtm`, 1 m LiDAR, sampled 2026-08-17                |
 
 ---
 
 ## Files
 
-| File | What it is |
-| --- | --- |
-| `waterloo-coverage.json` | What OpenStreetMap records for the region, per category. Produced by `pathable coverage --region waterloo`. |
-| `waterloo-routes.json` | Twenty real journeys under the standard and wheelchair profiles, plus the Dijkstra/A\* comparison and the unknown-penalty ablation. Produced by `pathable evaluate --region waterloo --algorithms --ablate`. |
-| `waterloo-performance.json` | Latency, memory and throughput measured on this machine. |
-| `screenshots/` | The real product answering from this dataset. |
+| File                        | What it is                                                                                                                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `waterloo-coverage.json`    | What OpenStreetMap records for the region, per category. Produced by `pathable coverage --region waterloo`.                                                                                                  |
+| `waterloo-routes.json`      | Twenty real journeys under the standard and wheelchair profiles, plus the Dijkstra/A\* comparison and the unknown-penalty ablation. Produced by `pathable evaluate --region waterloo --algorithms --ablate`. |
+| `waterloo-performance.json` | Latency, memory and throughput measured on this machine.                                                                                                                                                     |
+| `screenshots/`              | The real product answering from this dataset.                                                                                                                                                                |
 
 ---
 
@@ -36,13 +36,13 @@ Captured by `apps/web/tests/screenshots/real-waterloo.spec.ts` against the runni
 API and the active dataset. No API responses are stubbed — a screenshot of a
 synthetic fixture would be a picture of nothing.
 
-| File | What it shows |
-| --- | --- |
-| `01-desktop-wheelchair.png` | A 366 m wheelchair route on real network, with per-category evidence gaps |
-| `02-mobile-wheelchair.png` | The same journey at 390 px wide |
-| `03-desktop-stroller.png` | A second profile on a different journey |
-| `04-route-difference.png` | A journey where the accessible route differs measurably |
-| `05-missing-evidence.png` | A journey where the map is substantially silent |
+| File                                        | What it shows                                                                                                  |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `01-desktop-wheelchair.png`                 | A 366 m wheelchair route on real network, with per-category evidence gaps                                      |
+| `02-mobile-wheelchair.png`                  | The same journey at 390 px wide                                                                                |
+| `03-desktop-stroller.png`                   | A second profile on a different journey                                                                        |
+| `04-route-difference.png`                   | A journey where the accessible route differs measurably                                                        |
+| `05-missing-evidence.png`                   | A journey where the map is substantially silent                                                                |
 | `06-snapped-away-from-the-chosen-point.png` | The snapping caution: the route begins at the nearest mapped path, some distance from the point the user chose |
 
 **A gap worth naming.** §18 of the task card asks for a screenshot of a genuine

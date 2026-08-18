@@ -43,6 +43,19 @@ pnpm --filter @pathable/web test:e2e
 
 CI uploads the same files as the `playwright-report` artifact.
 
+Those run against stubbed responses, which is what makes them deterministic. A
+separate suite captures the product answering from the **real, active Waterloo
+dataset** — no stubs, a 180,554-segment network, and a live API. It needs a
+database and is not part of CI:
+
+```bash
+pnpm --filter @pathable/web exec playwright test --config playwright.screenshots.config.ts
+# -> docs/evidence/screenshots/
+```
+
+Those images, and the measurements behind them, are in
+[`docs/evidence/`](docs/evidence/README.md).
+
 ---
 
 ## Architecture
@@ -178,9 +191,20 @@ cd services/api
 # Create the pilot regions the API knows about.
 uv run pathable regions seed
 
-# Import the real Waterloo pedestrian network from OpenStreetMap. Takes a few
-# minutes and caches the Overpass response, so a second run is quick.
+# Import the real Waterloo pedestrian network from a published extract. This is
+# the path used for the live dataset: no rate limits, no dependency on a donated
+# service, and re-readable as often as you like. Download an extract first, e.g.
+# https://download.geofabrik.de/north-america/canada/ontario-latest.osm.pbf
+uv run pathable ingest pbf --region waterloo --file .osm-data/ontario-latest.osm.pbf   --provider geofabrik --source-timestamp 2026-08-16T23:08:23+00:00
+
+# Or import over Overpass. Convenient, but it is a donated service with strict
+# rate limits and a city-wide unsimplified query is impractically slow.
 uv run pathable ingest osm --region waterloo
+
+# Sample elevation and derive a grade for every segment long enough to have one.
+# NRCan HRDEM is 1 m LiDAR under the Open Government Licence - Canada; the 898 GB
+# mosaic is read in place by byte range, never downloaded.
+uv run pathable elevation apply --region waterloo --provider hrdem
 
 # Or load the deterministic test fixture instead — a nine-node network built
 # around one stairway-versus-ramp comparison. Useful for development and for
@@ -201,6 +225,23 @@ Overpass is a donated public service with strict rate limits. PathAble checks
 that an endpoint is reachable before it starts, so an unreachable one fails in
 seconds with an explanation rather than hanging. Pass `--overpass-url` to use a
 different instance.
+
+### Reporting what the data actually contains
+
+```bash
+# What OpenStreetMap records for the region, category by category. There is
+# deliberately no combined "accessibility score": a region with excellent kerb
+# data and no surface data would average to "moderate", which describes nothing.
+uv run pathable coverage --region waterloo --json coverage.json
+
+# Route a fixed corpus of twenty real journeys under two profiles and report
+# every outcome — including the ones where nothing changed and the ones with no
+# route at all.
+uv run pathable evaluate --region waterloo --profile wheelchair --algorithms --ablate
+```
+
+Results from the live dataset are kept in
+[`docs/evidence/`](docs/evidence/README.md).
 
 ### Measuring routing performance
 

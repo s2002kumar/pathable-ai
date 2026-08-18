@@ -1,7 +1,8 @@
 # Data sources and licensing
 
-Status: Phase 0. The only external data the application touches today is map
-tiles. Everything else here is preparation for Phase 0.5 onward.
+Status: Gate A+B. The application now ingests **OpenStreetMap data** (from a
+published extract) and **NRCan HRDEM elevation**, and serves map tiles from a
+public style. Imagery and user-contributed reports remain unstarted and gated.
 
 > This document records engineering understanding of the licences involved. It is
 > **not legal advice**. Before any public deployment, and before any imagery is
@@ -144,14 +145,14 @@ Required for grade, which is a first-order accessibility factor.
 
 **Selected: NRCan HRDEM (CanElevation), 1 m LiDAR bare-earth DTM.**
 
-| Source                                  | Licence                                  | Status                                                                    |
-| --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------- |
-| **NRCan HRDEM / CanElevation**          | **Open Government Licence – Canada**     | **In use.** 1 m LiDAR; commercial use and redistribution permitted        |
-| Ontario DTM (Lidar-Derived)             | Open Government Licence – Ontario        | Same underlying survey, clumsier access path. Useful as a cross-check     |
-| OpenTopoData (SRTM / ASTER)             | MIT software; source data public domain  | Implemented as a fallback for areas HRDEM does not cover                  |
-| Copernicus DEM GLO-30                   | Free with attribution (ESA COP-DEM)      | Not used — 30 m, and a DSM, so it includes buildings and trees            |
-| Open-Elevation                          | **No published licence or terms**        | Rejected. Also ~175 m effective cell, measured                            |
-| Municipal LiDAR (Region of Waterloo)    | Varies — **must be checked per dataset** | Not needed; HRDEM already covers the pilot area at 1 m                    |
+| Source                               | Licence                                  | Status                                                                |
+| ------------------------------------ | ---------------------------------------- | --------------------------------------------------------------------- |
+| **NRCan HRDEM / CanElevation**       | **Open Government Licence – Canada**     | **In use.** 1 m LiDAR; commercial use and redistribution permitted    |
+| Ontario DTM (Lidar-Derived)          | Open Government Licence – Ontario        | Same underlying survey, clumsier access path. Useful as a cross-check |
+| OpenTopoData (SRTM / ASTER)          | MIT software; source data public domain  | Implemented as a fallback for areas HRDEM does not cover              |
+| Copernicus DEM GLO-30                | Free with attribution (ESA COP-DEM)      | Not used — 30 m, and a DSM, so it includes buildings and trees        |
+| Open-Elevation                       | **No published licence or terms**        | Rejected. Also ~175 m effective cell, measured                        |
+| Municipal LiDAR (Region of Waterloo) | Varies — **must be checked per dataset** | Not needed; HRDEM already covers the pilot area at 1 m                |
 
 ### Why not a 30 m global model
 
