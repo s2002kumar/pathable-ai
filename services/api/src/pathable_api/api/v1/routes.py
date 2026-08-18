@@ -10,6 +10,7 @@ Nothing about a request is persisted. See ADR 0007.
 
 from __future__ import annotations
 
+import datetime as dt
 from http import HTTPStatus
 
 from fastapi import APIRouter, Request
@@ -72,6 +73,20 @@ async def list_profiles() -> MobilityProfileListResponse:
     )
 
 
+def _evidence_age_days(source_timestamp: dt.datetime | None) -> int | None:
+    """How old the underlying data is, in whole days.
+
+    Reported against the upstream publication time rather than when PathAble
+    fetched it: a dataset downloaded this morning from an extract published two
+    years ago is two years old, and saying otherwise would make stale data look
+    fresh.
+    """
+    if source_timestamp is None:
+        return None
+    age = dt.datetime.now(tz=dt.UTC) - source_timestamp
+    return max(0, age.days)
+
+
 @router.post(
     "/compare",
     response_model=RouteCompareResponse,
@@ -126,6 +141,10 @@ async def compare(
             source_type=dataset.source_type,
             source_name=dataset.source_name,
             acquired_at=dataset.acquired_at.isoformat(),
+            source_timestamp=(
+                None if dataset.source_timestamp is None else dataset.source_timestamp.isoformat()
+            ),
+            evidence_age_days=_evidence_age_days(dataset.source_timestamp),
             attribution=(
                 OSM_ATTRIBUTION if dataset.source_type == "osm" else SYNTHETIC_ATTRIBUTION
             ),

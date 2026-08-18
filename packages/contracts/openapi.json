@@ -227,7 +227,7 @@
         "description": "Which network answered this request.",
         "properties": {
           "acquired_at": {
-            "description": "When this dataset was obtained, ISO 8601.",
+            "description": "When PathAble obtained this dataset, ISO 8601. Not how old the map is.",
             "title": "Acquired At",
             "type": "string"
           },
@@ -248,6 +248,18 @@
             "title": "Dataset Id",
             "type": "string"
           },
+          "evidence_age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whole days between the upstream publication and this response. Null when the source published no timestamp. A route cannot say a particular crossing was surveyed years ago — OpenStreetMap element timestamps are not yet ingested — so this is the age of the dataset, not of any individual fact in it.",
+            "title": "Evidence Age Days"
+          },
           "region": {
             "title": "Region",
             "type": "string"
@@ -255,6 +267,18 @@
           "source_name": {
             "title": "Source Name",
             "type": "string"
+          },
+          "source_timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the upstream source published this data, ISO 8601. This is the figure that says how current the map is; `acquired_at` only says when it was fetched. Null when the source published no timestamp.",
+            "title": "Source Timestamp"
           },
           "source_type": {
             "enum": [

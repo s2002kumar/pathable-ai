@@ -248,7 +248,7 @@ export interface components {
         DatasetProvenance: {
             /**
              * Acquired At
-             * @description When this dataset was obtained, ISO 8601.
+             * @description When PathAble obtained this dataset, ISO 8601. Not how old the map is.
              */
             acquired_at: string;
             /**
@@ -264,10 +264,20 @@ export interface components {
             checksum: string;
             /** Dataset Id */
             dataset_id: string;
+            /**
+             * Evidence Age Days
+             * @description Whole days between the upstream publication and this response. Null when the source published no timestamp. A route cannot say a particular crossing was surveyed years ago — OpenStreetMap element timestamps are not yet ingested — so this is the age of the dataset, not of any individual fact in it.
+             */
+            evidence_age_days?: number | null;
             /** Region */
             region: string;
             /** Source Name */
             source_name: string;
+            /**
+             * Source Timestamp
+             * @description When the upstream source published this data, ISO 8601. This is the figure that says how current the map is; `acquired_at` only says when it was fetched. Null when the source published no timestamp.
+             */
+            source_timestamp?: string | null;
             /**
              * Source Type
              * @enum {string}

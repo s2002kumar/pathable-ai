@@ -94,6 +94,8 @@ const COMPARISON = {
     source_type: 'osm',
     source_name: 'openstreetmap:waterloo',
     acquired_at: '2026-08-12T00:00:00+00:00',
+    source_timestamp: '2026-08-10T00:00:00+00:00',
+    evidence_age_days: 2,
     attribution: '© OpenStreetMap contributors, ODbL 1.0',
   },
   ml_predictions_used: false,
@@ -405,6 +407,50 @@ describe('RouteWorkspace', () => {
     render(<RouteWorkspace {...config} fetchImpl={vi.fn() as unknown as typeof fetch} />);
 
     expect(screen.getByTestId('map-legend')).toBeInTheDocument();
+  });
+});
+
+describe('map age', () => {
+  it('reports how old the map is, not when it was downloaded', () => {
+    // An extract fetched this morning from a two-year-old publication is two
+    // years old. Reporting the fetch date would make stale data look fresh.
+    render(
+      <RouteComparisonView
+        comparison={{
+          ...COMPARISON,
+          dataset: { ...COMPARISON.dataset, evidence_age_days: 3 },
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/Map data published 3 days ago/)).toBeInTheDocument();
+  });
+
+  it('warns plainly once the map is old enough to have moved on', () => {
+    render(
+      <RouteComparisonView
+        comparison={{
+          ...COMPARISON,
+          dataset: { ...COMPARISON.dataset, evidence_age_days: 400 },
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/kerbs, closures, resurfacing/)).toBeInTheDocument();
+  });
+
+  it('says nothing when the source published no timestamp', () => {
+    // Silence beats inventing an age for data whose age is unknown.
+    render(
+      <RouteComparisonView
+        comparison={{
+          ...COMPARISON,
+          dataset: { ...COMPARISON.dataset, evidence_age_days: null },
+        }}
+      />,
+    );
+
+    expect(screen.queryByText(/Map data published/)).not.toBeInTheDocument();
   });
 });
 

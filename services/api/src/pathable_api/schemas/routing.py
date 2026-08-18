@@ -270,7 +270,26 @@ class DatasetProvenance(BaseModel):
     checksum: str = Field(description="Content hash of the dataset that produced this route.")
     source_type: Literal["osm", "synthetic"]
     source_name: str
-    acquired_at: str = Field(description="When this dataset was obtained, ISO 8601.")
+    acquired_at: str = Field(
+        description="When PathAble obtained this dataset, ISO 8601. Not how old the map is."
+    )
+    source_timestamp: str | None = Field(
+        default=None,
+        description=(
+            "When the upstream source published this data, ISO 8601. This is the figure that "
+            "says how current the map is; `acquired_at` only says when it was fetched. Null "
+            "when the source published no timestamp."
+        ),
+    )
+    evidence_age_days: int | None = Field(
+        default=None,
+        description=(
+            "Whole days between the upstream publication and this response. Null when the "
+            "source published no timestamp. A route cannot say a particular crossing was "
+            "surveyed years ago — OpenStreetMap element timestamps are not yet ingested — so "
+            "this is the age of the dataset, not of any individual fact in it."
+        ),
+    )
     attribution: str = Field(
         description="Required credit for the underlying map data.",
         examples=["© OpenStreetMap contributors, ODbL 1.0"],

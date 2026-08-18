@@ -70,12 +70,40 @@ export function RouteComparisonView({ comparison }: { readonly comparison: Route
           Routing uses recorded map attributes only — no predictions, no scoring, no machine
           learning. PathAble advises; it cannot guarantee a journey is passable.
         </p>
+        <MapAge dataset={comparison.dataset} />
         <p className={styles.attribution}>
           {comparison.dataset.attribution} · dataset{' '}
           <code>{comparison.dataset.checksum.slice(0, 8)}</code>
         </p>
       </footer>
     </div>
+  );
+}
+
+/** Beyond this the map is old enough that a user should be told plainly. */
+const STALE_AFTER_DAYS = 180;
+
+/**
+ * How old the map is.
+ *
+ * Reported against when the source published the data, not when PathAble
+ * fetched it — an extract downloaded this morning from a two-year-old
+ * publication is two years old, and reporting the download date would make
+ * stale data look fresh.
+ */
+function MapAge({ dataset }: { readonly dataset: RouteCompareResponse['dataset'] }) {
+  const days = dataset.evidence_age_days;
+  if (days === null || days === undefined) return null;
+
+  const when = days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`;
+
+  return (
+    <p className={styles.attribution}>
+      Map data published {when}.
+      {days >= STALE_AFTER_DAYS
+        ? ' Anything changed since then — kerbs, closures, resurfacing — is not reflected here.'
+        : ''}
+    </p>
   );
 }
 
