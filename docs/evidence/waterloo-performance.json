@@ -1,0 +1,59 @@
+{
+  "postgis_spatial_query": {
+    "n": 20,
+    "min_ms": 2.182,
+    "p50_ms": 6.856,
+    "p95_ms": 75.475,
+    "max_ms": 75.475
+  },
+  "stored_nodes": 155732,
+  "graph_load": {
+    "seconds": 83.78,
+    "nodes": 155714,
+    "segments": 180554,
+    "peak_python_heap_mb": 1317.8
+  },
+  "spatial_index_build": {
+    "seconds": 0.122,
+    "segments": 180554
+  },
+  "snap_unfiltered": {
+    "n": 120,
+    "min_ms": 0.085,
+    "p50_ms": 0.108,
+    "p95_ms": 0.291,
+    "max_ms": 13.454
+  },
+  "snap_profile_filtered": {
+    "n": 120,
+    "min_ms": 0.07,
+    "p50_ms": 0.134,
+    "p95_ms": 3.303,
+    "max_ms": 8.85
+  },
+  "route_dijkstra": {
+    "n": 38,
+    "min_ms": 22.152,
+    "p50_ms": 197.688,
+    "p95_ms": 1039.89,
+    "max_ms": 1104.519,
+    "median_expanded_nodes": 7409
+  },
+  "route_astar": {
+    "n": 38,
+    "min_ms": 26.17,
+    "p50_ms": 200.599,
+    "p95_ms": 1473.229,
+    "max_ms": 1551.921,
+    "median_expanded_nodes": 1970
+  },
+  "route_serialisation": {
+    "n": 20,
+    "min_ms": 2.11,
+    "p50_ms": 2.928,
+    "p95_ms": 8.151,
+    "max_ms": 8.151,
+    "response_bytes": 65164,
+    "segments": 95
+  }
+}

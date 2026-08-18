@@ -112,10 +112,35 @@ class EdgeIndex:
             return None
 
         point = Point(longitude, latitude)
-        shortlist = self._shortlist(point, candidates=candidates, filtered=accept is not None)
-        if not shortlist:
-            return None
 
+        # The overwhelmingly common case: the nearest segments are usable. Try
+        # the tree's own nearest query first, which is about a hundred times
+        # cheaper than a radius sweep, and only widen the search when everything
+        # close by is closed to this traveller.
+        best = self._best_of(
+            point,
+            self._shortlist(point, candidates=candidates, filtered=False),
+            accept=accept,
+            max_distance_m=max_distance_m,
+        )
+        if best is not None or accept is None:
+            return best
+
+        return self._best_of(
+            point,
+            self._shortlist(point, candidates=candidates, filtered=True),
+            accept=accept,
+            max_distance_m=max_distance_m,
+        )
+
+    def _best_of(
+        self,
+        point: Point,
+        shortlist: list[int],
+        *,
+        accept: Callable[[RoutableEdge], bool] | None,
+        max_distance_m: float | None,
+    ) -> EdgeSnap | None:
         best: EdgeSnap | None = None
         for index in shortlist:
             edge = self._edges[index]

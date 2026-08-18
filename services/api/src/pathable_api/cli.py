@@ -16,6 +16,7 @@ import sys
 import time
 import uuid
 from collections.abc import Sequence
+from dataclasses import asdict
 from pathlib import Path
 
 from sqlalchemy import select
@@ -512,7 +513,7 @@ async def _evaluate(database: Database, args: argparse.Namespace) -> int:
                 f"astar {timing.astar_ms:7.2f} ms ({timing.astar_expanded:>6} expanded)  "
                 f"{agreement}"
             )
-        payload["algorithms"] = [vars(timing) for timing in timings]
+        payload["algorithms"] = [asdict(timing) for timing in timings]
 
     if args.ablate:
         print()
