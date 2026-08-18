@@ -18,11 +18,12 @@ from pathable_api.routing.engine import (
     NoRouteFoundError,
     PointOffNetworkError,
     RequestTooLargeError,
+    Route,
     RoutingError,
     compute_route,
 )
 from pathable_api.routing.graph import RoutableGraph, graph_from_payload
-from pathable_api.routing.profiles import STANDARD, get_profile
+from pathable_api.routing.profiles import STANDARD, MobilityProfile, get_profile
 from pathable_api.routing.search import Algorithm
 
 A = NODES["A"]
@@ -207,15 +208,15 @@ def _route_or_none(
     graph: RoutableGraph,
     origin: tuple[float, float],
     destination: tuple[float, float],
-    profile: object,
+    profile: MobilityProfile,
     algorithm: Algorithm,
-):
+) -> Route | None:
     try:
         return compute_route(
             graph,
             origin=origin,
             destination=destination,
-            profile=profile,  # type: ignore[arg-type]
+            profile=profile,
             algorithm=algorithm,
         )
     except RoutingError:

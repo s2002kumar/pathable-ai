@@ -13,8 +13,14 @@ from __future__ import annotations
 
 import pytest
 
+from collections.abc import Callable, Iterator
+from pathlib import Path
+
 from pathable_api.cli import main
 from pathable_api.core.config import get_settings
+
+#: What the `cli` fixture hands back: argv in, exit code out.
+Cli = Callable[[list[str]], int]
 
 pytestmark = pytest.mark.integration
 
@@ -24,7 +30,7 @@ EXIT_MISCONFIGURED = 2
 
 
 @pytest.fixture
-def cli(monkeypatch: pytest.MonkeyPatch, migrated_database_url: str):
+def cli(monkeypatch: pytest.MonkeyPatch, migrated_database_url: str) -> Iterator[Cli]:
     """Point the CLI at a freshly migrated database."""
     monkeypatch.setenv("DATABASE_URL", migrated_database_url)
     get_settings.cache_clear()
@@ -33,13 +39,13 @@ def cli(monkeypatch: pytest.MonkeyPatch, migrated_database_url: str):
 
 
 class TestRegions:
-    def test_seeding_then_listing(self, cli, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_seeding_then_listing(self, cli: Cli, capsys: pytest.CaptureFixture[str]) -> None:
         assert cli(["regions", "seed"]) == EXIT_OK
         assert cli(["regions", "list"]) == EXIT_OK
 
         assert "waterloo" in capsys.readouterr().out
 
-    def test_seeding_twice_is_safe(self, cli) -> None:
+    def test_seeding_twice_is_safe(self, cli: Cli) -> None:
         # Re-running an import script must not fail on the region step.
         assert cli(["regions", "seed"]) == EXIT_OK
         assert cli(["regions", "seed"]) == EXIT_OK
@@ -47,7 +53,7 @@ class TestRegions:
 
 class TestDatasets:
     def test_the_fixture_can_be_loaded_and_listed(
-        self, cli, capsys: pytest.CaptureFixture[str]
+        self, cli: Cli, capsys: pytest.CaptureFixture[str]
     ) -> None:
         assert cli(["ingest", "synthetic"]) == EXIT_OK
         assert cli(["datasets", "list"]) == EXIT_OK
@@ -55,18 +61,18 @@ class TestDatasets:
         output = capsys.readouterr().out
         assert "active" in output
 
-    def test_listing_with_no_datasets_is_not_an_error(self, cli) -> None:
+    def test_listing_with_no_datasets_is_not_an_error(self, cli: Cli) -> None:
         # An empty database is a state, not a failure.
         assert cli(["datasets", "list"]) == EXIT_OK
 
 
 class TestCoverageCommand:
-    def test_it_refuses_a_region_with_no_dataset(self, cli) -> None:
+    def test_it_refuses_a_region_with_no_dataset(self, cli: Cli) -> None:
         assert cli(["regions", "seed"]) == EXIT_OK
 
         assert cli(["coverage", "--region", "waterloo"]) == EXIT_FAILED
 
-    def test_the_fixture_cannot_become_the_real_region_s_answer(self, cli) -> None:
+    def test_the_fixture_cannot_become_the_real_region_s_answer(self, cli: Cli) -> None:
         # Loading the synthetic network must not make `coverage --region
         # waterloo` start reporting on it. The fixture lives in its own region
         # precisely so a real command can never be answered with fake data, and
@@ -75,32 +81,32 @@ class TestCoverageCommand:
 
         assert cli(["coverage", "--region", "waterloo"]) == EXIT_FAILED
 
-    def test_a_region_nobody_configured_is_refused_before_any_work(self, cli) -> None:
+    def test_a_region_nobody_configured_is_refused_before_any_work(self, cli: Cli) -> None:
         with pytest.raises(SystemExit):
             cli(["coverage", "--region", "waterloo-synthetic"])
 
 
 class TestElevationCommand:
-    def test_a_provider_nobody_implemented_is_refused(self, cli) -> None:
+    def test_a_provider_nobody_implemented_is_refused(self, cli: Cli) -> None:
         assert cli(["elevation", "apply", "--region", "waterloo", "--provider", "guess"]) == (
             EXIT_MISCONFIGURED
         )
 
-    def test_the_disabled_provider_is_refused_rather_than_writing_nulls(self, cli) -> None:
+    def test_the_disabled_provider_is_refused_rather_than_writing_nulls(self, cli: Cli) -> None:
         # Running the sampler with elevation switched off would wipe whatever a
         # previous run had gathered.
         assert cli(["elevation", "apply", "--region", "waterloo", "--provider", "none"]) == (
             EXIT_MISCONFIGURED
         )
 
-    def test_it_reports_when_the_region_has_nothing_to_sample(self, cli) -> None:
+    def test_it_reports_when_the_region_has_nothing_to_sample(self, cli: Cli) -> None:
         assert cli(["regions", "seed"]) == EXIT_OK
 
         assert cli(["elevation", "apply", "--region", "waterloo"]) == EXIT_FAILED
 
 
 class TestEvaluateCommand:
-    def test_an_unknown_profile_is_refused(self, cli) -> None:
+    def test_an_unknown_profile_is_refused(self, cli: Cli) -> None:
         assert cli(["evaluate", "--region", "waterloo", "--profile", "hovercraft"]) == (
             EXIT_MISCONFIGURED
         )
@@ -108,7 +114,7 @@ class TestEvaluateCommand:
 
 class TestBenchmarkCommand:
     def test_a_synthetic_lattice_can_be_measured_without_a_dataset(
-        self, cli, capsys: pytest.CaptureFixture[str]
+        self, cli: Cli, capsys: pytest.CaptureFixture[str]
     ) -> None:
         assert cli(["benchmark", "route", "--grid", "6", "--samples", "3"]) == EXIT_OK
 
@@ -116,5 +122,5 @@ class TestBenchmarkCommand:
         # A lattice is not a map of anywhere, and the output has to say so.
         assert "lattice" in output.lower() or "grid" in output.lower()
 
-    def test_asking_for_neither_a_region_nor_a_grid_is_refused(self, cli) -> None:
+    def test_asking_for_neither_a_region_nor_a_grid_is_refused(self, cli: Cli) -> None:
         assert cli(["benchmark", "route"]) == EXIT_MISCONFIGURED

@@ -12,7 +12,7 @@ rather than into a height.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import requests
@@ -55,7 +55,12 @@ class StubSession:
 
 def provider(response: Any) -> tuple[OpenTopoDataProvider, StubSession]:
     session = StubSession(response)
-    return OpenTopoDataProvider(session=session, dataset="aster30m", resolution_m=30.0), session
+    # A structural stand-in for requests.Session: the provider only ever calls
+    # `.get`, and a real session here would mean a real request.
+    source = OpenTopoDataProvider(
+        session=cast("requests.Session", session), dataset="aster30m", resolution_m=30.0
+    )
+    return source, session
 
 
 class TestReadingAnAnswer:

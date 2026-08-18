@@ -10,12 +10,14 @@ Nothing here touches a database, a network, or an extract.
 
 from __future__ import annotations
 
+import argparse
+
 import pytest
 
 from pathable_api.cli import build_parser
 
 
-def parse(*argv: str):
+def parse(*argv: str) -> argparse.Namespace:
     return build_parser().parse_args(list(argv))
 
 

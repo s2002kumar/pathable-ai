@@ -24,13 +24,14 @@ from pathable_api.geo.elevation_apply import (
     apply_elevation,
     summarise,
 )
+from pathable_api.geo.datasets import IngestionResult
 from pathable_api.geo.fixtures import load_synthetic_dataset
 from pathable_api.geo.models import DatasetVersion
 
 
-async def _dataset(session: AsyncSession, result: object) -> DatasetVersion:
+async def _dataset(session: AsyncSession, result: IngestionResult) -> DatasetVersion:
     """The stored row for a freshly ingested dataset."""
-    dataset = await session.get(DatasetVersion, result.dataset_id)  # type: ignore[attr-defined]
+    dataset = await session.get(DatasetVersion, result.dataset_id)
     assert dataset is not None
     return dataset
 
@@ -94,7 +95,9 @@ class Hillside:
 
 
 class TestCoverageReport:
-    async def test_it_counts_physical_segments_not_directed_edges(self, db_session) -> None:
+    async def test_it_counts_physical_segments_not_directed_edges(
+        self, db_session: AsyncSession
+    ) -> None:
         # A two-way footway is one piece of pavement with one surface. Counting
         # it twice would inflate every figure in the report.
         result = await load_synthetic_dataset(db_session, activate=True)
@@ -105,7 +108,7 @@ class TestCoverageReport:
         assert report.segments == result.edge_count
         assert report.directed_edges >= report.segments
 
-    async def test_it_reports_each_category_separately(self, db_session) -> None:
+    async def test_it_reports_each_category_separately(self, db_session: AsyncSession) -> None:
         result = await load_synthetic_dataset(db_session, activate=True)
         report = await build_coverage_report(
             db_session, dataset=await _dataset(db_session, result), region="Fixture"
@@ -116,7 +119,7 @@ class TestCoverageReport:
         assert "smoothness" in names
         assert "width" in names
 
-    async def test_there_is_no_combined_accessibility_score(self, db_session) -> None:
+    async def test_there_is_no_combined_accessibility_score(self, db_session: AsyncSession) -> None:
         # The single most misleading number this project could produce: a region
         # with excellent kerb data and no surface data would average to
         # "moderate", which describes nothing and hides the actual gap.
@@ -130,7 +133,7 @@ class TestCoverageReport:
         assert "overall" not in rendered
         assert "not combined" in rendered
 
-    async def test_kerb_is_measured_over_crossings_only(self, db_session) -> None:
+    async def test_kerb_is_measured_over_crossings_only(self, db_session: AsyncSession) -> None:
         # A kerb is a fact about where a path meets a road. Measured across every
         # footway the number would always look reassuring and mean nothing.
         result = await load_synthetic_dataset(db_session, activate=True)
@@ -142,7 +145,9 @@ class TestCoverageReport:
         assert kerb is not None
         assert kerb.total == report.counts["crossings"]
 
-    async def test_unknown_is_counted_as_unknown_not_as_a_value(self, db_session) -> None:
+    async def test_unknown_is_counted_as_unknown_not_as_a_value(
+        self, db_session: AsyncSession
+    ) -> None:
         result = await load_synthetic_dataset(db_session, activate=True)
         report = await build_coverage_report(
             db_session, dataset=await _dataset(db_session, result), region="Fixture"
@@ -153,7 +158,7 @@ class TestCoverageReport:
         assert surface.unknown > 0
         assert "unknown" not in surface.values
 
-    async def test_the_report_carries_its_version(self, db_session) -> None:
+    async def test_the_report_carries_its_version(self, db_session: AsyncSession) -> None:
         # A figure quoted in a document has to be traceable to the definition
         # that produced it.
         result = await load_synthetic_dataset(db_session, activate=True)
@@ -165,7 +170,7 @@ class TestCoverageReport:
 
 
 class TestApplyingElevation:
-    async def test_it_writes_a_height_and_its_provenance(self, db_session) -> None:
+    async def test_it_writes_a_height_and_its_provenance(self, db_session: AsyncSession) -> None:
         result = await load_synthetic_dataset(db_session, activate=True)
         run = await apply_elevation(
             db_session, dataset=await _dataset(db_session, result), provider=FlatEarth()
@@ -177,7 +182,9 @@ class TestApplyingElevation:
         assert run.metadata["resolution_m"] == 1.0
         assert "acquired_at" in run.metadata
 
-    async def test_a_provider_with_no_coverage_leaves_elevation_unknown(self, db_session) -> None:
+    async def test_a_provider_with_no_coverage_leaves_elevation_unknown(
+        self, db_session: AsyncSession
+    ) -> None:
         # The failure this guards: zero-filling would turn "nobody measured
         # this" into "flat", which is the exact error the product exists to
         # avoid.
@@ -213,7 +220,7 @@ class TestApplyingElevation:
         assert run.edges_too_short >= 0
         assert "edges_too_short" in run.metadata
 
-    async def test_the_run_is_summarised_with_its_caveats(self, db_session) -> None:
+    async def test_the_run_is_summarised_with_its_caveats(self, db_session: AsyncSession) -> None:
         result = await load_synthetic_dataset(db_session, activate=True)
         run = await apply_elevation(
             db_session, dataset=await _dataset(db_session, result), provider=Hillside()

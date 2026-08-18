@@ -29,7 +29,7 @@ from pathable_api.geo.node_evidence import (
     apply_to_crossing,
     read_node_evidence,
 )
-from pathable_api.routing.graph import graph_from_payload
+from pathable_api.routing.graph import RoutableGraph, graph_from_payload
 
 Tags = dict[str, Any]
 
@@ -296,7 +296,7 @@ class TestNodeLevelKerbEvidence:
 
 
 class TestDirectionReachesTheRouter:
-    def _graph(self, tags: Tags):
+    def _graph(self, tags: Tags) -> RoutableGraph:
         nodes = [
             NetworkNode(source_node_id="A", geometry=Point(-80.54, 43.47)),
             NetworkNode(source_node_id="B", geometry=Point(-80.538, 43.47)),
