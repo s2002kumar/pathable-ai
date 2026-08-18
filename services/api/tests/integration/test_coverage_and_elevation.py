@@ -18,13 +18,13 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.geo.coverage import COVERAGE_REPORT_VERSION, build_coverage_report, render
+from pathable_api.geo.datasets import IngestionResult
 from pathable_api.geo.elevation import ElevationSample
 from pathable_api.geo.elevation_apply import (
     DISAGREEMENT_THRESHOLD_PERCENT,
     apply_elevation,
     summarise,
 )
-from pathable_api.geo.datasets import IngestionResult
 from pathable_api.geo.fixtures import load_synthetic_dataset
 from pathable_api.geo.models import DatasetVersion
 

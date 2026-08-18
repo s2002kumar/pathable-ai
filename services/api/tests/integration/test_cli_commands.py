@@ -11,10 +11,9 @@ work".
 
 from __future__ import annotations
 
-import pytest
-
 from collections.abc import Callable, Iterator
-from pathlib import Path
+
+import pytest
 
 from pathable_api.cli import main
 from pathable_api.core.config import get_settings
