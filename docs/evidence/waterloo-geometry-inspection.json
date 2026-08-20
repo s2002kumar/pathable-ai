@@ -1,6 +1,6 @@
 {
   "checked": 19,
-  "clean": 7,
+  "clean": 19,
   "routes": [
     {
       "case": "campus-library-to-student-life",
@@ -12,10 +12,7 @@
       "crossings": 0,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 7.8 m gap between two segments",
-        "reported 354 m but drew 362 m"
-      ]
+      "problems": []
     },
     {
       "case": "campus-to-laurier",
@@ -39,9 +36,7 @@
       "crossings": 9,
       "unknown_kerb_crossings": 1,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 11.3 m gap between two segments"
-      ]
+      "problems": []
     },
     {
       "case": "uptown-to-waterloo-park",
@@ -89,9 +84,7 @@
       "crossings": 3,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 7.8 m gap between two segments"
-      ]
+      "problems": []
     },
     {
       "case": "northfield-to-conestoga",
@@ -103,9 +96,7 @@
       "crossings": 3,
       "unknown_kerb_crossings": 3,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 4.4 m gap between two segments"
-      ]
+      "problems": []
     },
     {
       "case": "erb-westmount-to-uptown",
@@ -117,9 +108,7 @@
       "crossings": 10,
       "unknown_kerb_crossings": 1,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 9.6 m gap between two segments"
-      ]
+      "problems": []
     },
     {
       "case": "uptown-to-belmont",
@@ -131,9 +120,7 @@
       "crossings": 7,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 50.2 m gap between two segments"
-      ]
+      "problems": []
     },
     {
       "case": "belmont-to-hospital",
@@ -145,9 +132,7 @@
       "crossings": 0,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 27.5 m gap between two segments"
-      ]
+      "problems": []
     },
     {
       "case": "hospital-to-city-hall",
@@ -159,10 +144,7 @@
       "crossings": 3,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 12.9 m gap between two segments",
-        "reported 1652 m but drew 1690 m"
-      ]
+      "problems": []
     },
     {
       "case": "city-hall-to-victoria-park",
@@ -174,9 +156,7 @@
       "crossings": 3,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 7.5 m gap between two segments"
-      ]
+      "problems": []
     },
     {
       "case": "city-hall-to-market",
@@ -212,9 +192,7 @@
       "crossings": 2,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 55.1 m gap between two segments"
-      ]
+      "problems": []
     },
     {
       "case": "laurel-creek-to-campus",
@@ -238,10 +216,7 @@
       "crossings": 1,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 93.3 m gap between two segments",
-        "reported 1212 m but drew 1305 m"
-      ]
+      "problems": []
     },
     {
       "case": "columbia-to-rec-complex",
@@ -253,9 +228,7 @@
       "crossings": 0,
       "unknown_kerb_crossings": 0,
       "gradient_source": "derived_elevation",
-      "problems": [
-        "a 8.8 m gap between two segments"
-      ]
+      "problems": []
     }
   ]
 }

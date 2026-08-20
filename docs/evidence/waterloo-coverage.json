@@ -2,7 +2,7 @@
   "version": 1,
   "dataset_id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
   "region": "Waterloo, Ontario",
-  "generated_at": "2026-08-18T00:07:01.916759+00:00",
+  "generated_at": "2026-08-20T17:22:18.507392+00:00",
   "segments": 180554,
   "directed_edges": 361108,
   "nodes": 155714,
@@ -36,9 +36,9 @@
       "values": {}
     },
     "grade (from elevation)": {
-      "known": 0,
-      "unknown": 180554,
-      "known_fraction": 0.0,
+      "known": 97131,
+      "unknown": 83423,
+      "known_fraction": 0.538,
       "values": {}
     },
     "width": {

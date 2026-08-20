@@ -3,6 +3,14 @@
 Measurements and captures from the real Waterloo dataset. Every number here came
 from a run that actually happened; nothing is estimated or projected.
 
+**Every file here is regenerated after any change that could move it.** Two were
+briefly wrong and are worth naming: the coverage report was first run before
+elevation had been applied, so it recorded 0% for elevation-derived grade; and
+the geometry inspection was first run before the snapped-segment fix, so it
+recorded 12 failures. Both were regenerated against the final code. Evidence
+that lags the thing it describes is worse than no evidence, because it is
+believed.
+
 **Dataset under test**
 
 |                   |                                                                                 |
