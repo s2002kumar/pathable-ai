@@ -17,6 +17,7 @@ from sqlalchemy.schema import SchemaItem
 from pathable_api.core.config import get_settings
 from pathable_api.db.base import Base
 from pathable_api.geo import models as _geo_models  # noqa: F401  (registers tables)
+from pathable_api.perception import models as _perception_models  # noqa: F401  (registers tables)
 
 config = context.config
 
