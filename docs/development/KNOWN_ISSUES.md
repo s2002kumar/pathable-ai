@@ -304,5 +304,6 @@ exposes both. It was not wired through because the coverage report and the
 freshness policy would both have to change shape at the same time, and doing that
 with no use for the number yet would be building ahead of need.
 
-**Check when:** user reports arrive (Gate C) — the point at which "how old is this
-claim" becomes a question the product must answer about more than one source.
+**Check when:** a second source of evidence arrives — user reports, or model
+predictions — at which point "how old is this claim" becomes a question the
+product must answer about more than one thing at once.

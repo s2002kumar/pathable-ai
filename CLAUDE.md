@@ -47,29 +47,36 @@ These are not style preferences. They are what makes the product safe to use.
 Gate A–E are the governing product outcomes. Each is defensible only on real
 data, and none of them is complete because its code exists.
 
-- **Gate A — real geospatial system.** A real regional OSM network, ingested from
-  more than one acquisition path, with **elevation** as a required component and
-  derived grade kept distinguishable from OSM-reported incline.
-- **Gate B — defensible deterministic routing.** Dijkstra is the correctness
-  baseline and **A\* is required** alongside it; the two must be proven to agree
-  on optimal cost. Real route evaluation, real performance measurement and
-  manual geometry inspection are part of the gate, not extras.
-- **Gate C — evidence.** User reports and imagery, gated on a licensing review
-  that must happen before any ingestion.
-- **Gate D — learned prediction.** Requires **geographic hold-out** (never a
-  random split), **calibration**, a **rollback path**, and predictions that
-  actually change an edge's cost — a model that exists but changes no route has
-  not reached this gate.
-- **Gate E — production.** Requires observability, load testing, and recovery
-  that has actually been exercised rather than documented.
+- **Gate A — real system.** A real regional OSM network, ingested from more than
+  one acquisition path, with **elevation** as a required component and derived
+  grade kept distinguishable from OSM-reported incline. _Passed 2026-08-20._
+- **Gate B — hard differentiator.** Accessibility-aware routing that defensibly
+  beats a shortest path. Dijkstra is the correctness baseline and **A\* is
+  required** alongside it; the two must be proven to agree on optimal cost. Real
+  route evaluation, real performance measurement and manual geometry inspection
+  are part of the gate, not extras. _Passed 2026-08-20._
+- **Gate C — ML credibility.** Requires versioned real imagery with a defensible
+  licence chain, a labelled dataset, **geographic hold-out** (never a random
+  split), a baseline before the model, **calibration**, failure analysis, a
+  **rollback path**, and predictions that actually change an edge's cost. A model
+  that trains but changes no route has not reached this gate.
+- **Gate D — production credibility.** Requires observability, load testing, and
+  backup, restore and rollback that have actually been exercised rather than
+  documented.
+- **Gate E — external credibility.** Requires genuine external validation —
+  somebody outside this repository — plus a demo or video, published
+  architecture and benchmarks, a technical article, and a research-style
+  artifact. Nothing here may be claimed before it exists.
 
-**Evidence freshness is first-class.** Every routing-relevant fact carries where
-it came from and when. A two-year-old observation is not a current fact, and a
-route must be able to say so.
+**Evidence and uncertainty are a required system layer, not a gate of their
+own.** Every routing-relevant fact carries where it came from, whether it was
+observed or derived, and when. A two-year-old observation is not a current fact,
+and a route must be able to say so. Missing information is never evidence a path
+is clear.
 
-**External validation and the recruiter/research artifacts are completion
-requirements**, not optional polish — the work is not finished until somebody
-outside this repository can evaluate it.
+**A learned prediction never overwrites a deterministic map fact.** They are
+stored apart, costed apart, and shown apart, so "OpenStreetMap says" and "a model
+thinks" stay distinguishable in every response.
 
 ## Implementation approach
 
@@ -148,6 +155,9 @@ from a previous commit.
 
 ## Current state
 
-Phase 0 foundation merged and tagged `v0.1.0-foundation`. Gate A+B work is on
-`feature/p1-usable-routing-mvp`. See `docs/product/PHASES.md` for what exists
-and — more importantly — what deliberately does not.
+**Gate A and Gate B are passed**, merged and tagged `v0.2.0-gate-ab`. PathAble
+routes over a real 180,554-segment Waterloo network with 1 m LiDAR elevation.
+
+Gate C work is on `feature/c01-ml-production-readiness`, alongside the Gate D
+production track. See `docs/product/PHASES.md` for what exists and — more
+importantly — what deliberately does not.
