@@ -1,8 +1,7 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppHeader } from './AppHeader';
 import { ConfigurationError } from './ConfigurationError';
-import { PilotPanel } from './PilotPanel';
 
 const READY_BODY = {
   status: 'ready',
@@ -125,121 +124,6 @@ describe('AppHeader', () => {
 
     // The dot is decorative; the text carries the meaning.
     await waitFor(() => expect(screen.getByText(/API degraded/)).toBeInTheDocument());
-  });
-});
-
-describe('PilotPanel', () => {
-  function renderPanel(regionName = 'Waterloo, Ontario') {
-    return render(
-      <PilotPanel
-        regionName={regionName}
-        centerLat={43.4668}
-        centerLon={-80.5164}
-        descriptionId="pilot-area-description"
-      />,
-    );
-  }
-
-  it('renders the pilot area heading', () => {
-    renderPanel();
-
-    expect(
-      screen.getByRole('heading', { name: 'Waterloo, Ontario', level: 1 }),
-    ).toBeInTheDocument();
-  });
-
-  it('describes the pilot area in text, not only on the map', () => {
-    renderPanel();
-
-    const description = screen.getByTestId('pilot-description');
-    expect(description).toHaveTextContent(/uptown core/i);
-    expect(description).toHaveTextContent(/University of Waterloo/i);
-    expect(description).toHaveTextContent(/ION light-rail/i);
-  });
-
-  it('exposes the description under the id the map references', () => {
-    renderPanel();
-
-    expect(screen.getByTestId('pilot-description')).toHaveAttribute('id', 'pilot-area-description');
-  });
-
-  it('shows the configured centre coordinates', () => {
-    renderPanel();
-
-    expect(screen.getByText(/43\.4668° N/)).toBeInTheDocument();
-    expect(screen.getByText(/80\.5164° W/)).toBeInTheDocument();
-  });
-
-  it('discloses that this is a Phase 0 build', () => {
-    renderPanel();
-
-    const notice = screen.getByTestId('development-notice');
-    expect(notice).toHaveTextContent(/Phase 0/i);
-    expect(notice).toHaveTextContent(/foundation only/i);
-  });
-
-  it('states plainly that routing and ML do not exist yet', () => {
-    // This product could mislead someone into an unsafe journey. The disclosure
-    // is a safety requirement, not a nicety.
-    renderPanel();
-
-    const notice = screen.getByTestId('development-notice');
-    expect(notice).toHaveTextContent(/no routing/i);
-    expect(notice).toHaveTextContent(/no machine learning/i);
-    expect(notice).toHaveTextContent(/should be used to plan a journey/i);
-  });
-
-  it('shows visible data attribution', () => {
-    renderPanel();
-
-    const attribution = screen.getByTestId('attribution');
-    expect(attribution).toHaveTextContent(/OpenStreetMap/);
-    expect(within(attribution).getByRole('link', { name: /OpenStreetMap/ })).toHaveAttribute(
-      'href',
-      'https://www.openstreetmap.org/copyright',
-    );
-  });
-
-  it('notes that the development tile provider is not production-approved', () => {
-    renderPanel();
-
-    expect(screen.getByTestId('attribution')).toHaveTextContent(
-      /not been approved for production/i,
-    );
-  });
-
-  it('labels the Phase 1 list as planned, not available', () => {
-    renderPanel();
-
-    expect(screen.getByText(/Planned for Phase 1/i)).toBeInTheDocument();
-  });
-
-  it('offers no interactive routing controls', () => {
-    // A search box or "Find route" button that silently does nothing would be
-    // worse than no control at all.
-    renderPanel();
-
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
-    expect(screen.queryAllByRole('combobox')).toHaveLength(0);
-    expect(screen.queryAllByRole('searchbox')).toHaveLength(0);
-    expect(screen.queryAllByRole('radio')).toHaveLength(0);
-  });
-
-  it('exposes only external reference links, never route actions', () => {
-    renderPanel();
-
-    for (const link of screen.getAllByRole('link')) {
-      expect(link.getAttribute('href')).toMatch(/^https:\/\//);
-    }
-  });
-
-  it('follows the configured region rather than hard-coding Waterloo', () => {
-    renderPanel('Vancouver, British Columbia');
-
-    expect(
-      screen.getByRole('heading', { name: 'Vancouver, British Columbia', level: 1 }),
-    ).toBeInTheDocument();
   });
 });
 

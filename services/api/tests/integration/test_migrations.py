@@ -4,13 +4,26 @@ from __future__ import annotations
 
 import pytest
 from alembic import command
+from alembic.script import ScriptDirectory
 from sqlalchemy import Engine, create_engine, text
 
-from tests.integration.conftest import alembic_config
+from tests.integration.conftest import API_ROOT, alembic_config
 
 pytestmark = pytest.mark.integration
 
-BASELINE_REVISION = "0001_postgis"
+
+def head_revision() -> str:
+    """The current head, read from the migration scripts.
+
+    Derived rather than hard-coded so adding a migration does not silently turn
+    these assertions into a check that the *old* head is still applied.
+    """
+    config = alembic_config("postgresql+psycopg://unused/unused")
+    config.set_main_option("script_location", str(API_ROOT / "migrations"))
+    return ScriptDirectory.from_config(config).get_current_head() or ""
+
+
+HEAD_REVISION = head_revision()
 
 
 def engine_for(url: str) -> Engine:
@@ -61,7 +74,7 @@ class TestUpgradeFromEmpty:
 
         engine = engine_for(empty_database_url)
         try:
-            assert current_revision(engine) == BASELINE_REVISION
+            assert current_revision(engine) == HEAD_REVISION
         finally:
             engine.dispose()
 
@@ -74,7 +87,7 @@ class TestUpgradeFromEmpty:
 
         engine = engine_for(empty_database_url)
         try:
-            assert current_revision(engine) == BASELINE_REVISION
+            assert current_revision(engine) == HEAD_REVISION
         finally:
             engine.dispose()
 
@@ -122,6 +135,6 @@ class TestDowngrade:
         engine = engine_for(migrated_database_url)
         try:
             assert postgis_version(engine) is not None
-            assert current_revision(engine) == BASELINE_REVISION
+            assert current_revision(engine) == HEAD_REVISION
         finally:
             engine.dispose()

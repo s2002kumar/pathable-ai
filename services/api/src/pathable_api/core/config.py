@@ -20,6 +20,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 Environment = Literal["development", "test", "production"]
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LogFormat = Literal["json", "console"]
+GeocodingProviderName = Literal["none", "nominatim"]
 
 #: SQLAlchemy driver PathAble standardises on. Psycopg 3 serves both the async
 #: application engine and Alembic's synchronous engine from one URL, which is why
@@ -76,6 +77,15 @@ class Settings(BaseSettings):
     db_pool_size: Annotated[int, Field(ge=1, le=50)] = 5
     db_pool_max_overflow: Annotated[int, Field(ge=0, le=50)] = 5
 
+    # --- Geocoding --------------------------------------------------------
+    # Disabled by default: address search is a convenience on top of the
+    # map-click flow, and a deployment should opt into calling somebody else's
+    # donated service rather than doing it by accident.
+    geocoding_provider: GeocodingProviderName = "none"
+    #: Required by Nominatim's usage policy so an operator can reach whoever is
+    #: responsible for the traffic instead of blocking it.
+    geocoding_contact: str = ""
+
     # --- Observability ----------------------------------------------------
     log_level: LogLevel = "INFO"
     log_format: LogFormat = "json"
@@ -83,7 +93,7 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Field validation
     # ------------------------------------------------------------------
-    @field_validator("environment", "log_level", "log_format", mode="before")
+    @field_validator("environment", "log_level", "log_format", "geocoding_provider", mode="before")
     @classmethod
     def _normalise_enums(cls, value: object, info: ValidationInfo) -> object:
         """Accept ``production``/``PRODUCTION`` and ``info``/``INFO`` alike."""
@@ -190,6 +200,16 @@ class Settings(BaseSettings):
 
         if problems:
             raise ValueError("; ".join(problems))
+        return self
+
+    @model_validator(mode="after")
+    def _enforce_geocoding_requirements(self) -> Self:
+        if self.geocoding_provider == "nominatim" and not self.geocoding_contact.strip():
+            msg = (
+                "GEOCODING_CONTACT is required when GEOCODING_PROVIDER is 'nominatim'. "
+                "Nominatim's usage policy requires an identifying contact address."
+            )
+            raise ValueError(msg)
         return self
 
     # ------------------------------------------------------------------

@@ -9,6 +9,7 @@ vi.mock('maplibre-gl', () => ({
   getWorkerUrl: () => '',
   Map: class {
     on() {}
+    off() {}
     addControl() {}
     remove() {}
   },
@@ -24,6 +25,7 @@ const VALID_ENV = {
   NEXT_PUBLIC_PILOT_CENTER_LON: '-80.5164',
   NEXT_PUBLIC_PILOT_ZOOM: '14',
   NEXT_PUBLIC_PILOT_REGION_NAME: 'Waterloo, Ontario',
+  NEXT_PUBLIC_PILOT_REGION_SLUG: 'waterloo',
 };
 
 function setEnv(values: Record<string, string>) {
@@ -60,7 +62,7 @@ describe('HomePage', () => {
     expect(screen.getByText('PathAble AI')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: 'Waterloo, Ontario', level: 1 }),
+      screen.getByRole('heading', { name: /Waterloo, Ontario/, level: 1 }),
     ).toBeInTheDocument();
   });
 
@@ -72,13 +74,69 @@ describe('HomePage', () => {
     await waitFor(() => expect(screen.getByTestId('map-frame')).toBeInTheDocument());
   });
 
-  it('renders the pilot description and the development disclosure together', () => {
+  it('describes what the page does in text, not only on the map', () => {
     setEnv(VALID_ENV);
 
     render(<HomePage />);
 
-    expect(screen.getByTestId('pilot-description')).toBeInTheDocument();
-    expect(screen.getByTestId('development-notice')).toHaveTextContent(/no routing/i);
+    const description = screen.getByTestId('pilot-description');
+    expect(description).toHaveAttribute('id', 'pilot-area-description');
+    expect(description).toHaveTextContent(/compares the shortest walking route/i);
+  });
+
+  it('states that missing data is not evidence of a clear path', () => {
+    // The product's central safety claim. If this sentence disappears, somebody
+    // can read an unsurveyed route as a checked one.
+    setEnv(VALID_ENV);
+
+    render(<HomePage />);
+
+    expect(screen.getByTestId('pilot-description')).toHaveTextContent(
+      /missing information is never treated as a clear path/i,
+    );
+  });
+
+  it('never promises that a route is passable', () => {
+    setEnv(VALID_ENV);
+
+    render(<HomePage />);
+
+    expect(screen.getByTestId('pilot-description')).toHaveTextContent(
+      /no route here is a guarantee/i,
+    );
+  });
+
+  it('offers the mobility profiles as a labelled radio group', () => {
+    setEnv(VALID_ENV);
+
+    render(<HomePage />);
+
+    const group = screen.getByRole('radiogroup', { name: /mobility profile/i });
+    expect(group).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Wheelchair/ })).toBeChecked();
+    expect(screen.getAllByRole('radio')).toHaveLength(5);
+  });
+
+  it('explains how to begin before any point is chosen', () => {
+    setEnv(VALID_ENV);
+
+    render(<HomePage />);
+
+    const status = screen.getByTestId('route-status');
+    expect(status).toHaveAttribute('data-route-state', 'idle');
+    expect(status).toHaveTextContent(/choose a start and an end/i);
+  });
+
+  it('shows a map key explaining the two route lines', () => {
+    // The legend is real text outside the canvas: one painted into WebGL would
+    // be invisible to a screen reader and unselectable.
+    setEnv(VALID_ENV);
+
+    render(<HomePage />);
+
+    const legend = screen.getByTestId('map-legend');
+    expect(legend).toHaveTextContent(/Route for your profile/i);
+    expect(legend).toHaveTextContent(/Shortest walking route/i);
   });
 
   it('shows backend status in the shell', async () => {
@@ -91,14 +149,24 @@ describe('HomePage', () => {
     );
   });
 
-  it('presents no routing controls anywhere in the shell', () => {
+  it('shows visible OpenStreetMap attribution', () => {
     setEnv(VALID_ENV);
 
     render(<HomePage />);
 
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
-    expect(screen.queryAllByRole('searchbox')).toHaveLength(0);
-    expect(screen.queryAllByRole('combobox')).toHaveLength(0);
+    const attribution = screen.getByTestId('attribution');
+    expect(attribution).toHaveTextContent(/OpenStreetMap/);
+    expect(attribution).toHaveTextContent(/ODbL/);
+  });
+
+  it('notes that the development tile provider is not production-approved', () => {
+    setEnv(VALID_ENV);
+
+    render(<HomePage />);
+
+    expect(screen.getByTestId('attribution')).toHaveTextContent(
+      /not been approved for production/i,
+    );
   });
 
   it('renders the configuration error page instead of a broken shell', () => {
@@ -123,5 +191,13 @@ describe('HomePage', () => {
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent('NEXT_PUBLIC_PILOT_ZOOM');
     expect(alert).toHaveTextContent('NEXT_PUBLIC_API_BASE_URL');
+  });
+
+  it('rejects a region slug the API could not accept', () => {
+    setEnv({ ...VALID_ENV, NEXT_PUBLIC_PILOT_REGION_SLUG: 'Waterloo Ontario!' });
+
+    render(<HomePage />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('NEXT_PUBLIC_PILOT_REGION_SLUG');
   });
 });

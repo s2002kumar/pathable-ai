@@ -20,6 +20,7 @@ export const DEFAULTS = {
   pilotCenterLon: -80.5164,
   pilotZoom: 14,
   pilotRegionName: 'Waterloo, Ontario',
+  pilotRegionSlug: 'waterloo',
 } as const;
 
 const httpUrl = z
@@ -73,6 +74,15 @@ export const publicConfigSchema = z.object({
   pilotCenterLon: coordinate(-180, 180, 'NEXT_PUBLIC_PILOT_CENTER_LON'),
   pilotZoom: coordinate(0, 22, 'NEXT_PUBLIC_PILOT_ZOOM'),
   pilotRegionName: z.string().trim().min(1).max(80),
+  // Must match a `pilot_regions.slug` in the API. The pattern mirrors the
+  // backend's own validation so a typo fails at boot rather than as a 422 on
+  // the first route request.
+  pilotRegionSlug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9-]+$/, { message: 'must be lowercase letters, digits and hyphens' }),
 });
 
 export type PublicConfig = z.infer<typeof publicConfigSchema>;
@@ -105,6 +115,7 @@ export function parsePublicConfig(raw: RawConfig): ConfigResult {
     pilotCenterLon: withDefault(raw.NEXT_PUBLIC_PILOT_CENTER_LON, DEFAULTS.pilotCenterLon),
     pilotZoom: withDefault(raw.NEXT_PUBLIC_PILOT_ZOOM, DEFAULTS.pilotZoom),
     pilotRegionName: withDefault(raw.NEXT_PUBLIC_PILOT_REGION_NAME, DEFAULTS.pilotRegionName),
+    pilotRegionSlug: withDefault(raw.NEXT_PUBLIC_PILOT_REGION_SLUG, DEFAULTS.pilotRegionSlug),
   });
 
   if (parsed.success) {
@@ -118,6 +129,7 @@ export function parsePublicConfig(raw: RawConfig): ConfigResult {
     pilotCenterLon: 'NEXT_PUBLIC_PILOT_CENTER_LON',
     pilotZoom: 'NEXT_PUBLIC_PILOT_ZOOM',
     pilotRegionName: 'NEXT_PUBLIC_PILOT_REGION_NAME',
+    pilotRegionSlug: 'NEXT_PUBLIC_PILOT_REGION_SLUG',
   };
 
   return {
@@ -138,6 +150,7 @@ export function readRawPublicConfig(): RawConfig {
     NEXT_PUBLIC_PILOT_CENTER_LON: process.env.NEXT_PUBLIC_PILOT_CENTER_LON,
     NEXT_PUBLIC_PILOT_ZOOM: process.env.NEXT_PUBLIC_PILOT_ZOOM,
     NEXT_PUBLIC_PILOT_REGION_NAME: process.env.NEXT_PUBLIC_PILOT_REGION_NAME,
+    NEXT_PUBLIC_PILOT_REGION_SLUG: process.env.NEXT_PUBLIC_PILOT_REGION_SLUG,
   };
 }
 

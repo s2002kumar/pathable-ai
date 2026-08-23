@@ -142,17 +142,36 @@ poisoning the graph.
 enormous bounding box, thousands of waypoints, or absurd coordinates is a cheap
 denial of service.
 
-**Current state.** Health endpoints take no parameters. Configuration validates
-ports, coordinates, zoom and URLs at startup. Readiness has a bounded timeout, so
-a hung database cannot hold the request open indefinitely.
+**Current state.** Every input is bounded by a Pydantic constraint rather than a
+manual check, so an out-of-range value is rejected by the schema before any code
+sees it: longitude and latitude to the WGS84 range, region slugs to 64 characters
+matching `^[a-z0-9-]+$`, search text to 160 characters, result limits to 5.
 
-**Required for Phase 1.**
+Routing work is bounded three ways, all in `routing/engine.py`:
 
-- Bound every numeric input (Pydantic constraints, not manual checks).
-- Cap request body size at the proxy.
-- Reject bounding boxes beyond the pilot region.
-- Cap routing work explicitly (node budget, wall-clock timeout).
-- Rate limiting before any public deployment.
+| Bound                  | Value | Why                                                             |
+| ---------------------- | ----- | --------------------------------------------------------------- |
+| `MAX_REQUEST_SPAN_M`   | 15 km | Refused before any search runs; not a walking journey           |
+| `MAX_SNAP_DISTANCE_M`  | 300 m | A point further than this from any path is refused, not guessed |
+| `MAX_EDGE_EVALUATIONS` | 750 k | The search aborts rather than expanding a pathological request  |
+
+`RequestSizeLimitMiddleware` rejects a declared `Content-Length` above 64 KiB
+before the body is read — three orders of magnitude above a real request. It runs
+first, ahead of correlation logging, so nothing else is spent on an oversized
+body.
+
+Readiness still has a bounded timeout, so a hung database cannot hold a request
+open indefinitely.
+
+**Still required before public deployment.**
+
+- **Chunked bodies without a `Content-Length` are not bounded here.** Measuring
+  one means consuming the stream, which is the cost the middleware exists to
+  avoid; bounding it belongs to the reverse proxy in front of the service.
+- Rate limiting. There is none, and nothing in this service authenticates
+  callers.
+- A wall-clock timeout per request, in addition to the edge budget. The budget
+  bounds work, not time, and a heavily loaded machine can be slow within it.
 
 ---
 

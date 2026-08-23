@@ -58,3 +58,13 @@ desktop.ini
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Cached Overpass responses. Re-downloadable, large, and licensed OSM data that
+# does not belong in version control — the dataset in the database is the record.
+.osm-cache/
+services/api/.osm-cache/
+
+# Downloaded OpenStreetMap extracts. Hundreds of megabytes, re-downloadable, and
+# ODbL data that belongs in the database with its provenance rather than in git.
+.osm-data/
+services/api/.osm-data/

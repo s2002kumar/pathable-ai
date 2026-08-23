@@ -48,6 +48,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN groupadd --gid 10001 pathable \
     && useradd --uid 10001 --gid 10001 --create-home --shell /usr/sbin/nologin pathable
 
+# pip is removed from the runtime image. The virtualenv is self-contained and
+# nothing here installs packages at run time, so pip is unused weight — and it
+# vendors its own copies of msgpack and setuptools, which is where the image's
+# only HIGH findings came from (GHSA-6v7p-g79w-8964, CVE-2025-47273). Deleting
+# an unused package is a better answer than tracking advisories against code
+# that never executes. A runtime without a package installer is also one an
+# attacker cannot use to fetch anything.
+RUN python -m pip uninstall --yes pip \
+    && rm -rf /usr/local/lib/python3.13/site-packages/pip \
+              /usr/local/lib/python3.13/site-packages/pip-*.dist-info \
+              /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.13
+
 WORKDIR /app
 
 COPY --from=builder --chown=root:root /app/.venv /app/.venv

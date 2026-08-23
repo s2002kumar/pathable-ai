@@ -71,13 +71,14 @@ jobs:
 
       - run: uv sync --frozen
 
+      # No coverage floor here. It moved to the integration job, which is the
+      # only one that can run the whole suite — see the comment there.
       - name: Unit tests with coverage
         run: >
           uv run pytest tests/unit
           --cov=src/pathable_api
           --cov-report=term-missing
           --cov-report=xml
-          --cov-fail-under=85
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
@@ -122,8 +123,24 @@ jobs:
 
       - run: uv sync --frozen
 
-      - name: Integration tests against real PostGIS
-        run: uv run pytest tests/integration -v
+      # The whole suite, not just tests/integration, and the coverage floor
+      # lives here rather than on the unit job.
+      #
+      # Substantial behaviour — the dataset lifecycle, loading a graph out of
+      # PostGIS, region seeding — is deliberately covered against a real database
+      # rather than a mock, because that is the only way those guarantees are
+      # worth anything. Enforcing the floor over unit tests alone therefore
+      # measured the wrong thing: it counted real-PostGIS coverage as absent and
+      # rewarded moving logic to where a unit test could reach it.
+      #
+      # The threshold is 86%, above the 85% it replaces and just under the 87.27%
+      # this suite currently reaches, so it ratchets rather than slackens.
+      - name: Whole suite against real PostGIS, with the coverage floor
+        run: >
+          uv run pytest -v
+          --cov=src/pathable_api
+          --cov-report=term-missing
+          --cov-fail-under=86
 
   # ---------------------------------------------------------------------------
   # Frontend
@@ -300,6 +317,13 @@ jobs:
 
       - name: Apply migrations to the service database
         run: uv run alembic upgrade head
+        working-directory: services/api
+
+      # Routing needs a network to route on. The synthetic fixture is used rather
+      # than a real OSM import so this job stays deterministic and never depends
+      # on a donated public service being reachable.
+      - name: Load the synthetic network
+        run: uv run pathable ingest synthetic
         working-directory: services/api
 
       - name: Install Chromium

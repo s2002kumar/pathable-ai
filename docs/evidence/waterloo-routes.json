@@ -1,0 +1,1470 @@
+{
+  "region": "waterloo",
+  "dataset_checksum": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906",
+  "baseline_profile": "standard",
+  "subject_profile": "wheelchair",
+  "cases": [
+    {
+      "case": "campus-library-to-student-life",
+      "description": "Short walk across the University of Waterloo campus",
+      "route_changed": true,
+      "detour_m": 66.7,
+      "detour_fraction": 0.2321,
+      "reason": "avoids 3 segments with unknown surface; avoids 4 step segments",
+      "baseline": {
+        "case": "campus-library-to-student-life",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 287.4,
+        "effective_distance_m": 287.4,
+        "duration_seconds": 302.9,
+        "segments": 43,
+        "computation_ms": 14.9,
+        "expanded_nodes": 85,
+        "origin_snap_m": 3.2,
+        "destination_snap_m": 15.3,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "step segments": 4
+        },
+        "unknown": {
+          "surface": 12,
+          "smoothness": 43,
+          "gradient": 43,
+          "width": 43
+        }
+      },
+      "subject": {
+        "case": "campus-library-to-student-life",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 354.1,
+        "effective_distance_m": 601.0,
+        "duration_seconds": 372.7,
+        "segments": 47,
+        "computation_ms": 36.82,
+        "expanded_nodes": 353,
+        "origin_snap_m": 3.2,
+        "destination_snap_m": 15.3,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {},
+        "unknown": {
+          "surface": 9,
+          "smoothness": 47,
+          "gradient": 47,
+          "width": 47
+        }
+      }
+    },
+    {
+      "case": "campus-to-laurier",
+      "description": "Between the two universities, across University Avenue",
+      "route_changed": true,
+      "detour_m": 151.9,
+      "detour_fraction": 0.1037,
+      "reason": "avoids 11 segments with unknown gradient; avoids 14 crossings; avoids 2 step segments; avoids 22 segments with unknown surface; avoids 23 segments with unknown smoothness; avoids 28 segments with unknown width; avoids 9 segments with unknown kerb information",
+      "baseline": {
+        "case": "campus-to-laurier",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1464.5,
+        "effective_distance_m": 1464.5,
+        "duration_seconds": 1454.8,
+        "segments": 106,
+        "computation_ms": 148.23,
+        "expanded_nodes": 1771,
+        "origin_snap_m": 3.2,
+        "destination_snap_m": 2.3,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 16,
+          "step segments": 2
+        },
+        "unknown": {
+          "surface": 33,
+          "smoothness": 95,
+          "gradient": 106,
+          "width": 104,
+          "kerb information": 9
+        }
+      },
+      "subject": {
+        "case": "campus-to-laurier",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1616.4,
+        "effective_distance_m": 2498.3,
+        "duration_seconds": 1741.4,
+        "segments": 95,
+        "computation_ms": 461.3,
+        "expanded_nodes": 4251,
+        "origin_snap_m": 3.2,
+        "destination_snap_m": 2.3,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 2
+        },
+        "unknown": {
+          "surface": 11,
+          "smoothness": 72,
+          "gradient": 95,
+          "width": 76
+        }
+      }
+    },
+    {
+      "case": "laurier-to-uptown",
+      "description": "Laurier campus down to Uptown Waterloo",
+      "route_changed": true,
+      "detour_m": 25.3,
+      "detour_fraction": 0.0192,
+      "reason": "avoids 12 crossings; avoids 2 segments with unknown gradient; avoids 20 segments with unknown smoothness; avoids 6 segments with unknown surface; avoids 7 segments with unknown kerb information",
+      "baseline": {
+        "case": "laurier-to-uptown",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1316.1,
+        "effective_distance_m": 1316.1,
+        "duration_seconds": 1394.9,
+        "segments": 92,
+        "computation_ms": 100.54,
+        "expanded_nodes": 807,
+        "origin_snap_m": 2.3,
+        "destination_snap_m": 0.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 21
+        },
+        "unknown": {
+          "smoothness": 86,
+          "gradient": 92,
+          "width": 74,
+          "kerb information": 8,
+          "surface": 6
+        }
+      },
+      "subject": {
+        "case": "laurier-to-uptown",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1341.4,
+        "effective_distance_m": 2147.2,
+        "duration_seconds": 1592.0,
+        "segments": 90,
+        "computation_ms": 318.55,
+        "expanded_nodes": 2383,
+        "origin_snap_m": 2.3,
+        "destination_snap_m": 0.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 9
+        },
+        "unknown": {
+          "smoothness": 66,
+          "gradient": 90,
+          "width": 90,
+          "kerb information": 1
+        }
+      }
+    },
+    {
+      "case": "uptown-to-waterloo-park",
+      "description": "Uptown to the park, crossing the rail corridor",
+      "route_changed": false,
+      "detour_m": 0.0,
+      "detour_fraction": 0.0,
+      "reason": "identical route \u2014 nothing on the direct path costs this profile anything",
+      "baseline": {
+        "case": "uptown-to-waterloo-park",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1066.6,
+        "effective_distance_m": 1066.6,
+        "duration_seconds": 990.1,
+        "segments": 78,
+        "computation_ms": 63.4,
+        "expanded_nodes": 623,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 17.0,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 10
+        },
+        "unknown": {
+          "gradient": 78,
+          "width": 78,
+          "smoothness": 37,
+          "kerb information": 1
+        }
+      },
+      "subject": {
+        "case": "uptown-to-waterloo-park",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1066.6,
+        "effective_distance_m": 1563.3,
+        "duration_seconds": 1322.7,
+        "segments": 78,
+        "computation_ms": 162.93,
+        "expanded_nodes": 1246,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 17.0,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 10
+        },
+        "unknown": {
+          "gradient": 78,
+          "width": 78,
+          "smoothness": 37,
+          "kerb information": 1
+        }
+      }
+    },
+    {
+      "case": "park-to-campus",
+      "description": "Waterloo Park through to campus",
+      "route_changed": true,
+      "detour_m": 102.9,
+      "detour_fraction": 0.1009,
+      "reason": "avoids 1 segments with unknown smoothness; avoids 11 segments with unknown width; avoids 3 crossings; avoids 3 segments with unknown kerb information",
+      "baseline": {
+        "case": "park-to-campus",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1020.3,
+        "effective_distance_m": 1020.3,
+        "duration_seconds": 1035.8,
+        "segments": 90,
+        "computation_ms": 47.91,
+        "expanded_nodes": 472,
+        "origin_snap_m": 17.0,
+        "destination_snap_m": 3.2,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 14
+        },
+        "unknown": {
+          "gradient": 90,
+          "width": 70,
+          "kerb information": 5,
+          "smoothness": 19,
+          "surface": 8
+        }
+      },
+      "subject": {
+        "case": "park-to-campus",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1123.2,
+        "effective_distance_m": 1728.5,
+        "duration_seconds": 1402.3,
+        "segments": 91,
+        "computation_ms": 219.17,
+        "expanded_nodes": 1788,
+        "origin_snap_m": 17.0,
+        "destination_snap_m": 3.2,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 11
+        },
+        "unknown": {
+          "gradient": 91,
+          "width": 59,
+          "kerb information": 2,
+          "smoothness": 18,
+          "surface": 11
+        }
+      }
+    },
+    {
+      "case": "uptown-to-transit-hub",
+      "description": "Two blocks in Uptown to the transit hub",
+      "route_changed": true,
+      "detour_m": 96.6,
+      "detour_fraction": 0.5299,
+      "reason": "avoids 2 crossings; avoids 2 segments with unknown kerb information",
+      "baseline": {
+        "case": "uptown-to-transit-hub",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 182.3,
+        "effective_distance_m": 182.3,
+        "duration_seconds": 335.0,
+        "segments": 21,
+        "computation_ms": 5.53,
+        "expanded_nodes": 61,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 0.7,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 10
+        },
+        "unknown": {
+          "gradient": 21,
+          "width": 21,
+          "smoothness": 10,
+          "kerb information": 4
+        }
+      },
+      "subject": {
+        "case": "uptown-to-transit-hub",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 278.9,
+        "effective_distance_m": 667.0,
+        "duration_seconds": 453.6,
+        "segments": 25,
+        "computation_ms": 53.57,
+        "expanded_nodes": 498,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 0.7,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 8
+        },
+        "unknown": {
+          "gradient": 25,
+          "width": 24,
+          "smoothness": 19,
+          "kerb information": 2
+        }
+      }
+    },
+    {
+      "case": "rec-complex-to-campus",
+      "description": "Recreation complex south to campus",
+      "route_changed": true,
+      "detour_m": 69.1,
+      "detour_fraction": 0.0536,
+      "reason": "avoids 12 segments with unknown width; avoids 15 segments with unknown surface; avoids 2 segments with unknown kerb information",
+      "baseline": {
+        "case": "rec-complex-to-campus",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1290.3,
+        "effective_distance_m": 1290.3,
+        "duration_seconds": 1015.8,
+        "segments": 77,
+        "computation_ms": 129.72,
+        "expanded_nodes": 918,
+        "origin_snap_m": 41.6,
+        "destination_snap_m": 15.3,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 3
+        },
+        "unknown": {
+          "surface": 16,
+          "smoothness": 74,
+          "gradient": 77,
+          "width": 75,
+          "kerb information": 2
+        }
+      },
+      "subject": {
+        "case": "rec-complex-to-campus",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1359.4,
+        "effective_distance_m": 2064.2,
+        "duration_seconds": 1491.0,
+        "segments": 78,
+        "computation_ms": 153.25,
+        "expanded_nodes": 1866,
+        "origin_snap_m": 41.6,
+        "destination_snap_m": 15.3,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 3
+        },
+        "unknown": {
+          "surface": 1,
+          "smoothness": 75,
+          "gradient": 78,
+          "width": 63
+        }
+      }
+    },
+    {
+      "case": "northfield-to-conestoga",
+      "description": "Northfield station up to Conestoga Mall",
+      "route_changed": true,
+      "detour_m": 158.5,
+      "detour_fraction": 0.1349,
+      "reason": "avoids 2 segments with unknown smoothness; avoids 3 crossings; avoids 3 segments with unknown kerb information; avoids 9 segments with unknown surface",
+      "baseline": {
+        "case": "northfield-to-conestoga",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1175.0,
+        "effective_distance_m": 1175.0,
+        "duration_seconds": 990.4,
+        "segments": 66,
+        "computation_ms": 68.96,
+        "expanded_nodes": 685,
+        "origin_snap_m": 6.9,
+        "destination_snap_m": 2.1,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 6
+        },
+        "unknown": {
+          "kerb information": 6,
+          "smoothness": 48,
+          "gradient": 66,
+          "width": 49,
+          "surface": 25
+        }
+      },
+      "subject": {
+        "case": "northfield-to-conestoga",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1333.5,
+        "effective_distance_m": 2113.6,
+        "duration_seconds": 1463.7,
+        "segments": 90,
+        "computation_ms": 136.82,
+        "expanded_nodes": 1152,
+        "origin_snap_m": 6.9,
+        "destination_snap_m": 2.1,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 3
+        },
+        "unknown": {
+          "kerb information": 3,
+          "smoothness": 46,
+          "gradient": 90,
+          "width": 59,
+          "surface": 16
+        }
+      }
+    },
+    {
+      "case": "conestoga-to-rim-park",
+      "description": "Mall east to Rim Park \u2014 long, and partly along arterials",
+      "route_changed": false,
+      "detour_m": null,
+      "detour_fraction": null,
+      "reason": "No route satisfies the wheelchair profile between these points.",
+      "baseline": {
+        "case": "conestoga-to-rim-park",
+        "profile": "standard",
+        "routed": false,
+        "distance_m": null,
+        "effective_distance_m": null,
+        "duration_seconds": null,
+        "segments": 0,
+        "computation_ms": null,
+        "expanded_nodes": null,
+        "origin_snap_m": null,
+        "destination_snap_m": null,
+        "failure": "No route satisfies the standard walking profile between these points.",
+        "failure_kind": "NoRouteFoundError",
+        "barriers": {},
+        "unknown": {}
+      },
+      "subject": {
+        "case": "conestoga-to-rim-park",
+        "profile": "wheelchair",
+        "routed": false,
+        "distance_m": null,
+        "effective_distance_m": null,
+        "duration_seconds": null,
+        "segments": 0,
+        "computation_ms": null,
+        "expanded_nodes": null,
+        "origin_snap_m": null,
+        "destination_snap_m": null,
+        "failure": "No route satisfies the wheelchair profile between these points.",
+        "failure_kind": "NoRouteFoundError",
+        "barriers": {},
+        "unknown": {}
+      }
+    },
+    {
+      "case": "erb-westmount-to-uptown",
+      "description": "West Waterloo along Erb Street into Uptown",
+      "route_changed": true,
+      "detour_m": 54.5,
+      "detour_fraction": 0.0223,
+      "reason": "avoids 3 crossings; avoids 39 segments with unknown gradient; avoids 39 segments with unknown smoothness; avoids 39 segments with unknown width; avoids 8 segments with unknown surface",
+      "baseline": {
+        "case": "erb-westmount-to-uptown",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 2439.8,
+        "effective_distance_m": 2439.8,
+        "duration_seconds": 2067.3,
+        "segments": 195,
+        "computation_ms": 211.64,
+        "expanded_nodes": 2344,
+        "origin_snap_m": 11.8,
+        "destination_snap_m": 0.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 13
+        },
+        "unknown": {
+          "surface": 20,
+          "smoothness": 166,
+          "gradient": 195,
+          "width": 195,
+          "kerb information": 1
+        }
+      },
+      "subject": {
+        "case": "erb-westmount-to-uptown",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 2494.3,
+        "effective_distance_m": 4099.5,
+        "duration_seconds": 2825.5,
+        "segments": 156,
+        "computation_ms": 589.46,
+        "expanded_nodes": 5957,
+        "origin_snap_m": 11.8,
+        "destination_snap_m": 0.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 10
+        },
+        "unknown": {
+          "surface": 12,
+          "smoothness": 127,
+          "gradient": 156,
+          "width": 156,
+          "kerb information": 1
+        }
+      }
+    },
+    {
+      "case": "uptown-to-belmont",
+      "description": "Uptown Waterloo south to Belmont Village",
+      "route_changed": true,
+      "detour_m": 182.8,
+      "detour_fraction": 0.0685,
+      "reason": "avoids 14 crossings; avoids 3 segments with unknown kerb information; avoids 47 segments with unknown width; avoids 52 segments with unknown gradient; avoids 53 segments with unknown smoothness",
+      "baseline": {
+        "case": "uptown-to-belmont",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 2668.1,
+        "effective_distance_m": 2668.1,
+        "duration_seconds": 2396.4,
+        "segments": 169,
+        "computation_ms": 301.39,
+        "expanded_nodes": 3889,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 1.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 21
+        },
+        "unknown": {
+          "gradient": 169,
+          "width": 126,
+          "smoothness": 150,
+          "kerb information": 3
+        }
+      },
+      "subject": {
+        "case": "uptown-to-belmont",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 2850.9,
+        "effective_distance_m": 4109.8,
+        "duration_seconds": 3141.0,
+        "segments": 117,
+        "computation_ms": 859.36,
+        "expanded_nodes": 8302,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 1.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 7
+        },
+        "unknown": {
+          "gradient": 117,
+          "width": 79,
+          "smoothness": 97,
+          "surface": 2
+        }
+      }
+    },
+    {
+      "case": "belmont-to-hospital",
+      "description": "Belmont Village to Grand River Hospital",
+      "route_changed": true,
+      "detour_m": 116.9,
+      "detour_fraction": 0.0615,
+      "reason": "avoids 13 crossings; avoids 15 segments with unknown smoothness; avoids 16 segments with unknown width; avoids 17 segments with unknown gradient; avoids 2 step segments; avoids 4 segments with unknown kerb information",
+      "baseline": {
+        "case": "belmont-to-hospital",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1902.0,
+        "effective_distance_m": 1902.0,
+        "duration_seconds": 1738.9,
+        "segments": 103,
+        "computation_ms": 158.91,
+        "expanded_nodes": 1401,
+        "origin_snap_m": 1.8,
+        "destination_snap_m": 1.1,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 13,
+          "step segments": 2
+        },
+        "unknown": {
+          "smoothness": 98,
+          "gradient": 103,
+          "width": 102,
+          "kerb information": 4
+        }
+      },
+      "subject": {
+        "case": "belmont-to-hospital",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 2018.9,
+        "effective_distance_m": 3300.1,
+        "duration_seconds": 2125.1,
+        "segments": 86,
+        "computation_ms": 424.35,
+        "expanded_nodes": 4377,
+        "origin_snap_m": 1.8,
+        "destination_snap_m": 1.1,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {},
+        "unknown": {
+          "smoothness": 83,
+          "gradient": 86,
+          "width": 86
+        }
+      }
+    },
+    {
+      "case": "hospital-to-city-hall",
+      "description": "Hospital across to Kitchener City Hall",
+      "route_changed": true,
+      "detour_m": 88.3,
+      "detour_fraction": 0.0565,
+      "reason": "avoids 1 segments with unknown kerb information; avoids 15 segments with unknown smoothness; avoids 20 segments with unknown gradient; avoids 20 segments with unknown width; avoids 9 crossings",
+      "baseline": {
+        "case": "hospital-to-city-hall",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1564.0,
+        "effective_distance_m": 1564.0,
+        "duration_seconds": 1398.5,
+        "segments": 80,
+        "computation_ms": 72.4,
+        "expanded_nodes": 712,
+        "origin_snap_m": 1.1,
+        "destination_snap_m": 0.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 12
+        },
+        "unknown": {
+          "smoothness": 56,
+          "gradient": 80,
+          "width": 77,
+          "kerb information": 1
+        }
+      },
+      "subject": {
+        "case": "hospital-to-city-hall",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1652.3,
+        "effective_distance_m": 2355.6,
+        "duration_seconds": 1799.3,
+        "segments": 60,
+        "computation_ms": 217.8,
+        "expanded_nodes": 1970,
+        "origin_snap_m": 1.1,
+        "destination_snap_m": 0.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 3
+        },
+        "unknown": {
+          "smoothness": 41,
+          "gradient": 60,
+          "width": 57
+        }
+      }
+    },
+    {
+      "case": "city-hall-to-victoria-park",
+      "description": "City Hall to Victoria Park, downtown Kitchener",
+      "route_changed": true,
+      "detour_m": 69.7,
+      "detour_fraction": 0.0774,
+      "reason": "avoids 3 segments with unknown kerb information; avoids 7 crossings",
+      "baseline": {
+        "case": "city-hall-to-victoria-park",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 900.9,
+        "effective_distance_m": 900.9,
+        "duration_seconds": 867.4,
+        "segments": 69,
+        "computation_ms": 94.23,
+        "expanded_nodes": 717,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 21.0,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 10
+        },
+        "unknown": {
+          "smoothness": 50,
+          "gradient": 69,
+          "width": 69,
+          "kerb information": 3
+        }
+      },
+      "subject": {
+        "case": "city-hall-to-victoria-park",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 970.6,
+        "effective_distance_m": 1513.8,
+        "duration_seconds": 1081.7,
+        "segments": 81,
+        "computation_ms": 198.08,
+        "expanded_nodes": 1772,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 21.0,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 3
+        },
+        "unknown": {
+          "smoothness": 63,
+          "gradient": 81,
+          "width": 80
+        }
+      }
+    },
+    {
+      "case": "city-hall-to-market",
+      "description": "City Hall east to the Kitchener Market",
+      "route_changed": true,
+      "detour_m": 33.3,
+      "detour_fraction": 0.0414,
+      "reason": "avoids 1 segments with unknown kerb information; avoids 17 segments with unknown gradient; avoids 17 segments with unknown width; avoids 23 segments with unknown smoothness; avoids 5 crossings",
+      "baseline": {
+        "case": "city-hall-to-market",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 804.9,
+        "effective_distance_m": 804.9,
+        "duration_seconds": 796.2,
+        "segments": 54,
+        "computation_ms": 41.07,
+        "expanded_nodes": 527,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 33.1,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 10
+        },
+        "unknown": {
+          "smoothness": 37,
+          "gradient": 54,
+          "width": 53,
+          "kerb information": 1
+        }
+      },
+      "subject": {
+        "case": "city-hall-to-market",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 838.2,
+        "effective_distance_m": 1128.0,
+        "duration_seconds": 982.3,
+        "segments": 37,
+        "computation_ms": 99.18,
+        "expanded_nodes": 794,
+        "origin_snap_m": 0.8,
+        "destination_snap_m": 33.1,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 5
+        },
+        "unknown": {
+          "smoothness": 14,
+          "gradient": 37,
+          "width": 36
+        }
+      }
+    },
+    {
+      "case": "victoria-park-to-market",
+      "description": "Across downtown Kitchener, park to market",
+      "route_changed": true,
+      "detour_m": 83.8,
+      "detour_fraction": 0.0615,
+      "reason": "avoids 4 segments with unknown kerb information; avoids 5 segments with unknown smoothness; avoids 7 crossings",
+      "baseline": {
+        "case": "victoria-park-to-market",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1362.2,
+        "effective_distance_m": 1362.2,
+        "duration_seconds": 1269.0,
+        "segments": 92,
+        "computation_ms": 113.84,
+        "expanded_nodes": 1414,
+        "origin_snap_m": 21.0,
+        "destination_snap_m": 33.1,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 13
+        },
+        "unknown": {
+          "smoothness": 79,
+          "gradient": 92,
+          "width": 87,
+          "kerb information": 4
+        }
+      },
+      "subject": {
+        "case": "victoria-park-to-market",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1446.0,
+        "effective_distance_m": 2206.9,
+        "duration_seconds": 1642.1,
+        "segments": 94,
+        "computation_ms": 280.02,
+        "expanded_nodes": 2282,
+        "origin_snap_m": 21.0,
+        "destination_snap_m": 33.1,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 6
+        },
+        "unknown": {
+          "smoothness": 74,
+          "gradient": 94,
+          "width": 89
+        }
+      }
+    },
+    {
+      "case": "boardwalk-to-uptown",
+      "description": "The Boardwalk to Uptown Waterloo \u2014 a long suburban walk",
+      "route_changed": true,
+      "detour_m": 227.7,
+      "detour_fraction": 0.0415,
+      "reason": "avoids 2 segments with unknown kerb information; avoids 4 crossings; avoids 8 segments with unknown smoothness",
+      "baseline": {
+        "case": "boardwalk-to-uptown",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 5491.8,
+        "effective_distance_m": 5491.8,
+        "duration_seconds": 4188.0,
+        "segments": 191,
+        "computation_ms": 119.52,
+        "expanded_nodes": 1267,
+        "origin_snap_m": 6.5,
+        "destination_snap_m": 0.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 6
+        },
+        "unknown": {
+          "surface": 11,
+          "smoothness": 184,
+          "gradient": 191,
+          "width": 191,
+          "kerb information": 2
+        }
+      },
+      "subject": {
+        "case": "boardwalk-to-uptown",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 5719.5,
+        "effective_distance_m": 8899.1,
+        "duration_seconds": 6060.5,
+        "segments": 199,
+        "computation_ms": 1768.57,
+        "expanded_nodes": 17249,
+        "origin_snap_m": 6.5,
+        "destination_snap_m": 0.8,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 2
+        },
+        "unknown": {
+          "surface": 11,
+          "smoothness": 176,
+          "gradient": 199,
+          "width": 199
+        }
+      }
+    },
+    {
+      "case": "laurel-creek-to-campus",
+      "description": "Laurel Creek area down to campus",
+      "route_changed": true,
+      "detour_m": 30.1,
+      "detour_fraction": 0.0127,
+      "reason": "avoids 16 segments with unknown gradient; avoids 18 segments with unknown width; avoids 26 segments with unknown smoothness; avoids 4 segments with unknown kerb information; avoids 8 crossings; avoids 9 segments with unknown surface",
+      "baseline": {
+        "case": "laurel-creek-to-campus",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 2370.6,
+        "effective_distance_m": 2370.6,
+        "duration_seconds": 2036.0,
+        "segments": 140,
+        "computation_ms": 224.19,
+        "expanded_nodes": 2425,
+        "origin_snap_m": 1.7,
+        "destination_snap_m": 3.2,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 14
+        },
+        "unknown": {
+          "surface": 23,
+          "smoothness": 112,
+          "gradient": 140,
+          "width": 100,
+          "kerb information": 4
+        }
+      },
+      "subject": {
+        "case": "laurel-creek-to-campus",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 2400.7,
+        "effective_distance_m": 3375.2,
+        "duration_seconds": 2647.0,
+        "segments": 124,
+        "computation_ms": 503.26,
+        "expanded_nodes": 4844,
+        "origin_snap_m": 1.7,
+        "destination_snap_m": 3.2,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 6
+        },
+        "unknown": {
+          "surface": 14,
+          "smoothness": 86,
+          "gradient": 124,
+          "width": 82
+        }
+      }
+    },
+    {
+      "case": "bridgeport-to-columbia",
+      "description": "Bridgeport and Weber north to Columbia and King",
+      "route_changed": true,
+      "detour_m": 16.1,
+      "detour_fraction": 0.0135,
+      "reason": "avoids 13 segments with unknown smoothness; avoids 4 segments with unknown gradient; avoids 4 segments with unknown width; avoids 6 segments with unknown surface; avoids 9 crossings",
+      "baseline": {
+        "case": "bridgeport-to-columbia",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1196.1,
+        "effective_distance_m": 1196.1,
+        "duration_seconds": 1086.0,
+        "segments": 63,
+        "computation_ms": 44.76,
+        "expanded_nodes": 421,
+        "origin_snap_m": 2.8,
+        "destination_snap_m": 2.4,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 10
+        },
+        "unknown": {
+          "smoothness": 63,
+          "gradient": 63,
+          "width": 63,
+          "surface": 6
+        }
+      },
+      "subject": {
+        "case": "bridgeport-to-columbia",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1212.2,
+        "effective_distance_m": 1742.1,
+        "duration_seconds": 1296.0,
+        "segments": 59,
+        "computation_ms": 110.13,
+        "expanded_nodes": 899,
+        "origin_snap_m": 2.8,
+        "destination_snap_m": 2.4,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 1
+        },
+        "unknown": {
+          "smoothness": 50,
+          "gradient": 59,
+          "width": 59
+        }
+      }
+    },
+    {
+      "case": "columbia-to-rec-complex",
+      "description": "Columbia and King west to the recreation complex",
+      "route_changed": true,
+      "detour_m": 164.1,
+      "detour_fraction": 0.0916,
+      "reason": "avoids 1 segments with unknown kerb information; avoids 2 crossings; avoids 36 segments with unknown gradient; avoids 36 segments with unknown smoothness; avoids 36 segments with unknown width; avoids 78 segments with unknown surface",
+      "baseline": {
+        "case": "columbia-to-rec-complex",
+        "profile": "standard",
+        "routed": true,
+        "distance_m": 1792.4,
+        "effective_distance_m": 1792.4,
+        "duration_seconds": 1367.7,
+        "segments": 132,
+        "computation_ms": 175.9,
+        "expanded_nodes": 1882,
+        "origin_snap_m": 2.4,
+        "destination_snap_m": 41.6,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {
+          "crossings": 2
+        },
+        "unknown": {
+          "smoothness": 132,
+          "gradient": 132,
+          "width": 132,
+          "kerb information": 1,
+          "surface": 80
+        }
+      },
+      "subject": {
+        "case": "columbia-to-rec-complex",
+        "profile": "wheelchair",
+        "routed": true,
+        "distance_m": 1956.5,
+        "effective_distance_m": 3109.1,
+        "duration_seconds": 2059.4,
+        "segments": 96,
+        "computation_ms": 494.6,
+        "expanded_nodes": 4985,
+        "origin_snap_m": 2.4,
+        "destination_snap_m": 41.6,
+        "failure": null,
+        "failure_kind": null,
+        "barriers": {},
+        "unknown": {
+          "smoothness": 96,
+          "gradient": 96,
+          "width": 96,
+          "surface": 2
+        }
+      }
+    }
+  ],
+  "algorithms": [
+    {
+      "case": "campus-library-to-student-life",
+      "profile": "wheelchair",
+      "dijkstra_ms": 17.7,
+      "astar_ms": 47.06,
+      "dijkstra_expanded": 689,
+      "astar_expanded": 353,
+      "dijkstra_cost": 601.003,
+      "astar_cost": 601.003
+    },
+    {
+      "case": "campus-to-laurier",
+      "profile": "wheelchair",
+      "dijkstra_ms": 286.15,
+      "astar_ms": 448.57,
+      "dijkstra_expanded": 10816,
+      "astar_expanded": 4251,
+      "dijkstra_cost": 2498.326,
+      "astar_cost": 2498.326
+    },
+    {
+      "case": "laurier-to-uptown",
+      "profile": "wheelchair",
+      "dijkstra_ms": 220.02,
+      "astar_ms": 216.94,
+      "dijkstra_expanded": 7665,
+      "astar_expanded": 2383,
+      "dijkstra_cost": 2147.186,
+      "astar_cost": 2147.186
+    },
+    {
+      "case": "uptown-to-waterloo-park",
+      "profile": "wheelchair",
+      "dijkstra_ms": 170.6,
+      "astar_ms": 153.33,
+      "dijkstra_expanded": 5258,
+      "astar_expanded": 1246,
+      "dijkstra_cost": 1563.256,
+      "astar_cost": 1563.256
+    },
+    {
+      "case": "park-to-campus",
+      "profile": "wheelchair",
+      "dijkstra_ms": 201.43,
+      "astar_ms": 194.36,
+      "dijkstra_expanded": 7446,
+      "astar_expanded": 1788,
+      "dijkstra_cost": 1728.492,
+      "astar_cost": 1728.492
+    },
+    {
+      "case": "uptown-to-transit-hub",
+      "profile": "wheelchair",
+      "dijkstra_ms": 31.47,
+      "astar_ms": 46.92,
+      "dijkstra_expanded": 1282,
+      "astar_expanded": 498,
+      "dijkstra_cost": 667.041,
+      "astar_cost": 667.041
+    },
+    {
+      "case": "rec-complex-to-campus",
+      "profile": "wheelchair",
+      "dijkstra_ms": 174.89,
+      "astar_ms": 184.57,
+      "dijkstra_expanded": 6140,
+      "astar_expanded": 1866,
+      "dijkstra_cost": 2064.16,
+      "astar_cost": 2064.16
+    },
+    {
+      "case": "northfield-to-conestoga",
+      "profile": "wheelchair",
+      "dijkstra_ms": 82.97,
+      "astar_ms": 88.21,
+      "dijkstra_expanded": 3691,
+      "astar_expanded": 1152,
+      "dijkstra_cost": 2113.636,
+      "astar_cost": 2113.636
+    },
+    {
+      "case": "erb-westmount-to-uptown",
+      "profile": "wheelchair",
+      "dijkstra_ms": 443.38,
+      "astar_ms": 524.36,
+      "dijkstra_expanded": 16483,
+      "astar_expanded": 5957,
+      "dijkstra_cost": 4099.5,
+      "astar_cost": 4099.5
+    },
+    {
+      "case": "uptown-to-belmont",
+      "profile": "wheelchair",
+      "dijkstra_ms": 779.05,
+      "astar_ms": 773.1,
+      "dijkstra_expanded": 29301,
+      "astar_expanded": 8302,
+      "dijkstra_cost": 4109.823,
+      "astar_cost": 4109.823
+    },
+    {
+      "case": "belmont-to-hospital",
+      "profile": "wheelchair",
+      "dijkstra_ms": 373.65,
+      "astar_ms": 465.16,
+      "dijkstra_expanded": 14607,
+      "astar_expanded": 4377,
+      "dijkstra_cost": 3300.13,
+      "astar_cost": 3300.13
+    },
+    {
+      "case": "hospital-to-city-hall",
+      "profile": "wheelchair",
+      "dijkstra_ms": 197.8,
+      "astar_ms": 177.85,
+      "dijkstra_expanded": 7409,
+      "astar_expanded": 1970,
+      "dijkstra_cost": 2355.554,
+      "astar_cost": 2355.554
+    },
+    {
+      "case": "city-hall-to-victoria-park",
+      "profile": "wheelchair",
+      "dijkstra_ms": 155.52,
+      "astar_ms": 141.48,
+      "dijkstra_expanded": 5108,
+      "astar_expanded": 1772,
+      "dijkstra_cost": 1513.784,
+      "astar_cost": 1513.784
+    },
+    {
+      "case": "city-hall-to-market",
+      "profile": "wheelchair",
+      "dijkstra_ms": 76.74,
+      "astar_ms": 115.14,
+      "dijkstra_expanded": 3031,
+      "astar_expanded": 794,
+      "dijkstra_cost": 1128.02,
+      "astar_cost": 1128.02
+    },
+    {
+      "case": "victoria-park-to-market",
+      "profile": "wheelchair",
+      "dijkstra_ms": 172.35,
+      "astar_ms": 226.31,
+      "dijkstra_expanded": 7230,
+      "astar_expanded": 2282,
+      "dijkstra_cost": 2206.923,
+      "astar_cost": 2206.923
+    },
+    {
+      "case": "boardwalk-to-uptown",
+      "profile": "wheelchair",
+      "dijkstra_ms": 1043.37,
+      "astar_ms": 1485.91,
+      "dijkstra_expanded": 40881,
+      "astar_expanded": 17249,
+      "dijkstra_cost": 8899.11,
+      "astar_cost": 8899.11
+    },
+    {
+      "case": "laurel-creek-to-campus",
+      "profile": "wheelchair",
+      "dijkstra_ms": 415.12,
+      "astar_ms": 462.51,
+      "dijkstra_expanded": 16743,
+      "astar_expanded": 4844,
+      "dijkstra_cost": 3375.205,
+      "astar_cost": 3375.205
+    },
+    {
+      "case": "bridgeport-to-columbia",
+      "profile": "wheelchair",
+      "dijkstra_ms": 91.56,
+      "astar_ms": 93.26,
+      "dijkstra_expanded": 3818,
+      "astar_expanded": 899,
+      "dijkstra_cost": 1742.054,
+      "astar_cost": 1742.054
+    },
+    {
+      "case": "columbia-to-rec-complex",
+      "profile": "wheelchair",
+      "dijkstra_ms": 359.16,
+      "astar_ms": 458.53,
+      "dijkstra_expanded": 14506,
+      "astar_expanded": 4985,
+      "dijkstra_cost": 3109.107,
+      "astar_cost": 3109.107
+    }
+  ],
+  "ablation": [
+    {
+      "case": "campus-library-to-student-life",
+      "distances": {
+        "current": 354.1,
+        "no_gradient_unknown": 354.1,
+        "no_unknown_penalty": 354.1
+      }
+    },
+    {
+      "case": "campus-to-laurier",
+      "distances": {
+        "current": 1616.4,
+        "no_gradient_unknown": 1616.4,
+        "no_unknown_penalty": 1616.4
+      }
+    },
+    {
+      "case": "laurier-to-uptown",
+      "distances": {
+        "current": 1341.4,
+        "no_gradient_unknown": 1341.4,
+        "no_unknown_penalty": 1341.4
+      }
+    },
+    {
+      "case": "uptown-to-waterloo-park",
+      "distances": {
+        "current": 1066.6,
+        "no_gradient_unknown": 1066.6,
+        "no_unknown_penalty": 1066.6
+      }
+    },
+    {
+      "case": "park-to-campus",
+      "distances": {
+        "current": 1123.2,
+        "no_gradient_unknown": 1123.2,
+        "no_unknown_penalty": 1123.2
+      }
+    },
+    {
+      "case": "uptown-to-transit-hub",
+      "distances": {
+        "current": 278.9,
+        "no_gradient_unknown": 278.9,
+        "no_unknown_penalty": 278.9
+      }
+    },
+    {
+      "case": "rec-complex-to-campus",
+      "distances": {
+        "current": 1359.4,
+        "no_gradient_unknown": 1359.4,
+        "no_unknown_penalty": 1359.4
+      }
+    },
+    {
+      "case": "northfield-to-conestoga",
+      "distances": {
+        "current": 1333.5,
+        "no_gradient_unknown": 1333.5,
+        "no_unknown_penalty": 1333.5
+      }
+    },
+    {
+      "case": "conestoga-to-rim-park",
+      "distances": {
+        "current": null,
+        "no_gradient_unknown": null,
+        "no_unknown_penalty": null
+      }
+    },
+    {
+      "case": "erb-westmount-to-uptown",
+      "distances": {
+        "current": 2494.3,
+        "no_gradient_unknown": 2489.5,
+        "no_unknown_penalty": 2489.5
+      }
+    },
+    {
+      "case": "uptown-to-belmont",
+      "distances": {
+        "current": 2850.9,
+        "no_gradient_unknown": 2850.9,
+        "no_unknown_penalty": 2850.9
+      }
+    },
+    {
+      "case": "belmont-to-hospital",
+      "distances": {
+        "current": 2018.9,
+        "no_gradient_unknown": 2018.9,
+        "no_unknown_penalty": 2018.9
+      }
+    },
+    {
+      "case": "hospital-to-city-hall",
+      "distances": {
+        "current": 1652.3,
+        "no_gradient_unknown": 1638.4,
+        "no_unknown_penalty": 1638.4
+      }
+    },
+    {
+      "case": "city-hall-to-victoria-park",
+      "distances": {
+        "current": 970.6,
+        "no_gradient_unknown": 970.6,
+        "no_unknown_penalty": 970.6
+      }
+    },
+    {
+      "case": "city-hall-to-market",
+      "distances": {
+        "current": 838.2,
+        "no_gradient_unknown": 838.2,
+        "no_unknown_penalty": 838.2
+      }
+    },
+    {
+      "case": "victoria-park-to-market",
+      "distances": {
+        "current": 1446.0,
+        "no_gradient_unknown": 1446.0,
+        "no_unknown_penalty": 1446.0
+      }
+    },
+    {
+      "case": "boardwalk-to-uptown",
+      "distances": {
+        "current": 5719.5,
+        "no_gradient_unknown": 5719.5,
+        "no_unknown_penalty": 5719.5
+      }
+    },
+    {
+      "case": "laurel-creek-to-campus",
+      "distances": {
+        "current": 2400.7,
+        "no_gradient_unknown": 2400.7,
+        "no_unknown_penalty": 2400.7
+      }
+    },
+    {
+      "case": "bridgeport-to-columbia",
+      "distances": {
+        "current": 1212.2,
+        "no_gradient_unknown": 1212.2,
+        "no_unknown_penalty": 1212.2
+      }
+    },
+    {
+      "case": "columbia-to-rec-complex",
+      "distances": {
+        "current": 1956.5,
+        "no_gradient_unknown": 1809.3,
+        "no_unknown_penalty": 1809.3
+      }
+    }
+  ]
+}

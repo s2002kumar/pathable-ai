@@ -125,3 +125,185 @@ verification.
 
 **Unblock:** launch Docker Desktop and approve the UAC prompt, then
 `docker info`, `docker compose build --pull`, `docker compose up -d`.
+
+---
+
+## KI-3 — Overpass became unreachable from this network mid-session
+
+**Status: RESOLVED (routed around)** · environment limitation, not a code defect ·
+2026-08-12 · closed 2026-08-17
+
+**How it was closed.** Not by waiting for the block to lift. Overpass did become
+reachable again, but a city-wide unsimplified query then ran for 45 minutes
+without producing output, which made it impractical regardless of the block. The
+real fix was `pathable ingest pbf`: a published extract needs no live service, is
+re-readable as often as you like, and produced the live 180,554-segment dataset.
+Overpass remains supported as a second acquisition path, and a parity test pins
+that both paths interpret the same OSM facts identically.
+
+The original diagnosis follows, because it is still the right procedure for
+telling a network fault apart from a code defect.
+
+### Symptom
+
+`pathable ingest osm --region waterloo` cannot reach any Overpass endpoint. TCP
+connections to every published address time out, while everything else on the
+same machine is fine:
+
+```
+200 0.5s https://api.openstreetmap.org/api/versions
+200 0.2s https://nominatim.openstreetmap.org/status
+200 0.3s https://tiles.openfreemap.org/styles/liberty
+200 0.3s https://github.com
+FAIL 30.0s https://overpass-api.de/api/status   ConnectTimeout
+```
+
+Overpass **was** reachable earlier in the same session — a status query and a
+POST to `/api/interpreter` both returned 200 in about a second. It then began
+returning `429 Too Many Requests` on every attempt, and shortly afterwards
+stopped accepting connections from this host altogether.
+
+### Diagnosis
+
+The 429s were earned. Diagnosing an unrelated fault (below) involved repeated
+requests in quick succession, which is exactly what Overpass's slot management
+exists to stop. The subsequent connection timeouts are consistent with a
+temporary block at the service, and are expected to lapse.
+
+### What this did and did not affect
+
+The ingestion path itself is implemented and its conversion logic is covered by
+tests, but **no real Waterloo dataset has been ingested on this machine**, so
+there are no measurements over real OSM data. Routing has been exercised against
+the synthetic fixture in PostGIS and characterised for scale against an in-memory
+lattice; neither is a substitute.
+
+### A real fix that came out of it
+
+OSMnx pins the Overpass hostname to a single IP for the duration of an import —
+it calls `socket.gethostbyname` once and patches `getaddrinfo` — so its
+rate-limit accounting and its query reach the same backend. Correct for slot
+management, but it means a round-robin name with one unreachable member is a coin
+flip, and losing it hangs the whole import until the request timeout. Observed
+here: `overpass-api.de` resolves to `162.55.144.139` (reachable at the time) and
+`65.109.112.52` (not, from this network), and an import that pinned the second
+stalled for over an hour before it was killed.
+
+`select_overpass_endpoint` now probes every address an endpoint resolves to and
+only accepts one where all of them answer, so whichever OSMnx pins will work. The
+CLI now fails in about fifteen seconds with an actionable message instead of
+hanging.
+
+**Unblock:** wait for the block to lapse, then re-run the import. Use
+`--overpass-url` to point at another instance if needed.
+
+**If Overpass access stays unreliable**, the sanctioned channel for bulk OSM data
+is a pre-built extract rather than a live query, and both providers are reachable
+from here (checked 2026-08-12: `download.geofabrik.de` 200 in 0.9 s,
+`extract.bbbike.org` 200 in 1.0 s). That path needs a PBF reader — `pyrosm` or
+`osmium` — which is a dependency decision worth making deliberately rather than
+adding at the end of a batch, so it is recorded here instead of implemented.
+
+---
+
+## KI-4 — Origins snap to the nearest junction, not the nearest point on a path
+
+**Status: RESOLVED** · 2026-08-12 · fixed 2026-08-17
+
+Snapping now attaches to the nearest point _along_ a segment, splitting it for
+that request only — the cached graph is shared and version-keyed, so it is never
+mutated. An STRtree indexes the segments; building it over 180,554 segments takes
+0.16 s and is amortised by the dataset cache.
+
+Two further defects surfaced once this ran on real data, both found by evaluating
+twenty real journeys rather than by any unit test.
+
+**Snapping ignored whether the traveller was allowed on the segment.** A point in
+Waterloo Park landed 12.4 m onto a `highway=cycleway` carrying `foot=no`. That
+segment is correctly closed to pedestrians, so every route to that point failed —
+while a walkable path sat a few metres further on. Connectivity analysis put both
+endpoints in the same 152,935-node component, which is what proved it a bug
+rather than a limit of the data. Snapping now takes a predicate and searches
+outward through widening windows when everything nearby is closed to the profile.
+Unroutable journeys in the corpus went from 3 of 20 to 1.
+
+**A snapped segment was drawn backwards.** The halves of a split were stored
+already reversed _and_ marked as reversed, so `DirectedEdge.coordinates()` flipped
+them a second time. Twelve of the nineteen routable journeys drew a polyline with
+a gap of up to 93 m, and one ended 15 m from the point the user had chosen — while
+the reported distance stayed entirely plausible. Only checking drawn geometry
+against the source could have caught it. The regression tests cover the reverse
+traversal specifically, because a forward-only route drew correctly throughout.
+
+---
+
+## KI-5 — `unknown_data_fraction` may saturate on real OSM data
+
+**Status: RESOLVED** · raised 2026-08-12 · measured and addressed 2026-08-17
+
+The hypothesis was right about the cause and wrong about the consequence.
+
+`incline` really is almost absent: OpenStreetMap records it on **46 of 180,554**
+Waterloo segments, 0.03%. So before elevation, essentially every segment counted
+as having missing data and the headline figure sat near 100% on every route —
+exactly as predicted, and exactly as useless.
+
+Two things changed. Sampling NRCan HRDEM gives a derived grade on 53.8% of
+segments, so the gradient term discriminates again. And the reported figure was
+replaced outright: instead of one any-attribute-missing share, a route now
+reports per-category shares — "Surface data is missing for 38% of this route" —
+because two routes missing completely different things produced the same number
+and are completely different journeys.
+
+The underlying penalty was ablated rather than assumed. Over the twenty-journey
+corpus it still changes 3 of 20 routes, so it is not saturated. But removing only
+the missing-gradient term has exactly the same effect as removing every term, so
+one term is currently doing all the work. Recorded in ADR 0008.
+
+---
+
+## KI-6 — Loading the graph takes 97 seconds and 1.3 GB
+
+**Status: Open** · measured 2026-08-17
+
+Loading the active Waterloo dataset into the routing graph measured **97.5 s**
+with a **1.32 GB** peak Python heap, for 155,714 nodes and 180,554 segments. The
+cost is paid once per dataset version and then amortised by the version-keyed
+cache, so warm request latency is unaffected — route p50 is 195 ms — but it is
+the clearest scaling limit in the system:
+
+- A cold API instance cannot serve a route for a minute and a half after start.
+- Memory scales with the region, and Waterloo is one mid-sized city.
+- Two datasets resident in the cache is 2.6 GB.
+
+**Not fixed here**, deliberately. It needs a measurement-led choice between
+options with real trade-offs — a compact edge representation, loading geometry
+lazily, traversing the graph in PostGIS, or a serialised graph cached on disk —
+and choosing one before there is a deployment target with a known memory budget
+would be guessing.
+
+**Check when:** a deployment target exists, or a second region is added.
+
+---
+
+## KI-7 — Evidence freshness is a dataset-level fact
+
+**Status: Open** · 2026-08-17
+
+Every routing-relevant fact carries where it came from and when — but "when" is
+the timestamp of the whole extract, not of the individual element. The product
+can say the network was published on 2026-08-16; it cannot say that a particular
+crossing was last surveyed four years ago.
+
+That distinction matters for exactly the facts this product depends on. A kerb
+mapped in 2019 and a kerb mapped last week are not equally trustworthy, and a
+route that cannot tell them apart cannot warn about the difference.
+
+**The data exists**: OSM elements carry `timestamp` and `version`, and pyosmium
+exposes both. It was not wired through because the coverage report and the
+freshness policy would both have to change shape at the same time, and doing that
+with no use for the number yet would be building ahead of need.
+
+**Check when:** a second source of evidence arrives — user reports, or model
+predictions — at which point "how old is this claim" becomes a question the
+product must answer about more than one thing at once.

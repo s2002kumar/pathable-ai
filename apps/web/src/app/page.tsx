@@ -1,7 +1,6 @@
 import { AppHeader } from '@/components/AppHeader';
 import { ConfigurationError } from '@/components/ConfigurationError';
-import { PilotPanel } from '@/components/PilotPanel';
-import { MapPanel } from '@/features/map/MapPanel';
+import { RouteWorkspace } from '@/features/routing/RouteWorkspace';
 import { getPublicConfig } from '@/lib/public-config';
 import styles from './page.module.css';
 
@@ -24,27 +23,52 @@ export default function HomePage() {
     <div className={styles.shell}>
       <AppHeader apiBaseUrl={config.apiBaseUrl} pilotRegionName={config.pilotRegionName} />
 
-      <main className={styles.workspace} id="main-content">
-        <div className={styles.mapArea}>
-          <MapPanel
-            styleUrl={config.mapStyleUrl}
-            centerLat={config.pilotCenterLat}
-            centerLon={config.pilotCenterLon}
-            zoom={config.pilotZoom}
-            regionName={config.pilotRegionName}
-            attribution={MAP_ATTRIBUTION}
-            describedById={PILOT_DESCRIPTION_ID}
-          />
+      <main className={styles.main} id="main-content">
+        <div className={styles.intro}>
+          <h1 className={styles.pageTitle}>Walking routes in {config.pilotRegionName}</h1>
+          {/* The text alternative the map region points at. It states what the
+              map conveys rather than pointing at it, so it stands alone for
+              anyone who cannot see the map or render WebGL. */}
+          <p
+            className={styles.instructions}
+            id={PILOT_DESCRIPTION_ID}
+            data-testid="pilot-description"
+          >
+            Click the map to set a start and an end. PathAble compares the shortest walking route
+            with one that suits how you travel, and explains the difference using what OpenStreetMap
+            actually records — steps, surfaces, gradients and kerbs. Where nothing has been recorded
+            it says so: missing information is never treated as a clear path, and no route here is a
+            guarantee that a journey is passable.
+          </p>
         </div>
 
-        <div className={styles.panelArea}>
-          <PilotPanel
-            regionName={config.pilotRegionName}
-            centerLat={config.pilotCenterLat}
-            centerLon={config.pilotCenterLon}
-            descriptionId={PILOT_DESCRIPTION_ID}
-          />
-        </div>
+        <RouteWorkspace
+          apiBaseUrl={config.apiBaseUrl}
+          region={config.pilotRegionSlug}
+          mapStyleUrl={config.mapStyleUrl}
+          centerLat={config.pilotCenterLat}
+          centerLon={config.pilotCenterLon}
+          zoom={config.pilotZoom}
+          regionName={config.pilotRegionName}
+          attribution={MAP_ATTRIBUTION}
+          describedById={PILOT_DESCRIPTION_ID}
+        />
+
+        <p className={styles.attribution} data-testid="attribution">
+          Map data ©{' '}
+          <a
+            href="https://www.openstreetmap.org/copyright"
+            rel="noreferrer noopener"
+            target="_blank"
+          >
+            OpenStreetMap
+          </a>{' '}
+          contributors, ODbL 1.0. Development tiles served by{' '}
+          <a href="https://openfreemap.org/" rel="noreferrer noopener" target="_blank">
+            OpenFreeMap
+          </a>
+          , which has not been approved for production use.
+        </p>
       </main>
     </div>
   );

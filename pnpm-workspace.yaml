@@ -15,8 +15,14 @@ packages:
 # and the contract drift check proves the generated output is unchanged.
 #
 # Remove this once @redocly/openapi-core ships a release depending on >= 4.3.1.
+# GHSA-2v37-7h3g-55p8: nanoid < 3.3.18 loops indefinitely when a custom
+# generator is given size zero. It reaches us only through postcss, under both
+# Next and Vite, so there is no direct dependency to bump.
+#
+# Remove this once postcss depends on >= 3.3.18.
 overrides:
   "js-yaml@>=4.0.0 <4.3.1": "^4.3.1"
+  "nanoid@<3.3.18": ">=3.3.18"
 
 allowBuilds:
   # Native module resolver used by eslint-plugin-import-x (via eslint-config-next).

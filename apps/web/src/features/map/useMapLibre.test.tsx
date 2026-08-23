@@ -61,7 +61,7 @@ function Harness({
   styleUrl?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const status = useMapLibre({
+  const { status } = useMapLibre({
     containerRef: ref,
     styleUrl,
     center: [-80.5164, 43.4668],

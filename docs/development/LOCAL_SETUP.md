@@ -111,8 +111,13 @@ Frontend and backend unit tests need nothing:
 
 ```bash
 pnpm --filter @pathable/web dev
-uv --directory services/api run uvicorn pathable_api.main:app --reload
+uv --directory services/api run python -m pathable_api --reload
 ```
+
+Start the API through `python -m pathable_api`, not the bare `uvicorn` CLI. On
+Windows uvicorn picks an event loop psycopg cannot use, and the failure only
+appears once a request touches the database — as a 500, long after startup
+looked fine.
 
 Readiness will report `not_ready` without a database. Liveness still returns 200,
 which is the intended split.

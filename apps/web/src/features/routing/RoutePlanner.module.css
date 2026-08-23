@@ -1,0 +1,390 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--color-text-subtle);
+}
+
+.title {
+  font-size: var(--text-xl);
+  letter-spacing: -0.015em;
+  color: var(--color-text);
+}
+
+/* --- Origin and destination ---------------------------------------------- */
+
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.point {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* The point waiting to be set is outlined, not merely tinted: a colour change
+   alone would be invisible to a colour-blind user and in high-contrast mode. */
+.point[data-awaiting='true'] {
+  border-color: var(--color-brand-border);
+  outline: 2px dashed var(--color-brand-border);
+  outline-offset: -4px;
+}
+
+.pointMarker {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: #ffffff;
+  background: var(--color-brand);
+  border-radius: var(--radius-pill);
+}
+
+.pointMarker[data-marker='B'] {
+  background: var(--color-danger-dot);
+}
+
+.pointLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.pointValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.pointEmpty {
+  font-family: var(--font-sans);
+  font-style: italic;
+  color: var(--color-text-subtle);
+}
+
+.pointActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* --- Mobility profile ---------------------------------------------------- */
+
+.fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.profiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.profileOption {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'input label'
+    '.     hint';
+  gap: 0 var(--space-3);
+  padding: var(--space-3);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.profileOption[data-selected='true'] {
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand);
+}
+
+/* Focus lives on the label because the radio itself is visually small; without
+   this, keyboard users see the ring on a 16px control inside a large target. */
+.profileOption:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.profileInput {
+  grid-area: input;
+  align-self: center;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-brand);
+}
+
+.profileLabel {
+  grid-area: label;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.profileHint {
+  grid-area: hint;
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+/* --- Status and results --------------------------------------------------- */
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.hint {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text-muted);
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  font-size: var(--text-base);
+  color: var(--color-danger-text);
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-md);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.headline,
+.headlineGood,
+.headlineBad {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  border-radius: var(--radius-md);
+}
+
+.headline {
+  color: var(--color-text);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+}
+
+.headlineGood {
+  color: var(--color-ok-text);
+  background: var(--color-ok-surface);
+  border: 1px solid var(--color-ok-border);
+}
+
+.headlineBad {
+  color: var(--color-danger-text);
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+}
+
+.routeCards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.routeCard {
+  padding: var(--space-4);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.routeCardPrimary {
+  background: var(--color-surface);
+  border-color: var(--color-brand-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.routeCardHeader {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.routeCardTitle {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+/* Matches the map line styling — solid for the accessible route, dashed for the
+   shortest route — so the legend is the same signal in both places. */
+.swatch {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 0;
+  border-top-width: 4px;
+  border-top-style: solid;
+  border-radius: 2px;
+}
+
+.swatch[data-variant='accessible'] {
+  border-top-color: #0b6bcb;
+}
+
+.swatch[data-variant='standard'] {
+  border-top-style: dashed;
+  border-top-color: #5b6470;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2) var(--space-4);
+}
+
+.stat {
+  display: contents;
+}
+
+.stat dt {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.stat dd {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  text-align: right;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sectionHeading {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.reasonList,
+.cautionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.reason,
+.caution {
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  border-left: 3px solid var(--color-brand-border);
+}
+
+.caution {
+  color: var(--color-warn-text);
+  border-left-color: var(--color-warn-border);
+}
+
+.reason {
+  color: var(--color-text-muted);
+}
+
+.provenance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--color-text-subtle);
+  border-top: 1px solid var(--color-border);
+}
+
+.attribution code {
+  font-family: var(--font-mono);
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+
+.secondaryButton {
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--color-surface-sunken);
+}
+
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.secondaryButton:disabled {
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profileOption {
+    transition: none;
+  }
+}

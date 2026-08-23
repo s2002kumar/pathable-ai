@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "dataset_id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+  "region": "Waterloo, Ontario",
+  "generated_at": "2026-08-20T17:22:18.507392+00:00",
+  "segments": 180554,
+  "directed_edges": 361108,
+  "nodes": 155714,
+  "total_length_km": 3363.65,
+  "categories": {
+    "surface": {
+      "known": 100672,
+      "unknown": 79882,
+      "known_fraction": 0.5576,
+      "values": {
+        "compacted": 1884,
+        "paved": 92596,
+        "rough": 6192
+      }
+    },
+    "smoothness": {
+      "known": 3618,
+      "unknown": 176936,
+      "known_fraction": 0.02,
+      "values": {
+        "bad": 93,
+        "excellent": 1180,
+        "good": 1659,
+        "intermediate": 686
+      }
+    },
+    "grade (OSM incline)": {
+      "known": 46,
+      "unknown": 180508,
+      "known_fraction": 0.0003,
+      "values": {}
+    },
+    "grade (from elevation)": {
+      "known": 97131,
+      "unknown": 83423,
+      "known_fraction": 0.538,
+      "values": {}
+    },
+    "width": {
+      "known": 8056,
+      "unknown": 172498,
+      "known_fraction": 0.0446,
+      "values": {}
+    },
+    "kerb (crossings only)": {
+      "known": 4845,
+      "unknown": 6919,
+      "known_fraction": 0.4118,
+      "values": {
+        "flush": 271,
+        "lowered": 4408,
+        "none": 38,
+        "present_unknown": 111,
+        "raised": 17
+      }
+    },
+    "crossing type": {
+      "known": 11650,
+      "unknown": 114,
+      "known_fraction": 0.9903,
+      "values": {
+        "controlled": 2,
+        "informal": 4,
+        "marked": 4079,
+        "rainbow": 2,
+        "traffic_signals": 1568,
+        "uncontrolled": 1747,
+        "unmarked": 4248
+      }
+    },
+    "tactile paving (crossings)": {
+      "known": 5476,
+      "unknown": 6288,
+      "known_fraction": 0.4655,
+      "values": {
+        "no": 3198,
+        "yes": 2278
+      }
+    }
+  },
+  "counts": {
+    "step_segments": 437,
+    "steps_counted": 1809,
+    "crossings": 11764,
+    "kerb_from_node": 4829,
+    "pedestrian_one_way": 0,
+    "vehicle_oneway_ignored": 13579,
+    "ambiguous_direction": 0,
+    "conflicting_attributes": 0,
+    "pedestrian_prohibited": 2061
+  },
+  "freshness": {
+    "0-7 days": 180554
+  }
+}

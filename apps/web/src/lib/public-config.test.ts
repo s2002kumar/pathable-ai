@@ -9,6 +9,7 @@ const VALID = {
   NEXT_PUBLIC_PILOT_CENTER_LON: '-80.5164',
   NEXT_PUBLIC_PILOT_ZOOM: '14',
   NEXT_PUBLIC_PILOT_REGION_NAME: 'Waterloo, Ontario',
+  NEXT_PUBLIC_PILOT_REGION_SLUG: 'waterloo',
 } as const;
 
 function issuesFor(overrides: Record<string, string | undefined>): string[] {
@@ -30,6 +31,7 @@ describe('parsePublicConfig', () => {
       pilotCenterLon: -80.5164,
       pilotZoom: 14,
       pilotRegionName: 'Waterloo, Ontario',
+      pilotRegionSlug: 'waterloo',
     });
   });
 

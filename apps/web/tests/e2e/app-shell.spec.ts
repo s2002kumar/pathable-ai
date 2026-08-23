@@ -10,22 +10,25 @@ test.describe('application shell', () => {
     await expect(page.getByTestId('pilot-region')).toContainText('Waterloo, Ontario');
   });
 
-  test('discloses that this is a Phase 0 build with no routing or ML', async ({ page }) => {
-    await page.goto('/');
-
-    const notice = page.getByTestId('development-notice');
-    await expect(notice).toBeVisible();
-    await expect(notice).toContainText(/Phase 0/i);
-    await expect(notice).toContainText(/no routing/i);
-    await expect(notice).toContainText(/no machine learning/i);
-  });
-
-  test('describes the pilot area in text as well as on the map', async ({ page }) => {
+  test('states that missing data is never treated as a clear path', async ({ page }) => {
+    // The product's central safety claim, asserted in the shipped page rather
+    // than only in a unit test.
     await page.goto('/');
 
     const description = page.getByTestId('pilot-description');
     await expect(description).toBeVisible();
-    await expect(description).toContainText(/uptown core/i);
+    await expect(description).toContainText(
+      /missing information is never treated as a clear path/i,
+    );
+    await expect(description).toContainText(/no route here is a guarantee/i);
+  });
+
+  test('describes what the page does in text as well as on the map', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByTestId('pilot-description')).toContainText(
+      /compares the shortest walking route/i,
+    );
   });
 
   test('shows visible map data attribution', async ({ page }) => {
@@ -123,12 +126,20 @@ test.describe('application shell', () => {
     expect(container.width).toBeGreaterThanOrEqual(frame.width - 4);
   });
 
-  test('presents no routing controls', async ({ page }) => {
+  test('offers the mobility profiles as a labelled radio group', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByRole('textbox')).toHaveCount(0);
-    await expect(page.getByRole('searchbox')).toHaveCount(0);
-    await expect(page.getByRole('combobox')).toHaveCount(0);
+    await expect(page.getByRole('radiogroup', { name: /mobility profile/i })).toBeVisible();
+    await expect(page.getByRole('radio')).toHaveCount(5);
+    await expect(page.getByRole('radio', { name: /Wheelchair/ })).toBeChecked();
+  });
+
+  test('explains how to start before any point is chosen', async ({ page }) => {
+    await page.goto('/');
+
+    const status = page.getByTestId('route-status');
+    await expect(status).toHaveAttribute('data-route-state', 'idle');
+    await expect(status).toContainText(/choose a start and an end/i);
   });
 
   test('gives keyboard focus a visible indicator', async ({ page }) => {

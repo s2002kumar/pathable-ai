@@ -18,9 +18,11 @@ from pathable_api.core.config import Settings, get_settings
 from pathable_api.core.errors import register_exception_handlers
 from pathable_api.core.event_loop import configure_event_loop_policy
 from pathable_api.core.logging import configure_logging, get_logger
-from pathable_api.core.middleware import RequestContextMiddleware
+from pathable_api.core.middleware import RequestContextMiddleware, RequestSizeLimitMiddleware
 from pathable_api.core.request_context import REQUEST_ID_HEADER
 from pathable_api.db.session import Database, build_database
+from pathable_api.geo.geocoding import build_geocoder
+from pathable_api.routing.graph import GraphRepository
 
 logger = get_logger(__name__)
 
@@ -32,17 +34,39 @@ configure_event_loop_policy()
 API_DESCRIPTION = """
 Backend for **PathAble AI**, an accessibility-aware pedestrian routing project.
 
-**Phase 0 status.** This service currently exposes health and readiness endpoints only.
-There is no routing, no pedestrian graph, no elevation data, and no machine learning
-behind this API yet. Endpoints that compare a shortest pedestrian route against an
-accessibility-aware route do not exist and are not simulated.
+Routing compares the shortest walking route against a route that respects a chosen
+mobility profile, and explains the difference using attributes recorded in
+OpenStreetMap.
+
+**What this is not.** Every routing decision is a deterministic rule over recorded
+map attributes. There is no machine learning, no model prediction and no inferred
+accessibility score anywhere in this service — `ml_predictions_used` is present on
+every route response and is always `false`. Missing accessibility data is reported
+as `unknown`, never as evidence that a path is clear, and no route is a guarantee
+that a journey is passable.
+
+Map data © OpenStreetMap contributors, ODbL 1.0.
 """.strip()
 
 OPENAPI_TAGS = [
     {
         "name": "health",
         "description": "Liveness and readiness probes used by Docker, CI and the web client.",
-    }
+    },
+    {
+        "name": "routing",
+        "description": (
+            "Accessibility-aware pedestrian routing over a versioned OpenStreetMap "
+            "network. Requests are not persisted."
+        ),
+    },
+    {
+        "name": "geocoding",
+        "description": (
+            "Optional place-name search, restricted to a pilot region. Disabled unless a "
+            "provider is configured."
+        ),
+    },
 ]
 
 
@@ -61,6 +85,22 @@ def _build_lifespan(
                 "database_target": settings.safe_database_target(),
                 "allowed_origins": list(settings.allowed_origins),
             },
+        )
+
+        # One repository per application, so the loaded graph is shared across
+        # requests instead of being rebuilt per call.
+        app.state.graph_repository = GraphRepository()
+
+        # Built once so the geocoder's rate limiter is process-wide. One per
+        # request would let N concurrent requests each think they had a slot.
+        app.state.geocoder = build_geocoder(
+            settings.geocoding_provider,
+            contact=settings.geocoding_contact,
+            user_agent=f"{settings.service_name}/{settings.app_version}",
+        )
+        logger.info(
+            "Geocoding configured",
+            extra={"provider": app.state.geocoder.name, "enabled": app.state.geocoder.enabled},
         )
 
         if settings.database_url:
@@ -126,6 +166,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             max_age=600,
         )
 
+    # Starlette applies middleware in reverse registration order, so this pair
+    # runs context-first, size-limit-second. Correlation costs a UUID and no body
+    # read, and it means a 413 carries a request id the caller can quote — which
+    # a refusal with no way to report it does not.
+    app.add_middleware(RequestSizeLimitMiddleware)
     app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
     app.include_router(api_router)
