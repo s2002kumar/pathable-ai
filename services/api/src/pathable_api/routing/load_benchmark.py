@@ -411,7 +411,10 @@ class LoadBenchmarkReport:
         """Only valid runs count; the invalid ones are listed, not averaged."""
         timing = self.timing_runs()
         heap = self.heap_runs()
-        peaks = [run.peak_rss_mb for run in self.runs if run.valid and run.peak_rss_mb is not None]
+        # Resident memory from timing runs only: the tracer's own bookkeeping
+        # inflates the heap run's working set well past what the service uses.
+        peaks = [run.peak_rss_mb for run in timing if run.peak_rss_mb is not None]
+        settled = [run.rss_mb for run in timing if run.rss_mb is not None]
         elapsed = sorted(run.elapsed_seconds for run in timing)
         return {
             "timing_runs": len(timing),
@@ -427,6 +430,7 @@ class LoadBenchmarkReport:
                 else None
             ),
             "max_peak_rss_mb": max(peaks) if peaks else None,
+            "median_rss_after_load_mb": round(statistics.median(settled), 1) if settled else None,
             "invalid_runs": sum(1 for run in self.runs if not run.valid),
             "runs_under_memory_pressure": sum(1 for run in self.runs if run.memory_pressure),
         }
@@ -580,8 +584,9 @@ def render(report: LoadBenchmarkReport) -> list[str]:
         )
     if summary["max_peak_rss_mb"] is not None:
         lines.append(
-            f"Peak RSS   {summary['max_peak_rss_mb']} MB ({report.process_memory_method}; "
-            "process-wide, so later runs include earlier ones)"
+            f"RSS        {summary['median_rss_after_load_mb']} MB after a load, "
+            f"{summary['max_peak_rss_mb']} MB at peak while loading "
+            f"({report.process_memory_method}; timing runs only)"
         )
     if summary["invalid_runs"]:
         lines.append(f"Excluded   {summary['invalid_runs']} invalid run(s), listed above")

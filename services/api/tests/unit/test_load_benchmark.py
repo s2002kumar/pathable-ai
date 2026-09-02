@@ -184,6 +184,18 @@ class TestSummary:
         assert summary["timing_runs"] == 1
         assert summary["median_seconds"] == 50.0
 
+    def test_resident_memory_is_taken_from_timing_runs_only(self) -> None:
+        # tracemalloc's own bookkeeping roughly doubles the working set; that
+        # figure describes the tracer, not the service.
+        timing = _run(1, elapsed=50.0)
+        traced = _run(2, elapsed=120.0, heap=700.0)
+        traced.rss_mb, traced.peak_rss_mb = 975.0, 2092.0
+
+        summary = _report([timing, traced]).summary()
+
+        assert summary["max_peak_rss_mb"] == 950.0
+        assert summary["median_rss_after_load_mb"] == 900.0
+
     def test_no_valid_runs_reports_none_rather_than_a_number(self) -> None:
         report = _report([_run(1, elapsed=54452.0, valid=False)])
 
