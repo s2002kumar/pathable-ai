@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -308,3 +309,36 @@ class TestMemoryProbes:
         assert process.method
         for value in (machine.total_mb, machine.available_mb, process.rss_mb, process.peak_rss_mb):
             assert value is None or value >= 0.0
+
+
+class TestCommandOutput:
+    def test_the_json_report_is_written_with_lf_line_endings(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Found on Windows: the first evidence file came out CRLF and failed the
+        # repository's formatter check. The report is committed evidence, so its
+        # bytes must not depend on the platform that produced it.
+        from pathable_api import cli
+        from pathable_api.core.config import get_settings
+
+        report = _report([_run(1, elapsed=50.0)])
+
+        async def fake_benchmark(*args: object, **kwargs: object) -> LoadBenchmarkReport:
+            return report
+
+        monkeypatch.setattr(cli, "run_load_benchmark", fake_benchmark)
+        monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://x:y@localhost:1/none")
+        get_settings.cache_clear()
+        target = tmp_path / "load.json"
+        try:
+            exit_code = cli.main(
+                ["benchmark", "load", "--region", "waterloo", "--json", str(target)]
+            )
+        finally:
+            get_settings.cache_clear()
+
+        assert exit_code == 0
+        content = target.read_bytes()
+        assert b"\r\n" not in content
+        assert content.endswith(b"}\n")
+        assert json.loads(content)["region"] == "waterloo-synthetic"

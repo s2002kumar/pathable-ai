@@ -683,7 +683,11 @@ async def _benchmark_load(database: Database, args: argparse.Namespace) -> int:
         print(line)
 
     if args.json:
-        Path(args.json).write_text(json.dumps(report.to_dict(), indent=2) + "\n", encoding="utf-8")
+        # LF regardless of platform: this file is committed as evidence and the
+        # repository's formatter check rejects CRLF.
+        Path(args.json).write_text(
+            json.dumps(report.to_dict(), indent=2) + "\n", encoding="utf-8", newline="\n"
+        )
         print(f"\nWrote {args.json}")
     return EXIT_OK
 
