@@ -29,13 +29,15 @@ believed.
 
 ## Files
 
-| File                                | What it is                                                                                                                                                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `waterloo-coverage.json`            | What OpenStreetMap records for the region, per category. Produced by `pathable coverage --region waterloo`.                                                                                                  |
-| `waterloo-routes.json`              | Twenty real journeys under the standard and wheelchair profiles, plus the Dijkstra/A\* comparison and the unknown-penalty ablation. Produced by `pathable evaluate --region waterloo --algorithms --ablate`. |
-| `waterloo-performance.json`         | Latency, memory and throughput measured on this machine.                                                                                                                                                     |
-| `waterloo-geometry-inspection.json` | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                |
-| `screenshots/`                      | The real product answering from this dataset.                                                                                                                                                                |
+| File                                | What it is                                                                                                                                                                                                                                                              |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `waterloo-coverage.json`            | What OpenStreetMap records for the region, per category. Produced by `pathable coverage --region waterloo`.                                                                                                                                                             |
+| `waterloo-routes.json`              | Twenty real journeys under the standard and wheelchair profiles, plus the Dijkstra/A\* comparison and the unknown-penalty ablation. Produced by `pathable evaluate --region waterloo --algorithms --ablate`.                                                            |
+| `waterloo-performance.json`         | Latency, memory and throughput measured on this machine. Its `graph_load` block is the 2026-08-17 figure, measured under tracemalloc; superseded by the file below.                                                                                                     |
+| `waterloo-graph-load.json`          | Cold-start cost: loading the dataset into the routing graph, three timed runs plus one under tracemalloc, with the machine conditions and a content fingerprint. Produced by `pathable benchmark load --region waterloo --json docs/evidence/waterloo-graph-load.json`. |
+| `waterloo-graph-load-before.json`   | The same command run at `1ee1d65`, whose loader is identical to `main`'s, minutes before the Core-column loader was applied. Kept so the before/after pair can be checked, not only asserted.                                                                           |
+| `waterloo-geometry-inspection.json` | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                                                                           |
+| `screenshots/`                      | The real product answering from this dataset.                                                                                                                                                                                                                           |
 
 ---
 
@@ -69,6 +71,23 @@ the route corpus; only the screenshot of it is missing.
 ---
 
 ## Headline findings
+
+**Loading the graph now takes about half the time and half the heap.** The
+same 180,554 segments load with a peak Python heap of **700.7 MB against
+1,381.3 MB** before (−49%), and in a **median 22.1 s against 46.8 s** on the
+same laptop, same dataset, the same afternoon — best run to best run, 21.4 s
+against 35.0 s (−39%). Resident memory settles at about 850 MB after a load,
+with a transient peak near 1.1 GB while the rows stream in. Every run started
+with under 10% of physical memory free, which each report flags, so the
+conservative figure is the best-run one and the wall-clock is this laptop's,
+not a server's. Both loads carry the same SHA-256 fingerprint of every node
+and every segment (`88f63bcaed9ce3ce…` / `972e3e41d4728b3b…`), and the
+twenty-journey corpus routes identically. The change is a narrow Core-column
+read instead of ORM entities, WKB instead of WKT, and leaving the 765,290-entry
+OSM tag blob in the database where it is provenance. The 97.5 s previously
+recorded in `waterloo-performance.json` was measured under tracemalloc, which
+the new command shows costs 2.5–6× on this load; it never described the
+service's real cold start.
 
 **Grade was effectively absent before elevation.** OpenStreetMap records an
 `incline` on 46 of 180,554 segments — 0.03%. After sampling HRDEM, 97,131

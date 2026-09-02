@@ -262,27 +262,44 @@ one term is currently doing all the work. Recorded in ADR 0008.
 
 ---
 
-## KI-6 — Loading the graph takes 97 seconds and 1.3 GB
+## KI-6 — Loading the graph takes 20 seconds and 700 MB of heap
 
-**Status: Open** · measured 2026-08-17
+**Status: Open, reduced** · measured 2026-08-17 · re-measured 2026-09-02
 
-Loading the active Waterloo dataset into the routing graph measured **97.5 s**
-with a **1.32 GB** peak Python heap, for 155,714 nodes and 180,554 segments. The
-cost is paid once per dataset version and then amortised by the version-keyed
-cache, so warm request latency is unaffected — route p50 is 195 ms — but it is
-the clearest scaling limit in the system:
+Loading the active Waterloo dataset into the routing graph — 155,714 nodes and
+180,554 segments — now measures a **median 22.1 s** with a **700.7 MB** peak
+Python heap, against 46.8 s and 1,381.3 MB for the previous loader on the same
+machine and dataset the same afternoon (best run to best run, 21.4 s against
+35.0 s). Every run started with under 10% of physical memory free, and the
+wall-clock is a laptop's, so the time is a direction and a rough size, not a
+service-level figure; the heap and the fingerprint are exact. Both figures come from
+`pathable benchmark load --region waterloo`, which records the conditions and
+refuses to average in a run that was not really running; the pair is kept in
+[`docs/evidence/`](../evidence/README.md). The change was measurement-led:
+profiling showed SQLAlchemy building a full ORM entity per edge, so the loader
+now reads narrow Core columns, takes geometry as WKB, and leaves the OSM tag
+blob in the database.
 
-- A cold API instance cannot serve a route for a minute and a half after start.
-- Memory scales with the region, and Waterloo is one mid-sized city.
-- Two datasets resident in the cache is 2.6 GB.
+The originally recorded 97.5 s was measured with tracemalloc on for the whole
+load, which the new command shows inflates wall-clock 2.5–6×. It was never the
+service's real cold start.
 
-**Not fixed here**, deliberately. It needs a measurement-led choice between
-options with real trade-offs — a compact edge representation, loading geometry
-lazily, traversing the graph in PostGIS, or a serialised graph cached on disk —
-and choosing one before there is a deployment target with a known memory budget
-would be guessing.
+Still open, because it is still the clearest scaling limit in the system:
 
-**Check when:** a deployment target exists, or a second region is added.
+- A cold API instance cannot serve a route for about twenty seconds after start.
+- Resident memory after a load is about 850 MB, with a transient peak near
+  1.1 GB while the rows stream in. Memory scales with the region, and Waterloo
+  is one mid-sized city.
+- Two datasets resident in the cache is roughly 1.7 GB.
+
+The remaining cost is NetworkX edge insertion and Python object construction
+— 180,554 `EdgeFeatures` and 361,108 `DirectedEdge` instances. Halving that
+again needs a different in-memory representation, which is a real
+architectural change and wants its own measurement rather than being bundled
+into a query fix.
+
+**Check when:** a deployment target with a memory budget exists, or a second
+region is added.
 
 ---
 
