@@ -24,7 +24,7 @@ from typing import Any
 from networkx import MultiDiGraph
 from shapely import wkb as shapely_wkb
 from shapely.geometry import LineString, Point
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.core.logging import get_logger
@@ -313,7 +313,16 @@ async def load_graph(
     edge_rows = await session.execute(
         select(
             *_EDGE_COLUMNS,
-            GraphEdge.raw_tags["name"].astext.label("name"),
+            # Only a JSON string is a name. `->>` would happily render a number
+            # or an OSMnx-merged list of names as text, and the Python loader
+            # this replaced dropped those; the SQL side has to agree with it.
+            case(
+                (
+                    func.jsonb_typeof(GraphEdge.raw_tags["name"]) == "string",
+                    GraphEdge.raw_tags["name"].astext,
+                ),
+                else_=None,
+            ).label("name"),
             func.ST_AsBinary(GraphEdge.geometry).label("geometry_wkb"),
         ).where(GraphEdge.dataset_version_id == dataset.id)
     )
