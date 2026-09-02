@@ -157,8 +157,15 @@ def _windows_process_memory() -> ProcessMemory:  # pragma: no cover - platform s
 
     counters = ProcessMemoryCounters()
     counters.cb = ctypes.sizeof(ProcessMemoryCounters)
-    handle = windll.kernel32.GetCurrentProcess()
-    if windll.psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb):
+    # Without declared argument types the pseudo-handle (-1) is truncated to a
+    # 32-bit int on a 64-bit process and the call fails with ERROR_INVALID_HANDLE.
+    get_current_process = windll.kernel32.GetCurrentProcess
+    get_current_process.restype = ctypes.c_void_p
+    get_info = windll.psapi.GetProcessMemoryInfo
+    get_info.argtypes = (ctypes.c_void_p, ctypes.POINTER(ProcessMemoryCounters), ctypes.c_ulong)
+    get_info.restype = ctypes.c_int
+    handle = get_current_process()
+    if get_info(handle, ctypes.byref(counters), counters.cb):
         return ProcessMemory(
             _mb(counters.WorkingSetSize),
             _mb(counters.PeakWorkingSetSize),
