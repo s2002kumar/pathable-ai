@@ -255,6 +255,21 @@ machine. The `--grid` mode measures an in-memory lattice, which is _not a map of
 anywhere_ — it exists to characterise how routing scales with network size, and
 any number from it must be reported as such.
 
+```bash
+# The cold-start cost: load the active dataset into the routing graph, three
+# timed runs plus one under tracemalloc, and write the full report as JSON.
+uv run pathable benchmark load --region waterloo --json graph-load.json
+```
+
+`benchmark load` records the dataset, the commit, the machine and how much
+memory was free before every run, and it marks a run **invalid** rather than
+averaging it in when the wall-clock says the process was mostly not running
+(a suspended laptop, or paging). Timing runs and the tracemalloc run are kept
+apart because the tracer slows allocation. The report also carries a SHA-256
+fingerprint of every node and segment, so two versions of the loader can be
+shown to have built the same graph — a speed-up that quietly dropped a field
+would otherwise still look like a speed-up.
+
 ---
 
 ## Commands

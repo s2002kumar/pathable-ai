@@ -146,6 +146,11 @@ class RoutableGraph:
         return edge
 
     @property
+    def segments(self) -> tuple[RoutableEdge, ...]:
+        """Every physical segment, once, in load order. Read-only."""
+        return tuple(self._segments)
+
+    @property
     def edge_index(self) -> EdgeIndex:
         """Spatial index over segment geometry, built lazily."""
         if self._edge_index is None:
