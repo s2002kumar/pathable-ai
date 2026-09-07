@@ -445,6 +445,12 @@ Start the database and export the URL:
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors,
 licensed under the [Open Database License](https://opendatacommons.org/licenses/odbl/).
 Development tiles are served by [OpenFreeMap](https://openfreemap.org/).
+
+Gradients derived from elevation use NRCan's High Resolution Digital Elevation
+Model (CanElevation): _Contains information licensed under the
+[Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada)._
+The same statement is returned with every route response that carries a derived
+gradient and shown in the route panel.
 OpenStreetMap data and OpenStreetMap-operated services are separate
 considerations — see the licensing document before relying on either.
 

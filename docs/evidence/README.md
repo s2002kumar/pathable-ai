@@ -3,6 +3,12 @@
 Measurements and captures from the real Waterloo dataset. Every number here came
 from a run that actually happened; nothing is estimated or projected.
 
+**Attribution.** Every route, coverage figure and screenshot here derives from
+OpenStreetMap data — © OpenStreetMap contributors, ODbL 1.0 — and the JSON
+files that carry map-derived content are themselves ODbL-derived data. Gradients
+come from NRCan HRDEM: _Contains information licensed under the Open Government
+Licence – Canada._
+
 **Every file here is regenerated after any change that could move it.** Two were
 briefly wrong and are worth naming: the coverage report was first run before
 elevation had been applied, so it recorded 0% for elevation-derived grade; and

@@ -55,8 +55,12 @@ Three obligations:
 
 - On the map: MapLibre `AttributionControl`, non-compact, always visible.
 - In the interface: the pilot panel's attribution line, linking to the OSM
-  copyright page.
-- In the repository: the README.
+  copyright page, and the route panel's footer.
+- In every route response: `dataset.attribution`, so a client cannot show a
+  route without holding the credit; `dataset.elevation_attribution` carries the
+  Open Government Licence – Canada statement whenever a derived grade is present
+  (§5).
+- In the repository: the README and `docs/evidence/README.md`.
 
 ---
 
