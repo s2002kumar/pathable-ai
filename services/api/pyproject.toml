@@ -31,7 +31,7 @@ dependencies = [
 pathable = "pathable_api.cli:main"
 
 [project.urls]
-Repository = "https://github.com/pathable-ai/pathable-ai"
+Repository = "https://github.com/s2002kumar/pathable-ai"
 
 [dependency-groups]
 dev = [
