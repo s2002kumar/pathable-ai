@@ -248,6 +248,21 @@
             "title": "Dataset Id",
             "type": "string"
           },
+          "elevation_attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required credit for the elevation model behind any derived gradient in this response. Null when the dataset carries no elevation at all, in which case every gradient shown was recorded by a mapper or is unknown.",
+            "examples": [
+              "Contains information licensed under the Open Government Licence – Canada."
+            ],
+            "title": "Elevation Attribution"
+          },
           "evidence_age_days": {
             "anyOf": [
               {

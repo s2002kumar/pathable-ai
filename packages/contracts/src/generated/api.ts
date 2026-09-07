@@ -265,6 +265,12 @@ export interface components {
             /** Dataset Id */
             dataset_id: string;
             /**
+             * Elevation Attribution
+             * @description Required credit for the elevation model behind any derived gradient in this response. Null when the dataset carries no elevation at all, in which case every gradient shown was recorded by a mapper or is unknown.
+             * @example Contains information licensed under the Open Government Licence – Canada.
+             */
+            elevation_attribution?: string | null;
+            /**
              * Evidence Age Days
              * @description Whole days between the upstream publication and this response. Null when the source published no timestamp. A route cannot say a particular crossing was surveyed years ago — OpenStreetMap element timestamps are not yet ingested — so this is the age of the dataset, not of any individual fact in it.
              */

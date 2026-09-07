@@ -201,6 +201,29 @@ describe('RoutePlanner', () => {
     expect(screen.getByText(/© OpenStreetMap contributors, ODbL 1\.0/)).toBeInTheDocument();
   });
 
+  it('shows the elevation licence credit whenever the dataset carries one', () => {
+    // Derived gradients come from NRCan's HRDEM under the Open Government
+    // Licence – Canada, which requires its statement wherever a grade is shown.
+    const credit = 'Contains information licensed under the Open Government Licence – Canada.';
+    renderPlanner({
+      state: {
+        status: 'success',
+        comparison: {
+          ...COMPARISON,
+          dataset: { ...COMPARISON.dataset, elevation_attribution: credit },
+        } as unknown as RouteCompareResponse,
+      },
+    });
+
+    expect(screen.getByTestId('elevation-attribution')).toHaveTextContent(credit);
+  });
+
+  it('shows no elevation credit for a dataset that was never sampled', () => {
+    renderPlanner();
+
+    expect(screen.queryByTestId('elevation-attribution')).not.toBeInTheDocument();
+  });
+
   it('reports unrecorded gradients as unrecorded rather than zero', () => {
     renderPlanner({
       state: {
