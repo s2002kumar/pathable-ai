@@ -200,6 +200,9 @@ the scheduled `Security` workflow on `main` succeeded, and the six Dependabot
 pull requests opened that morning each received sixteen green checks. This
 branch's own result is whatever its pull request shows; nothing here is
 described as green until a run on this branch has actually completed.
+Observed: on draft pull request #40, all sixteen checks of the `CI` and
+`Security` workflows completed and passed (runs 34155685310 and 34155685314,
+2026-09-07).
 
 ## 10. How to re-run this gate
 
