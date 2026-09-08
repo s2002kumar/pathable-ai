@@ -9,7 +9,7 @@ requires-python = ">=3.13,<3.14"
 license = { text = "LicenseRef-AllRightsReserved" }
 dependencies = [
     "fastapi>=0.115.0,<0.200.0",
-    "uvicorn[standard]>=0.34.0,<0.40.0",
+    "uvicorn[standard]>=0.34.0,<0.53.0",
     "pydantic>=2.10.0,<3.0.0",
     "pydantic-settings>=2.7.0,<3.0.0",
     "sqlalchemy[asyncio]>=2.0.36,<3.0.0",
