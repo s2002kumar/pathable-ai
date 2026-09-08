@@ -372,9 +372,11 @@ Not implemented. When they are:
 
 ## 8. Software licences
 
-**PathAble itself has no licence yet** — it is private and unreleased, and all
-rights are reserved by default. See [`../../LICENSING.md`](../../LICENSING.md).
-Do not describe the project as open source.
+**PathAble's own source code is © Sandeep Kumar, all rights reserved** —
+source-visible, but granting nobody a right to reuse it. See
+[`../../LICENSING.md`](../../LICENSING.md). Do not describe the project as open
+source. That policy is separate from, and does not affect, the data obligations
+in this document.
 
 The obligations below come from what PathAble _uses_ and apply regardless of what
 licence PathAble eventually adopts. Key dependencies:

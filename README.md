@@ -430,8 +430,11 @@ Start the database and export the URL:
 
 ## Current limitations
 
-- No routing, no pedestrian graph, no elevation data, no imagery, no ML.
-- No user accounts, no authentication, no user reports.
+- No machine learning of any kind: every routing decision is a deterministic
+  rule over recorded OpenStreetMap attributes.
+- No imagery, no user reports, and no per-element edit times — evidence
+  freshness is a dataset-level fact.
+- No user accounts and no authentication.
 - The default map style (OpenFreeMap) is a development convenience and **has not
   been approved for production**. See
   [`docs/licensing/DATA_SOURCES.md`](docs/licensing/DATA_SOURCES.md).
@@ -463,11 +466,17 @@ considerations — see the licensing document before relying on either.
 
 ## Licence
 
-**No licence has been selected.** This is a private, unreleased project, and all
-rights are reserved by default. It is not open source and should not be described
-as such. See [`LICENSING.md`](LICENSING.md) — choosing a licence is a founder
-decision and a release-readiness item.
+**Source code: © Sandeep Kumar. All rights reserved.** This repository is
+intended to be _source-visible_ — readable by anyone who opens it — which is not
+a grant of any right to use, copy, modify or redistribute the code. **PathAble is
+not open source** and should not be described as MIT, Apache-licensed, or free to
+use. See [`LICENSING.md`](LICENSING.md) for the full policy and for why the
+permissive door was deliberately left open rather than walked through.
 
-Third-party obligations are unaffected: OpenStreetMap data remains ODbL and
-requires attribution, and dependency licences are recorded in
+**The data is licensed separately, and more generously.** OpenStreetMap data and
+the pedestrian graph derived from it are ODbL 1.0; elevation-derived gradients
+carry the Open Government Licence – Canada statement; the measurement files in
+[`docs/evidence/`](docs/evidence/README.md) are OSM-derived data attributed in
+that directory. Those obligations are unaffected by the code's copyright, and
+dependency licences are recorded in
 [`docs/licensing/DATA_SOURCES.md`](docs/licensing/DATA_SOURCES.md).

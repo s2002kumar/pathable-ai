@@ -1,14 +1,18 @@
 # Public-release safety gate
 
-**Verdict: NOT SAFE TO MAKE PUBLIC — for one non-engineering reason.** The
-repository holds no secrets, no private data and no restricted datasets, every
-scan and audit run for this gate came back clean, and the one attribution gap
-found was fixed on this branch. What blocks publication is that the project has
-**no licence** ([`LICENSING.md`](../../LICENSING.md)): a public repository with
-all rights reserved is a founder decision that has not been made, and it is
-listed there as the first release-readiness item. Once a licence is chosen and
-the items under _Founder decisions_ below are settled, nothing in this gate
-stands in the way.
+**Verdict: TECHNICALLY SAFE TO MAKE PUBLIC. Visibility is deliberately
+deferred.** The repository holds no secrets, no private data and no restricted
+datasets; every scan and audit run for this gate came back clean; the one
+attribution gap found was fixed here; and the publication policy that was the
+sole remaining blocker has since been decided and written down in
+[`LICENSING.md`](../../LICENSING.md) — source-visible, © Sandeep Kumar, all
+rights reserved, with the ODbL and Open Government Licence obligations on the
+data kept separate from it.
+
+Nothing in this gate now stands in the way of publication. **The repository
+nevertheless remains private**, by choice: visibility is its own release step,
+taken when the rest of the recruiting-readiness work is finished, not as a side
+effect of this assessment.
 
 Assessed 2026-09-07 on `main` at `74825356` (tag `v0.2.0-gate-ab`), with the
 two open feature branches and every tag included in the history scan. The
@@ -158,22 +162,32 @@ on 2026-09-07). None is bulk-merged here.
    when `localhost` resolves to IPv6 first under Docker Desktop, which made the
    integration suite appear to hang during this gate. Environment, not code.
 
-## 7. Founder decisions before publication
+## 7. Founder decisions — taken
 
-1. **Choose a licence**, or decide the code stays all-rights-reserved while
-   public. This is the blocker. See `LICENSING.md`, which also lists the
-   derived-database (ODbL) consequence and contributor terms.
-2. **Commit identity.** 75 commits carry the maintainer's personal email
-   address. Publishing a repository publishes its history; a GitHub
-   `noreply` address for future commits is a setting, but changing past
-   commits is a history rewrite, which this gate does not perform.
-3. **Evidence data licence.** The route, coverage and geometry JSON in
-   `docs/evidence/` are small OSM-derived extracts. They are now labelled ODbL;
-   whether to keep them in a public repository under the project's eventual
-   licence is a legal question, not an engineering one.
-4. **Free tile service.** OpenFreeMap is the configured style and is not
-   approved for production; a public repository is fine, a public deployment
-   is a separate decision (ADR 0005).
+All four questions this gate raised have been answered. They are recorded here
+as decisions, with the policy itself in [`LICENSING.md`](../../LICENSING.md).
+
+1. **Licence.** The code is **source-visible and all rights reserved**,
+   © Sandeep Kumar. Not open source, and deliberately not a permissive licence:
+   publishing under MIT or Apache is a one-way door, and this keeps it open.
+   README, `LICENSING.md` and the package metadata all say the same thing.
+2. **Commit identity.** History is **preserved as it stands**, personal email
+   addresses included. Rewriting it to change past authorship was rejected —
+   the history is the record of how the work was done. Future commits use the
+   GitHub-provided `users.noreply.github.com` address, applied as
+   repository-local Git configuration.
+3. **Evidence data.** The OSM-derived JSON in `docs/evidence/` **stays public**,
+   with its ODbL and Open Government Licence attribution stated at the top of
+   that directory's README and explicitly separated from the code's copyright.
+4. **Free tile service.** Unchanged and still true: OpenFreeMap is a development
+   convenience, a public _repository_ is unaffected by it, and a public
+   _deployment_ on an unguaranteed community service remains a separate decision
+   (ADR 0005).
+
+**What is still not decided, and does not block visibility:** whether to adopt a
+permissive licence later, contributor terms (needed before a second
+contributor), and whether a public deployment happens at all — which is what
+would trigger the ODbL derived-database obligation.
 
 ## 8. Local verification, branch head
 
