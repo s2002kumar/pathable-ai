@@ -45,7 +45,9 @@ from pathable_api.geo.regions import PILOT_REGIONS, region_definition, seed_pilo
 from pathable_api.routing.ablation import run_ablation, summarise_ablation
 from pathable_api.routing.benchmark import build_measurement_grid, measure
 from pathable_api.routing.evaluation import as_records, compare_algorithms, evaluate
-from pathable_api.routing.graph import GraphRepository, graph_from_payload
+from pathable_api.routing.graph import GraphRepository, NoActiveDatasetError, graph_from_payload
+from pathable_api.routing.load_benchmark import render as render_load_benchmark
+from pathable_api.routing.load_benchmark import run_load_benchmark
 from pathable_api.routing.profiles import get_profile
 from pathable_api.routing.waterloo_cases import WATERLOO_CASES
 
@@ -163,6 +165,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="Profile to measure; repeatable. Defaults to standard and wheelchair.",
     )
 
+    load_bench = benchmark_actions.add_parser(
+        "load",
+        help=(
+            "Time loading a region's active dataset into the routing graph and measure "
+            "its memory. The cold-start cost of the service."
+        ),
+    )
+    load_bench.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    load_bench.add_argument(
+        "--runs",
+        type=int,
+        default=3,
+        help="Timing runs, without tracemalloc so its overhead does not inflate the clock.",
+    )
+    load_bench.add_argument(
+        "--heap-runs",
+        type=int,
+        default=1,
+        help="Additional runs under tracemalloc, for peak Python heap. Slower; timed separately.",
+    )
+    load_bench.add_argument("--json", default=None, help="Write the full report here.")
+
     elevation = subcommands.add_parser(
         "elevation", help="Sample elevation for a dataset and derive segment grade."
     )
@@ -269,6 +295,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _coverage(database, args)
             case "evaluate":
                 return await _evaluate(database, args)
+            case "benchmark" if args.benchmark_command == "load":
+                return await _benchmark_load(database, args)
             case "benchmark":
                 return await _benchmark(database, args)
             case _:
@@ -634,6 +662,33 @@ async def _benchmark(database: Database, args: argparse.Namespace) -> int:
             f"{summary.profile:<18}{summary.samples:>5}{summary.failures:>6}"
             f"{summary.p50_ms:>10.2f}{summary.p95_ms:>10.2f}{summary.max_ms:>10.2f}"
         )
+    return EXIT_OK
+
+
+async def _benchmark_load(database: Database, args: argparse.Namespace) -> int:
+    if args.runs < 0 or args.heap_runs < 0 or args.runs + args.heap_runs < 1:
+        print("error: ask for at least one run.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+
+    async with database.session() as session:
+        try:
+            report = await run_load_benchmark(
+                session, args.region, runs=args.runs, heap_runs=args.heap_runs
+            )
+        except NoActiveDatasetError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+
+    for line in render_load_benchmark(report):
+        print(line)
+
+    if args.json:
+        # LF regardless of platform: this file is committed as evidence and the
+        # repository's formatter check rejects CRLF.
+        Path(args.json).write_text(
+            json.dumps(report.to_dict(), indent=2) + "\n", encoding="utf-8", newline="\n"
+        )
+        print(f"\nWrote {args.json}")
     return EXIT_OK
 
 

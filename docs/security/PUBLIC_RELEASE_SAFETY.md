@@ -191,6 +191,10 @@ would trigger the ODbL derived-database obligation.
 
 ## 8. Local verification, branch head
 
+Counts are from the safety-gate branch as assessed. The graph-performance
+work merged separately and adds tests, so `main` now runs more than these;
+the numbers are left as measured rather than restated from memory.
+
 | Gate                                                    | Result                                |
 | ------------------------------------------------------- | ------------------------------------- |
 | gitleaks history (all refs) and tree, after remediation | 0 findings                            |

@@ -11,7 +11,8 @@
     "seconds": 97.46,
     "nodes": 155714,
     "segments": 180554,
-    "peak_python_heap_mb": 1317.9
+    "peak_python_heap_mb": 1317.9,
+    "note": "Measured 2026-08-17 with tracemalloc active for the whole load, which inflates the wall-clock; kept as the historical figure. Current measurements: waterloo-graph-load.json."
   },
   "spatial_index_build": {
     "seconds": 0.159,

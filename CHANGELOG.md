@@ -23,6 +23,12 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
   licence inventory and attribution verification behind it. Git history is
   preserved unchanged; future commits use a GitHub `noreply` address.
 
+- **`pathable benchmark load`**, a committed, repeatable measurement of the
+  cold-start cost: it times loading a region into the routing graph, measures
+  peak Python heap and process memory, records the machine conditions, marks a
+  run invalid rather than averaging it in when the process was mostly not
+  running, and fingerprints every node and segment so two loaders can be shown
+  to have built the same graph. Results live in `docs/evidence/`.
 - **A real Waterloo network, ingested from a published extract.** 155,714 nodes
   and 180,554 physical segments (361,108 routable directed edges, 3,363.7 km) read
   from Geofabrik's Ontario extract, whose published MD5 matched the download
@@ -45,6 +51,12 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Changed
 
+- **Graph loading reads narrow Core columns instead of ORM entities**, takes
+  geometry as WKB, and leaves the OSM tag blob in the database. On the Waterloo
+  dataset, peak Python heap fell from 1,381 MB to 701 MB and the median load
+  from 46.8 s to 22.1 s on the same laptop; the loaded graph and every route in
+  the evaluation corpus are unchanged. KI-6 stays open at the new baseline.
+
 - **The route panel says which fact is missing, not how much is.** "Length with
   missing accessibility data: 38%" is replaced by per-category sentences such as
   "Surface data is missing for 38% of this route", because two routes missing
@@ -52,6 +64,10 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
   whether its gradient was recorded by a mapper or inferred from a terrain model.
 
 ### Fixed
+
+- A segment's `name` is taken from the OSM tag only when it is a JSON string.
+  The SQL extraction would otherwise have rendered a number or an OSMnx-merged
+  list of names as text, where the previous loader dropped them.
 
 - **The map now renders a real vector basemap (KI-1).** MapLibre 6 loads its tile
   worker as a separate module chunk and derives the URL from `import.meta.url`,

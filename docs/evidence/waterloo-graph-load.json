@@ -1,0 +1,105 @@
+{
+  "load_benchmark_version": 1,
+  "region": "waterloo",
+  "dataset_id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+  "dataset_checksum": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906",
+  "environment": {
+    "python": "3.13.2",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "git_commit": "5358695cbbdd1fcf6833c06094a32dae5bcd19b6"
+  },
+  "machine_memory": {
+    "total_mb": 16498.0,
+    "method": "windows:GlobalMemoryStatusEx"
+  },
+  "process_memory_method": "windows:GetProcessMemoryInfo working set",
+  "graph": {
+    "nodes": 155714,
+    "segments": 180554,
+    "directed_edges": 361108,
+    "named_segments": 51003,
+    "segments_with_raw_tags_in_memory": 0,
+    "segment_sha256": "88f63bcaed9ce3ce920c8df4a1819b47e22850bceb9fb3aa091feb0158d81d83",
+    "node_sha256": "972e3e41d4728b3b19987b3679548a2c1e3b13f6c2e876a2325eb21b61108111"
+  },
+  "summary": {
+    "timing_runs": 3,
+    "median_seconds": 22.14,
+    "min_seconds": 21.4,
+    "max_seconds": 24.34,
+    "spread_ratio": 1.14,
+    "heap_runs": 1,
+    "median_peak_python_heap_mb": 700.7,
+    "max_peak_rss_mb": 1125.5,
+    "median_rss_after_load_mb": 850.5,
+    "invalid_runs": 0,
+    "runs_under_memory_pressure": 4
+  },
+  "runs": [
+    {
+      "run": 1,
+      "tracemalloc": false,
+      "started_at": "2026-09-02T22:02:28+00:00",
+      "elapsed_seconds": 24.34,
+      "cpu_seconds": 23.0,
+      "load_seconds_reported": 24.2,
+      "peak_python_heap_mb": null,
+      "rss_mb": 856.9,
+      "peak_rss_mb": 1120.2,
+      "available_mb_before": 1101.9,
+      "available_mb_after": 802.4,
+      "memory_pressure": true,
+      "valid": true,
+      "invalid_reason": null
+    },
+    {
+      "run": 2,
+      "tracemalloc": false,
+      "started_at": "2026-09-02T22:03:05+00:00",
+      "elapsed_seconds": 21.4,
+      "cpu_seconds": 20.75,
+      "load_seconds_reported": 21.3,
+      "peak_python_heap_mb": null,
+      "rss_mb": 848.9,
+      "peak_rss_mb": 1125.0,
+      "available_mb_before": 1376.8,
+      "available_mb_after": 925.7,
+      "memory_pressure": true,
+      "valid": true,
+      "invalid_reason": null
+    },
+    {
+      "run": 3,
+      "tracemalloc": false,
+      "started_at": "2026-09-02T22:03:27+00:00",
+      "elapsed_seconds": 22.14,
+      "cpu_seconds": 21.31,
+      "load_seconds_reported": 22.03,
+      "peak_python_heap_mb": null,
+      "rss_mb": 850.5,
+      "peak_rss_mb": 1125.5,
+      "available_mb_before": 1603.4,
+      "available_mb_after": 886.2,
+      "memory_pressure": true,
+      "valid": true,
+      "invalid_reason": null
+    },
+    {
+      "run": 4,
+      "tracemalloc": true,
+      "started_at": "2026-09-02T22:03:51+00:00",
+      "elapsed_seconds": 133.24,
+      "cpu_seconds": 128.69,
+      "load_seconds_reported": 130.6,
+      "peak_python_heap_mb": 700.7,
+      "rss_mb": 933.9,
+      "peak_rss_mb": 1773.1,
+      "available_mb_before": 1569.8,
+      "available_mb_after": 1466.2,
+      "memory_pressure": true,
+      "valid": true,
+      "invalid_reason": null
+    }
+  ]
+}
