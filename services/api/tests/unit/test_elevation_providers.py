@@ -18,6 +18,7 @@ import pytest
 import requests
 
 from pathable_api.geo.elevation import (
+    ELEVATION_ATTRIBUTION_BY_SOURCE,
     HRDEM_ATTRIBUTION,
     HrdemProvider,
     OpenTopoDataProvider,
@@ -203,3 +204,18 @@ class TestChoosingAProvider:
 
         assert source.dataset == "srtm30m"
         assert source.resolution_m == 90.0
+
+
+class TestAttributionRegistry:
+    @pytest.mark.parametrize("name", ["hrdem", "opentopodata"])
+    def test_every_constructible_provider_has_a_registered_credit(self, name: str) -> None:
+        # A provider that writes grades but has no entry here would produce
+        # gradients the API cannot credit. That is a licensing failure, not a
+        # cosmetic one, so it is pinned per provider.
+        provider = build_provider(name)
+
+        assert ELEVATION_ATTRIBUTION_BY_SOURCE[provider.name] == provider.attribution
+        assert provider.attribution
+
+    def test_the_disabled_provider_owes_nothing(self) -> None:
+        assert build_provider("none").name not in ELEVATION_ATTRIBUTION_BY_SOURCE

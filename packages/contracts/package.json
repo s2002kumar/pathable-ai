@@ -2,6 +2,7 @@
   "name": "@pathable/contracts",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "TypeScript types generated from the PathAble API OpenAPI document",
   "type": "module",
   "main": "./src/index.ts",

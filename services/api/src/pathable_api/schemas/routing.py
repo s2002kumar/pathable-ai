@@ -294,6 +294,18 @@ class DatasetProvenance(BaseModel):
         description="Required credit for the underlying map data.",
         examples=["© OpenStreetMap contributors, ODbL 1.0"],
     )
+    elevation_attribution: str | None = Field(
+        default=None,
+        description=(
+            "Required credit for the elevation model behind any derived gradient in this "
+            "response. Null when the dataset carries no elevation at all, in which case every "
+            "gradient shown was recorded by a mapper or is unknown."
+        ),
+        examples=[
+            # The licence's own wording uses an en dash.
+            "Contains information licensed under the Open Government Licence – Canada."  # noqa: RUF001
+        ],
+    )
 
 
 class RouteCompareResponse(BaseModel):

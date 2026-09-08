@@ -4,9 +4,9 @@ version = "0.1.0"
 description = "PathAble AI backend — Phase 0 foundation (health, config, PostGIS baseline)"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-# No licence has been selected; see LICENSING.md at the repository root. This is
-# a private, unreleased project and is not open source.
-license = { text = "LicenseRef-Proprietary-Unreleased" }
+# Source-visible, all rights reserved. Not open source, and not an OSI licence
+# identifier: see LICENSING.md at the repository root for the policy.
+license = { text = "LicenseRef-AllRightsReserved" }
 dependencies = [
     "fastapi>=0.115.0,<0.200.0",
     "uvicorn[standard]>=0.34.0,<0.40.0",
@@ -31,7 +31,7 @@ dependencies = [
 pathable = "pathable_api.cli:main"
 
 [project.urls]
-Repository = "https://github.com/pathable-ai/pathable-ai"
+Repository = "https://github.com/s2002kumar/pathable-ai"
 
 [dependency-groups]
 dev = [

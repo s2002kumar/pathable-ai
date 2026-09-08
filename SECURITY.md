@@ -2,10 +2,11 @@
 
 ## Project status
 
-PathAble AI is in Phase 0. It is **not deployed anywhere**, holds **no user
-data**, has **no authentication**, and runs only on developer machines. The
-security posture described here is what the foundation establishes, not a
-statement that the system has been audited.
+PathAble AI is pre-release. It routes over a real OpenStreetMap network for one
+pilot region, but it is **not deployed anywhere**, holds **no user data**, has
+**no authentication**, and runs only on developer machines. The security posture
+described here is what the foundation establishes, not a statement that the
+system has been audited.
 
 **No formal security audit or penetration test has been performed.**
 

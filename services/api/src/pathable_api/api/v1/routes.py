@@ -20,6 +20,7 @@ from pathable_api.api.deps import DatabaseDep
 from pathable_api.core.errors import ApiError
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.datasets import get_active_dataset
+from pathable_api.geo.elevation import elevation_attribution
 from pathable_api.geo.models import PilotRegion
 from pathable_api.routing.comparison import RouteComparison, compare_routes
 from pathable_api.routing.engine import Route
@@ -148,6 +149,10 @@ async def compare(
             attribution=(
                 OSM_ATTRIBUTION if dataset.source_type == "osm" else SYNTHETIC_ATTRIBUTION
             ),
+            # Grades derived from an elevation model carry their own licence
+            # obligation, separate from the map's. It travels with the response
+            # so no client can show a gradient without also having the credit.
+            elevation_attribution=await elevation_attribution(session, dataset.id),
         )
 
     comparison = compare_routes(

@@ -8,17 +8,25 @@ response contract, and the failure paths a client will actually hit.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterator
+import asyncio
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import Any
 
 import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from pathable_api.core.config import Settings
+from pathable_api.core.event_loop import selector_loop_factory
+from pathable_api.geo.datasets import get_active_dataset
+from pathable_api.geo.elevation import HRDEM_ATTRIBUTION, ElevationSample
+from pathable_api.geo.elevation_apply import apply_elevation
 from pathable_api.geo.fixtures import NODES, SYNTHETIC_REGION_SLUG, load_synthetic_dataset
+from pathable_api.geo.models import PilotRegion
 from pathable_api.main import create_app
 
 pytestmark = pytest.mark.integration
@@ -183,6 +191,74 @@ class TestProvenance:
     def test_synthetic_data_is_never_presented_as_a_survey(self, client: TestClient) -> None:
         attribution = compare(client)["dataset"]["attribution"]
         assert "not a survey" in attribution.lower()
+
+    def test_a_dataset_with_no_elevation_owes_no_elevation_credit(self, client: TestClient) -> None:
+        # Null, not an empty string and not the HRDEM line: a credit for a
+        # model that produced nothing here would be as misleading as no credit
+        # for one that did.
+        assert compare(client)["dataset"]["elevation_attribution"] is None
+
+    def test_hrdem_grades_carry_the_open_government_licence_credit(
+        self, seeded_database_url: str
+    ) -> None:
+        # The Open Government Licence - Canada requires its statement on every
+        # surface showing a derived grade. Before this test the API had no way
+        # to say it, so the route panel could not either. The provider is a
+        # stand-in so the test never touches NRCan's S3 bucket; what is under
+        # test is that the stored source name reaches the response as the credit.
+        #
+        # Elevation is applied on its own loop, as the CLI does, rather than
+        # from inside an async test: the TestClient below runs the app on a
+        # second thread, and holding this test's loop while it does is a
+        # deadlock on Windows.
+        asyncio.run(_apply_fake_hrdem(seeded_database_url), loop_factory=selector_loop_factory())
+
+        settings = Settings(
+            _env_file=None,
+            environment="test",
+            database_url=seeded_database_url,
+            allowed_origins=("http://localhost:3000",),
+            log_level="WARNING",
+            log_format="console",
+        )
+        with TestClient(create_app(settings)) as test_client:
+            body = compare(test_client)
+
+        assert body["dataset"]["elevation_attribution"] == HRDEM_ATTRIBUTION
+        assert "Open Government Licence" in body["dataset"]["elevation_attribution"]
+
+
+async def _apply_fake_hrdem(database_url: str) -> None:
+    engine = create_async_engine(database_url, poolclass=NullPool)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            region = (
+                await session.execute(
+                    select(PilotRegion).where(PilotRegion.slug == SYNTHETIC_REGION_SLUG)
+                )
+            ).scalar_one()
+            dataset = await get_active_dataset(session, region.id)
+            assert dataset is not None
+            await apply_elevation(session, dataset=dataset, provider=_LabelledAsHrdem())
+            await session.commit()
+    finally:
+        await engine.dispose()
+
+
+class _LabelledAsHrdem:
+    """A flat world that records itself under HRDEM's source name."""
+
+    name = "nrcan-hrdem"
+    dataset = "fake-hrdem"
+    resolution_m: float | None = 1.0
+    enabled = True
+    attribution = HRDEM_ATTRIBUTION
+
+    async def sample(self, points: Sequence[tuple[float, float]]) -> list[ElevationSample]:
+        return [
+            ElevationSample(longitude, latitude, 300.0, self.name, self.dataset, self.resolution_m)
+            for longitude, latitude in points
+        ]
 
 
 class TestCustomProfile:

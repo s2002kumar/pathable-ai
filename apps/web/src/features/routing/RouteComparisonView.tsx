@@ -75,6 +75,11 @@ export function RouteComparisonView({ comparison }: { readonly comparison: Route
           {comparison.dataset.attribution} · dataset{' '}
           <code>{comparison.dataset.checksum.slice(0, 8)}</code>
         </p>
+        {comparison.dataset.elevation_attribution ? (
+          <p className={styles.attribution} data-testid="elevation-attribution">
+            {comparison.dataset.elevation_attribution}
+          </p>
+        ) : null}
       </footer>
     </div>
   );
