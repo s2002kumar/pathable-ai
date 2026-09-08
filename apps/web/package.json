@@ -2,6 +2,7 @@
   "name": "@pathable/web",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "sync:maplibre": "node ../../scripts/sync-maplibre-worker.mjs",

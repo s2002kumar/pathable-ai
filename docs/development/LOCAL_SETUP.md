@@ -189,6 +189,12 @@ pnpm test:integration
 The suite reads `.env` automatically when run through `uv`, so exporting is only
 needed if your shell environment differs.
 
+If every connection to the Compose database takes about thirty seconds — tests
+that appear to hang, a CLI command that sits silently before its first line —
+`localhost` is resolving to IPv6 (`::1`) first and the container is only
+published on IPv4. Use `127.0.0.1` in `DATABASE_URL` instead of `localhost`.
+Seen on Windows with Docker Desktop once another Compose stack was running.
+
 ### Contracts
 
 After changing any Pydantic response model:

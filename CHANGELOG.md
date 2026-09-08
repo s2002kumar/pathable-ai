@@ -12,6 +12,17 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **A publication policy, and a public-release safety gate that produced it.**
+  PathAble's source code is **source-visible and all rights reserved**
+  (© Sandeep Kumar) — deliberately not open source, because a permissive licence
+  is a one-way door and this keeps it open. The data is licensed separately and
+  more generously: OpenStreetMap under ODbL 1.0, elevation under the Open
+  Government Licence – Canada, and the OSM-derived measurement files in
+  `docs/evidence/` labelled as such. `LICENSING.md` states the policy;
+  `docs/security/PUBLIC_RELEASE_SAFETY.md` records the scans, dependency audits,
+  licence inventory and attribution verification behind it. Git history is
+  preserved unchanged; future commits use a GitHub `noreply` address.
+
 - **A real Waterloo network, ingested from a published extract.** 155,714 nodes
   and 180,554 physical segments (361,108 routable directed edges, 3,363.7 km) read
   from Geofabrik's Ontario extract, whose published MD5 matched the download

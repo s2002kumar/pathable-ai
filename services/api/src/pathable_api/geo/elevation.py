@@ -63,15 +63,20 @@ import datetime as dt
 import math
 import os
 import time
+import uuid
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Final, Protocol
 
 import requests
+from sqlalchemy import select
 
 from pathable_api.core.logging import get_logger
+from pathable_api.geo.models import GraphNode
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
@@ -540,3 +545,68 @@ def acquisition_metadata(
         "attribution": provider.attribution,
         "min_segment_length_m": min_segment_length_for_grade(provider.resolution_m),
     }
+
+
+#: Attribution owed for each elevation source that can appear on a stored node.
+#: Keyed by the provider's ``name`` because that is what ``elevation_source``
+#: records; a route response looks the dataset's sources up here so the credit
+#: travels with every grade it produced. A provider missing from this table is a
+#: bug, and a unit test checks every constructible provider is present.
+ELEVATION_ATTRIBUTION_BY_SOURCE: Final[dict[str, str]] = {
+    "nrcan-hrdem": HRDEM_ATTRIBUTION,
+    "opentopodata": OpenTopoDataProvider.attribution,
+}
+
+
+#: Datasets are immutable once active and the routing graph built from one is
+#: cached for the life of the process, so the credit owed for its elevation is
+#: resolved once per dataset per process and cached alongside. A dataset that
+#: gains elevation after the process started needs a restart for its grades to
+#: appear at all, and the same restart refreshes this.
+_ELEVATION_CREDIT_CACHE: dict[uuid.UUID, str | None] = {}
+_ELEVATION_CREDIT_CACHE_LIMIT = 64
+
+
+def clear_elevation_attribution_cache() -> None:
+    _ELEVATION_CREDIT_CACHE.clear()
+
+
+async def elevation_attribution(session: AsyncSession, dataset_id: uuid.UUID) -> str | None:
+    """The credit owed for the elevation behind a dataset's derived grades.
+
+    ``None`` when no node in the dataset carries an elevation, which is the
+    honest answer for a dataset that was never sampled. Resolved from the
+    distinct ``elevation_source`` values stored on the dataset's nodes — the
+    provenance written at sampling time — and cached per process, because
+    walking a city's nodes on every route request is not a price a credit line
+    should cost.
+    """
+    if dataset_id in _ELEVATION_CREDIT_CACHE:
+        return _ELEVATION_CREDIT_CACHE[dataset_id]
+
+    sources = (
+        await session.execute(
+            select(GraphNode.elevation_source)
+            .where(
+                GraphNode.dataset_version_id == dataset_id,
+                GraphNode.elevation_source.is_not(None),
+            )
+            .distinct()
+        )
+    ).scalars()
+    owed: list[str] = []
+    for source in sorted(str(value) for value in sources):
+        credit = ELEVATION_ATTRIBUTION_BY_SOURCE.get(source)
+        if credit is None:
+            logger.warning(
+                "Elevation source has no registered attribution",
+                extra={"elevation_source": source, "dataset_id": str(dataset_id)},
+            )
+            continue
+        owed.append(credit)
+    result = " ".join(owed) if owed else None
+
+    if len(_ELEVATION_CREDIT_CACHE) >= _ELEVATION_CREDIT_CACHE_LIMIT:
+        _ELEVATION_CREDIT_CACHE.clear()
+    _ELEVATION_CREDIT_CACHE[dataset_id] = result
+    return result

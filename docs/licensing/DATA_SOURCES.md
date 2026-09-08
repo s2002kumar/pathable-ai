@@ -55,8 +55,12 @@ Three obligations:
 
 - On the map: MapLibre `AttributionControl`, non-compact, always visible.
 - In the interface: the pilot panel's attribution line, linking to the OSM
-  copyright page.
-- In the repository: the README.
+  copyright page, and the route panel's footer.
+- In every route response: `dataset.attribution`, so a client cannot show a
+  route without holding the credit; `dataset.elevation_attribution` carries the
+  Open Government Licence – Canada statement whenever a derived grade is present
+  (§5).
+- In the repository: the README and `docs/evidence/README.md`.
 
 ---
 
@@ -368,9 +372,11 @@ Not implemented. When they are:
 
 ## 8. Software licences
 
-**PathAble itself has no licence yet** — it is private and unreleased, and all
-rights are reserved by default. See [`../../LICENSING.md`](../../LICENSING.md).
-Do not describe the project as open source.
+**PathAble's own source code is © Sandeep Kumar, all rights reserved** —
+source-visible, but granting nobody a right to reuse it. See
+[`../../LICENSING.md`](../../LICENSING.md). Do not describe the project as open
+source. That policy is separate from, and does not affect, the data obligations
+in this document.
 
 The obligations below come from what PathAble _uses_ and apply regardless of what
 licence PathAble eventually adopts. Key dependencies:
