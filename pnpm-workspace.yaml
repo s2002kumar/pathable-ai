@@ -29,7 +29,7 @@ allowBuilds:
   # Without its build step, `pnpm lint` fails to resolve any import.
   unrs-resolver: true
 
-# Next.js 16.3.5 is younger than the release-age gate above but fixes two
+# Next.js 16.3.5 is younger than pnpm's default release-age gate but fixes two
 # critical unauthenticated RCE advisories (GHSA-p293-qw3h-jr36,
 # GHSA-2xp9-vwfh-vxw4). Waiting out the gate would mean shipping the hole;
 # remove these entries once the version is old enough to pass on its own.
