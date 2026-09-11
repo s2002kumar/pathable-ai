@@ -8,6 +8,7 @@ from fastapi import Depends, Request
 
 from pathable_api.core.config import Settings, get_settings
 from pathable_api.db.session import Database
+from pathable_api.routing.warmup import GraphWarmup
 
 
 def settings_dependency(request: Request) -> Settings:
@@ -32,5 +33,12 @@ def database_dependency(request: Request) -> Database | None:
     return database
 
 
+def warmup_dependency(request: Request) -> GraphWarmup:
+    """The startup graph preload, or an unconfigured one outside a lifespan."""
+    warmup: GraphWarmup | None = getattr(request.app.state, "graph_warmup", None)
+    return warmup if warmup is not None else GraphWarmup()
+
+
 SettingsDep = Annotated[Settings, Depends(settings_dependency)]
 DatabaseDep = Annotated[Database | None, Depends(database_dependency)]
+WarmupDep = Annotated[GraphWarmup, Depends(warmup_dependency)]

@@ -298,3 +298,23 @@ class TestSettingsCache:
             assert get_settings() is not first
         finally:
             reset_settings_cache()
+
+
+class TestGraphPreloadRegions:
+    def test_default_is_lazy(self) -> None:
+        # Development must not pay a twenty-second graph load on every start.
+        assert settings_from({}).graph_preload_regions == ()
+
+    def test_comma_separated_slugs_are_parsed_and_deduplicated(self) -> None:
+        settings = settings_from({"graph_preload_regions": "waterloo, waterloo,kitchener"})
+
+        assert settings.graph_preload_regions == ("waterloo", "kitchener")
+
+    def test_an_empty_string_means_no_preload(self) -> None:
+        # Compose passes "" when the variable is unset; that must not become ("",).
+        assert settings_from({"graph_preload_regions": ""}).graph_preload_regions == ()
+
+    @pytest.mark.parametrize("value", ["Waterloo", "water loo", "waterloo;drop", "-x"])
+    def test_a_slug_that_is_not_a_slug_is_rejected(self, value: str) -> None:
+        with pytest.raises(ValidationError):
+            settings_from({"graph_preload_regions": value})

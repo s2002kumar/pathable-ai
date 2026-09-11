@@ -57,6 +57,17 @@ class ReadinessChecks(BaseModel):
 
     database: DependencyCheck = Field(description="PostgreSQL connectivity.")
     postgis: DependencyCheck = Field(description="PostGIS extension availability.")
+    graph: DependencyCheck = Field(
+        default=DependencyCheck(
+            status="ok", detail="graphs load on first request; no regions configured for preload"
+        ),
+        description=(
+            "Routing-graph state. When GRAPH_PRELOAD_REGIONS is set, 'ok' only once every "
+            "configured region's graph is loaded and routable; a region with no active dataset "
+            "or a failed load keeps the instance not ready. Without preload, graphs load on "
+            "the first request and this check is always 'ok'."
+        ),
+    )
 
 
 class ReadinessResponse(BaseModel):
@@ -84,6 +95,11 @@ class ReadinessResponse(BaseModel):
                             "status": "ok",
                             "detail": "postgis 3.4.2",
                             "latency_ms": 1.08,
+                        },
+                        "graph": {
+                            "status": "ok",
+                            "detail": "waterloo: 155714 nodes, 180554 segments loaded in 21.3 s",
+                            "latency_ms": 21300.0,
                         },
                     },
                 }

@@ -78,7 +78,7 @@ class TestReadinessWithoutDatabaseConfiguration:
         body = client.get(READY_URL).json()
 
         assert set(body) == {"status", "service", "version", "checks"}
-        assert set(body["checks"]) == {"database", "postgis"}
+        assert set(body["checks"]) == {"database", "postgis", "graph"}
 
 
 class TestReadinessWithUnreachableDatabase:
@@ -111,3 +111,26 @@ class TestReadinessWithUnreachableDatabase:
             "database unreachable",
             "probe exceeded the configured readiness timeout",
         }
+
+
+class TestReadinessGraphLine:
+    def test_without_preload_the_graph_line_is_ok_and_says_why(self, client: TestClient) -> None:
+        # Lazy loading is a legitimate configuration, and readiness must not
+        # wait on a load that will never be scheduled.
+        body = ReadinessResponse.model_validate(client.get(READY_URL).json())
+
+        assert body.checks.graph.status == "ok"
+        assert "first request" in body.checks.graph.detail
+
+    def test_preload_without_a_database_is_reported_on_the_graph_line(self) -> None:
+        # Both facts are true and both are shown: no database, and therefore no
+        # graph. The operator sees the cause, not only the consequence.
+        settings = build_settings(graph_preload_regions=("waterloo",))
+
+        with TestClient(create_app(settings)) as client:
+            response = client.get(READY_URL)
+
+        assert response.status_code == 503
+        body = ReadinessResponse.model_validate(response.json())
+        assert body.checks.graph.status == "unavailable"
+        assert "DATABASE_URL" in body.checks.graph.detail

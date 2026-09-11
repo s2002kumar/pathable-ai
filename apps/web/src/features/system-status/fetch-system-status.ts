@@ -15,6 +15,7 @@ export const STATUS_TIMEOUT_MS = 5_000;
 const DEPENDENCY_LABELS: Record<string, string> = {
   database: 'database',
   postgis: 'PostGIS',
+  graph: 'routing graph',
 };
 
 function isReadinessResponse(value: unknown): value is ReadinessResponse {

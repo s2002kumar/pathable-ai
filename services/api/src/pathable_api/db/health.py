@@ -101,4 +101,8 @@ async def check_dependencies(engine: AsyncEngine, *, timeout_seconds: float) -> 
 
 def is_ready(checks: ReadinessChecks) -> bool:
     """Readiness requires every dependency to be usable."""
-    return checks.database.status == "ok" and checks.postgis.status == "ok"
+    return (
+        checks.database.status == "ok"
+        and checks.postgis.status == "ok"
+        and checks.graph.status == "ok"
+    )
