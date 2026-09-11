@@ -1,0 +1,3327 @@
+{
+  "environment": {
+    "measured_at_utc": "2026-09-11T20:58:36+00:00",
+    "host_platform": "Windows-11-10.0.26200-SP0",
+    "host_machine": "AMD64",
+    "python": "3.14.5",
+    "docker_server_version": "28.4.0",
+    "docker_os": "Docker Desktop (linux/x86_64)",
+    "docker_cpus": 22,
+    "docker_memory_total_mb": 7987,
+    "cgroup_version": "2",
+    "host_memory_total_mb": 16498,
+    "host_memory_available_mb": 856
+  },
+  "images": {
+    "api": {
+      "image": "pathable-envelope-api:local",
+      "id": "sha256:b732b85626b90c1b18d6df8b988ef8e7e44be323ff65dc0df703e70dcb0f47c4",
+      "size_mb": 208.5,
+      "user": "pathable",
+      "cmd": [
+        "python",
+        "-m",
+        "pathable_api"
+      ],
+      "entrypoint": [
+        "/usr/local/bin/api-entrypoint.sh"
+      ]
+    },
+    "web": {
+      "image": "pathable-envelope-web:local",
+      "id": "sha256:3aeffd02b80ea6d3265f9e0c2505832844493dd770e6c93297f803a38d50cc01",
+      "size_mb": 93.1,
+      "user": "pathable",
+      "cmd": [
+        "node",
+        "apps/web/server.js"
+      ],
+      "entrypoint": [
+        "docker-entrypoint.sh"
+      ]
+    }
+  },
+  "database": {
+    "postgres_version": "PostgreSQL 17.5 (Debian 17.5-1.pgdg110+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1 20210110, 64-bit",
+    "postgis_version": "3.5.2",
+    "alembic_revision": "0005_kerb_tiers",
+    "database_size": "190 MB",
+    "database_size_bytes": "198962323",
+    "active_dataset": {
+      "id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+      "checksum": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906",
+      "source_name": "openstreetmap-pbf:waterloo",
+      "node_count": 155714,
+      "edge_count": 180554
+    },
+    "graph_nodes": "155732",
+    "graph_edges": "180580",
+    "tables": [
+      {
+        "table": "graph_edges",
+        "total": "121 MB",
+        "total_bytes": 127025152,
+        "heap": "76 MB",
+        "indexes": "45 MB"
+      },
+      {
+        "table": "graph_nodes",
+        "total": "49 MB",
+        "total_bytes": 51404800,
+        "heap": "28 MB",
+        "indexes": "21 MB"
+      },
+      {
+        "table": "spatial_ref_sys",
+        "total": "7144 kB",
+        "total_bytes": 7315456,
+        "heap": "6896 kB",
+        "indexes": "208 kB"
+      },
+      {
+        "table": "dataset_versions",
+        "total": "160 kB",
+        "total_bytes": 163840,
+        "heap": "8192 bytes",
+        "indexes": "64 kB"
+      },
+      {
+        "table": "ingestion_runs",
+        "total": "128 kB",
+        "total_bytes": 131072,
+        "heap": "8192 bytes",
+        "indexes": "32 kB"
+      },
+      {
+        "table": "pilot_regions",
+        "total": "88 kB",
+        "total_bytes": 90112,
+        "heap": "8192 bytes",
+        "indexes": "40 kB"
+      },
+      {
+        "table": "alembic_version",
+        "total": "56 kB",
+        "total_bytes": 57344,
+        "heap": "8192 bytes",
+        "indexes": "16 kB"
+      }
+    ],
+    "max_connections": "100"
+  },
+  "batches": {
+    "one-worker": {
+      "2g": {
+        "memory_limit": "2g",
+        "command": "python -m pathable_api",
+        "summary": {
+          "runs": 3,
+          "valid_runs": 3,
+          "median_seconds_to_live": 4.07,
+          "median_seconds_to_ready": 18.67,
+          "max_seconds_to_ready": 19.57,
+          "median_graph_load_seconds": 14.6,
+          "median_migration_seconds": 1.0,
+          "median_rss_before_graph_load_mb": 27.2,
+          "max_rss_peak_mb": 1026.1,
+          "median_rss_peak_mb": 1023.6,
+          "median_hwm_sum_at_ready_mb": 1064.0,
+          "median_rss_at_ready_mb": 996.7,
+          "median_rss_steady_mb": 997.2,
+          "max_cgroup_peak_mb": 1024.0,
+          "median_first_route_ms": 119.0
+        },
+        "runs": [
+          {
+            "label": "one-worker/2g/run1",
+            "memory_limit": "2g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:22:13.911406215Z",
+            "seconds_to_live": 3.66,
+            "seconds_to_ready": 18.33,
+            "migration_seconds": 1.0,
+            "graph_load_seconds": 13.47,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 13.5 s",
+            "rss_before_graph_load_mb": 26.6,
+            "rss_peak_mb": 1023.6,
+            "hwm_sum_at_ready_mb": 1064.0,
+            "rss_at_ready_mb": 996.7,
+            "rss_steady_mb": 997.2,
+            "cgroup_peak_mb": 1024.0,
+            "cgroup_steady_mb": 969.2,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.134,
+              "response_bytes": 59797,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 4.0,
+                "max_ms": 21.6,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 56.7,
+                "max_ms": 67.0,
+                "response_bytes": 59797,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 4.6,
+                "max_ms": 27.6,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 631.2,
+                "max_ms": 699.4,
+                "response_bytes": 157622,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 2.52,
+                "rss_mb": 26.6,
+                "hwm_mb": 26.6,
+                "processes": 3.0,
+                "cgroup_memory": "50.36MiB",
+                "cgroup_memory_mb": 50.4,
+                "cpu_percent": "294.41%"
+              },
+              {
+                "t": 5.35,
+                "rss_mb": 140.4,
+                "hwm_mb": 140.6,
+                "processes": 2.0,
+                "cgroup_memory": "492MiB",
+                "cgroup_memory_mb": 492.0,
+                "cpu_percent": "107.64%"
+              },
+              {
+                "t": 8.66,
+                "rss_mb": 779.3,
+                "hwm_mb": 788.1,
+                "processes": 3.0,
+                "cgroup_memory": "749.4MiB",
+                "cgroup_memory_mb": 749.4,
+                "cpu_percent": "108.99%"
+              },
+              {
+                "t": 11.47,
+                "rss_mb": 824.2,
+                "hwm_mb": 824.2,
+                "processes": 2.0,
+                "cgroup_memory": "824.3MiB",
+                "cgroup_memory_mb": 824.3,
+                "cpu_percent": "109.37%"
+              },
+              {
+                "t": 14.26,
+                "rss_mb": 923.1,
+                "hwm_mb": 923.1,
+                "processes": 2.0,
+                "cgroup_memory": "918.1MiB",
+                "cgroup_memory_mb": 918.1,
+                "cpu_percent": "108.52%"
+              },
+              {
+                "t": 18.05,
+                "rss_mb": 1023.6,
+                "hwm_mb": 1023.6,
+                "processes": 3.0,
+                "cgroup_memory": "1GiB",
+                "cgroup_memory_mb": 1024.0,
+                "cpu_percent": "109.39%"
+              }
+            ]
+          },
+          {
+            "label": "one-worker/2g/run2",
+            "memory_limit": "2g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:22:54.54390667Z",
+            "seconds_to_live": 4.08,
+            "seconds_to_ready": 18.67,
+            "migration_seconds": 1.0,
+            "graph_load_seconds": 14.6,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 14.6 s",
+            "rss_before_graph_load_mb": 27.2,
+            "rss_peak_mb": 995.4,
+            "hwm_sum_at_ready_mb": 1063.9,
+            "rss_at_ready_mb": 995.6,
+            "rss_steady_mb": 995.9,
+            "cgroup_peak_mb": 1005.0,
+            "cgroup_steady_mb": 962.6,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.119,
+              "response_bytes": 59797,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 14.6,
+                "max_ms": 26.9,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 40.1,
+                "max_ms": 65.1,
+                "response_bytes": 59797,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 3.1,
+                "max_ms": 25.7,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 530.9,
+                "max_ms": 565.0,
+                "response_bytes": 157622,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 2.37,
+                "rss_mb": 27.2,
+                "hwm_mb": 27.2,
+                "processes": 3.0,
+                "cgroup_memory": "43.29MiB",
+                "cgroup_memory_mb": 43.3,
+                "cpu_percent": "287.18%"
+              },
+              {
+                "t": 5.1,
+                "rss_mb": 130.9,
+                "hwm_mb": 130.9,
+                "processes": 2.0,
+                "cgroup_memory": "439.3MiB",
+                "cgroup_memory_mb": 439.3,
+                "cpu_percent": "96.61%"
+              },
+              {
+                "t": 8.15,
+                "rss_mb": 777.9,
+                "hwm_mb": 778.1,
+                "processes": 3.0,
+                "cgroup_memory": "734.4MiB",
+                "cgroup_memory_mb": 734.4,
+                "cpu_percent": "99.90%"
+              },
+              {
+                "t": 10.86,
+                "rss_mb": 789.1,
+                "hwm_mb": 789.1,
+                "processes": 2.0,
+                "cgroup_memory": "783.4MiB",
+                "cgroup_memory_mb": 783.4,
+                "cpu_percent": "99.64%"
+              },
+              {
+                "t": 13.65,
+                "rss_mb": 866.8,
+                "hwm_mb": 866.8,
+                "processes": 2.0,
+                "cgroup_memory": "881.4MiB",
+                "cgroup_memory_mb": 881.4,
+                "cpu_percent": "108.45%"
+              },
+              {
+                "t": 17.6,
+                "rss_mb": 977.0,
+                "hwm_mb": 977.0,
+                "processes": 3.0,
+                "cgroup_memory": "1005MiB",
+                "cgroup_memory_mb": 1005.0,
+                "cpu_percent": "108.56%"
+              },
+              {
+                "t": 20.44,
+                "rss_mb": 995.4,
+                "hwm_mb": 1063.7,
+                "processes": 2.0,
+                "cgroup_memory": "962.5MiB",
+                "cgroup_memory_mb": 962.5,
+                "cpu_percent": "0.18%"
+              }
+            ]
+          },
+          {
+            "label": "one-worker/2g/run3",
+            "memory_limit": "2g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:23:36.656540832Z",
+            "seconds_to_live": 4.07,
+            "seconds_to_ready": 19.57,
+            "migration_seconds": 1.0,
+            "graph_load_seconds": 15.08,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 15.1 s",
+            "rss_before_graph_load_mb": 27.6,
+            "rss_peak_mb": 1026.1,
+            "hwm_sum_at_ready_mb": 1064.6,
+            "rss_at_ready_mb": 997.2,
+            "rss_steady_mb": 997.6,
+            "cgroup_peak_mb": 1017.0,
+            "cgroup_steady_mb": 963.8,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.117,
+              "response_bytes": 59797,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 3.1,
+                "max_ms": 4.4,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 51.0,
+                "max_ms": 57.0,
+                "response_bytes": 59797,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 3.0,
+                "max_ms": 18.7,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 586.4,
+                "max_ms": 733.6,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 2.42,
+                "rss_mb": 27.6,
+                "hwm_mb": 27.6,
+                "processes": 3.0,
+                "cgroup_memory": "41.91MiB",
+                "cgroup_memory_mb": 41.9,
+                "cpu_percent": "190.14%"
+              },
+              {
+                "t": 5.67,
+                "rss_mb": 89.4,
+                "hwm_mb": 89.4,
+                "processes": 2.0,
+                "cgroup_memory": "423.5MiB",
+                "cgroup_memory_mb": 423.5,
+                "cpu_percent": "106.81%"
+              },
+              {
+                "t": 8.51,
+                "rss_mb": 781.0,
+                "hwm_mb": 781.3,
+                "processes": 3.0,
+                "cgroup_memory": "734.8MiB",
+                "cgroup_memory_mb": 734.8,
+                "cpu_percent": "109.14%"
+              },
+              {
+                "t": 11.23,
+                "rss_mb": 787.9,
+                "hwm_mb": 787.9,
+                "processes": 2.0,
+                "cgroup_memory": "784.1MiB",
+                "cgroup_memory_mb": 784.1,
+                "cpu_percent": "99.72%"
+              },
+              {
+                "t": 13.96,
+                "rss_mb": 865.8,
+                "hwm_mb": 865.8,
+                "processes": 2.0,
+                "cgroup_memory": "866.2MiB",
+                "cgroup_memory_mb": 866.2,
+                "cpu_percent": "100.17%"
+              },
+              {
+                "t": 16.99,
+                "rss_mb": 956.8,
+                "hwm_mb": 956.8,
+                "processes": 3.0,
+                "cgroup_memory": "955.6MiB",
+                "cgroup_memory_mb": 955.6,
+                "cpu_percent": "100.44%"
+              },
+              {
+                "t": 19.7,
+                "rss_mb": 1026.1,
+                "hwm_mb": 1026.1,
+                "processes": 2.0,
+                "cgroup_memory": "1017MiB",
+                "cgroup_memory_mb": 1017.0,
+                "cpu_percent": "99.81%"
+              }
+            ]
+          }
+        ],
+        "concurrency_probe": {
+          "levels": [
+            {
+              "concurrency": 1,
+              "requests": 6,
+              "ok": 3,
+              "errors": 3,
+              "timeouts": 0,
+              "answer_mismatches": 0,
+              "elapsed_s": 1.78,
+              "requests_per_second": 3.36,
+              "p50_ms": 583.0,
+              "p95_ms": 610.2,
+              "max_ms": 610.2,
+              "cpu_percent_samples": [
+                "104.93%"
+              ],
+              "rss_mb_max": 997.4
+            },
+            {
+              "concurrency": 2,
+              "requests": 12,
+              "ok": 6,
+              "errors": 6,
+              "timeouts": 0,
+              "answer_mismatches": 0,
+              "elapsed_s": 3.4,
+              "requests_per_second": 3.53,
+              "p50_ms": 565.3,
+              "p95_ms": 592.9,
+              "max_ms": 592.9,
+              "cpu_percent_samples": [
+                "106.73%",
+                "66.86%"
+              ],
+              "rss_mb_max": 1020.7
+            },
+            {
+              "concurrency": 4,
+              "requests": 24,
+              "ok": 12,
+              "errors": 12,
+              "timeouts": 0,
+              "answer_mismatches": 0,
+              "elapsed_s": 7.71,
+              "requests_per_second": 3.11,
+              "p50_ms": 1248.9,
+              "p95_ms": 1635.0,
+              "max_ms": 1635.0,
+              "cpu_percent_samples": [
+                "109.18%",
+                "133.99%",
+                "108.53%",
+                "33.91%"
+              ],
+              "rss_mb_max": 997.6
+            },
+            {
+              "concurrency": 8,
+              "requests": 48,
+              "ok": 24,
+              "errors": 24,
+              "timeouts": 0,
+              "answer_mismatches": 0,
+              "elapsed_s": 15.43,
+              "requests_per_second": 3.11,
+              "p50_ms": 2607.3,
+              "p95_ms": 2678.5,
+              "max_ms": 2691.7,
+              "cpu_percent_samples": [
+                "114.17%",
+                "109.40%",
+                "133.80%",
+                "111.26%",
+                "109.09%",
+                "126.35%"
+              ],
+              "rss_mb_max": 1020.5
+            }
+          ]
+        },
+        "restart_and_shutdown": {
+          "restart": {
+            "docker_restart_seconds": 6.88,
+            "seconds_to_ready_after_restart": 25.26
+          },
+          "stop": {
+            "seconds": 6.18,
+            "exit_code": 0,
+            "logged_shutdown": true
+          }
+        },
+        "probe": {
+          "warm_routes": {
+            "campus-library-to-student-life/wheelchair": {
+              "statuses": [
+                200
+              ],
+              "median_ms": 122.3,
+              "max_ms": 1632.8,
+              "response_bytes": 59798,
+              "matches_reference": true,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "campus-library-to-student-life/stroller": {
+              "statuses": [
+                200
+              ],
+              "median_ms": 66.6,
+              "max_ms": 100.1,
+              "response_bytes": 55631,
+              "matches_reference": true,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 327.4,
+                  "segments": 42,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "uptown-to-kitchener-city-hall/wheelchair": {
+              "statuses": [
+                200
+              ],
+              "median_ms": 1350.6,
+              "max_ms": 1693.2,
+              "response_bytes": 157622,
+              "matches_reference": true,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 3022.8,
+                  "segments": 139,
+                  "stairway_count": 0
+                },
+                "accessible_route": {
+                  "distance_m": 3089.6,
+                  "segments": 123,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "uptown-to-kitchener-city-hall/stroller": {
+              "statuses": [
+                200
+              ],
+              "median_ms": 862.9,
+              "max_ms": 986.1,
+              "response_bytes": 158271,
+              "matches_reference": true,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 3022.8,
+                  "segments": 139,
+                  "stairway_count": 0
+                },
+                "accessible_route": {
+                  "distance_m": 3065.6,
+                  "segments": 128,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            }
+          },
+          "concurrency_probe": {
+            "levels": [
+              {
+                "concurrency": 1,
+                "requests": 6,
+                "ok": 6,
+                "errors": 0,
+                "timeouts": 0,
+                "answer_mismatches": 0,
+                "elapsed_s": 2.97,
+                "requests_per_second": 2.02,
+                "p50_ms": 445.1,
+                "p95_ms": 974.2,
+                "max_ms": 974.2,
+                "cpu_percent_samples": [
+                  "107.07%",
+                  "43.63%"
+                ],
+                "rss_mb_max": 996.7
+              },
+              {
+                "concurrency": 2,
+                "requests": 12,
+                "ok": 12,
+                "errors": 0,
+                "timeouts": 0,
+                "answer_mismatches": 0,
+                "elapsed_s": 4.89,
+                "requests_per_second": 2.45,
+                "p50_ms": 737.8,
+                "p95_ms": 1020.2,
+                "max_ms": 1020.2,
+                "cpu_percent_samples": [
+                  "135.20%",
+                  "108.81%"
+                ],
+                "rss_mb_max": 996.5
+              },
+              {
+                "concurrency": 4,
+                "requests": 24,
+                "ok": 24,
+                "errors": 0,
+                "timeouts": 0,
+                "answer_mismatches": 0,
+                "elapsed_s": 8.77,
+                "requests_per_second": 2.74,
+                "p50_ms": 1456.3,
+                "p95_ms": 1624.5,
+                "max_ms": 1660.7,
+                "cpu_percent_samples": [
+                  "108.81%",
+                  "123.18%",
+                  "109.90%",
+                  "82.93%"
+                ],
+                "rss_mb_max": 996.7
+              },
+              {
+                "concurrency": 8,
+                "requests": 48,
+                "ok": 48,
+                "errors": 0,
+                "timeouts": 0,
+                "answer_mismatches": 0,
+                "elapsed_s": 21.07,
+                "requests_per_second": 2.28,
+                "p50_ms": 3458.9,
+                "p95_ms": 3952.7,
+                "max_ms": 3957.9,
+                "cpu_percent_samples": [
+                  "109.22%",
+                  "108.89%",
+                  "109.13%",
+                  "109.98%",
+                  "108.77%",
+                  "109.44%",
+                  "109.03%",
+                  "111.77%"
+                ],
+                "rss_mb_max": 1019.5
+              }
+            ]
+          }
+        }
+      }
+    },
+    "one-worker-limits": {
+      "1g": {
+        "memory_limit": "1g",
+        "command": "python -m pathable_api",
+        "summary": {
+          "runs": 2,
+          "valid_runs": 2,
+          "median_seconds_to_live": 4.09,
+          "median_seconds_to_ready": 19.35,
+          "max_seconds_to_ready": 19.39,
+          "median_graph_load_seconds": 13.97,
+          "median_migration_seconds": 1.0,
+          "median_rss_before_graph_load_mb": 26.1,
+          "max_rss_peak_mb": 1051.5,
+          "median_rss_peak_mb": 1035.75,
+          "median_hwm_sum_at_ready_mb": 1058.0,
+          "median_rss_at_ready_mb": 991.9,
+          "median_rss_steady_mb": 993.6,
+          "max_cgroup_peak_mb": 1005.0,
+          "median_first_route_ms": 212.5
+        },
+        "runs": [
+          {
+            "label": "one-worker-limits/1g/run1",
+            "memory_limit": "1g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:25:16.290860279Z",
+            "seconds_to_live": 4.3,
+            "seconds_to_ready": 19.31,
+            "migration_seconds": 1.0,
+            "graph_load_seconds": 13.73,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 13.7 s",
+            "rss_before_graph_load_mb": 26.1,
+            "rss_peak_mb": 1020.0,
+            "hwm_sum_at_ready_mb": 1056.2,
+            "rss_at_ready_mb": 990.6,
+            "rss_steady_mb": 992.5,
+            "cgroup_peak_mb": 1005.0,
+            "cgroup_steady_mb": 956.3,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.248,
+              "response_bytes": 59795,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 4.3,
+                "max_ms": 18.5,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 44.6,
+                "max_ms": 60.8,
+                "response_bytes": 59796,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 4.6,
+                "max_ms": 23.4,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 643.3,
+                "max_ms": 665.3,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 3.68,
+                "rss_mb": 26.1,
+                "hwm_mb": 26.1,
+                "processes": 3.0,
+                "cgroup_memory": "19.23MiB",
+                "cgroup_memory_mb": 19.2,
+                "cpu_percent": "282.10%"
+              },
+              {
+                "t": 6.5,
+                "rss_mb": 237.9,
+                "hwm_mb": 238.1,
+                "processes": 2.0,
+                "cgroup_memory": "588.4MiB",
+                "cgroup_memory_mb": 588.4,
+                "cpu_percent": "107.79%"
+              },
+              {
+                "t": 9.31,
+                "rss_mb": 779.5,
+                "hwm_mb": 788.2,
+                "processes": 3.0,
+                "cgroup_memory": "738.4MiB",
+                "cgroup_memory_mb": 738.4,
+                "cpu_percent": "108.64%"
+              },
+              {
+                "t": 12.09,
+                "rss_mb": 810.9,
+                "hwm_mb": 810.9,
+                "processes": 2.0,
+                "cgroup_memory": "814.9MiB",
+                "cgroup_memory_mb": 814.9,
+                "cpu_percent": "109.23%"
+              },
+              {
+                "t": 15.4,
+                "rss_mb": 891.7,
+                "hwm_mb": 891.9,
+                "processes": 2.0,
+                "cgroup_memory": "898.9MiB",
+                "cgroup_memory_mb": 898.9,
+                "cpu_percent": "109.07%"
+              },
+              {
+                "t": 18.2,
+                "rss_mb": 1020.0,
+                "hwm_mb": 1020.3,
+                "processes": 3.0,
+                "cgroup_memory": "1005MiB",
+                "cgroup_memory_mb": 1005.0,
+                "cpu_percent": "108.56%"
+              },
+              {
+                "t": 21.03,
+                "rss_mb": 990.6,
+                "hwm_mb": 1056.2,
+                "processes": 2.0,
+                "cgroup_memory": "954.9MiB",
+                "cgroup_memory_mb": 954.9,
+                "cpu_percent": "0.20%"
+              }
+            ]
+          },
+          {
+            "label": "one-worker-limits/1g/run2",
+            "memory_limit": "1g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:25:57.102749767Z",
+            "seconds_to_live": 3.88,
+            "seconds_to_ready": 19.39,
+            "migration_seconds": 1.0,
+            "graph_load_seconds": 14.21,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 14.2 s",
+            "rss_before_graph_load_mb": 26.1,
+            "rss_peak_mb": 1051.5,
+            "hwm_sum_at_ready_mb": 1059.8,
+            "rss_at_ready_mb": 993.2,
+            "rss_steady_mb": 994.7,
+            "cgroup_peak_mb": 997.4,
+            "cgroup_steady_mb": 958.8,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.177,
+              "response_bytes": 59797,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 4.2,
+                "max_ms": 16.8,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 40.1,
+                "max_ms": 62.7,
+                "response_bytes": 59796,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 4.0,
+                "max_ms": 28.3,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 584.8,
+                "max_ms": 634.4,
+                "response_bytes": 157622,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 2.49,
+                "rss_mb": 26.1,
+                "hwm_mb": 26.1,
+                "processes": 3.0,
+                "cgroup_memory": "42.8MiB",
+                "cgroup_memory_mb": 42.8,
+                "cpu_percent": "294.83%"
+              },
+              {
+                "t": 5.81,
+                "rss_mb": 109.2,
+                "hwm_mb": 109.2,
+                "processes": 2.0,
+                "cgroup_memory": "470MiB",
+                "cgroup_memory_mb": 470.0,
+                "cpu_percent": "108.48%"
+              },
+              {
+                "t": 8.64,
+                "rss_mb": 783.0,
+                "hwm_mb": 783.0,
+                "processes": 3.0,
+                "cgroup_memory": "734.8MiB",
+                "cgroup_memory_mb": 734.8,
+                "cpu_percent": "109.23%"
+              },
+              {
+                "t": 11.46,
+                "rss_mb": 779.3,
+                "hwm_mb": 779.3,
+                "processes": 2.0,
+                "cgroup_memory": "775.9MiB",
+                "cgroup_memory_mb": 775.9,
+                "cpu_percent": "109.22%"
+              },
+              {
+                "t": 15.02,
+                "rss_mb": 856.4,
+                "hwm_mb": 856.6,
+                "processes": 2.0,
+                "cgroup_memory": "896.1MiB",
+                "cgroup_memory_mb": 896.1,
+                "cpu_percent": "108.39%"
+              },
+              {
+                "t": 17.83,
+                "rss_mb": 995.7,
+                "hwm_mb": 995.7,
+                "processes": 3.0,
+                "cgroup_memory": "997.4MiB",
+                "cgroup_memory_mb": 997.4,
+                "cpu_percent": "109.12%"
+              },
+              {
+                "t": 20.63,
+                "rss_mb": 1051.5,
+                "hwm_mb": 1051.7,
+                "processes": 2.0,
+                "cgroup_memory": "957.7MiB",
+                "cgroup_memory_mb": 957.7,
+                "cpu_percent": "32.52%"
+              }
+            ]
+          }
+        ]
+      },
+      "1.25g": {
+        "memory_limit": "1.25g",
+        "command": "python -m pathable_api",
+        "summary": {
+          "runs": 2,
+          "valid_runs": 2,
+          "median_seconds_to_live": 5.27,
+          "median_seconds_to_ready": 31.41,
+          "max_seconds_to_ready": 44.04,
+          "median_graph_load_seconds": 24.93,
+          "median_migration_seconds": 1.0,
+          "median_rss_before_graph_load_mb": 28.2,
+          "max_rss_peak_mb": 1058.8,
+          "median_rss_peak_mb": 1027.85,
+          "median_hwm_sum_at_ready_mb": 1063.95,
+          "median_rss_at_ready_mb": 997.05,
+          "median_rss_steady_mb": 997.25,
+          "max_cgroup_peak_mb": 1040.4,
+          "median_first_route_ms": 342.5
+        },
+        "runs": [
+          {
+            "label": "one-worker-limits/1.25g/run1",
+            "memory_limit": "1.25g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:26:34.507402682Z",
+            "seconds_to_live": 4.61,
+            "seconds_to_ready": 18.79,
+            "migration_seconds": 1.0,
+            "graph_load_seconds": 13.06,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 13.1 s",
+            "rss_before_graph_load_mb": 27.3,
+            "rss_peak_mb": 996.9,
+            "hwm_sum_at_ready_mb": 1064.2,
+            "rss_at_ready_mb": 996.8,
+            "rss_steady_mb": 997.1,
+            "cgroup_peak_mb": 1005.0,
+            "cgroup_steady_mb": 964.2,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.125,
+              "response_bytes": 59797,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 3.1,
+                "max_ms": 4.0,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 60.5,
+                "max_ms": 67.8,
+                "response_bytes": 59797,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 3.4,
+                "max_ms": 4.4,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 582.6,
+                "max_ms": 1094.9,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 2.6,
+                "rss_mb": 27.3,
+                "hwm_mb": 27.3,
+                "processes": 3.0,
+                "cgroup_memory": "23.66MiB",
+                "cgroup_memory_mb": 23.7,
+                "cpu_percent": "108.57%"
+              },
+              {
+                "t": 5.43,
+                "rss_mb": 59.1,
+                "hwm_mb": 59.1,
+                "processes": 2.0,
+                "cgroup_memory": "161.4MiB",
+                "cgroup_memory_mb": 161.4,
+                "cpu_percent": "290.08%"
+              },
+              {
+                "t": 8.74,
+                "rss_mb": 662.9,
+                "hwm_mb": 663.1,
+                "processes": 3.0,
+                "cgroup_memory": "734.9MiB",
+                "cgroup_memory_mb": 734.9,
+                "cpu_percent": "109.28%"
+              },
+              {
+                "t": 11.54,
+                "rss_mb": 780.9,
+                "hwm_mb": 780.9,
+                "processes": 2.0,
+                "cgroup_memory": "781.8MiB",
+                "cgroup_memory_mb": 781.8,
+                "cpu_percent": "108.54%"
+              },
+              {
+                "t": 14.32,
+                "rss_mb": 866.8,
+                "hwm_mb": 866.8,
+                "processes": 2.0,
+                "cgroup_memory": "882MiB",
+                "cgroup_memory_mb": 882.0,
+                "cpu_percent": "109.17%"
+              },
+              {
+                "t": 17.63,
+                "rss_mb": 978.2,
+                "hwm_mb": 978.2,
+                "processes": 3.0,
+                "cgroup_memory": "1005MiB",
+                "cgroup_memory_mb": 1005.0,
+                "cpu_percent": "109.32%"
+              },
+              {
+                "t": 20.45,
+                "rss_mb": 996.9,
+                "hwm_mb": 1064.3,
+                "processes": 2.0,
+                "cgroup_memory": "964.1MiB",
+                "cgroup_memory_mb": 964.1,
+                "cpu_percent": "0.19%"
+              }
+            ]
+          },
+          {
+            "label": "one-worker-limits/1.25g/run2",
+            "memory_limit": "1.25g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:27:13.79971984Z",
+            "seconds_to_live": 5.93,
+            "seconds_to_ready": 44.04,
+            "migration_seconds": 1.0,
+            "graph_load_seconds": 36.79,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 36.8 s",
+            "rss_before_graph_load_mb": 29.1,
+            "rss_peak_mb": 1058.8,
+            "hwm_sum_at_ready_mb": 1063.7,
+            "rss_at_ready_mb": 997.3,
+            "rss_steady_mb": 997.4,
+            "cgroup_peak_mb": 1040.4,
+            "cgroup_steady_mb": 965.1,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.56,
+              "response_bytes": 59798,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 6.9,
+                "max_ms": 21.1,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 89.9,
+                "max_ms": 103.3,
+                "response_bytes": 59797,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 6.9,
+                "max_ms": 29.7,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 1067.4,
+                "max_ms": 1227.9,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 2.89,
+                "rss_mb": 26.0,
+                "hwm_mb": 26.0,
+                "processes": 3.0,
+                "cgroup_memory": "17.24MiB",
+                "cgroup_memory_mb": 17.2,
+                "cpu_percent": "107.34%"
+              },
+              {
+                "t": 5.89,
+                "rss_mb": 29.1,
+                "hwm_mb": 29.1,
+                "processes": 2.0,
+                "cgroup_memory": "60.38MiB",
+                "cgroup_memory_mb": 60.4,
+                "cpu_percent": "296.11%"
+              },
+              {
+                "t": 9.33,
+                "rss_mb": 286.5,
+                "hwm_mb": 287.1,
+                "processes": 2.0,
+                "cgroup_memory": "370MiB",
+                "cgroup_memory_mb": 370.0,
+                "cpu_percent": "98.37%"
+              },
+              {
+                "t": 16.1,
+                "rss_mb": 560.6,
+                "hwm_mb": 561.1,
+                "processes": 2.0,
+                "cgroup_memory": "734.1MiB",
+                "cgroup_memory_mb": 734.1,
+                "cpu_percent": "109.01%"
+              },
+              {
+                "t": 19.26,
+                "rss_mb": 754.8,
+                "hwm_mb": 764.4,
+                "processes": 2.0,
+                "cgroup_memory": "724MiB",
+                "cgroup_memory_mb": 724.0,
+                "cpu_percent": "109.67%"
+              },
+              {
+                "t": 22.7,
+                "rss_mb": 774.3,
+                "hwm_mb": 774.3,
+                "processes": 2.0,
+                "cgroup_memory": "761.4MiB",
+                "cgroup_memory_mb": 761.4,
+                "cpu_percent": "141.43%"
+              },
+              {
+                "t": 25.81,
+                "rss_mb": 816.5,
+                "hwm_mb": 816.5,
+                "processes": 3.0,
+                "cgroup_memory": "791.4MiB",
+                "cgroup_memory_mb": 791.4,
+                "cpu_percent": "100.78%"
+              },
+              {
+                "t": 28.7,
+                "rss_mb": 840.6,
+                "hwm_mb": 840.6,
+                "processes": 2.0,
+                "cgroup_memory": "819.1MiB",
+                "cgroup_memory_mb": 819.1,
+                "cpu_percent": "101.17%"
+              },
+              {
+                "t": 31.59,
+                "rss_mb": 875.8,
+                "hwm_mb": 875.8,
+                "processes": 2.0,
+                "cgroup_memory": "857.1MiB",
+                "cgroup_memory_mb": 857.1,
+                "cpu_percent": "109.26%"
+              },
+              {
+                "t": 34.87,
+                "rss_mb": 926.6,
+                "hwm_mb": 926.7,
+                "processes": 3.0,
+                "cgroup_memory": "895MiB",
+                "cgroup_memory_mb": 895.0,
+                "cpu_percent": "100.25%"
+              },
+              {
+                "t": 37.88,
+                "rss_mb": 928.8,
+                "hwm_mb": 928.8,
+                "processes": 2.0,
+                "cgroup_memory": "912.2MiB",
+                "cgroup_memory_mb": 912.2,
+                "cpu_percent": "100.12%"
+              },
+              {
+                "t": 40.71,
+                "rss_mb": 982.7,
+                "hwm_mb": 982.9,
+                "processes": 2.0,
+                "cgroup_memory": "979MiB",
+                "cgroup_memory_mb": 979.0,
+                "cpu_percent": "99.99%"
+              },
+              {
+                "t": 43.5,
+                "rss_mb": 1058.8,
+                "hwm_mb": 1058.8,
+                "processes": 3.0,
+                "cgroup_memory": "1.016GiB",
+                "cgroup_memory_mb": 1040.4,
+                "cpu_percent": "99.64%"
+              }
+            ]
+          }
+        ]
+      },
+      "1.5g": {
+        "memory_limit": "1.5g",
+        "command": "python -m pathable_api",
+        "summary": {
+          "runs": 2,
+          "valid_runs": 2,
+          "median_seconds_to_live": 7.34,
+          "median_seconds_to_ready": 33.65,
+          "max_seconds_to_ready": 34.32,
+          "median_graph_load_seconds": 24.93,
+          "median_migration_seconds": 2.0,
+          "median_rss_before_graph_load_mb": 92.7,
+          "max_rss_peak_mb": 1082.8,
+          "median_rss_peak_mb": 1054.3,
+          "median_hwm_sum_at_ready_mb": 1064.1,
+          "median_rss_at_ready_mb": 997.35,
+          "median_rss_steady_mb": 997.85,
+          "max_cgroup_peak_mb": 1012.0,
+          "median_first_route_ms": 280.0
+        },
+        "runs": [
+          {
+            "label": "one-worker-limits/1.5g/run1",
+            "memory_limit": "1.5g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:28:21.709017988Z",
+            "seconds_to_live": 6.79,
+            "seconds_to_ready": 32.98,
+            "migration_seconds": 2.0,
+            "graph_load_seconds": 25.62,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 25.6 s",
+            "rss_before_graph_load_mb": 95.4,
+            "rss_peak_mb": 1025.8,
+            "hwm_sum_at_ready_mb": 1064.0,
+            "rss_at_ready_mb": 996.8,
+            "rss_steady_mb": 997.3,
+            "cgroup_peak_mb": 1012.0,
+            "cgroup_steady_mb": 964.7,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.34,
+              "response_bytes": 59798,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 30.4,
+                "max_ms": 30.8,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 73.9,
+                "max_ms": 97.4,
+                "response_bytes": 59796,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 7.2,
+                "max_ms": 10.5,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 1132.2,
+                "max_ms": 1309.1,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 3.03,
+                "rss_mb": 26.2,
+                "hwm_mb": 26.2,
+                "processes": 3.0,
+                "cgroup_memory": "42.51MiB",
+                "cgroup_memory_mb": 42.5,
+                "cpu_percent": "108.46%"
+              },
+              {
+                "t": 5.88,
+                "rss_mb": 95.4,
+                "hwm_mb": 95.4,
+                "processes": 3.0,
+                "cgroup_memory": "49.26MiB",
+                "cgroup_memory_mb": 49.3,
+                "cpu_percent": "109.36%"
+              },
+              {
+                "t": 9.22,
+                "rss_mb": 202.5,
+                "hwm_mb": 202.5,
+                "processes": 3.0,
+                "cgroup_memory": "302.1MiB",
+                "cgroup_memory_mb": 302.1,
+                "cpu_percent": "76.53%"
+              },
+              {
+                "t": 12.16,
+                "rss_mb": 612.7,
+                "hwm_mb": 612.7,
+                "processes": 2.0,
+                "cgroup_memory": "727.6MiB",
+                "cgroup_memory_mb": 727.6,
+                "cpu_percent": "109.76%"
+              },
+              {
+                "t": 14.96,
+                "rss_mb": 756.3,
+                "hwm_mb": 765.0,
+                "processes": 2.0,
+                "cgroup_memory": "749.8MiB",
+                "cgroup_memory_mb": 749.8,
+                "cpu_percent": "126.43%"
+              },
+              {
+                "t": 18.51,
+                "rss_mb": 831.2,
+                "hwm_mb": 831.4,
+                "processes": 3.0,
+                "cgroup_memory": "819.8MiB",
+                "cgroup_memory_mb": 819.8,
+                "cpu_percent": "100.12%"
+              },
+              {
+                "t": 21.5,
+                "rss_mb": 888.8,
+                "hwm_mb": 888.8,
+                "processes": 2.0,
+                "cgroup_memory": "877.6MiB",
+                "cgroup_memory_mb": 877.6,
+                "cpu_percent": "99.83%"
+              },
+              {
+                "t": 25.18,
+                "rss_mb": 950.3,
+                "hwm_mb": 951.0,
+                "processes": 3.0,
+                "cgroup_memory": "909.3MiB",
+                "cgroup_memory_mb": 909.3,
+                "cpu_percent": "101.17%"
+              },
+              {
+                "t": 28.46,
+                "rss_mb": 976.8,
+                "hwm_mb": 976.8,
+                "processes": 2.0,
+                "cgroup_memory": "967.6MiB",
+                "cgroup_memory_mb": 967.6,
+                "cpu_percent": "100.27%"
+              },
+              {
+                "t": 31.49,
+                "rss_mb": 1025.8,
+                "hwm_mb": 1025.8,
+                "processes": 2.0,
+                "cgroup_memory": "1012MiB",
+                "cgroup_memory_mb": 1012.0,
+                "cpu_percent": "110.05%"
+              },
+              {
+                "t": 34.38,
+                "rss_mb": 1020.8,
+                "hwm_mb": 1086.8,
+                "processes": 3.0,
+                "cgroup_memory": "964.8MiB",
+                "cgroup_memory_mb": 964.8,
+                "cpu_percent": "15.37%"
+              }
+            ]
+          },
+          {
+            "label": "one-worker-limits/1.5g/run2",
+            "memory_limit": "1.5g",
+            "command": "python -m pathable_api",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:29:22.884122101Z",
+            "seconds_to_live": 7.89,
+            "seconds_to_ready": 34.32,
+            "migration_seconds": 2.0,
+            "graph_load_seconds": 24.23,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 24.2 s",
+            "rss_before_graph_load_mb": 90.0,
+            "rss_peak_mb": 1082.8,
+            "hwm_sum_at_ready_mb": 1064.2,
+            "rss_at_ready_mb": 997.9,
+            "rss_steady_mb": 998.4,
+            "cgroup_peak_mb": 1010.0,
+            "cgroup_steady_mb": 965.6,
+            "process_count": 2,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.22,
+              "response_bytes": 59798,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 9.3,
+                "max_ms": 19.4,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 72.4,
+                "max_ms": 125.4,
+                "response_bytes": 59797,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 6.6,
+                "max_ms": 23.8,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 1289.7,
+                "max_ms": 1485.8,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 3.5,
+                "rss_mb": 22.5,
+                "hwm_mb": 23.0,
+                "processes": 3.0,
+                "cgroup_memory": "41.89MiB",
+                "cgroup_memory_mb": 41.9,
+                "cpu_percent": "108.12%"
+              },
+              {
+                "t": 6.88,
+                "rss_mb": 90.0,
+                "hwm_mb": 90.2,
+                "processes": 3.0,
+                "cgroup_memory": "38.34MiB",
+                "cgroup_memory_mb": 38.3,
+                "cpu_percent": "108.89%"
+              },
+              {
+                "t": 9.86,
+                "rss_mb": 179.8,
+                "hwm_mb": 179.8,
+                "processes": 2.0,
+                "cgroup_memory": "267.2MiB",
+                "cgroup_memory_mb": 267.2,
+                "cpu_percent": "104.06%"
+              },
+              {
+                "t": 12.85,
+                "rss_mb": 603.3,
+                "hwm_mb": 603.9,
+                "processes": 2.0,
+                "cgroup_memory": "702.8MiB",
+                "cgroup_memory_mb": 702.8,
+                "cpu_percent": "109.28%"
+              },
+              {
+                "t": 16.51,
+                "rss_mb": 778.3,
+                "hwm_mb": 787.9,
+                "processes": 3.0,
+                "cgroup_memory": "736.1MiB",
+                "cgroup_memory_mb": 736.1,
+                "cpu_percent": "108.85%"
+              },
+              {
+                "t": 19.48,
+                "rss_mb": 792.3,
+                "hwm_mb": 792.3,
+                "processes": 2.0,
+                "cgroup_memory": "779.9MiB",
+                "cgroup_memory_mb": 779.9,
+                "cpu_percent": "109.12%"
+              },
+              {
+                "t": 22.49,
+                "rss_mb": 852.3,
+                "hwm_mb": 852.3,
+                "processes": 2.0,
+                "cgroup_memory": "820.5MiB",
+                "cgroup_memory_mb": 820.5,
+                "cpu_percent": "109.28%"
+              },
+              {
+                "t": 26.65,
+                "rss_mb": 919.7,
+                "hwm_mb": 919.7,
+                "processes": 3.0,
+                "cgroup_memory": "896.3MiB",
+                "cgroup_memory_mb": 896.3,
+                "cpu_percent": "117.52%"
+              },
+              {
+                "t": 29.62,
+                "rss_mb": 968.3,
+                "hwm_mb": 968.3,
+                "processes": 2.0,
+                "cgroup_memory": "964.2MiB",
+                "cgroup_memory_mb": 964.2,
+                "cpu_percent": "108.63%"
+              },
+              {
+                "t": 32.68,
+                "rss_mb": 1026.2,
+                "hwm_mb": 1026.2,
+                "processes": 2.0,
+                "cgroup_memory": "1010MiB",
+                "cgroup_memory_mb": 1010.0,
+                "cpu_percent": "150.72%"
+              },
+              {
+                "t": 36.69,
+                "rss_mb": 1082.8,
+                "hwm_mb": 1082.9,
+                "processes": 3.0,
+                "cgroup_memory": "965.2MiB",
+                "cgroup_memory_mb": 965.2,
+                "cpu_percent": "0.37%"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "two-workers": {
+      "4g": {
+        "memory_limit": "4g",
+        "command": "uvicorn pathable_api.main:app --host 0.0.0.0 --port 8000 --workers 2",
+        "summary": {
+          "runs": 2,
+          "valid_runs": 2,
+          "median_seconds_to_live": 8.61,
+          "median_seconds_to_ready": 38.73,
+          "max_seconds_to_ready": 44.04,
+          "median_graph_load_seconds": 28.47,
+          "median_migration_seconds": 2.0,
+          "median_rss_before_graph_load_mb": 86.3,
+          "max_rss_peak_mb": 2164.5,
+          "median_rss_peak_mb": 2144.4,
+          "median_hwm_sum_at_ready_mb": 2173.1,
+          "median_rss_at_ready_mb": 2037.7,
+          "median_rss_steady_mb": 2047.65,
+          "max_cgroup_peak_mb": 2082.8,
+          "median_first_route_ms": 263.0
+        },
+        "runs": [
+          {
+            "label": "two-workers/4g/run1",
+            "memory_limit": "4g",
+            "command": "uvicorn pathable_api.main:app --host 0.0.0.0 --port 8000 --workers 2",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:30:31.708761105Z",
+            "seconds_to_live": 8.53,
+            "seconds_to_ready": 44.04,
+            "migration_seconds": 2.0,
+            "graph_load_seconds": 32.56,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 32.6 s",
+            "rss_before_graph_load_mb": 76.9,
+            "rss_peak_mb": 2124.3,
+            "hwm_sum_at_ready_mb": 2172.3,
+            "rss_at_ready_mb": 2038.1,
+            "rss_steady_mb": 2057.2,
+            "cgroup_peak_mb": 2082.8,
+            "cgroup_steady_mb": 1958.9,
+            "process_count": 5,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.248,
+              "response_bytes": 59798,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 7.8,
+                "max_ms": 29.0,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 97.1,
+                "max_ms": 223.2,
+                "response_bytes": 59797,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 6.1,
+                "max_ms": 9.4,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 1146.4,
+                "max_ms": 1364.2,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 3.39,
+                "rss_mb": 26.7,
+                "hwm_mb": 26.7,
+                "processes": 3.0,
+                "cgroup_memory": "9.766MiB",
+                "cgroup_memory_mb": 9.8,
+                "cpu_percent": "108.38%"
+              },
+              {
+                "t": 7.32,
+                "rss_mb": 76.9,
+                "hwm_mb": 77.1,
+                "processes": 3.0,
+                "cgroup_memory": "70.57MiB",
+                "cgroup_memory_mb": 70.6,
+                "cpu_percent": "181.07%"
+              },
+              {
+                "t": 10.26,
+                "rss_mb": 318.9,
+                "hwm_mb": 320.2,
+                "processes": 5.0,
+                "cgroup_memory": "659.2MiB",
+                "cgroup_memory_mb": 659.2,
+                "cpu_percent": "203.33%"
+              },
+              {
+                "t": 14.44,
+                "rss_mb": 1286.4,
+                "hwm_mb": 1287.1,
+                "processes": 5.0,
+                "cgroup_memory": "1.284GiB",
+                "cgroup_memory_mb": 1314.8,
+                "cpu_percent": "292.11%"
+              },
+              {
+                "t": 20.33,
+                "rss_mb": 1562.9,
+                "hwm_mb": 1563.3,
+                "processes": 5.0,
+                "cgroup_memory": "1.442GiB",
+                "cgroup_memory_mb": 1476.6,
+                "cpu_percent": "218.98%"
+              },
+              {
+                "t": 23.35,
+                "rss_mb": 1588.2,
+                "hwm_mb": 1588.8,
+                "processes": 5.0,
+                "cgroup_memory": "1.512GiB",
+                "cgroup_memory_mb": 1548.3,
+                "cpu_percent": "230.58%"
+              },
+              {
+                "t": 27.52,
+                "rss_mb": 1705.7,
+                "hwm_mb": 1706.2,
+                "processes": 6.0,
+                "cgroup_memory": "1.629GiB",
+                "cgroup_memory_mb": 1668.1,
+                "cpu_percent": "234.14%"
+              },
+              {
+                "t": 30.63,
+                "rss_mb": 1782.2,
+                "hwm_mb": 1782.6,
+                "processes": 5.0,
+                "cgroup_memory": "1.704GiB",
+                "cgroup_memory_mb": 1744.9,
+                "cpu_percent": "218.97%"
+              },
+              {
+                "t": 33.72,
+                "rss_mb": 1896.5,
+                "hwm_mb": 1897.1,
+                "processes": 5.0,
+                "cgroup_memory": "1.792GiB",
+                "cgroup_memory_mb": 1835.0,
+                "cpu_percent": "281.87%"
+              },
+              {
+                "t": 37.69,
+                "rss_mb": 1966.6,
+                "hwm_mb": 1967.2,
+                "processes": 6.0,
+                "cgroup_memory": "1.888GiB",
+                "cgroup_memory_mb": 1933.3,
+                "cpu_percent": "227.71%"
+              },
+              {
+                "t": 40.83,
+                "rss_mb": 2079.8,
+                "hwm_mb": 2080.1,
+                "processes": 5.0,
+                "cgroup_memory": "1.969GiB",
+                "cgroup_memory_mb": 2016.3,
+                "cpu_percent": "217.56%"
+              },
+              {
+                "t": 43.92,
+                "rss_mb": 2124.3,
+                "hwm_mb": 2125.9,
+                "processes": 6.0,
+                "cgroup_memory": "2.034GiB",
+                "cgroup_memory_mb": 2082.8,
+                "cpu_percent": "236.39%"
+              }
+            ]
+          },
+          {
+            "label": "two-workers/4g/run2",
+            "memory_limit": "4g",
+            "command": "uvicorn pathable_api.main:app --host 0.0.0.0 --port 8000 --workers 2",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:31:37.229063477Z",
+            "seconds_to_live": 8.7,
+            "seconds_to_ready": 33.43,
+            "migration_seconds": 2.0,
+            "graph_load_seconds": 24.37,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 24.4 s",
+            "rss_before_graph_load_mb": 95.7,
+            "rss_peak_mb": 2164.5,
+            "hwm_sum_at_ready_mb": 2173.9,
+            "rss_at_ready_mb": 2037.3,
+            "rss_steady_mb": 2038.1,
+            "cgroup_peak_mb": 2028.5,
+            "cgroup_steady_mb": 1962.0,
+            "process_count": 5,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.278,
+              "response_bytes": 59797,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 7.4,
+                "max_ms": 18.6,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 111.1,
+                "max_ms": 241.5,
+                "response_bytes": 59797,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 9.0,
+                "max_ms": 28.5,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 1303.2,
+                "max_ms": 1357.6,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 4.09,
+                "rss_mb": 26.9,
+                "hwm_mb": 26.9,
+                "processes": 3.0,
+                "cgroup_memory": "20.84MiB",
+                "cgroup_memory_mb": 20.8,
+                "cpu_percent": "108.75%"
+              },
+              {
+                "t": 7.13,
+                "rss_mb": 95.7,
+                "hwm_mb": 95.7,
+                "processes": 3.0,
+                "cgroup_memory": "70.25MiB",
+                "cgroup_memory_mb": 70.2,
+                "cpu_percent": "166.60%"
+              },
+              {
+                "t": 10.08,
+                "rss_mb": 272.9,
+                "hwm_mb": 273.3,
+                "processes": 5.0,
+                "cgroup_memory": "394.3MiB",
+                "cgroup_memory_mb": 394.3,
+                "cpu_percent": "208.07%"
+              },
+              {
+                "t": 13.29,
+                "rss_mb": 1120.6,
+                "hwm_mb": 1121.3,
+                "processes": 5.0,
+                "cgroup_memory": "1.342GiB",
+                "cgroup_memory_mb": 1374.2,
+                "cpu_percent": "220.95%"
+              },
+              {
+                "t": 16.18,
+                "rss_mb": 1582.2,
+                "hwm_mb": 1598.8,
+                "processes": 6.0,
+                "cgroup_memory": "1.46GiB",
+                "cgroup_memory_mb": 1495.0,
+                "cpu_percent": "199.98%"
+              },
+              {
+                "t": 19.1,
+                "rss_mb": 1559.4,
+                "hwm_mb": 1575.9,
+                "processes": 5.0,
+                "cgroup_memory": "1.504GiB",
+                "cgroup_memory_mb": 1540.1,
+                "cpu_percent": "200.58%"
+              },
+              {
+                "t": 22.2,
+                "rss_mb": 1662.2,
+                "hwm_mb": 1662.4,
+                "processes": 5.0,
+                "cgroup_memory": "1.642GiB",
+                "cgroup_memory_mb": 1681.4,
+                "cpu_percent": "225.46%"
+              },
+              {
+                "t": 25.04,
+                "rss_mb": 1822.8,
+                "hwm_mb": 1823.4,
+                "processes": 6.0,
+                "cgroup_memory": "1.751GiB",
+                "cgroup_memory_mb": 1793.0,
+                "cpu_percent": "209.31%"
+              },
+              {
+                "t": 27.92,
+                "rss_mb": 1900.2,
+                "hwm_mb": 1900.5,
+                "processes": 5.0,
+                "cgroup_memory": "1.847GiB",
+                "cgroup_memory_mb": 1891.3,
+                "cpu_percent": "200.43%"
+              },
+              {
+                "t": 31.5,
+                "rss_mb": 2052.9,
+                "hwm_mb": 2053.1,
+                "processes": 5.0,
+                "cgroup_memory": "1.981GiB",
+                "cgroup_memory_mb": 2028.5,
+                "cpu_percent": "200.33%"
+              },
+              {
+                "t": 34.33,
+                "rss_mb": 2164.5,
+                "hwm_mb": 2164.7,
+                "processes": 6.0,
+                "cgroup_memory": "1.917GiB",
+                "cgroup_memory_mb": 1963.0,
+                "cpu_percent": "100.55%"
+              }
+            ]
+          }
+        ],
+        "concurrency_probe": {
+          "levels": [
+            {
+              "concurrency": 1,
+              "requests": 6,
+              "ok": 3,
+              "errors": 3,
+              "timeouts": 0,
+              "answer_mismatches": 0,
+              "elapsed_s": 4.01,
+              "requests_per_second": 1.5,
+              "p50_ms": 1397.6,
+              "p95_ms": 1402.3,
+              "max_ms": 1402.3,
+              "cpu_percent_samples": [
+                "100.86%",
+                "97.16%"
+              ],
+              "rss_mb_max": 2038.3
+            },
+            {
+              "concurrency": 2,
+              "requests": 12,
+              "ok": 6,
+              "errors": 6,
+              "timeouts": 0,
+              "answer_mismatches": 0,
+              "elapsed_s": 6.89,
+              "requests_per_second": 1.74,
+              "p50_ms": 1145.2,
+              "p95_ms": 1318.9,
+              "max_ms": 1318.9,
+              "cpu_percent_samples": [
+                "133.46%",
+                "108.05%",
+                "124.03%"
+              ],
+              "rss_mb_max": 2038.3
+            },
+            {
+              "concurrency": 4,
+              "requests": 24,
+              "ok": 12,
+              "errors": 12,
+              "timeouts": 0,
+              "answer_mismatches": 0,
+              "elapsed_s": 7.72,
+              "requests_per_second": 3.11,
+              "p50_ms": 1104.1,
+              "p95_ms": 2120.0,
+              "max_ms": 2120.0,
+              "cpu_percent_samples": [
+                "214.79%",
+                "215.55%",
+                "100.41%"
+              ],
+              "rss_mb_max": 2061.1
+            },
+            {
+              "concurrency": 8,
+              "requests": 48,
+              "ok": 24,
+              "errors": 24,
+              "timeouts": 0,
+              "answer_mismatches": 0,
+              "elapsed_s": 12.39,
+              "requests_per_second": 3.87,
+              "p50_ms": 1700.7,
+              "p95_ms": 2945.4,
+              "max_ms": 3142.6,
+              "cpu_percent_samples": [
+                "200.13%",
+                "223.60%",
+                "199.76%",
+                "225.26%",
+                "100.61%"
+              ],
+              "rss_mb_max": 2038.3
+            }
+          ]
+        },
+        "probe": {
+          "warm_routes": {
+            "campus-library-to-student-life/wheelchair": {
+              "statuses": [
+                200
+              ],
+              "median_ms": 106.9,
+              "max_ms": 365.2,
+              "response_bytes": 59797,
+              "matches_reference": true,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "campus-library-to-student-life/stroller": {
+              "statuses": [
+                200
+              ],
+              "median_ms": 86.5,
+              "max_ms": 98.5,
+              "response_bytes": 55632,
+              "matches_reference": true,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 327.4,
+                  "segments": 42,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "uptown-to-kitchener-city-hall/wheelchair": {
+              "statuses": [
+                200
+              ],
+              "median_ms": 944.1,
+              "max_ms": 1214.4,
+              "response_bytes": 157623,
+              "matches_reference": true,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 3022.8,
+                  "segments": 139,
+                  "stairway_count": 0
+                },
+                "accessible_route": {
+                  "distance_m": 3089.6,
+                  "segments": 123,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "uptown-to-kitchener-city-hall/stroller": {
+              "statuses": [
+                200
+              ],
+              "median_ms": 861.8,
+              "max_ms": 1159.4,
+              "response_bytes": 158271,
+              "matches_reference": true,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 3022.8,
+                  "segments": 139,
+                  "stairway_count": 0
+                },
+                "accessible_route": {
+                  "distance_m": 3065.6,
+                  "segments": 128,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            }
+          },
+          "concurrency_probe": {
+            "levels": [
+              {
+                "concurrency": 1,
+                "requests": 6,
+                "ok": 6,
+                "errors": 0,
+                "timeouts": 0,
+                "answer_mismatches": 0,
+                "elapsed_s": 3.01,
+                "requests_per_second": 1.99,
+                "p50_ms": 508.2,
+                "p95_ms": 919.1,
+                "max_ms": 919.1,
+                "cpu_percent_samples": [
+                  "109.28%",
+                  "0.97%"
+                ],
+                "rss_mb_max": 2039.6
+              },
+              {
+                "concurrency": 2,
+                "requests": 12,
+                "ok": 12,
+                "errors": 0,
+                "timeouts": 0,
+                "answer_mismatches": 0,
+                "elapsed_s": 4.71,
+                "requests_per_second": 2.55,
+                "p50_ms": 297.5,
+                "p95_ms": 965.8,
+                "max_ms": 965.8,
+                "cpu_percent_samples": [
+                  "125.83%",
+                  "97.13%"
+                ],
+                "rss_mb_max": 2039.6
+              },
+              {
+                "concurrency": 4,
+                "requests": 24,
+                "ok": 24,
+                "errors": 0,
+                "timeouts": 0,
+                "answer_mismatches": 0,
+                "elapsed_s": 6.38,
+                "requests_per_second": 3.76,
+                "p50_ms": 737.1,
+                "p95_ms": 1621.4,
+                "max_ms": 1756.2,
+                "cpu_percent_samples": [
+                  "160.32%",
+                  "197.42%"
+                ],
+                "rss_mb_max": 2061.6
+              },
+              {
+                "concurrency": 8,
+                "requests": 48,
+                "ok": 48,
+                "errors": 0,
+                "timeouts": 0,
+                "answer_mismatches": 0,
+                "elapsed_s": 10.38,
+                "requests_per_second": 4.63,
+                "p50_ms": 944.7,
+                "p95_ms": 2414.1,
+                "max_ms": 3140.1,
+                "cpu_percent_samples": [
+                  "200.25%",
+                  "200.58%",
+                  "188.11%",
+                  "197.79%",
+                  "6.88%"
+                ],
+                "rss_mb_max": 2039.8
+              }
+            ]
+          }
+        }
+      }
+    },
+    "two-workers-2g": {
+      "2g": {
+        "memory_limit": "2g",
+        "command": "uvicorn pathable_api.main:app --host 0.0.0.0 --port 8000 --workers 2",
+        "summary": {
+          "runs": 1,
+          "valid_runs": 1,
+          "median_seconds_to_live": 7.84,
+          "median_seconds_to_ready": 30.39,
+          "max_seconds_to_ready": 30.39,
+          "median_graph_load_seconds": 21.49,
+          "median_migration_seconds": 2.0,
+          "median_rss_before_graph_load_mb": 95.6,
+          "max_rss_peak_mb": 2133.6,
+          "median_rss_peak_mb": 2133.6,
+          "median_hwm_sum_at_ready_mb": 2161.2,
+          "median_rss_at_ready_mb": 2004.0,
+          "median_rss_steady_mb": 2006.9,
+          "max_cgroup_peak_mb": 2001.9,
+          "median_first_route_ms": 343.0
+        },
+        "runs": [
+          {
+            "label": "two-workers-2g/2g/run1",
+            "memory_limit": "2g",
+            "command": "uvicorn pathable_api.main:app --host 0.0.0.0 --port 8000 --workers 2",
+            "valid": true,
+            "invalid_reason": null,
+            "started_at_utc": "2026-09-12T20:33:12.061061705Z",
+            "seconds_to_live": 7.84,
+            "seconds_to_ready": 30.39,
+            "migration_seconds": 2.0,
+            "graph_load_seconds": 21.49,
+            "graph_detail": "waterloo: 155714 nodes, 180554 segments loaded in 21.5 s",
+            "rss_before_graph_load_mb": 95.6,
+            "rss_peak_mb": 2133.6,
+            "hwm_sum_at_ready_mb": 2161.2,
+            "rss_at_ready_mb": 2004.0,
+            "rss_steady_mb": 2006.9,
+            "cgroup_peak_mb": 2001.9,
+            "cgroup_steady_mb": 1919.0,
+            "process_count": 5,
+            "first_route": {
+              "case": "campus-library-to-student-life",
+              "profile": "wheelchair",
+              "status": 200,
+              "seconds": 0.343,
+              "response_bytes": 59798,
+              "signature": {
+                "standard_route": {
+                  "distance_m": 287.4,
+                  "segments": 43,
+                  "stairway_count": 4
+                },
+                "accessible_route": {
+                  "distance_m": 354.1,
+                  "segments": 47,
+                  "stairway_count": 0
+                },
+                "ml_predictions_used": false,
+                "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+              }
+            },
+            "warm_routes": {
+              "campus-library-to-student-life/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 19.0,
+                "max_ms": 31.4,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "campus-library-to-student-life/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 109.7,
+                "max_ms": 394.4,
+                "response_bytes": 59798,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 287.4,
+                    "segments": 43,
+                    "stairway_count": 4
+                  },
+                  "accessible_route": {
+                    "distance_m": 354.1,
+                    "segments": 47,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              },
+              "uptown-to-kitchener-city-hall/standard": {
+                "statuses": [
+                  422
+                ],
+                "median_ms": 10.0,
+                "max_ms": 30.7,
+                "response_bytes": 278,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": null,
+                  "accessible_route": null,
+                  "ml_predictions_used": null,
+                  "dataset": null
+                }
+              },
+              "uptown-to-kitchener-city-hall/wheelchair": {
+                "statuses": [
+                  200
+                ],
+                "median_ms": 1183.8,
+                "max_ms": 1284.4,
+                "response_bytes": 157623,
+                "matches_reference": true,
+                "signature": {
+                  "standard_route": {
+                    "distance_m": 3022.8,
+                    "segments": 139,
+                    "stairway_count": 0
+                  },
+                  "accessible_route": {
+                    "distance_m": 3089.6,
+                    "segments": 123,
+                    "stairway_count": 0
+                  },
+                  "ml_predictions_used": false,
+                  "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+                }
+              }
+            },
+            "oom_killed": false,
+            "restart_count": 0,
+            "samples": [
+              {
+                "t": 2.95,
+                "rss_mb": 28.6,
+                "hwm_mb": 28.6,
+                "processes": 3.0,
+                "cgroup_memory": "18MiB",
+                "cgroup_memory_mb": 18.0,
+                "cpu_percent": "107.51%"
+              },
+              {
+                "t": 5.93,
+                "rss_mb": 95.6,
+                "hwm_mb": 95.6,
+                "processes": 3.0,
+                "cgroup_memory": "77.8MiB",
+                "cgroup_memory_mb": 77.8,
+                "cpu_percent": "179.60%"
+              },
+              {
+                "t": 9.29,
+                "rss_mb": 410.4,
+                "hwm_mb": 411.0,
+                "processes": 5.0,
+                "cgroup_memory": "979.5MiB",
+                "cgroup_memory_mb": 979.5,
+                "cpu_percent": "212.32%"
+              },
+              {
+                "t": 12.23,
+                "rss_mb": 1526.0,
+                "hwm_mb": 1526.6,
+                "processes": 5.0,
+                "cgroup_memory": "1.441GiB",
+                "cgroup_memory_mb": 1475.6,
+                "cpu_percent": "219.98%"
+              },
+              {
+                "t": 15.27,
+                "rss_mb": 1583.3,
+                "hwm_mb": 1599.1,
+                "processes": 6.0,
+                "cgroup_memory": "1.491GiB",
+                "cgroup_memory_mb": 1526.8,
+                "cpu_percent": "218.61%"
+              },
+              {
+                "t": 18.84,
+                "rss_mb": 1644.8,
+                "hwm_mb": 1645.4,
+                "processes": 5.0,
+                "cgroup_memory": "1.617GiB",
+                "cgroup_memory_mb": 1655.8,
+                "cpu_percent": "219.68%"
+              },
+              {
+                "t": 21.77,
+                "rss_mb": 1807.9,
+                "hwm_mb": 1808.3,
+                "processes": 5.0,
+                "cgroup_memory": "1.75GiB",
+                "cgroup_memory_mb": 1792.0,
+                "cpu_percent": "218.72%"
+              },
+              {
+                "t": 24.8,
+                "rss_mb": 1920.4,
+                "hwm_mb": 1920.9,
+                "processes": 6.0,
+                "cgroup_memory": "1.847GiB",
+                "cgroup_memory_mb": 1891.3,
+                "cpu_percent": "219.36%"
+              },
+              {
+                "t": 28.8,
+                "rss_mb": 2053.9,
+                "hwm_mb": 2054.4,
+                "processes": 5.0,
+                "cgroup_memory": "1.955GiB",
+                "cgroup_memory_mb": 2001.9,
+                "cpu_percent": "218.93%"
+              },
+              {
+                "t": 31.74,
+                "rss_mb": 2133.6,
+                "hwm_mb": 2160.5,
+                "processes": 5.0,
+                "cgroup_memory": "1.872GiB",
+                "cgroup_memory_mb": 1916.9,
+                "cpu_percent": "62.90%"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "route_reference": {
+    "campus-library-to-student-life/standard": {
+      "standard_route": null,
+      "accessible_route": null,
+      "ml_predictions_used": null,
+      "dataset": null
+    },
+    "campus-library-to-student-life/wheelchair": {
+      "standard_route": {
+        "distance_m": 287.4,
+        "segments": 43,
+        "stairway_count": 4
+      },
+      "accessible_route": {
+        "distance_m": 354.1,
+        "segments": 47,
+        "stairway_count": 0
+      },
+      "ml_predictions_used": false,
+      "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+    },
+    "uptown-to-kitchener-city-hall/standard": {
+      "standard_route": null,
+      "accessible_route": null,
+      "ml_predictions_used": null,
+      "dataset": null
+    },
+    "uptown-to-kitchener-city-hall/wheelchair": {
+      "standard_route": {
+        "distance_m": 3022.8,
+        "segments": 139,
+        "stairway_count": 0
+      },
+      "accessible_route": {
+        "distance_m": 3089.6,
+        "segments": 123,
+        "stairway_count": 0
+      },
+      "ml_predictions_used": false,
+      "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+    },
+    "campus-library-to-student-life/stroller": {
+      "standard_route": {
+        "distance_m": 287.4,
+        "segments": 43,
+        "stairway_count": 4
+      },
+      "accessible_route": {
+        "distance_m": 327.4,
+        "segments": 42,
+        "stairway_count": 0
+      },
+      "ml_predictions_used": false,
+      "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+    },
+    "uptown-to-kitchener-city-hall/stroller": {
+      "standard_route": {
+        "distance_m": 3022.8,
+        "segments": 139,
+        "stairway_count": 0
+      },
+      "accessible_route": {
+        "distance_m": 3065.6,
+        "segments": 128,
+        "stairway_count": 0
+      },
+      "ml_predictions_used": false,
+      "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+    }
+  }
+}

@@ -298,6 +298,18 @@ again needs a different in-memory representation, which is a real
 architectural change and wants its own measurement rather than being bundled
 into a query fix.
 
+**In the production container** (measured 2026-09-11 on the real image, empty
+database, isolated stack — see [ADR 0009](../adr/0009-deployment-architecture.md)
+and [`docs/evidence/production-envelope.json`](../evidence/production-envelope.json)):
+one worker reaches readiness a median 18.7 s after `compose up` on this laptop,
+with the graph preload itself 14.6 s; resident memory is **997 MB steady** with
+a **1,064 MB** lifetime peak, so a 2 GB tier is the smallest defensible size
+and a 1 GB limit ran with 6% headroom. **Every uvicorn worker holds its own
+copy**: two workers measured 2.04 GB resident, 2.17 GB peak. `GRAPH_PRELOAD_REGIONS`
+now makes the load part of startup and holds readiness at 503 until it is
+done, so an orchestrator no longer routes users into the load window; the
+window itself is unchanged.
+
 **Check when:** a deployment target with a memory budget exists, or a second
 region is added.
 
