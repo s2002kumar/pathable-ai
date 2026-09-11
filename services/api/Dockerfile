@@ -43,6 +43,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:${PATH}"
 
+# Take Debian's security updates at build time. The official base image is
+# rebuilt on its own schedule, and the gap between an advisory and that rebuild
+# is exactly when the image scan fails on a package this service never calls
+# (libpcre2, in the case that added this line). Nothing is pinned on purpose:
+# the point is to pick up whatever bookworm-security has published.
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # 10001 is outside the range typical distro packages claim, so the mapping stays
 # predictable if a volume is ever shared with the host.
 RUN groupadd --gid 10001 pathable \
