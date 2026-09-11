@@ -1,0 +1,134 @@
+# PathAble AI — isolated, production-like stack for measuring the resource
+# envelope and smoke-testing the real images. Not the development stack.
+#
+#   docker compose -f infra/production-smoke/compose.yaml up --build -d
+#
+# Everything here is deliberately separate from compose.yaml at the repository
+# root: its own project name, its own database volume, its own host ports. The
+# developer database volume (pathable-db-data) is never mounted or touched.
+# See docs/deployment/PRODUCTION_SMOKE.md for the full procedure.
+#
+# The API runs with ENVIRONMENT=production, which makes the settings model refuse
+# to start without an explicit origin list, JSON logs and a database URL — the
+# same constraints a real deployment must satisfy.
+
+name: pathable-envelope
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pathable
+      # A placeholder for a database that only ever listens on this machine.
+      # Never reuse it anywhere real.
+      POSTGRES_PASSWORD: pathable_envelope_only
+      POSTGRES_DB: pathable
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${ENVELOPE_DB_PORT:-5434}:5432"
+    volumes:
+      - pathable-envelope-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pathable -d pathable"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: ${ENVELOPE_DB_MEMORY_LIMIT:-1g}
+
+  api:
+    build:
+      context: ../..
+      dockerfile: services/api/Dockerfile
+      target: runtime
+    image: pathable-envelope-api:local
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      DATABASE_URL: postgresql+psycopg://pathable:pathable_envelope_only@db:5432/pathable
+      ALLOWED_ORIGINS: http://localhost:${ENVELOPE_WEB_PORT:-3001},http://127.0.0.1:${ENVELOPE_WEB_PORT:-3001}
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      READINESS_TIMEOUT_SECONDS: "2.0"
+      # Load the pilot region's graph at startup and hold readiness until it is
+      # routable. Set to an empty string to measure the lazy path instead.
+      GRAPH_PRELOAD_REGIONS: ${ENVELOPE_PRELOAD_REGIONS:-waterloo}
+    # Overridable so the worker-count measurement can start the same image with
+    # `uvicorn pathable_api.main:app --workers 2 ...` and nothing else changed.
+    command: ${ENVELOPE_API_COMMAND:-python -m pathable_api}
+    ports:
+      - "${ENVELOPE_API_PORT:-8001}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=3).status==200 else 1)",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          # The knob the memory-limit runs turn. 2g is the default because the
+          # measured cold-start peak is about 1.1 GB and sizing at the peak is
+          # how a service falls over on the day it matters.
+          memory: ${ENVELOPE_API_MEMORY_LIMIT:-2g}
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:${ENVELOPE_API_PORT:-8001}
+        NEXT_PUBLIC_MAP_STYLE_URL: https://tiles.openfreemap.org/styles/liberty
+        NEXT_PUBLIC_PILOT_CENTER_LAT: "43.4668"
+        NEXT_PUBLIC_PILOT_CENTER_LON: "-80.5164"
+        NEXT_PUBLIC_PILOT_ZOOM: "14"
+        NEXT_PUBLIC_PILOT_REGION_NAME: "Waterloo, Ontario"
+    image: pathable-envelope-web:local
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "${ENVELOPE_WEB_PORT:-3001}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('node:http').get('http://127.0.0.1:3000/api/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: ${ENVELOPE_WEB_MEMORY_LIMIT:-512m}
+
+volumes:
+  # Distinct from the development volume by name, so `down -v` here can never
+  # destroy a developer's data and nothing here can read it.
+  pathable-envelope-db-data:
+    name: pathable-envelope-db-data
