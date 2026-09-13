@@ -54,7 +54,10 @@ services:
       ENVIRONMENT: production
       API_HOST: 0.0.0.0
       API_PORT: 8000
-      DATABASE_URL: postgresql+psycopg://pathable:pathable_envelope_only@db:5432/pathable
+      # Overridable so the same image can be pointed at the restricted-role
+      # database the managed-hosting restore builds (see restore-dataset.sh),
+      # which is the only way to prove that path with the real container.
+      DATABASE_URL: ${ENVELOPE_DATABASE_URL:-postgresql+psycopg://pathable:pathable_envelope_only@db:5432/pathable}
       ALLOWED_ORIGINS: http://localhost:${ENVELOPE_WEB_PORT:-3001},http://127.0.0.1:${ENVELOPE_WEB_PORT:-3001}
       LOG_LEVEL: INFO
       LOG_FORMAT: json

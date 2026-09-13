@@ -88,33 +88,88 @@ docker exec <source-db-container> pg_dump -U pathable -d pathable \
   --table=pilot_regions --table=dataset_versions --table=ingestion_runs \
   --table=graph_nodes --table=graph_edges > waterloo-main-data.dump
 sha256sum waterloo-main-data.dump
-
-# Restore into the migrated, empty envelope database:
-docker cp waterloo-main-data.dump pathable-envelope-db-1:/tmp/
-docker exec pathable-envelope-db-1 pg_restore -U pathable -d pathable \
-  --data-only --disable-triggers --no-owner --no-privileges --exit-on-error \
-  /tmp/waterloo-main-data.dump
-docker exec pathable-envelope-db-1 rm /tmp/waterloo-main-data.dump
-docker exec pathable-envelope-db-1 psql -U pathable -d pathable -c "vacuum analyze"
 ```
 
-`--disable-triggers` lets the five tables load without ordering them by
-foreign key; it needs the database owner, which the Compose user is. Verify
-identity before trusting anything measured on it:
+Restore with the committed script, which needs no privilege a managed
+PostgreSQL service withholds:
 
 ```bash
-docker exec pathable-envelope-db-1 psql -U pathable -d pathable -At -c \
-  "select id, checksum, status, source_name, node_count, edge_count from dataset_versions"
+infra/production-smoke/restore-dataset.sh \
+  --dump waterloo-main-data.dump \
+  --container pathable-envelope-db-1 \
+  --user pathable_app --db pathable_managed
 ```
 
-The dump used for the committed evidence: 31,240,046 bytes, SHA-256
-`20d3ad955636f56e5700c6627ccfa2eafa7f023f29bd6449e674c0794bff5e7e`, exported
-in 4 s and restored in 7.2 s; dataset `51585450-8ff5-409d-a02e-66d5a3c5e260`,
-checksum `51e75f78…d2e906`, 155,714 nodes and 180,554 segments — the same
-dataset every file in `docs/evidence/` describes. The synthetic fixture rows
-ride along because they live in the same tables; they are 9 nodes and 13
-segments in their own region. Keep the dump outside the repository and delete
-it afterwards.
+### Why not `--disable-triggers`
+
+The obvious restore is `pg_restore --data-only --disable-triggers`, and it is
+the wrong habit to build. `--disable-triggers` switches off _system_ triggers —
+the ones that enforce foreign keys — and PostgreSQL reserves that for
+superusers. Managed services do not give you one. Run as an ordinary owner
+role, it fails exactly like this:
+
+```
+pg_restore: error: could not execute query: ERROR:  permission denied:
+    "RI_ConstraintTrigger_a_21027" is a system trigger
+Command was: ALTER TABLE public.pilot_regions DISABLE TRIGGER ALL;
+```
+
+The flag exists because pg_dump cannot promise a working order for every
+schema — circular foreign keys have none. This schema is a tree, so an order
+exists, and the script states it rather than hoping for it:
+
+    pilot_regions -> dataset_versions -> ingestion_runs -> graph_nodes -> graph_edges
+
+That order is handed to `pg_restore --use-list` and applied with
+`--single-transaction`, so a failure leaves an empty database rather than half
+a network. (Measured aside: pg_dump's own ordering for this archive already
+worked. Pinning it means that stays true instead of being a coincidence.)
+
+The script refuses an archive carrying tables it does not know, refuses one
+carrying schema objects, refuses a database that is not migrated, refuses a
+database that already has rows, and verifies counts, foreign keys, the
+`incline_direction` check and geometry validity before reporting success.
+
+### Approximating a managed database locally
+
+Managed PostgreSQL gives you a role that owns its databases and is not a
+superuser — DigitalOcean's is `doadmin`. These three statements, run by the
+platform's own admin, are what the platform does for you; everything after
+them is done as the restricted role:
+
+```bash
+docker exec pathable-envelope-db-1 psql -U pathable -d postgres \
+  -c "create role pathable_app login password '<local placeholder>' \
+      nosuperuser nocreatedb nocreaterole nobypassrls noreplication noinherit" \
+  -c "create database pathable_managed owner pathable_app"
+# The platform installs PostGIS; CREATE EXTENSION is superuser-only in vanilla
+# PostgreSQL, and migration 0001 uses CREATE EXTENSION IF NOT EXISTS so an
+# ordinary owner can run the migrations afterwards.
+docker exec pathable-envelope-db-1 psql -U pathable -d pathable_managed \
+  -c "create extension if not exists postgis"
+
+# Migrate as the restricted role, then restore as it.
+docker run --rm --network pathable-envelope_default \
+  -e DATABASE_URL="postgresql+psycopg://pathable_app:<password>@db:5432/pathable_managed" \
+  --entrypoint sh pathable-envelope-api:local -c 'cd /app && alembic upgrade head'
+```
+
+Point the API at it with `ENVELOPE_DATABASE_URL` and the rest of this guide
+works unchanged.
+
+### What the recorded run produced
+
+Dump 31,240,046 bytes, SHA-256
+`20d3ad955636f56e5700c6627ccfa2eafa7f023f29bd6449e674c0794bff5e7e`. Migration
+from zero as the restricted role 6.1 s; restore 18 s; 33.9 s end to end
+including verification. Dataset `51585450-8ff5-409d-a02e-66d5a3c5e260`,
+checksum `51e75f78…d2e906`, 155,714 nodes and 180,554 segments — 361,108
+directed edges once loaded, matching what the API builds. Zero orphaned rows,
+zero invalid geometries, all four foreign keys and all twelve check
+constraints in place, PostGIS 3.5.2, 186 MB. The synthetic fixture rows ride
+along because they live in the same tables; they are 9 nodes and 13 segments
+in their own region. Keep the dump outside the repository and delete it
+afterwards.
 
 ## 3. Measure
 
@@ -149,16 +204,37 @@ before reading the output:
   the sum of each process's own lifetime peak (VmHWM), which cannot be missed
   by sampling.
 
-## 4. Smoke the web image
+## 4. Measure the web container
+
+The frontend has its own harness, because its hosting tier is a separate
+question from the API's and a much smaller one:
 
 ```bash
-docker compose -f infra/production-smoke/compose.yaml up -d web
-curl -s http://127.0.0.1:3001/api/healthz
-curl -s -o /dev/null -w '%{http_code} %{size_download}\n' http://127.0.0.1:3001/
+python infra/production-smoke/measure_web.py --runs 3 --memory-limit 512m \
+  --json docs/evidence/production-envelope.json --append
 ```
 
+Each run recreates the web service alone and checks that it becomes healthy,
+serves the landing page, keeps its security headers, carries the right baked
+API origin, runs the production standalone server rather than a dev server,
+and is never OOM-killed or restarted — recording container RSS and the cgroup
+figure throughout. A run that fails any of those is recorded as failed with
+the reason; the script exits non-zero if any did.
+
+Then drive the real browser through the containers:
+
+```bash
+FULLSTACK_TARGET=compose FULLSTACK_WEB_URL=http://localhost:3001 \
+FULLSTACK_API_URL=http://localhost:8001 \
+  pnpm --filter @pathable/web exec playwright test --config=playwright.fullstack.config.ts
+```
+
+That is the only configuration where the request path is
+`browser -> web container -> api container -> postgis container`.
+
 The web image is Next.js standalone output served by `node apps/web/server.js`
-as uid 10001, with npm and corepack removed; the map worker is in
+as uid 10001, with npm, corepack and the Next CLI removed — so a development
+server cannot be started in it. The map worker is in
 `apps/web/public/maplibre/`. Its `NEXT_PUBLIC_API_BASE_URL` is baked at build
 time, so the image is specific to the API origin it was built for.
 

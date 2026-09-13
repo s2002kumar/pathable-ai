@@ -336,3 +336,29 @@ with no use for the number yet would be building ahead of need.
 **Check when:** a second source of evidence arrives — user reports, or model
 predictions — at which point "how old is this claim" becomes a question the
 product must answer about more than one thing at once.
+
+---
+
+## KI-8 — The managed-hosting bootstrap is proven against a stand-in, not a provider
+
+**Status: Open** · 2026-09-12
+
+The dataset restore no longer needs a PostgreSQL superuser. It was demonstrated
+against a role created to look like the one a managed service hands out —
+`superuser=f createdb=f createrole=f bypassrls=f replication=f`, owning its own
+database, with PostGIS installed by the platform's admin beforehand — and the
+old `pg_restore --disable-triggers` command was run as that role first, failing
+with `permission denied: "RI_ConstraintTrigger_a_21027" is a system trigger`,
+which is what would have happened on the provider.
+
+**That is a stand-in, not the thing itself.** A real managed database differs
+in ways this cannot rehearse: the exact grants DigitalOcean gives `doadmin`,
+whether `CREATE EXTENSION postgis` is permitted directly or must go through
+their console, connection limits and pooler behaviour under `pgbouncer`,
+whether an idle transaction is cut short mid-restore, and how long a 31 MB
+archive takes over the network rather than over a loopback socket. Any of those
+could need a change to
+[`infra/production-smoke/restore-dataset.sh`](../../infra/production-smoke/restore-dataset.sh).
+
+**Check when:** the first real managed database exists. Run the script against
+it before believing the bootstrap works, and record what differed.
