@@ -1,0 +1,109 @@
+# Claims ledger
+
+Every claim worth making about PathAble, with the exact wording that is supportable, the evidence behind it, and
+the overstatement it is one word away from. If a sentence about this project is not in this file, it has not been
+checked.
+
+**Measured against** `main` at the commit this document ships on, dataset
+`51585450-8ff5-409d-a02e-66d5a3c5e260`, checksum `51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906`.
+Every wall-clock figure was produced on one Windows laptop under memory pressure and is a shape, not a service
+level.
+
+---
+
+## 1. What the system is
+
+| #   | Say this                                                                                                          | Evidence                                                                                              | Conditions                                                                     | Never say                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| 1.1 | "Accessibility-aware pedestrian routing over a real 180,554-segment OpenStreetMap network for Waterloo, Ontario." | [evidence index](evidence/README.md)                                                                  | One city. Pilot region is configurable but has only ever been run on Waterloo. | "Covers Ontario / Canada / multiple cities."                                        |
+| 1.2 | "Deterministic rules over recorded map attributes. No machine learning."                                          | `ml_predictions_used: false` on every response, typed as a literal                                    | —                                                                              | "AI-powered", "ML-driven", "intelligent routing", "learns".                         |
+| 1.3 | "It advises; it does not certify."                                                                                | [PHASES.md](product/PHASES.md) standing rules                                                         | —                                                                              | "Certified accessible", "safe route", "guaranteed passable", "verified accessible". |
+| 1.4 | "Missing accessibility data is reported as unknown and penalised, never treated as a clear path."                 | Cost model [ADR 0008](adr/0008-accessibility-cost-model.md); UI asserted in `recruiter-demo.test.tsx` | —                                                                              | "Solves missing accessibility data", "complete accessibility data".                 |
+
+## 2. Data and ingestion
+
+| #   | Say this                                                                                                                                                        | Evidence                                                                                                   | Conditions                                                                             | Never say                                           |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 2.1 | "155,714 nodes, 180,554 physical segments, 361,108 directed routing edges."                                                                                     | [`production-envelope.json`](evidence/production-envelope.json) → `managed_restore.verified_after_restore` | One dataset version. Directed edges are derived: 2 per two-way segment, 1 per one-way. | Quoting directed edges as "segments" or vice versa. |
+| 2.2 | "Ingested from a published Geofabrik extract whose publisher MD5 matched, with a content checksum over the network."                                            | [evidence index](evidence/README.md)                                                                       | —                                                                                      | "Real-time OSM sync."                               |
+| 2.3 | "Elevation from NRCan HRDEM 1 m LiDAR, chosen by measuring that a 30 m model's error exceeds the signal (RMSE 4.06 pp against a 1.78% median grade over 50 m)." | [`DATA_SOURCES.md` §5](licensing/DATA_SOURCES.md)                                                          | Bare-earth model; cannot see ramps or steps.                                           | "Surveyed gradients", "measured slope on the path". |
+| 2.4 | "OSM records an `incline` on 0.03% of segments — 46 of 180,554 — which is why elevation was a gate requirement."                                                | [`waterloo-coverage.json`](evidence/waterloo-coverage.json)                                                | —                                                                                      | Implying gradient is well covered anywhere.         |
+| 2.5 | "A dataset is immutable once activated; ingestion writes a new version and swaps activation in one transaction, enforced by a database constraint."             | `geo/datasets.py`, migration `0002`                                                                        | —                                                                                      | "Zero-downtime data updates" (untested under load). |
+
+## 3. Routing
+
+| #   | Say this                                                                                                                           | Evidence                                                                                                                       | Conditions                                     | Never say                                      |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- | ---------------------------------------------- |
+| 3.1 | "Verified example: 287.4 m with 4 stairways against 354.1 m with none — 66.67 m and 23% longer to avoid them."                     | [`waterloo-routes.json`](evidence/waterloo-routes.json), journey `campus-library-to-student-life`; reproduced live in the demo | One journey, wheelchair profile.               | Presenting it as typical of all journeys.      |
+| 3.2 | "Across a 20-journey corpus fixed before any route was computed: 18 route differently, 1 has no route at all, median detour 70 m." | [`waterloo-routes.json`](evidence/waterloo-routes.json)                                                                        | 20 journeys chosen by the author, not sampled. | "Validated on real user journeys", "20 users". |
+| 3.3 | "Dijkstra and A\* agree on optimal cost on every routable journey."                                                                | [`waterloo-routes.json`](evidence/waterloo-routes.json) → `algorithms`                                                         | —                                              | "Proven optimal" beyond this corpus.           |
+| 3.4 | "A\* expands 1,970 nodes at the median against Dijkstra's 7,409, and is _not_ faster: 195 ms against 213 ms at p50."               | [`waterloo-performance.json`](evidence/waterloo-performance.json)                                                              | One machine.                                   | "A\* made routing faster."                     |
+| 3.5 | "Route p50 is around 200 ms warm on a laptop."                                                                                     | [`waterloo-performance.json`](evidence/waterloo-performance.json)                                                              | Laptop, single process, warm graph.            | "200 ms production latency", any SLA.          |
+| 3.6 | "The no-route case is real: Rim Park is in a separate 1,887-node component because its connection leaves the pilot bounding box."  | [`waterloo-routes.json`](evidence/waterloo-routes.json)                                                                        | —                                              | Describing it as a bug, or hiding it.          |
+
+## 4. Performance work
+
+| #   | Say this                                                                                                                                                | Evidence                                                                                                                                                                         | Conditions                                                                                    | Never say                                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 4.1 | "Profiling identified SQLAlchemy ORM entity construction as the graph-load bottleneck: 147.5 s against 5.0 s for the same rows as narrow Core columns." | Commit `63743e9` message; [`waterloo-graph-load-before.json`](evidence/waterloo-graph-load-before.json)                                                                          | Isolated read, one machine.                                                                   | —                                                   |
+| 4.2 | "Graph load: median 46.83 s → 22.14 s; peak Python heap 1,381.3 MB → 700.7 MB, a 49% reduction."                                                        | [`waterloo-graph-load.json`](evidence/waterloo-graph-load.json) vs [`-before.json`](evidence/waterloo-graph-load-before.json), both from the committed `pathable benchmark load` | Same laptop, same afternoon, under 10% free memory. Heap is exact; wall-clock is a direction. | Quoting the times as production cold-start figures. |
+| 4.3 | "Proven to change no route: identical node and segment SHA-256 fingerprints, identical answers on all 20 journeys."                                     | Fingerprints in both benchmark files                                                                                                                                             | —                                                                                             | —                                                   |
+| 4.4 | "KI-6 is still open — ~1 GB resident per worker is the dominant hosting cost."                                                                          | [KI-6](development/KNOWN_ISSUES.md)                                                                                                                                              | —                                                                                             | "Solved the memory problem."                        |
+
+## 5. Production readiness
+
+| #   | Say this                                                                                                                                                               | Evidence                                                                                                  | Conditions                                                       | Never say                                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------- |
+| 5.1 | "Measured the production containers from an empty database: one API worker is routable 18.7 s after start, holds 997 MB steady and peaks at 1,064 MB."                 | [`production-envelope.json`](evidence/production-envelope.json)                                           | 11 cold starts, one laptop, host under memory pressure.          | "Production-ready", "production capacity".        |
+| 5.2 | "The graph is duplicated per worker: two workers measured 2.04 GB resident."                                                                                           | same                                                                                                      | —                                                                | —                                                 |
+| 5.3 | "The frontend runs in 512 MiB with 92% headroom across three cold starts and a browser suite."                                                                         | same → `web_batches`                                                                                      | —                                                                | —                                                 |
+| 5.4 | "Migration from an empty database, idempotent re-run, and safe failure on a bad revision are all verified."                                                            | [PRODUCTION_SMOKE.md](deployment/PRODUCTION_SMOKE.md)                                                     | —                                                                | "Zero-downtime migrations."                       |
+| 5.5 | "The dataset bootstrap works without a PostgreSQL superuser, verified against a restricted role after showing the obvious `--disable-triggers` approach fails on one." | [`restore-dataset.sh`](../infra/production-smoke/restore-dataset.sh); [KI-8](development/KNOWN_ISSUES.md) | Proven against a stand-in role, **not** a real managed provider. | "Verified on DigitalOcean."                       |
+| 5.6 | "A costed deployment architecture at USD 45.15 / CAD 62.61 a month, compared across four providers from official pricing."                                             | [ADR 0009](adr/0009-deployment-architecture.md), sources accessed 2026-09-11                              | Proposal only.                                                   | "We deploy on DigitalOcean", "hosted in Toronto". |
+
+## 6. Engineering practice
+
+| #   | Say this                                                                                                                                             | Evidence                                                                                                              | Conditions                         | Never say                                  |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------ |
+| 6.1 | "727 backend tests (unit + real-PostGIS integration) at 89.13% coverage against an 86% floor; 220 frontend unit; 80 stubbed browser; 16 full-stack." | CI on `main`                                                                                                          | Suites overlap; report separately. | One combined total.                        |
+| 6.2 | "Integration tests run against real PostgreSQL/PostGIS in a throwaway database, never a mock."                                                       | `tests/integration/conftest.py`                                                                                       | —                                  | —                                          |
+| 6.3 | "Contract drift is a CI failure: Pydantic → OpenAPI → TypeScript, regenerated and byte-compared."                                                    | `scripts/contracts.mjs`, CI job                                                                                       | —                                  | —                                          |
+| 6.4 | "A security workflow runs dependency audits, container scans and a full-history secret scan."                                                        | `.github/workflows/security.yml`; [public-release safety gate](security/PUBLIC_RELEASE_SAFETY.md)                     | —                                  | "Security audited" / "penetration tested". |
+| 6.5 | "A geometry inspection found a bug that produced plausible numbers attached to a wrong line — 12 of 19 routes drew discontinuously."                 | [`waterloo-geometry-inspection.json`](evidence/waterloo-geometry-inspection.json); [defence §16a](PROJECT_DEFENSE.md) | —                                  | —                                          |
+
+## 7. The demo
+
+| #   | Say this                                                                                            | Evidence                                                                                                         | Conditions                          | Never say                            |
+| --- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
+| 7.1 | "A 67-second recording of the real production containers answering a real request."                 | [`pathable-demo.webm`](evidence/media/pathable-demo.webm); [provenance](evidence/screenshots/DEMO_PROVENANCE.md) | Local containers. Not a deployment. | "Live demo", "try it here", any URL. |
+| 7.2 | "One press, under three seconds from page load to the comparison on screen."                        | [DEMO_SCRIPT.md](evidence/DEMO_SCRIPT.md)                                                                        | Laptop, warm graph.                 | "Sub-second".                        |
+| 7.3 | "The demo preset supplies coordinates and a profile only; a test asserts it carries no route data." | `recruiter-demo.test.tsx`                                                                                        | —                                   | —                                    |
+
+---
+
+## Prohibited claims
+
+Not "avoid" — **prohibited**. Each is false today, and several would be harmful.
+
+| Claim                                                 | Why it is false                                                                              |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Deployed / live / hosted / "try it at…"               | No hosting account, no URL, no provisioned resource.                                         |
+| Real users, adoption, traffic, "used by…"             | Nobody outside this repository has used it.                                                  |
+| Production latency, throughput, capacity, uptime, SLA | Every figure is one laptop. The concurrency probe was six requests per client.               |
+| High availability                                     | Single node everywhere in the proposal; nothing is redundant.                                |
+| Accessibility certified / safe / guaranteed passable  | It advises. Two routing errors are not symmetric, and this is the dangerous one.             |
+| Scientifically validated accessibility model          | The cost weights are engineering judgement, never validated against real mobility-aid users. |
+| Machine learning / AI-powered / predictive            | Gate C is not started. Every response says `ml_predictions_used: false`.                     |
+| Solved missing accessibility data                     | It _reports_ the gap. On the demo journey the gap is 100%.                                   |
+| Coverage beyond Waterloo                              | One region, one dataset.                                                                     |
+| Open source                                           | Source-visible, all rights reserved. See [`LICENSING.md`](../LICENSING.md).                  |
+| "Fully tested" / "100% coverage"                      | 89.13% backend, 92.83% frontend statements, with named gaps.                                 |
+| On-the-ground verified routes                         | Nobody has walked them.                                                                      |
+
+## Wording that is safe by construction
+
+- "Locally validated production-container build" — not "production deployment".
+- "Recorded demo" or "local production-build demo" — never "live demo".
+- "Measured on one laptop under memory pressure" — attached to every wall-clock figure.
+- "Proposed" — attached to every sentence about hosting.
+- "Reports unknown" — never "handles" or "resolves" unknown.
