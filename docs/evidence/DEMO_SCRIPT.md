@@ -81,6 +81,19 @@ reproducible without a click. It is a preset for the inputs only — there is no
 recorded response anywhere in the application, and the full-stack suite asserts
 that the figures on screen are the ones the API returned.
 
+## Where the demo is tested
+
+The demo journey has its own full-stack suite,
+`apps/web/tests/fullstack/recruiter-demo.spec.ts`, which drives a real browser
+through the containers, watches the network, and checks that the figures on
+screen are the ones the API returned.
+
+It needs the real Waterloo network. CI loads the nine-node synthetic fixture —
+ingesting a 970 MB extract on every pull request would be absurd — so these
+tests **skip in CI with a printed reason** and run here, against the stack
+above. Everything that does not need Waterloo, including the whole unit suite
+and the stubbed browser suite, runs in CI as usual.
+
 ## The manual path still works
 
 The example is a shortcut, not a replacement. Press **Clear**, then click the map
