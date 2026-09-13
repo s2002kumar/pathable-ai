@@ -86,6 +86,13 @@ class Settings(BaseSettings):
     #: responsible for the traffic instead of blocking it.
     geocoding_contact: str = ""
 
+    # --- Routing graph ----------------------------------------------------
+    #: Regions whose active graph is loaded at startup, so readiness stays
+    #: false until they can actually be routed over. Empty, the default, keeps
+    #: the lazy behaviour: a graph loads on the first request that needs it.
+    #: A deployment should set this; a developer's machine need not.
+    graph_preload_regions: Annotated[tuple[str, ...], NoDecode] = ()
+
     # --- Observability ----------------------------------------------------
     log_level: LogLevel = "INFO"
     log_format: LogFormat = "json"
@@ -118,6 +125,25 @@ class Settings(BaseSettings):
             msg = "API_HOST must be a non-empty value without whitespace"
             raise ValueError(msg)
         return host
+
+    @field_validator("graph_preload_regions", mode="before")
+    @classmethod
+    def _parse_preload_regions(cls, value: object) -> object:
+        if isinstance(value, str):
+            return tuple(_split_csv(value))
+        return value
+
+    @field_validator("graph_preload_regions", mode="after")
+    @classmethod
+    def _validate_preload_regions(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        for slug in value:
+            if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", slug):
+                msg = (
+                    f"Invalid region slug {slug!r} in GRAPH_PRELOAD_REGIONS: expected "
+                    f"lowercase letters, digits and hyphens (for example waterloo)"
+                )
+                raise ValueError(msg)
+        return tuple(dict.fromkeys(value))
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

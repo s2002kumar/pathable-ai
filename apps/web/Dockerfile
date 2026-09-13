@@ -74,6 +74,13 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
+# Debian security updates at build time, for the same reason as the API image:
+# the base image's rebuild cadence is not ours, and the scan is.
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --gid 10001 pathable \
     && useradd --uid 10001 --gid 10001 --create-home --shell /usr/sbin/nologin pathable
 

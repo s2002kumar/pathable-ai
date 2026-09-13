@@ -6,7 +6,7 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Response
 
-from pathable_api.api.deps import DatabaseDep, SettingsDep
+from pathable_api.api.deps import DatabaseDep, SettingsDep, WarmupDep
 from pathable_api.db.health import check_dependencies, is_ready
 from pathable_api.schemas.health import (
     DependencyCheck,
@@ -45,8 +45,9 @@ async def liveness(settings: SettingsDep) -> LivenessResponse:
     summary="Readiness probe",
     description=(
         "Reports whether this instance should receive traffic. Probes PostgreSQL "
-        "connectivity and PostGIS availability under a bounded timeout. Returns 200 "
-        "when ready and 503 when not; the body shape is identical in both cases."
+        "connectivity and PostGIS availability under a bounded timeout, and reports "
+        "whether every preloaded routing graph is loaded. Returns 200 when ready and "
+        "503 when not; the body shape is identical in both cases."
     ),
     operation_id="getReadiness",
     responses={
@@ -59,6 +60,7 @@ async def liveness(settings: SettingsDep) -> LivenessResponse:
 async def readiness(
     settings: SettingsDep,
     database: DatabaseDep,
+    warmup: WarmupDep,
     response: Response,
 ) -> ReadinessResponse:
     if database is None:
@@ -70,6 +72,10 @@ async def readiness(
         checks = await check_dependencies(
             database.engine, timeout_seconds=settings.readiness_timeout_seconds
         )
+
+    # The graph line comes from the lifespan's preload state, not from a probe:
+    # a graph that is still loading is a fact about this process, not the database.
+    checks = checks.model_copy(update={"graph": warmup.check()})
 
     ready = is_ready(checks)
     response.status_code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE

@@ -68,6 +68,11 @@ class TestReadinessResponse:
             "checks": {
                 "database": {"status": "ok", "detail": "connected", "latency_ms": 4.21},
                 "postgis": {"status": "ok", "detail": "postgis 3.4.2", "latency_ms": 1.08},
+                "graph": {
+                    "status": "ok",
+                    "detail": "graphs load on first request; no regions configured for preload",
+                    "latency_ms": None,
+                },
             },
         }
 

@@ -39,6 +39,7 @@ SETTINGS_ENV_VARS = (
     "LOG_FORMAT",
     "GEOCODING_PROVIDER",
     "GEOCODING_CONTACT",
+    "GRAPH_PRELOAD_REGIONS",
 )
 
 
@@ -80,6 +81,7 @@ def build_settings(
     log_format: LogFormat = "console",
     geocoding_provider: GeocodingProviderName = "none",
     geocoding_contact: str = "",
+    graph_preload_regions: tuple[str, ...] = (),
 ) -> Settings:
     """Construct settings for a test, ignoring the ambient environment."""
     return Settings(
@@ -96,6 +98,7 @@ def build_settings(
         log_format=log_format,
         geocoding_provider=geocoding_provider,
         geocoding_contact=geocoding_contact,
+        graph_preload_regions=graph_preload_regions,
     )
 
 

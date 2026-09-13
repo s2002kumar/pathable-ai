@@ -64,7 +64,7 @@ export interface paths {
         };
         /**
          * Readiness probe
-         * @description Reports whether this instance should receive traffic. Probes PostgreSQL connectivity and PostGIS availability under a bounded timeout. Returns 200 when ready and 503 when not; the body shape is identical in both cases.
+         * @description Reports whether this instance should receive traffic. Probes PostgreSQL connectivity and PostGIS availability under a bounded timeout, and reports whether every preloaded routing graph is loaded. Returns 200 when ready and 503 when not; the body shape is identical in both cases.
          */
         get: operations["getReadiness"];
         put?: never;
@@ -514,6 +514,14 @@ export interface components {
         ReadinessChecks: {
             /** @description PostgreSQL connectivity. */
             database: components["schemas"]["DependencyCheck"];
+            /**
+             * @description Routing-graph state. When GRAPH_PRELOAD_REGIONS is set, 'ok' only once every configured region's graph is loaded and routable; a region with no active dataset or a failed load keeps the instance not ready. Without preload, graphs load on the first request and this check is always 'ok'.
+             * @default {
+             *       "detail": "graphs load on first request; no regions configured for preload",
+             *       "status": "ok"
+             *     }
+             */
+            graph: components["schemas"]["DependencyCheck"];
             /** @description PostGIS extension availability. */
             postgis: components["schemas"]["DependencyCheck"];
         };
@@ -528,6 +536,11 @@ export interface components {
          *         "database": {
          *           "detail": "connected",
          *           "latency_ms": 4.21,
+         *           "status": "ok"
+         *         },
+         *         "graph": {
+         *           "detail": "waterloo: 155714 nodes, 180554 segments loaded in 21.3 s",
+         *           "latency_ms": 21300,
          *           "status": "ok"
          *         },
          *         "postgis": {

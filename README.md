@@ -243,6 +243,19 @@ uv run pathable evaluate --region waterloo --profile wheelchair --algorithms --a
 Results from the live dataset are kept in
 [`docs/evidence/`](docs/evidence/README.md).
 
+### Running the production images
+
+```bash
+docker compose -f infra/production-smoke/compose.yaml up --build -d
+```
+
+An isolated stack — its own project name, database volume and ports — that
+runs the real API and web images with `ENVIRONMENT=production` and loads the
+pilot region's graph at startup. [`docs/deployment/PRODUCTION_SMOKE.md`](docs/deployment/PRODUCTION_SMOKE.md)
+walks through migrating an empty database, populating the Waterloo dataset,
+and measuring what the containers need; the numbers and the hosting decision
+they led to are in [ADR 0009](docs/adr/0009-deployment-architecture.md).
+
 ### Measuring routing performance
 
 ```bash

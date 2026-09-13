@@ -23,6 +23,7 @@ from pathable_api.core.request_context import REQUEST_ID_HEADER
 from pathable_api.db.session import Database, build_database
 from pathable_api.geo.geocoding import build_geocoder
 from pathable_api.routing.graph import GraphRepository
+from pathable_api.routing.warmup import GraphWarmup
 
 logger = get_logger(__name__)
 
@@ -112,9 +113,25 @@ def _build_lifespan(
                 "Liveness is unaffected."
             )
 
+        # Preloading runs in the background so liveness answers at once; readiness
+        # reports "loading" until every configured region is routable. See
+        # routing/warmup.py for why a deployment wants this and development does not.
+        warmup = GraphWarmup.for_regions(settings.graph_preload_regions)
+        app.state.graph_warmup = warmup
+        if warmup.configured:
+            if app.state.database is None:
+                warmup.fail_without_database()
+            else:
+                logger.info(
+                    "Preloading routing graphs",
+                    extra={"regions": list(settings.graph_preload_regions)},
+                )
+                warmup.start(app.state.database, app.state.graph_repository)
+
         try:
             yield
         finally:
+            await warmup.stop()
             database: Database | None = getattr(app.state, "database", None)
             if database is not None:
                 await database.dispose()
