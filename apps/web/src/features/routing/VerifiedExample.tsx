@@ -22,8 +22,31 @@ export type VerifiedExampleCardProps = {
  * regresses.
  */
 export function VerifiedExampleCard({ example, onRun, active, busy }: VerifiedExampleCardProps) {
+  // Once the example has been run, the answer is directly below this card and
+  // needs the room. The card keeps its button and its provenance, and loses the
+  // paragraph explaining an offer the viewer has already accepted.
+  if (active) {
+    return (
+      <section className={styles.exampleCompact} data-testid="verified-example" data-active="true">
+        <p className={styles.exampleDetail} id="verified-example-detail">
+          <strong>Example journey:</strong> {example.originLabel} to {example.destinationLabel}.{' '}
+          {example.provenance} Computed live.
+        </p>
+        <button
+          type="button"
+          className={styles.exampleButtonQuiet}
+          onClick={() => onRun(example)}
+          data-testid="run-verified-example"
+          aria-describedby="verified-example-detail"
+        >
+          {busy ? 'Comparing…' : 'Run it again'}
+        </button>
+      </section>
+    );
+  }
+
   return (
-    <section className={styles.example} data-testid="verified-example" data-active={active}>
+    <section className={styles.example} data-testid="verified-example" data-active="false">
       <h3 className={styles.exampleTitle}>New here?</h3>
       <p className={styles.exampleBody}>
         Load a journey from our published evaluation corpus and compare a wheelchair route against
@@ -36,7 +59,7 @@ export function VerifiedExampleCard({ example, onRun, active, busy }: VerifiedEx
         data-testid="run-verified-example"
         aria-describedby="verified-example-detail"
       >
-        {active && busy ? 'Comparing…' : 'Try a wheelchair route example'}
+        Try a wheelchair route example
       </button>
       <p className={styles.exampleDetail} id="verified-example-detail">
         {example.originLabel} to {example.destinationLabel}. {example.description}.{' '}

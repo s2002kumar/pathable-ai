@@ -133,6 +133,30 @@ test.describe('the recruiter demo', () => {
     await expect(unknown).not.toContainText(/\b(verified|safe|guaranteed|confident)\b/i);
   });
 
+  test('the incompleteness of the data is visible without scrolling', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+    await runExample(page);
+
+    const summary = page.getByTestId('uncertainty-summary');
+    await expect(summary).toBeVisible();
+    await expect(summary).toContainText('Accessibility data is incomplete');
+    await expect(summary).not.toContainText(/(safe|verified|confident|guaranteed)/i);
+
+    // Visible is not the same as in the viewport: the panel scrolls, and an
+    // element below the fold still reports itself visible to Playwright.
+    const inViewport = await summary.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+    });
+    expect(inViewport).toBe(true);
+
+    // And the fuller explanation is still there, further down.
+    await expect(page.getByTestId('difference-unknown')).toContainText(
+      /missing information, not a clear path/i,
+    );
+  });
+
   test('both routes are drawn, and the key names them in words', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
@@ -223,6 +247,15 @@ test.describe('the demo on a phone', () => {
 
     const difference = page.getByTestId('route-difference');
     await expect(difference).toBeVisible();
+
+    // The uncertainty line has to survive the narrow viewport too.
+    const summary = page.getByTestId('uncertainty-summary');
+    await expect(summary).toContainText('Accessibility data is incomplete');
+    const inViewport = await summary.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+    });
+    expect(inViewport).toBe(true);
 
     // Nothing may overflow the viewport sideways: a horizontal scrollbar on a
     // phone is how a comparison becomes unreadable.

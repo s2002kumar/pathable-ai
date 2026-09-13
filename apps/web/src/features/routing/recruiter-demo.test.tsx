@@ -254,6 +254,55 @@ describe('why the routes differ', () => {
     expect(screen.getByText('Not recorded')).toBeInTheDocument();
   });
 
+  it('says the data is incomplete before a viewer has scrolled anywhere', () => {
+    // The distances are the flattering half of the answer. This is the other
+    // half, in the same glance — the detailed per-category version is further
+    // down the panel and below the fold on both demo viewports.
+    render(<RouteDifference comparison={CAMPUS_RESPONSE} />);
+
+    const summary = screen.getByTestId('uncertainty-summary');
+    expect(summary).toHaveAttribute('data-complete', 'false');
+    expect(summary).toHaveTextContent('Accessibility data is incomplete');
+    expect(summary).toHaveTextContent('100% of this route');
+    expect(summary).toHaveTextContent(/unrecorded is not the same as clear/i);
+    expect(summary).not.toHaveTextContent(/(safe|verified|confident|guaranteed)/i);
+  });
+
+  it('reports the largest gap when the route is not wholly unrecorded', () => {
+    const partly = {
+      ...CAMPUS_RESPONSE,
+      accessible_route: {
+        ...CAMPUS_RESPONSE.accessible_route,
+        unknown_data_fraction: 0,
+        evidence_coverage: { surface: 0.12, smoothness: 0.61, gradient: 0.2 },
+      },
+    } as unknown as RouteCompareResponse;
+
+    render(<RouteDifference comparison={partly} />);
+
+    const summary = screen.getByTestId('uncertainty-summary');
+    expect(summary).toHaveTextContent(/surface condition/i);
+    expect(summary).toHaveTextContent('61%');
+  });
+
+  it('says so plainly when nothing is missing, without claiming more', () => {
+    const complete = {
+      ...CAMPUS_RESPONSE,
+      accessible_route: {
+        ...CAMPUS_RESPONSE.accessible_route,
+        unknown_data_fraction: 0,
+        evidence_coverage: {},
+      },
+    } as unknown as RouteCompareResponse;
+
+    render(<RouteDifference comparison={complete} />);
+
+    const summary = screen.getByTestId('uncertainty-summary');
+    expect(summary).toHaveAttribute('data-complete', 'true');
+    expect(summary).toHaveTextContent(/every accessibility category .* is recorded/i);
+    expect(summary).not.toHaveTextContent(/(safe|accessible route|verified|guaranteed)/i);
+  });
+
   it('never presents missing data as a clear path', () => {
     render(<RouteDifference comparison={CAMPUS_RESPONSE} />);
 

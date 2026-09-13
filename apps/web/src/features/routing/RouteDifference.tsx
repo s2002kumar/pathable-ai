@@ -1,8 +1,58 @@
 'use client';
 
-import type { RouteCompareResponse } from '@pathable/contracts';
+import type { Route, RouteCompareResponse } from '@pathable/contracts';
 import { formatDistance } from './types';
 import styles from './RoutePlanner.module.css';
+
+/** How each category reads when it is the largest gap on a route. */
+const GAP_NAMES: Readonly<Record<string, string>> = {
+  surface: 'surface',
+  smoothness: 'surface condition',
+  gradient: 'gradient',
+  width: 'path width',
+  kerb: 'kerb',
+};
+
+/**
+ * One line, above the fold, saying how much of this route the map is silent
+ * about.
+ *
+ * The detailed version is further down the panel and is the better answer —
+ * per category, with the sentence about what missing data does and does not
+ * mean. But it is below the fold on both the viewports the demo is given at,
+ * and a viewer who reads only the distances has been told the most flattering
+ * half of the story. This is the unflattering half, in the same glance.
+ *
+ * It is deliberately not a score. "38% unknown" as a headline number invites
+ * being read as a confidence rating, so the wording names the thing that is
+ * missing and states plainly that an absence is not a clearance.
+ */
+function UncertaintySummary({ route }: { readonly route: Route }) {
+  const unknownShare = route.unknown_data_fraction ?? 0;
+  const coverage = route.evidence_coverage ?? {};
+  const [largestGap] =
+    Object.entries(coverage)
+      .filter(([category, share]) => share > 0 && category in GAP_NAMES)
+      .sort(([, a], [, b]) => b - a) ?? [];
+
+  if (unknownShare <= 0 && largestGap === undefined) {
+    return (
+      <p className={styles.uncertainty} data-testid="uncertainty-summary" data-complete="true">
+        Every accessibility category this route touches is recorded in OpenStreetMap.
+      </p>
+    );
+  }
+
+  return (
+    <p className={styles.uncertainty} data-testid="uncertainty-summary" data-complete="false">
+      <strong>Accessibility data is incomplete.</strong>{' '}
+      {unknownShare > 0
+        ? `OpenStreetMap records no accessibility detail for ${Math.round(unknownShare * 100)}% of this route`
+        : `The biggest gap is ${GAP_NAMES[largestGap![0]]}, missing for ${Math.round(largestGap![1] * 100)}% of this route`}
+      . Unrecorded is not the same as clear.
+    </p>
+  );
+}
 
 /**
  * The answer to the only question the comparison exists to answer.
@@ -46,6 +96,8 @@ export function RouteDifference({ comparison }: { readonly comparison: RouteComp
       <h3 className={styles.differenceHeading} id="route-difference-heading">
         Why are they different?
       </h3>
+
+      <UncertaintySummary route={accessible} />
 
       <dl className={styles.differenceFigures}>
         <div className={styles.differenceFigure} data-testid="difference-shortest">
