@@ -1,7 +1,7 @@
 # ADR 0009 — Deployment architecture, sized from the measured production envelope
 
-- **Status**: Proposed — awaiting the founder's provider and cost approval
-- **Date**: 2026-09-11
+- **Status**: Proposed — architecture settled from measurements; **no spending approved**
+- **Date**: 2026-09-11, revised 2026-09-12 (frontend tier measured, managed-hosting restore)
 - **Related**: [0004 PostGIS and the runtime graph](0004-postgis-and-runtime-graph.md),
   [0005 map and geocoding providers](0005-map-and-geocoding-providers.md),
   [KI-6](../development/KNOWN_ISSUES.md), [production smoke procedure](../deployment/PRODUCTION_SMOKE.md),
@@ -177,13 +177,13 @@ here, into an empty database, once.
 
 ## The envelope, stated
 
-| Quantity                              | Measured                       | Sized with 30% headroom | Tier to buy                                   |
-| ------------------------------------- | ------------------------------ | ----------------------- | --------------------------------------------- |
-| API memory, one worker                | 1,083 MB peak, 997 MB steady   | 1.41 GB                 | **2 GB**                                      |
-| API memory, two workers               | 2,165 MB peak, 2,057 MB steady | 2.81 GB                 | **4 GB**                                      |
-| API cold start to ready (this laptop) | 18.7 s median, 44 s worst      | —                       | Readiness must gate traffic; no scale-to-zero |
-| Database                              | 190 MB, 3× transient           | 1 GB RAM is ample       | Smallest managed PostGIS plan                 |
-| Web                                   | 86 MB resident                 | —                       | Smallest tier, or static hosting if exported  |
+| Quantity                                   | Measured                                              | Sized with 30% headroom | Tier to buy                                   |
+| ------------------------------------------ | ----------------------------------------------------- | ----------------------- | --------------------------------------------- |
+| API memory, one worker                     | 1,083 MB peak, 997 MB steady                          | 1.41 GB                 | **2 GB**                                      |
+| API memory, two workers                    | 2,165 MB peak, 2,057 MB steady                        | 2.81 GB                 | **4 GB**                                      |
+| API cold start to ready (this laptop)      | 18.7 s median, 44 s worst                             | —                       | Readiness must gate traffic; no scale-to-zero |
+| Database                                   | 190 MB, 3× transient                                  | 1 GB RAM is ample       | Smallest managed PostGIS plan                 |
+| Web, three cold starts under a 512 MiB cap | 88 MB peak, 86 MB steady; 93 MB after browser traffic | 512 MiB leaves 92% free | **512 MiB** (measured below)                  |
 
 Rejected on these numbers, before price is considered:
 
@@ -202,6 +202,40 @@ Rejected on these numbers, before price is considered:
   is 190 MB today and 544 MB while loading; Render's free Postgres expires
   after 30 days).
 
+### The frontend tier, measured rather than assumed
+
+PA-RR-03 sized the web service at 1 GiB on the strength of one observation.
+Three clean cold starts of the real image under a hard 512 MiB cap, each
+recreated from scratch against the running API:
+
+|                                     |              run 1 |             run 2 |              run 3 |
+| ----------------------------------- | -----------------: | ----------------: | -----------------: |
+| Healthy (Docker health check)       |             6.60 s |            6.06 s |             6.60 s |
+| Landing page served                 |             6.82 s |            6.11 s |             6.69 s |
+| Page size / median load             | 17,825 B / 12.1 ms | 17,825 B / 7.0 ms | 17,825 B / 10.6 ms |
+| Container RSS, peak / steady        |     86.4 / 85.8 MB |    87.9 / 86.5 MB |     87.0 / 86.5 MB |
+| Per-process VmHWM                   |            87.4 MB |           88.0 MB |            87.7 MB |
+| cgroup peak against the 512 MiB cap |            40.0 MB |           39.9 MB |            39.6 MB |
+| Headroom at the cgroup peak         |              92.2% |             92.2% |              92.3% |
+| OOM kills / restarts                |              0 / 0 |             0 / 0 |              0 / 0 |
+
+Every run also had to prove it was serving production, not merely serving:
+the container is started from `node apps/web/server.js`, pid 1 is the Next.js
+standalone server, the runtime image contains no Next CLI at all so a dev
+server cannot be started in it, `NODE_ENV=production`, the page carries no
+hot-reload markers, the three security headers from `next.config.ts` are
+present, `x-powered-by` is absent, and the baked API origin is the right one.
+
+Then the real browser, through the containers
+(`browser -> web container -> api container -> postgis container`): the
+full-stack Playwright suite, 7 tests, all passing in 23.1 s, after which the
+container's lifetime peak was 93.0 MB and the cgroup 49.3 MB — still 82% free.
+No OOM, no restart.
+
+**512 MiB it is.** 93 MB against 512 MiB is 5.5× headroom, which is not a
+close call; the next tier down does not exist. This is the one place a cheaper
+tier is defensible on evidence, and it takes USD 7 a month off the total.
+
 ## Options compared
 
 All prices from the providers' own pages, accessed 2026-09-11. Bank of Canada
@@ -211,13 +245,14 @@ the total. Taxes are excluded everywhere.
 
 ### A. DigitalOcean App Platform + Managed PostgreSQL, Toronto — recommended
 
-| Component   | Tier                                                        |                USD/mo | Source                                                                                       |
-| ----------- | ----------------------------------------------------------- | --------------------: | -------------------------------------------------------------------------------------------- |
-| API         | `apps-s-1vcpu-2gb` — 1 shared vCPU, 2 GiB, 200 GiB transfer |                 25.00 | [App Platform pricing](https://docs.digitalocean.com/products/app-platform/details/pricing/) |
-| Web         | `apps-s-1vcpu-1gb` — 1 shared vCPU, 1 GiB                   |                 12.00 | same                                                                                         |
-| Database    | Managed PostgreSQL 1 GiB / 1 vCPU / 10 GiB, single node     |                 15.15 | [Managed Databases pricing](https://www.digitalocean.com/pricing/managed-databases)          |
-| **Total**   |                                                             | **52.15 ≈ CAD 72.31** |                                                                                              |
-| Two workers | `apps-s-2vcpu-4gb` 50.00 instead of 25.00                   |    77.15 ≈ CAD 106.98 |                                                                                              |
+| Component                       | Tier                                                        |                USD/mo | Source                                                                                       |
+| ------------------------------- | ----------------------------------------------------------- | --------------------: | -------------------------------------------------------------------------------------------- |
+| API                             | `apps-s-1vcpu-2gb` — 1 shared vCPU, 2 GiB, 200 GiB transfer |                 25.00 | [App Platform pricing](https://docs.digitalocean.com/products/app-platform/details/pricing/) |
+| Web                             | `apps-s-1vcpu-0.5gb` — 1 shared vCPU, 512 MiB               |                  5.00 | same                                                                                         |
+| Database                        | Managed PostgreSQL 1 GiB / 1 vCPU / 10 GiB, single node     |                 15.15 | [Managed Databases pricing](https://www.digitalocean.com/pricing/managed-databases)          |
+| **Total**                       |                                                             | **45.15 ≈ CAD 62.61** |                                                                                              |
+| If the web tier had to be 1 GiB | `apps-s-1vcpu-1gb` 12.00 instead of 5.00                    |     52.15 ≈ CAD 72.31 |                                                                                              |
+| Two API workers                 | `apps-s-2vcpu-4gb` 50.00 instead of 25.00                   |     70.15 ≈ CAD 97.27 |                                                                                              |
 
 - **Region.** Toronto (`tor`) is available for App Platform and Managed
   Databases ([availability](https://docs.digitalocean.com/platform/regional-availability/)).
@@ -362,11 +397,28 @@ tested and is not assumed: the totals above pay for a container.
 
 ## Decision (proposed)
 
-**Primary: Option A**, DigitalOcean App Platform in Toronto —
-`apps-s-1vcpu-2gb` for the API with `GRAPH_PRELOAD_REGIONS=waterloo`, a 1 GiB
-web service, and a 1 GiB single-node Managed PostgreSQL with PostGIS —
-**about USD 52 / CAD 72 a month** before tax and usage, with outbound transfer
-and database storage as the only variable charges.
+**Primary: Option A**, DigitalOcean App Platform in Toronto. Precisely:
+
+| Piece        | Choice                                                                |
+| ------------ | --------------------------------------------------------------------- |
+| Region       | Toronto (`tor`)                                                       |
+| API          | one `apps-s-1vcpu-2gb` container (1 shared vCPU, 2 GiB)               |
+| API workers  | **one**, with `GRAPH_PRELOAD_REGIONS=waterloo`                        |
+| Frontend     | one `apps-s-1vcpu-0.5gb` container (512 MiB), measured above          |
+| Database     | one 1 GiB / 1 vCPU single-node Managed PostgreSQL with PostGIS        |
+| Hostname     | the provider's `*.ondigitalocean.app`; **no custom domain** initially |
+| Availability | single node everywhere. **No high-availability claim.**               |
+| Capacity     | sized from a laptop measurement. **No production-capacity claim.**    |
+
+**USD 45.15 ≈ CAD 62.61 a month** before tax and usage — API 25.00, frontend
+5.00, database 15.15 — with outbound transfer beyond the included allowance
+and database storage beyond 10 GiB as the only variable charges. Had the
+frontend needed 1 GiB, the same architecture would be USD 52.15 ≈ CAD 72.31;
+the three trials above are why it does not.
+
+**Nothing is approved and nothing is spent.** No account exists, no resource
+has been created, and this card did not ask for either. Paid deployment is
+deferred to a later card and a separate decision.
 
 **Fallback: Option B**, Fly.io in Toronto at about USD 59 / CAD 81, on the
 explicit condition that PostGIS on a PostgreSQL 17 Managed Postgres cluster is
@@ -388,10 +440,14 @@ either recommended provider sells above 1.41 GB.
 1. Provider and tier: A as proposed, B, or something else.
 2. Whether a Canadian region is a requirement or a preference. If it is not,
    C becomes comparable.
-3. Payment method and account creation — nothing here has been signed up for.
-4. Custom domain: optional with either recommendation; both provide a
-   hostname and a certificate. A registrar fee was not researched.
-5. Whether one worker is acceptable for the pilot, given the probe.
+3. Payment method and account creation — nothing here has been signed up for,
+   and the spending itself is the decision.
+4. Whether one worker is acceptable for the pilot, given the probe.
+
+Settled by measurement and no longer open: the frontend tier (512 MiB), and
+the custom domain (none initially — the provider's hostname is enough for a
+recruiter-facing pilot, and a domain can be added later without changing
+anything above).
 
 ## Consequences
 
@@ -404,4 +460,17 @@ either recommended provider sells above 1.41 GB.
 - PA-RR-04 (observability) has two concrete jobs whichever option is chosen:
   log forwarding, because neither recommended provider retains runtime logs
   for long by default, and a scheduled, exercised backup-and-restore.
+- The dataset bootstrap no longer needs a superuser. `pg_restore
+--disable-triggers` was replaced by an explicit dependency order applied in
+  one transaction (`infra/production-smoke/restore-dataset.sh`), demonstrated
+  against a role with `superuser=f createdb=f createrole=f bypassrls=f
+replication=f` that owns its own database — the shape DigitalOcean's
+  `doadmin` has. The old command was run as that role first, and failed with
+  `permission denied: "RI_ConstraintTrigger_a_21027" is a system trigger`,
+  which is what would have happened on the provider. After the new restore:
+  dataset `51585450…`, checksum `51e75f78…`, 155,714 nodes, 180,554 segments,
+  361,108 directed edges once loaded, no orphaned rows, no invalid geometry,
+  every foreign key and the `incline_direction` check in place, and both an
+  ordinary and an accessibility-aware route answering identically to the
+  reference.
 - Nothing about routing, the graph representation or the data changed.

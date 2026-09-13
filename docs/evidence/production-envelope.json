@@ -3323,5 +3323,399 @@
       "ml_predictions_used": false,
       "dataset": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
     }
+  },
+  "web_batches": {
+    "web-512m": {
+      "memory_limit": "512m",
+      "measured_at_utc": "2026-09-13T01:38:36+00:00",
+      "summary": {
+        "runs": 3,
+        "passed_runs": 3,
+        "median_seconds_to_healthy": 6.6,
+        "median_seconds_to_page": 6.69,
+        "median_page_ms": 10.6,
+        "median_rss_steady_mb": 86.5,
+        "max_rss_peak_mb": 87.9,
+        "max_hwm_sum_mb": 88.0,
+        "max_cgroup_peak_mb": 40.0,
+        "median_cgroup_steady_mb": 38.3,
+        "min_headroom_percent": 92.2,
+        "oom_kills": 0,
+        "restarts": 0
+      },
+      "runs": [
+        {
+          "label": "web-512m/run1",
+          "memory_limit": "512m",
+          "passed": true,
+          "failures": [],
+          "seconds_to_healthy": 6.6,
+          "seconds_to_healthz": 6.77,
+          "seconds_to_page": 6.82,
+          "page_bytes": 17825,
+          "page_ms": 12.1,
+          "rss_peak_mb": 86.4,
+          "rss_steady_mb": 85.8,
+          "hwm_sum_mb": 87.4,
+          "cgroup_peak_mb": 40.0,
+          "cgroup_steady_mb": 38.5,
+          "limit_mb": 512.0,
+          "headroom_percent": 92.2,
+          "process_count": 2,
+          "server_command": "[\"node\",\"apps/web/server.js\"] -> 'next-server (v16.3.5)'",
+          "node_env": "production",
+          "api_origin_in_page": true,
+          "headers_present": true,
+          "oom_killed": false,
+          "restart_count": 0,
+          "samples": [
+            {
+              "t": 2.8,
+              "rss_mb": 75.0,
+              "hwm_mb": 75.1,
+              "processes": 2.0,
+              "cgroup_memory": "37.17MiB",
+              "cgroup_memory_mb": 37.2,
+              "cpu_percent": "5.19%"
+            },
+            {
+              "t": 5.7,
+              "rss_mb": 83.8,
+              "hwm_mb": 83.8,
+              "processes": 2.0,
+              "cgroup_memory": "37.17MiB",
+              "cgroup_memory_mb": 37.2,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 8.64,
+              "rss_mb": 86.4,
+              "hwm_mb": 86.4,
+              "processes": 2.0,
+              "cgroup_memory": "40.03MiB",
+              "cgroup_memory_mb": 40.0,
+              "cpu_percent": "15.36%"
+            },
+            {
+              "t": 11.52,
+              "rss_mb": 86.2,
+              "hwm_mb": 87.6,
+              "processes": 2.0,
+              "cgroup_memory": "37.63MiB",
+              "cgroup_memory_mb": 37.6,
+              "cpu_percent": "5.54%"
+            },
+            {
+              "t": 14.64,
+              "rss_mb": 85.1,
+              "hwm_mb": 87.4,
+              "processes": 2.0,
+              "cgroup_memory": "37.65MiB",
+              "cgroup_memory_mb": 37.6,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 17.49,
+              "rss_mb": 85.3,
+              "hwm_mb": 87.6,
+              "processes": 2.0,
+              "cgroup_memory": "38.3MiB",
+              "cgroup_memory_mb": 38.3,
+              "cpu_percent": "10.31%"
+            }
+          ]
+        },
+        {
+          "label": "web-512m/run2",
+          "memory_limit": "512m",
+          "passed": true,
+          "failures": [],
+          "seconds_to_healthy": 6.06,
+          "seconds_to_healthz": 6.09,
+          "seconds_to_page": 6.11,
+          "page_bytes": 17825,
+          "page_ms": 7.0,
+          "rss_peak_mb": 87.9,
+          "rss_steady_mb": 86.5,
+          "hwm_sum_mb": 88.0,
+          "cgroup_peak_mb": 39.9,
+          "cgroup_steady_mb": 38.2,
+          "limit_mb": 512.0,
+          "headroom_percent": 92.2,
+          "process_count": 2,
+          "server_command": "[\"node\",\"apps/web/server.js\"] -> 'next-server (v16.3.5)'",
+          "node_env": "production",
+          "api_origin_in_page": true,
+          "headers_present": true,
+          "oom_killed": false,
+          "restart_count": 0,
+          "samples": [
+            {
+              "t": 2.95,
+              "rss_mb": 74.1,
+              "hwm_mb": 74.8,
+              "processes": 2.0,
+              "cgroup_memory": "37.14MiB",
+              "cgroup_memory_mb": 37.1,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 5.82,
+              "rss_mb": 84.4,
+              "hwm_mb": 84.4,
+              "processes": 2.0,
+              "cgroup_memory": "37.18MiB",
+              "cgroup_memory_mb": 37.2,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 8.66,
+              "rss_mb": 87.9,
+              "hwm_mb": 87.9,
+              "processes": 2.0,
+              "cgroup_memory": "39.92MiB",
+              "cgroup_memory_mb": 39.9,
+              "cpu_percent": "0.03%"
+            },
+            {
+              "t": 11.82,
+              "rss_mb": 87.1,
+              "hwm_mb": 88.0,
+              "processes": 2.0,
+              "cgroup_memory": "37.82MiB",
+              "cgroup_memory_mb": 37.8,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 14.72,
+              "rss_mb": 86.0,
+              "hwm_mb": 88.0,
+              "processes": 2.0,
+              "cgroup_memory": "37.64MiB",
+              "cgroup_memory_mb": 37.6,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 17.59,
+              "rss_mb": 86.0,
+              "hwm_mb": 88.0,
+              "processes": 2.0,
+              "cgroup_memory": "38.26MiB",
+              "cgroup_memory_mb": 38.3,
+              "cpu_percent": "8.85%"
+            }
+          ]
+        },
+        {
+          "label": "web-512m/run3",
+          "memory_limit": "512m",
+          "passed": true,
+          "failures": [],
+          "seconds_to_healthy": 6.6,
+          "seconds_to_healthz": 6.62,
+          "seconds_to_page": 6.69,
+          "page_bytes": 17825,
+          "page_ms": 10.6,
+          "rss_peak_mb": 87.0,
+          "rss_steady_mb": 86.5,
+          "hwm_sum_mb": 87.7,
+          "cgroup_peak_mb": 39.6,
+          "cgroup_steady_mb": 38.3,
+          "limit_mb": 512.0,
+          "headroom_percent": 92.3,
+          "process_count": 2,
+          "server_command": "[\"node\",\"apps/web/server.js\"] -> 'next-server (v16.3.5)'",
+          "node_env": "production",
+          "api_origin_in_page": true,
+          "headers_present": true,
+          "oom_killed": false,
+          "restart_count": 0,
+          "samples": [
+            {
+              "t": 2.88,
+              "rss_mb": 75.3,
+              "hwm_mb": 75.3,
+              "processes": 2.0,
+              "cgroup_memory": "36.91MiB",
+              "cgroup_memory_mb": 36.9,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 5.79,
+              "rss_mb": 84.1,
+              "hwm_mb": 84.1,
+              "processes": 2.0,
+              "cgroup_memory": "37.22MiB",
+              "cgroup_memory_mb": 37.2,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 8.58,
+              "rss_mb": 87.0,
+              "hwm_mb": 87.0,
+              "processes": 2.0,
+              "cgroup_memory": "39.57MiB",
+              "cgroup_memory_mb": 39.6,
+              "cpu_percent": "11.46%"
+            },
+            {
+              "t": 11.67,
+              "rss_mb": 86.7,
+              "hwm_mb": 87.7,
+              "processes": 2.0,
+              "cgroup_memory": "37.71MiB",
+              "cgroup_memory_mb": 37.7,
+              "cpu_percent": "7.39%"
+            },
+            {
+              "t": 14.53,
+              "rss_mb": 85.8,
+              "hwm_mb": 87.7,
+              "processes": 2.0,
+              "cgroup_memory": "37.65MiB",
+              "cgroup_memory_mb": 37.6,
+              "cpu_percent": "0.00%"
+            },
+            {
+              "t": 17.38,
+              "rss_mb": 85.8,
+              "hwm_mb": 87.7,
+              "processes": 2.0,
+              "cgroup_memory": "38.42MiB",
+              "cgroup_memory_mb": 38.4,
+              "cpu_percent": "8.76%"
+            }
+          ]
+        }
+      ],
+      "playwright_fullstack": {
+        "config": "playwright.fullstack.config.ts with FULLSTACK_TARGET=compose",
+        "path": "browser -> web container (512 MiB) -> api container -> postgis container",
+        "tests": 7,
+        "passed": 7,
+        "failed": 0,
+        "seconds": 23.1,
+        "web_peak_rss_mb_after_browser_traffic": 93.0,
+        "web_cgroup_after_browser_traffic_mb": 49.3,
+        "oom_killed": false,
+        "restarts": 0
+      }
+    }
+  },
+  "managed_restore": {
+    "why": "The PA-RR-03 bootstrap used `pg_restore --data-only --disable-triggers`, which turns off the system triggers that enforce foreign keys and is reserved for superusers. No managed PostgreSQL service grants that, so the procedure would have failed on the first real database. Replaced by an explicit dependency order applied in one transaction, demonstrated here as a role that is not a superuser.",
+    "restricted_role": {
+      "name": "pathable_app",
+      "attributes": "superuser=false createdb=false createrole=false bypassrls=false replication=false",
+      "owns_the_database": true,
+      "owns_the_tables": "pathable_app",
+      "postgis_preinstalled_by_the_platform": true,
+      "note": "Approximates DigitalOcean's doadmin: owns its databases, is not a superuser. PostGIS is created by the platform's own admin, as a managed service does; migration 0001 uses CREATE EXTENSION IF NOT EXISTS, which an ordinary owner may run once the extension is present."
+    },
+    "old_procedure_fails_as_this_role": {
+      "command": "pg_restore --data-only --disable-triggers ...",
+      "exit_code": 1,
+      "error": "permission denied: \"RI_ConstraintTrigger_a_21027\" is a system trigger",
+      "rows_after": 0
+    },
+    "artifact": {
+      "file": "waterloo-main-data.dump (kept outside the repository)",
+      "bytes": 31240046,
+      "sha256": "20d3ad955636f56e5700c6627ccfa2eafa7f023f29bd6449e674c0794bff5e7e",
+      "format": "custom, --data-only --no-owner --no-privileges",
+      "tables": [
+        "pilot_regions",
+        "dataset_versions",
+        "ingestion_runs",
+        "graph_nodes",
+        "graph_edges"
+      ]
+    },
+    "restore": {
+      "script": "infra/production-smoke/restore-dataset.sh",
+      "table_order": [
+        "pilot_regions",
+        "dataset_versions",
+        "ingestion_runs",
+        "graph_nodes",
+        "graph_edges"
+      ],
+      "mechanism": "pg_restore --use-list --single-transaction --no-owner --no-privileges",
+      "superuser_required": false,
+      "disable_triggers_used": false,
+      "migrate_from_zero_seconds": 6.1,
+      "restore_seconds": 18,
+      "total_wall_seconds": 33.9,
+      "refuses_a_non_empty_target": true,
+      "pg_dump_natural_order_also_works": "Measured: an unordered --data-only restore of this archive succeeded too, because pg_dump happened to emit a dependency-safe order for this tree-shaped schema. The order is pinned anyway so that stays true rather than remaining a coincidence."
+    },
+    "verified_after_restore": {
+      "dataset_id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+      "dataset_checksum": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906",
+      "alembic_revision": "0005_kerb_tiers",
+      "graph_nodes": 155714,
+      "graph_segments": 180554,
+      "directed_edges_implied_by_rows": 361108,
+      "directed_edges_loaded_by_the_api": 361108,
+      "orphaned_rows": 0,
+      "invalid_geometries": 0,
+      "non_linestring_geometries": 0,
+      "distinct_srid": 1,
+      "srid": 4326,
+      "foreign_keys": {
+        "graph_edges": [
+          "fk_graph_edges_dataset_version_id_dataset_versions",
+          "fk_graph_edges_from_node_id_graph_nodes",
+          "fk_graph_edges_to_node_id_graph_nodes"
+        ],
+        "graph_nodes": [
+          "fk_graph_nodes_dataset_version_id_dataset_versions"
+        ],
+        "dataset_versions": [
+          "fk_dataset_versions_pilot_region_id_pilot_regions"
+        ],
+        "ingestion_runs": [
+          "fk_ingestion_runs_dataset_version_id_dataset_versions"
+        ]
+      },
+      "incline_direction_check": "CHECK (((incline_direction)::text = ANY ((ARRAY['up'::character varying, 'down'::character varying, 'unknown'::character varying])::text[])))",
+      "check_constraints_on_graph_edges": 12,
+      "postgis_version": "3.5.2",
+      "database_size": "186 MB"
+    },
+    "api_against_this_database": {
+      "readiness": "503 while the graph loaded, 200 once it was routable",
+      "graph_preload_seconds": 41.6,
+      "note": "Slower than the 14.6 s baseline because the restore and analyze had just churned the page cache on a host with little free memory. The baseline stands; this is not a new one.",
+      "ordinary_route": {
+        "case": "campus-library-to-student-life",
+        "route": "standard (shortest walking), returned as the baseline of every comparison",
+        "distance_m": 287.4,
+        "segments": 43,
+        "stairway_count": 4
+      },
+      "accessibility_aware_route": {
+        "case": "campus-library-to-student-life",
+        "profile": "wheelchair",
+        "distance_m": 354.1,
+        "segments": 47,
+        "stairway_count": 0,
+        "http_status": 200,
+        "seconds": 0.454,
+        "response_bytes": 59798
+      },
+      "accessibility_aware_route_long": {
+        "case": "uptown-to-kitchener-city-hall",
+        "profile": "stroller",
+        "standard_distance_m": 3022.8,
+        "accessible_distance_m": 3065.6,
+        "http_status": 200,
+        "seconds": 0.999,
+        "response_bytes": 158271
+      },
+      "matches_the_pre_existing_reference": true,
+      "ml_predictions_used": false,
+      "latency_caveat": "Laptop figures under memory pressure. Not production latency."
+    }
   }
 }
