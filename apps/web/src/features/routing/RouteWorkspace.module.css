@@ -32,7 +32,11 @@
 .legend {
   position: absolute;
   right: var(--space-3);
-  bottom: var(--space-8);
+  /* Top, not bottom: on a narrow screen the map's attribution wraps to two
+     lines and would run underneath a legend anchored to the bottom edge, and
+     the OpenStreetMap credit is not something a decoration may cover. The
+     desktop rule below moves it back down, where there is room. */
+  top: var(--space-3);
   z-index: 4;
   display: flex;
   flex-direction: column;
@@ -138,6 +142,7 @@
 
   .legend {
     right: var(--space-6);
+    top: auto;
     bottom: var(--space-10);
   }
 }

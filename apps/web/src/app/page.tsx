@@ -1,6 +1,7 @@
 import { AppHeader } from '@/components/AppHeader';
 import { ConfigurationError } from '@/components/ConfigurationError';
 import { RouteWorkspace } from '@/features/routing/RouteWorkspace';
+import { exampleFromSearchParams } from '@/features/routing/verified-example';
 import { getPublicConfig } from '@/lib/public-config';
 import styles from './page.module.css';
 
@@ -10,7 +11,16 @@ const PILOT_DESCRIPTION_ID = 'pilot-area-description';
 const MAP_ATTRIBUTION =
   '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>';
 
-export default function HomePage() {
+type HomePageProps = {
+  /** Next 16 hands search parameters to a server component as a promise. */
+  readonly searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  // Resolved here rather than in a client effect: the page already knows the
+  // URL, so a deep-linked walkthrough renders with its journey already chosen
+  // instead of filling itself in a frame later.
+  const example = exampleFromSearchParams(await searchParams);
   const result = getPublicConfig();
 
   if (!result.ok) {
@@ -52,6 +62,7 @@ export default function HomePage() {
           regionName={config.pilotRegionName}
           attribution={MAP_ATTRIBUTION}
           describedById={PILOT_DESCRIPTION_ID}
+          initialExample={example}
         />
 
         <p className={styles.attribution} data-testid="attribution">

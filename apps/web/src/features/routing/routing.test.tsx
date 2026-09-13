@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { RouteCompareResponse } from '@pathable/contracts';
 import { RouteComparisonView } from './RouteComparisonView';
 import { RoutePlanner } from './RoutePlanner';
+import { CAMPUS_EXAMPLE } from './verified-example';
 import { RouteWorkspace } from './RouteWorkspace';
 import { compareRoutes } from './compare-routes';
 import { formatDistance, formatDuration, nextRole } from './types';
@@ -108,6 +109,9 @@ function renderPlanner(overrides: Partial<Parameters<typeof RoutePlanner>[0]> = 
     state: { status: 'success' as const, comparison: COMPARISON },
     apiBaseUrl: 'http://api.test',
     region: 'waterloo',
+    example: CAMPUS_EXAMPLE,
+    exampleActive: false,
+    onRunExample: vi.fn(),
     onProfileChange: vi.fn(),
     onClearPoints: vi.fn(),
     onSwapPoints: vi.fn(),
@@ -235,7 +239,10 @@ describe('RoutePlanner', () => {
       },
     });
 
-    expect(screen.getByText('Not recorded')).toBeInTheDocument();
+    // Scoped to the breakdown: "Not recorded" is also the name of an evidence
+    // class in the difference block, and the assertion is about the gradient.
+    const breakdown = screen.getByRole('region', { name: /what is on this route/i });
+    expect(within(breakdown).getByText('Not recorded')).toBeInTheDocument();
   });
 
   it('explains a profile with no possible route instead of failing silently', () => {
