@@ -388,3 +388,220 @@
     transition: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * The verified example: the fastest route to understanding the product.
+ * ------------------------------------------------------------------------ */
+
+.example {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-brand-soft);
+  border: 1px solid var(--color-brand-border);
+  border-radius: var(--radius-md);
+}
+
+.exampleTitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.exampleBody {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.exampleButton {
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  background: var(--color-brand);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-sm);
+}
+
+.exampleButton:hover {
+  background: var(--color-brand-strong);
+}
+
+.exampleButton:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.exampleDetail {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Why the two routes differ. The answer, above everything that qualifies it.
+ * ------------------------------------------------------------------------ */
+
+.difference {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.differenceHeading {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.differenceFigures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.differenceFigure dt {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+
+.differenceFigure dd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.differenceNote {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-muted);
+}
+
+.evidenceList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.evidenceItem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+/* The tag is the whole point of this block: it says what kind of claim the
+   sentence beside it is. Text, never colour alone. */
+.evidenceTag {
+  flex: 0 0 auto;
+  padding: 2px var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  border: 1px solid;
+  border-radius: var(--radius-pill);
+}
+
+.evidenceTag[data-kind='observed'] {
+  color: var(--color-ok-text);
+  background: var(--color-ok-surface);
+  border-color: var(--color-ok-border);
+}
+
+.evidenceTag[data-kind='profile'] {
+  color: var(--color-text);
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand-border);
+}
+
+.evidenceTag[data-kind='derived'] {
+  color: var(--color-warn-text);
+  background: var(--color-warn-surface);
+  border-color: var(--color-warn-border);
+}
+
+.evidenceTag[data-kind='unknown'] {
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+/* The one-line uncertainty summary, above the fold. Warning tone rather than
+   danger: incomplete data is the normal state of OpenStreetMap, not an alarm,
+   and an alarm every time would be ignored by the second route. */
+.uncertainty {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-warn-text);
+  background: var(--color-warn-surface);
+  border: 1px solid var(--color-warn-border);
+  border-radius: var(--radius-sm);
+}
+
+.uncertainty[data-complete='true'] {
+  color: var(--color-ok-text);
+  background: var(--color-ok-surface);
+  border-color: var(--color-ok-border);
+}
+
+/* The example card after it has been used: same information, a fraction of the
+   height, because the answer below it is what the viewer is now reading. */
+.exampleCompact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-brand-soft);
+  border: 1px solid var(--color-brand-border);
+  border-radius: var(--radius-md);
+}
+
+.exampleButtonQuiet {
+  flex: 0 0 auto;
+  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-brand);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--color-brand-border);
+  border-radius: var(--radius-sm);
+}
+
+.exampleButtonQuiet:hover {
+  background: var(--color-surface);
+}
+
+.exampleButtonQuiet:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}

@@ -3,6 +3,8 @@
 import type { ProfileKey } from '@pathable/contracts';
 import { PlaceSearch } from '@/features/geocoding/PlaceSearch';
 import { RouteComparisonView } from './RouteComparisonView';
+import { VerifiedExampleCard } from './VerifiedExample';
+import type { VerifiedExample } from './verified-example';
 import {
   type LngLat,
   type PlannerPoints,
@@ -40,6 +42,9 @@ export type RoutePlannerProps = {
   readonly state: RouteRequestState;
   readonly apiBaseUrl: string;
   readonly region: string;
+  readonly example: VerifiedExample;
+  readonly exampleActive: boolean;
+  readonly onRunExample: (example: VerifiedExample) => void;
   readonly onProfileChange: (key: ProfileKey) => void;
   readonly onClearPoints: () => void;
   readonly onSwapPoints: () => void;
@@ -54,6 +59,9 @@ export function RoutePlanner({
   state,
   apiBaseUrl,
   region,
+  example,
+  exampleActive,
+  onRunExample,
   onProfileChange,
   onClearPoints,
   onSwapPoints,
@@ -69,6 +77,56 @@ export function RoutePlanner({
           Compare routes
         </h2>
       </header>
+
+      <VerifiedExampleCard
+        example={example}
+        onRun={onRunExample}
+        active={exampleActive}
+        busy={state.status === 'loading'}
+      />
+
+      {/* Directly under the example, because that is where the answer to
+          pressing it belongs. Measured during the PA-RR-06 audit: with the
+          inputs above it, pressing the example changed the map and left the
+          panel showing the coordinates it had just filled in, with the
+          comparison two screens down. The region is always rendered and
+          never empty — an aria-live container has to exist before anything
+          is put into it, and an empty box is not something a viewer can
+          see. */}
+      <div
+        className={styles.status}
+        // Results replace one another in place, so the region has to announce
+        // itself rather than relying on focus moving somewhere.
+        aria-live="polite"
+        aria-busy={state.status === 'loading'}
+        data-route-state={state.status}
+        data-testid="route-status"
+      >
+        {state.status === 'idle' ? (
+          <p className={styles.hint}>
+            Choose a start and an end on the map, or press the example above, and PathAble will
+            compare the shortest walking route with one that suits how you travel.
+          </p>
+        ) : null}
+
+        {state.status === 'loading' ? (
+          <p className={styles.hint}>
+            Comparing routes… The first request after the service starts also waits for the Waterloo
+            routing graph to load.
+          </p>
+        ) : null}
+
+        {state.status === 'error' ? (
+          <div className={styles.error} role="alert">
+            <p>{state.message}</p>
+            <button type="button" className={styles.secondaryButton} onClick={onRetry}>
+              Try again
+            </button>
+          </div>
+        ) : null}
+
+        {state.status === 'success' ? <RouteComparisonView comparison={state.comparison} /> : null}
+      </div>
 
       <PlaceSearch
         apiBaseUrl={apiBaseUrl}
@@ -102,36 +160,6 @@ export function RoutePlanner({
           ))}
         </div>
       </fieldset>
-
-      <div
-        className={styles.status}
-        // Results replace one another in place, so the region has to announce
-        // itself rather than relying on focus moving somewhere.
-        aria-live="polite"
-        aria-busy={state.status === 'loading'}
-        data-route-state={state.status}
-        data-testid="route-status"
-      >
-        {state.status === 'idle' ? (
-          <p className={styles.hint}>
-            Choose a start and an end on the map, then PathAble will compare the shortest walking
-            route with one that suits how you travel.
-          </p>
-        ) : null}
-
-        {state.status === 'loading' ? <p className={styles.hint}>Comparing routes…</p> : null}
-
-        {state.status === 'error' ? (
-          <div className={styles.error} role="alert">
-            <p>{state.message}</p>
-            <button type="button" className={styles.secondaryButton} onClick={onRetry}>
-              Try again
-            </button>
-          </div>
-        ) : null}
-
-        {state.status === 'success' ? <RouteComparisonView comparison={state.comparison} /> : null}
-      </div>
     </section>
   );
 }

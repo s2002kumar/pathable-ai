@@ -53,11 +53,20 @@ beforeEach(() => {
   );
 });
 
+/**
+ * `HomePage` is an async server component — it resolves the `?example=` deep
+ * link before rendering — so a test has to await it rather than render the
+ * promise it returns.
+ */
+function homePage(searchParams: Record<string, string | string[] | undefined> = {}) {
+  return HomePage({ searchParams: Promise.resolve(searchParams) });
+}
+
 describe('HomePage', () => {
-  it('renders the product shell', () => {
+  it('renders the product shell', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     expect(screen.getByText('PathAble AI')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
@@ -69,47 +78,47 @@ describe('HomePage', () => {
   it('renders the map surface', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     await waitFor(() => expect(screen.getByTestId('map-frame')).toBeInTheDocument());
   });
 
-  it('describes what the page does in text, not only on the map', () => {
+  it('describes what the page does in text, not only on the map', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     const description = screen.getByTestId('pilot-description');
     expect(description).toHaveAttribute('id', 'pilot-area-description');
     expect(description).toHaveTextContent(/compares the shortest walking route/i);
   });
 
-  it('states that missing data is not evidence of a clear path', () => {
+  it('states that missing data is not evidence of a clear path', async () => {
     // The product's central safety claim. If this sentence disappears, somebody
     // can read an unsurveyed route as a checked one.
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     expect(screen.getByTestId('pilot-description')).toHaveTextContent(
       /missing information is never treated as a clear path/i,
     );
   });
 
-  it('never promises that a route is passable', () => {
+  it('never promises that a route is passable', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     expect(screen.getByTestId('pilot-description')).toHaveTextContent(
       /no route here is a guarantee/i,
     );
   });
 
-  it('offers the mobility profiles as a labelled radio group', () => {
+  it('offers the mobility profiles as a labelled radio group', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     const group = screen.getByRole('radiogroup', { name: /mobility profile/i });
     expect(group).toBeInTheDocument();
@@ -117,22 +126,25 @@ describe('HomePage', () => {
     expect(screen.getAllByRole('radio')).toHaveLength(5);
   });
 
-  it('explains how to begin before any point is chosen', () => {
+  it('explains how to begin before any point is chosen', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
-    const status = screen.getByTestId('route-status');
-    expect(status).toHaveAttribute('data-route-state', 'idle');
-    expect(status).toHaveTextContent(/choose a start and an end/i);
+    expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'idle');
+
+    // Two ways in, in the order a first-time viewer should meet them: a journey
+    // they can run immediately, and the map they can use instead.
+    expect(screen.getByTestId('run-verified-example')).toBeInTheDocument();
+    expect(screen.getByTestId('route-status')).toHaveTextContent(/choose a start and an end/i);
   });
 
-  it('shows a map key explaining the two route lines', () => {
+  it('shows a map key explaining the two route lines', async () => {
     // The legend is real text outside the canvas: one painted into WebGL would
     // be invisible to a screen reader and unselectable.
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     const legend = screen.getByTestId('map-legend');
     expect(legend).toHaveTextContent(/Route for your profile/i);
@@ -142,61 +154,61 @@ describe('HomePage', () => {
   it('shows backend status in the shell', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     await waitFor(() =>
       expect(screen.getByTestId('system-status')).toHaveAttribute('data-status', 'ready'),
     );
   });
 
-  it('shows visible OpenStreetMap attribution', () => {
+  it('shows visible OpenStreetMap attribution', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     const attribution = screen.getByTestId('attribution');
     expect(attribution).toHaveTextContent(/OpenStreetMap/);
     expect(attribution).toHaveTextContent(/ODbL/);
   });
 
-  it('notes that the development tile provider is not production-approved', () => {
+  it('notes that the development tile provider is not production-approved', async () => {
     setEnv(VALID_ENV);
 
-    render(<HomePage />);
+    render(await homePage());
 
     expect(screen.getByTestId('attribution')).toHaveTextContent(
       /not been approved for production/i,
     );
   });
 
-  it('renders the configuration error page instead of a broken shell', () => {
+  it('renders the configuration error page instead of a broken shell', async () => {
     setEnv({ ...VALID_ENV, NEXT_PUBLIC_PILOT_ZOOM: '99' });
 
-    render(<HomePage />);
+    render(await homePage());
 
     expect(screen.getByTestId('configuration-error')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('NEXT_PUBLIC_PILOT_ZOOM');
     expect(screen.queryByText('PathAble AI')).not.toBeInTheDocument();
   });
 
-  it('reports every configuration problem at once', () => {
+  it('reports every configuration problem at once', async () => {
     setEnv({
       ...VALID_ENV,
       NEXT_PUBLIC_PILOT_ZOOM: '99',
       NEXT_PUBLIC_API_BASE_URL: 'not-a-url',
     });
 
-    render(<HomePage />);
+    render(await homePage());
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent('NEXT_PUBLIC_PILOT_ZOOM');
     expect(alert).toHaveTextContent('NEXT_PUBLIC_API_BASE_URL');
   });
 
-  it('rejects a region slug the API could not accept', () => {
+  it('rejects a region slug the API could not accept', async () => {
     setEnv({ ...VALID_ENV, NEXT_PUBLIC_PILOT_REGION_SLUG: 'Waterloo Ontario!' });
 
-    render(<HomePage />);
+    render(await homePage());
 
     expect(screen.getByRole('alert')).toHaveTextContent('NEXT_PUBLIC_PILOT_REGION_SLUG');
   });

@@ -30,6 +30,28 @@ function isReadinessResponse(value: unknown): value is ReadinessResponse {
   );
 }
 
+/**
+ * Whether the only thing not ready is a routing graph that is still loading.
+ *
+ * The backend distinguishes the cases in the check's own words: a graph being
+ * built reads "loading <region>" or "pending", while a graph that will never
+ * arrive reads "no active dataset" or names a failure. Only the first is a
+ * waiting state, and treating the others as one would hide a real fault behind
+ * a spinner forever.
+ */
+function isPreparingGraph(body: ReadinessResponse): boolean {
+  const checks = body.checks as Record<string, { status: string; detail: string } | undefined>;
+  const graph = checks.graph;
+  if (graph === undefined || graph.status === 'ok') return false;
+
+  const everythingElseIsFine = Object.entries(checks).every(
+    ([name, check]) => name === 'graph' || check?.status === 'ok',
+  );
+  if (!everythingElseIsFine) return false;
+
+  return /^\s*(loading|pending)\b/i.test(graph.detail);
+}
+
 function failingDependencies(body: ReadinessResponse): string[] {
   return Object.entries(body.checks)
     .filter(([, check]) => check.status !== 'ok')
@@ -78,6 +100,15 @@ export async function fetchSystemStatus({
 
     if (response.ok && body.status === 'ready') {
       return { state: 'ready', service: body.service, version: body.version };
+    }
+
+    if (isPreparingGraph(body)) {
+      return {
+        state: 'preparing',
+        service: body.service,
+        version: body.version,
+        detail: body.checks.graph.detail,
+      };
     }
 
     return {

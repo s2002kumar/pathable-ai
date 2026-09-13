@@ -29,6 +29,12 @@ export function describeStatus(status: SystemStatus): Presentation {
         detail: `${status.service} v${status.version}`,
         className: styles.ready,
       };
+    case 'preparing':
+      return {
+        label: 'Preparing routes',
+        detail: 'loading the Waterloo routing graph',
+        className: styles.preparing,
+      };
     case 'degraded':
       return {
         label: 'API degraded',

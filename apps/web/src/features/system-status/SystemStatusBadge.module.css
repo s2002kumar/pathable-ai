@@ -40,6 +40,19 @@
   --tone-dot: var(--color-ok-dot);
 }
 
+/* Starting, not broken: the neutral tone plus the pulsing dot reads as "wait",
+   where the warning tone would read as "something is wrong". */
+.preparing {
+  --tone-surface: var(--color-neutral-surface);
+  --tone-border: var(--color-neutral-border);
+  --tone-text: var(--color-neutral-text);
+  --tone-dot: var(--color-neutral-dot);
+}
+
+.preparing .dot {
+  animation: pulse 1.4s var(--ease-out) infinite;
+}
+
 .degraded {
   --tone-surface: var(--color-warn-surface);
   --tone-border: var(--color-warn-border);

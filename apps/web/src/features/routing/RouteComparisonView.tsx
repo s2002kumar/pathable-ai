@@ -1,6 +1,7 @@
 'use client';
 
 import type { Route, RouteCompareResponse } from '@pathable/contracts';
+import { RouteDifference } from './RouteDifference';
 import { formatDistance, formatDuration } from './types';
 import styles from './RoutePlanner.module.css';
 
@@ -14,10 +15,13 @@ import styles from './RoutePlanner.module.css';
  */
 export function RouteComparisonView({ comparison }: { readonly comparison: RouteCompareResponse }) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
+  const bothRoutes = Boolean(standard && accessible);
 
   return (
     <div className={styles.results}>
       <RouteHeadline comparison={comparison} />
+
+      <RouteDifference comparison={comparison} />
 
       <div className={styles.routeCards}>
         {accessible ? (
@@ -33,10 +37,13 @@ export function RouteComparisonView({ comparison }: { readonly comparison: Route
         ) : null}
       </div>
 
-      {comparison.explanations.length > 0 ? (
+      {/* RouteDifference above already carries these statements, sorted by
+          where each came from. It only renders when there are two routes to
+          compare, so this stays for the single-route cases. */}
+      {comparison.explanations.length > 0 && !bothRoutes ? (
         <section className={styles.section} aria-labelledby="route-explanations-heading">
           <h3 className={styles.sectionHeading} id="route-explanations-heading">
-            Why this route
+            Every statement behind this route
           </h3>
           <ul className={styles.reasonList}>
             {comparison.explanations.map((explanation) => (

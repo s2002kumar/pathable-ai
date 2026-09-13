@@ -6,6 +6,7 @@ import { MapPanel } from '@/features/map/MapPanel';
 import { RoutePlanner } from './RoutePlanner';
 import { useRouteComparison } from './useRouteComparison';
 import type { LngLat, PlannerPoints, ProfileSelection } from './types';
+import { CAMPUS_EXAMPLE, type VerifiedExample } from './verified-example';
 import styles from './RouteWorkspace.module.css';
 
 export type RouteWorkspaceProps = {
@@ -20,6 +21,12 @@ export type RouteWorkspaceProps = {
   readonly describedById?: string;
   /** Injectable so tests never touch the network. */
   readonly fetchImpl?: typeof fetch;
+  /**
+   * Preselect an example. Resolved from the query string by the page, which is
+   * a server component and can read it without an effect — so a deep link is
+   * server-rendered like everything else rather than appearing a frame late.
+   */
+  readonly initialExample?: VerifiedExample | null;
 };
 
 const EMPTY_POINTS: PlannerPoints = { origin: null, destination: null };
@@ -43,9 +50,15 @@ export function RouteWorkspace({
   attribution,
   describedById,
   fetchImpl,
+  initialExample,
 }: RouteWorkspaceProps) {
-  const [points, setPoints] = useState<PlannerPoints>(EMPTY_POINTS);
+  const [points, setPoints] = useState<PlannerPoints>(
+    initialExample
+      ? { origin: initialExample.origin, destination: initialExample.destination }
+      : EMPTY_POINTS,
+  );
   const [profileKey, setProfileKey] = useState<ProfileKey>('wheelchair');
+  const [activeExampleId, setActiveExampleId] = useState<string | null>(initialExample?.id ?? null);
   const profile = useMemo<ProfileSelection>(() => ({ key: profileKey }), [profileKey]);
 
   const { state, retry } = useRouteComparison({
@@ -56,7 +69,16 @@ export function RouteWorkspace({
     ...(fetchImpl ? { fetchImpl } : {}),
   });
 
+  const handleRunExample = useCallback((example: VerifiedExample) => {
+    // Inputs only. Both endpoints and the profile land together, which is all
+    // the comparison hook needs to issue the real request.
+    setPoints({ origin: example.origin, destination: example.destination });
+    setProfileKey('wheelchair');
+    setActiveExampleId(example.id);
+  }, []);
+
   const handleSelectPoint = useCallback((position: LngLat) => {
+    setActiveExampleId(null);
     setPoints((current) => {
       if (current.origin === null) return { ...current, origin: position };
       if (current.destination === null) return { ...current, destination: position };
@@ -67,6 +89,7 @@ export function RouteWorkspace({
   }, []);
 
   const handleClear = useCallback(() => {
+    setActiveExampleId(null);
     setPoints(EMPTY_POINTS);
   }, []);
 
@@ -103,6 +126,9 @@ export function RouteWorkspace({
           state={state}
           apiBaseUrl={apiBaseUrl}
           region={region}
+          example={CAMPUS_EXAMPLE}
+          exampleActive={activeExampleId === CAMPUS_EXAMPLE.id}
+          onRunExample={handleRunExample}
           onProfileChange={setProfileKey}
           onClearPoints={handleClear}
           onSwapPoints={handleSwap}
