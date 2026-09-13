@@ -48,6 +48,7 @@ believed.
 | `production-envelope.json`          | The production API image measured in an isolated Compose stack from an empty database: migration, cold start to live and to ready, graph preload, resident memory per process and per cgroup, memory-limit and worker-count runs, warm and concurrent route latency, restart and shutdown — plus three frontend cold starts under a 512 MiB cap (`measure_web.py`) and the managed-hosting restore, performed as a role that is not a superuser (`restore-dataset.sh`). Produced by `python infra/production-smoke/measure.py`; procedure in [`docs/deployment/PRODUCTION_SMOKE.md`](../deployment/PRODUCTION_SMOKE.md), decision in [ADR 0009](../adr/0009-deployment-architecture.md). |
 | `waterloo-geometry-inspection.json` | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `screenshots/`                      | The real product answering from this dataset. The `demo-*` captures are the PA-RR-06 recruiter journey; their provenance is in [`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `media/`                            | `pathable-demo.webm` — a 67-second recording of one real browser session against the real production containers, captured by Playwright's video recorder, not edited or spliced. Provenance, capture command and licence obligations in [`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).                                                                                                                                                                                                                                                                                                                                                                              |
 | `DEMO_SCRIPT.md`                    | How to show the product in about sixty seconds on the local production stack, and what may and may not be claimed while doing it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ---
@@ -78,6 +79,23 @@ connection to the rest of the network leaves the pilot bounding box and was
 clipped; placing a point there needs the map driven to specific coordinates, and
 the app has no deep-link for that. The failure is real, measured and reported in
 the route corpus; only the screenshot of it is missing.
+
+---
+
+## Recording
+
+`media/pathable-demo.webm` — 66.8 s, VP9, 1152x684, 2,227,364 bytes.
+
+One continuous browser session, recorded by Playwright's video recorder while
+the page drove the production containers over HTTP. There is no editing, no
+splice and no re-take stitched in: what the engine returned is what the
+recording shows, and had it returned something else the recording would show
+that instead. The capture script, the commit it ran at, and the basemap
+attribution obligations are in
+[`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).
+
+It is a recording of a **local production-build stack**, not of a deployment.
+Nothing in it is reachable from the internet.
 
 ---
 

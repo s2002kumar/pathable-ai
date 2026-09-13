@@ -73,7 +73,17 @@ Do not say: that it is deployed, that it is live, that a route is safe or
 accessible, or that anything here is machine learning. It is none of those, and
 the interface is careful not to claim them.
 
+The full list of what may and may not be said, with the evidence behind each
+supportable claim, is the [claims ledger](../CLAIMS_LEDGER.md). Prepared answers
+at three lengths are in [interview explanations](../INTERVIEW_EXPLANATIONS.md),
+and the depth behind them in the [project defence](../PROJECT_DEFENSE.md).
+
 ## Recording it
+
+**A recording already exists:** [`media/pathable-demo.webm`](media/pathable-demo.webm),
+66.8 s, captured from exactly this script against the production containers. Use
+it when you cannot bring the stack up; give the demo live when you can, because
+a live answer is worth more than a recording of one.
 
 `http://localhost:3001/?example=campus-library-to-student-life` preselects the
 journey and issues the same live request on load, which makes a screen recording
