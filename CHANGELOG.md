@@ -12,6 +12,20 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **A recruiter-facing evidence package, and a ledger that governs it.** The
+  README now opens with what PathAble does, a 67-second recording of the real
+  production containers answering a real request
+  (`docs/evidence/media/pathable-demo.webm`), and a table in which every figure
+  links to the run that produced it. `docs/PROJECT_DEFENSE.md` is the
+  interview-depth account — architecture, the cost model, three debugging
+  stories told with their evidence, the trade-offs and what breaks at 10x.
+  `docs/CLAIMS_LEDGER.md` maps each claim to its exact supportable wording, its
+  evidence, the conditions it was measured under and the overstatement it is one
+  word away from, followed by a prohibited-claims list: no deployment, no users,
+  no production latency, no certification, no machine learning.
+  `docs/INTERVIEW_EXPLANATIONS.md` holds drafts at thirty seconds, two minutes
+  and ten. Nothing in the package asserts anything the repository cannot show.
+
 - **A publication policy, and a public-release safety gate that produced it.**
   PathAble's source code is **source-visible and all rights reserved**
   (© Sandeep Kumar) — deliberately not open source, because a permissive licence
