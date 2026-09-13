@@ -202,7 +202,8 @@ Twenty real Waterloo journeys, fixed **before** any route was computed, spanning
 a ravine footbridge, a rail corridor, and distances from two blocks to a few kilometres. Every one is reported
 whatever it did.
 
-Results: 18 of 20 route differently under a wheelchair profile, 1 has no route at all, median detour 70 m. The
+Results: 18 of 20 route differently under a wheelchair profile, 1 has no route at all, median detour 86.1 m
+across the 18 that change (83.8 m across all 19 routable journeys). The
 no-route case is real and correct — Rim Park sits in a separate 1,887-node component because its connection to
 the network leaves the pilot bounding box and was clipped.
 

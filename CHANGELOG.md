@@ -10,6 +10,19 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Three published figures that the evidence did not support.** Building the
+  claims ledger meant checking every number against the file behind it, which
+  caught them: the median detour across the twenty-journey corpus was published
+  as 70 m and is 86.1 m across the eighteen journeys that change (83.8 m across
+  all nineteen routable) — recomputing from the corpus at the commit that first
+  published it gives the same 86.05, so it was wrong when written rather than
+  stale; backend coverage was quoted at 89.13% and is 89.09%; and the full-stack
+  demo suite was described as skipping eight of nine tests in CI when it skips
+  all nine. None of the three changes an argument, which is exactly why they
+  survived until something checked them.
+
 ### Added
 
 - **A recruiter-facing evidence package, and a ledger that governs it.** The

@@ -370,7 +370,7 @@ it before believing the bootstrap works, and record what differed.
 **Status: Open** · 2026-09-13
 
 `apps/web/tests/fullstack/recruiter-demo.spec.ts` is the suite that proves the
-recruiter demo shows what the API actually returned. Eight of its nine tests
+recruiter demo shows what the API actually returned. All nine of its tests
 need the real Waterloo network, and CI loads the nine-node synthetic fixture —
 ingesting a 970 MB extract on every pull request would cost more than it is
 worth. Those tests therefore probe the API once and **skip with a printed

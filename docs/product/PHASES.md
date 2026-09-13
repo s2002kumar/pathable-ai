@@ -127,7 +127,9 @@ the two routes are explainable and verifiable on the ground.
 _Explainability is delivered and now measured._ Twenty real journeys were routed
 under both the standard and wheelchair profiles: 18 produced a different route,
 1 has no route at all, and every difference is attributed to something the route
-avoided. Median detour was 70 m. Full results in
+avoided. Median detour was 86.1 m across the 18 that change, 83.8 m across all
+19 routable journeys. (An earlier revision of this paragraph said 70 m; that
+figure was never in the corpus and is corrected here.) Full results in
 [`docs/evidence/waterloo-routes.json`](../evidence/waterloo-routes.json).
 
 _On-the-ground verification has still not been performed._ Route geometry has
