@@ -81,9 +81,10 @@ and the depth behind them in the [project defence](../PROJECT_DEFENSE.md).
 ## Recording it
 
 **A recording already exists:** [`media/pathable-demo.webm`](media/pathable-demo.webm),
-66.8 s, captured from exactly this script against the production containers. Use
-it when you cannot bring the stack up; give the demo live when you can, because
-a live answer is worth more than a recording of one.
+66.8 s, captured from exactly this script against the production containers, with
+a 13.5-second excerpt at [`media/pathable-demo.gif`](media/pathable-demo.gif) for
+the README. Use them when you cannot bring the stack up; give the demo live when
+you can, because a live answer is worth more than a recording of one.
 
 `http://localhost:3001/?example=campus-library-to-student-life` preselects the
 journey and issues the same live request on load, which makes a screen recording

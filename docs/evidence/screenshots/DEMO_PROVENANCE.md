@@ -20,6 +20,17 @@ the engine at capture time.
 | Basemap tiles     | OpenFreeMap (OpenMapTiles schema, OpenStreetMap data), a development convenience that is not approved for production                                                                                                                                                                                                                                                                                                                                                                                       |
 | Media attribution | The captured frames carry the credit OpenFreeMap requires for media: **OpenFreeMap © OpenMapTiles Data from OpenStreetMap**, rendered by MapLibre's attribution control. OpenStreetMap's guidelines require static images to be attributed as interactive maps are; OpenMapTiles asks for the same credit "in a textual description near the image", which the section below provides. Gradients: _Contains information licensed under the Open Government Licence – Canada._ Sources checked 2026-09-13. |
 
+## The excerpt
+
+`../media/pathable-demo.gif` is cut from `../media/pathable-demo.webm` at t=10.5 s for 13.5 s, downscaled to
+720x428 at 6 fps with a 128-colour palette. Nothing is re-recorded, re-ordered or re-timed; it is a window onto
+the same session, and every frame of it still carries the OpenFreeMap, OpenStreetMap and elevation credits the
+full recording does.
+
+```bash
+ffmpeg -ss 10.5 -t 13.5 -i pathable-demo.webm   -vf "fps=6,scale=720:-1:flags=lanczos,split[x][y];[x]palettegen=max_colors=128:stats_mode=diff[p];[y][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"   -loop 0 pathable-demo.gif
+```
+
 ## What the engine returned at capture time
 
 Read from the `POST /api/v1/routes/compare` response the browser received, not
