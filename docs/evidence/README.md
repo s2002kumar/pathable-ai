@@ -48,6 +48,7 @@ believed.
 | `production-envelope.json`          | The production API image measured in an isolated Compose stack from an empty database: migration, cold start to live and to ready, graph preload, resident memory per process and per cgroup, memory-limit and worker-count runs, warm and concurrent route latency, restart and shutdown — plus three frontend cold starts under a 512 MiB cap (`measure_web.py`) and the managed-hosting restore, performed as a role that is not a superuser (`restore-dataset.sh`). Produced by `python infra/production-smoke/measure.py`; procedure in [`docs/deployment/PRODUCTION_SMOKE.md`](../deployment/PRODUCTION_SMOKE.md), decision in [ADR 0009](../adr/0009-deployment-architecture.md). |
 | `waterloo-geometry-inspection.json` | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `screenshots/`                      | The real product answering from this dataset. The `demo-*` captures are the PA-RR-06 recruiter journey; their provenance is in [`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `media/`                            | `pathable-demo.webm` — a 67-second recording of one real browser session against the real production containers, captured by Playwright's video recorder, not edited or spliced. Provenance, capture command and licence obligations in [`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).                                                                                                                                                                                                                                                                                                                                                                              |
 | `DEMO_SCRIPT.md`                    | How to show the product in about sixty seconds on the local production stack, and what may and may not be claimed while doing it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ---
@@ -58,26 +59,50 @@ Captured by `apps/web/tests/screenshots/real-waterloo.spec.ts` against the runni
 API and the active dataset. No API responses are stubbed — a screenshot of a
 synthetic fixture would be a picture of nothing.
 
-| File                                        | What it shows                                                                                                  |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `01-desktop-wheelchair.png`                 | A 366 m wheelchair route on real network, with per-category evidence gaps                                      |
-| `02-mobile-wheelchair.png`                  | The same journey at 390 px wide                                                                                |
-| `03-desktop-stroller.png`                   | A second profile on a different journey                                                                        |
-| `04-route-difference.png`                   | A journey where the accessible route differs measurably                                                        |
-| `05-missing-evidence.png`                   | A journey where the map is substantially silent                                                                |
-| `06-snapped-away-from-the-chosen-point.png` | The snapping caution: the route begins at the nearest mapped path, some distance from the point the user chose |
+| File                        | What it shows                                                                                                                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `01-desktop-wheelchair.png` | A 366 m wheelchair route on real network, with per-category evidence gaps                                                                                                                |
+| `02-mobile-wheelchair.png`  | The same journey at 390 px wide                                                                                                                                                          |
+| `03-desktop-stroller.png`   | A second profile on a different journey                                                                                                                                                  |
+| `04-route-difference.png`   | A journey where the accessible route differs measurably                                                                                                                                  |
+| `05-missing-evidence.png`   | A journey where the map is substantially silent — and, in the same frame, the snapping caution: the route begins at the nearest mapped path, some distance from the point the user chose |
 
 Screenshots were re-captured after the geometry fix below, so every line shown
 is continuous.
 
-**A gap worth naming.** §18 of the task card asks for a screenshot of a genuine
-no-route case. There is a real one — `conestoga-to-rim-park` in
-`waterloo-routes.json` — but it cannot currently be reproduced through the
-interface. Rim Park sits in a separate 1,887-node component, because its
-connection to the rest of the network leaves the pilot bounding box and was
-clipped; placing a point there needs the map driven to specific coordinates, and
-the app has no deep-link for that. The failure is real, measured and reported in
-the route corpus; only the screenshot of it is missing.
+**A gap worth naming, and a duplicate removed.** The screenshot spec's sixth
+capture is meant to show a genuine no-route case. There is a real one —
+`conestoga-to-rim-park` in `waterloo-routes.json` — but it cannot be reproduced
+through the interface: Rim Park sits in a separate 1,887-node component because
+its connection to the rest of the network leaves the pilot bounding box and was
+clipped, and placing a point there needs the map driven to specific coordinates,
+which the app has no deep-link for. The two points the spec uses instead do
+route, so the capture came out **byte-identical to `05-missing-evidence.png`**.
+It was committed anyway under the name
+`06-snapped-away-from-the-chosen-point.png` and listed here as a separate
+capture, which it was not.
+
+That file has been deleted and its description folded into the row above, which
+is the frame that actually carries both statements. The no-route case remains
+real, measured and reported in the route corpus; only a screenshot of it is
+missing, and nothing here should be read as supplying one.
+
+---
+
+## Recording
+
+`media/pathable-demo.webm` — 66.8 s, VP9, 1152x684, 2,227,364 bytes.
+
+One continuous browser session, recorded by Playwright's video recorder while
+the page drove the production containers over HTTP. There is no editing, no
+splice and no re-take stitched in: what the engine returned is what the
+recording shows, and had it returned something else the recording would show
+that instead. The capture script, the commit it ran at, and the basemap
+attribution obligations are in
+[`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).
+
+It is a recording of a **local production-build stack**, not of a deployment.
+Nothing in it is reachable from the internet.
 
 ---
 

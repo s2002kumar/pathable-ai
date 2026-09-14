@@ -10,7 +10,40 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Four published claims that the evidence did not support.** Building the
+  claims ledger meant checking every number against the file behind it, which
+  caught them. The median detour across the twenty-journey corpus was published
+  as 70 m and is 86.1 m across the eighteen journeys that change, 83.8 m across
+  all nineteen routable — recomputing from the corpus at the commit that first
+  published 70 m gives the same 86.05, so it was wrong when written rather than
+  left behind. Backend coverage was quoted as 89.13% with no measurement
+  context; it is 89.09% in CI and 89.13% locally on Windows, where one
+  platform-specific test is skipped, and the README now says which. The
+  full-stack demo suite was described as skipping eight of nine tests in CI when
+  the guard skips all nine. And `06-snapped-away-from-the-chosen-point.png` was
+  listed in the evidence index as a distinct capture when it was byte-identical
+  to `05-missing-evidence.png` — the spec's no-route attempt produced a route —
+  so the file is deleted and the index says what happened. None of the four
+  changes an argument, which is exactly why they survived until something
+  checked them.
+
 ### Added
+
+- **A recruiter-facing evidence package, and a ledger that governs it.** The
+  README now opens with what PathAble does, a 67-second recording of the real
+  production containers answering a real request
+  (`docs/evidence/media/pathable-demo.webm`), and a table in which every figure
+  links to the run that produced it. `docs/PROJECT_DEFENSE.md` is the
+  interview-depth account — architecture, the cost model, three debugging
+  stories told with their evidence, the trade-offs and what breaks at 10x.
+  `docs/CLAIMS_LEDGER.md` maps each claim to its exact supportable wording, its
+  evidence, the conditions it was measured under and the overstatement it is one
+  word away from, followed by a prohibited-claims list: no deployment, no users,
+  no production latency, no certification, no machine learning.
+  `docs/INTERVIEW_EXPLANATIONS.md` holds drafts at thirty seconds, two minutes
+  and ten. Nothing in the package asserts anything the repository cannot show.
 
 - **A publication policy, and a public-release safety gate that produced it.**
   PathAble's source code is **source-visible and all rights reserved**

@@ -1,30 +1,161 @@
 # PathAble AI
 
-Accessibility-aware pedestrian routing.
+**Pedestrian routing that compares the shortest walk against one you can actually make — and shows its working.**
 
-PathAble AI is being built to let anyone pick an origin, a destination and a
-mobility profile — wheelchair, walker, crutches, stroller, reduced mobility or a
-custom set of preferences — and compare the ordinary shortest walking route
-against a route chosen for accessibility. The pilot region is Waterloo, Ontario,
-but the geography is configuration rather than an assumption.
+Pick two points in Waterloo, Ontario and a mobility profile. PathAble returns the ordinary shortest walking route
+alongside a route that respects that profile, and explains the difference using what OpenStreetMap actually
+records: steps, surfaces, gradients, kerbs. Where nothing has been recorded, it says so.
 
-> ## Current status: Phase 1 — routing works, and there is still no machine learning
->
-> You can pick two points in the pilot region, choose a mobility profile, and get
-> a shortest walking route alongside one that respects that profile, with a
-> written explanation of the difference.
->
-> **Every routing decision is a deterministic rule over attributes recorded in
-> OpenStreetMap.** There is no model, no prediction and no accessibility score
-> anywhere in this system. Every route response carries
-> `ml_predictions_used: false`, and it is typed as a literal `false` so a client
-> cannot compile against anything else.
->
-> **Missing data is reported as `unknown`, never as evidence that a path is
-> clear**, and no route here is a guarantee that a journey is passable. PathAble
-> advises; it does not certify. See [`docs/product/PHASES.md`](docs/product/PHASES.md).
+[![CI](https://github.com/s2002kumar/pathable-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/s2002kumar/pathable-ai/actions/workflows/ci.yml)
+[![Security](https://github.com/s2002kumar/pathable-ai/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/s2002kumar/pathable-ai/actions/workflows/security.yml)
+
+## Recorded demo · 67 seconds
+
+[![One press loads a journey from the evaluation corpus: 287 m with four stairways against 354 m with none, and a
+banner stating that OpenStreetMap records no accessibility detail for 100% of this
+route](docs/evidence/screenshots/demo-desktop-02-comparison.png)](docs/evidence/media/pathable-demo.webm)
+
+**▶ [Watch the 67-second recording](docs/evidence/media/pathable-demo.webm)** — a real browser driving the real
+production containers against the real Waterloo network. No response is faked or spliced; the
+[full-stack test suite](apps/web/tests/fullstack/recruiter-demo.spec.ts) watches the network and asserts that the
+figures on screen are the ones the API returned.
+
+**This is a local production-build demo. PathAble is not deployed anywhere** — there is no live URL, no hosting
+account and no public service. Everything above runs from `docker compose` on one laptop.
+
+## What the comparison actually says
+
+One press loads `campus-library-to-student-life` from the committed twenty-journey corpus and the engine answers
+live:
+
+|                        | Distance    | Stairways |
+| ---------------------- | ----------- | --------- |
+| Shortest walking route | **287.4 m** | 4         |
+| Wheelchair route       | **354.1 m** | 0         |
+
+**+66.67 m (23%) to avoid four stairways.** Every statement beside those numbers is tagged with the kind of claim
+it is — _recorded in OpenStreetMap_, _your profile's rules_, _derived from an elevation model_, _not recorded_ —
+because an observation, an estimate, a policy consequence and an absence are four different things, and the fourth
+must never read as the first. On this journey OpenStreetMap records **no accessibility detail for 100% of the
+route**, and the interface says so above the distances rather than below them.
+
+There is **no machine learning here**. Every routing decision is a deterministic rule over recorded map
+attributes; every response carries `ml_predictions_used: false`, typed as a literal so a client cannot compile
+against anything else.
+
+## Verified engineering facts
+
+Every figure below links to the evidence that produced it and the conditions it was measured under. Nothing here
+is estimated.
+
+| Fact                                                                                                                                                                                         | Evidence                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **155,714 nodes · 180,554 physical segments · 361,108 directed edges** ingested from a published OpenStreetMap extract, with 1 m LiDAR elevation                                             | [evidence index](docs/evidence/README.md) · [`production-envelope.json`](docs/evidence/production-envelope.json)                                                                   |
+| **Graph load: 46.83 s → 22.14 s median, peak Python heap 1,381.3 MB → 700.7 MB (−49%)** after replacing ORM entity construction with narrow Core columns                                     | [`waterloo-graph-load.json`](docs/evidence/waterloo-graph-load.json) vs [`-before.json`](docs/evidence/waterloo-graph-load-before.json) · [KI-6](docs/development/KNOWN_ISSUES.md) |
+| **Routes unchanged by that optimisation** — identical node and segment SHA-256 fingerprints, identical answers on all 20 corpus journeys                                                     | [`waterloo-routes.json`](docs/evidence/waterloo-routes.json)                                                                                                                       |
+| **18 of 20 corpus journeys route differently** for a wheelchair profile; 1 has no route at all and says why                                                                                  | [`waterloo-routes.json`](docs/evidence/waterloo-routes.json)                                                                                                                       |
+| **A\* is not faster here**: 1,970 expanded nodes against Dijkstra's 7,409, but 195 ms against 213 ms at p50 — reported as a wash, not a win                                                  | [`waterloo-performance.json`](docs/evidence/waterloo-performance.json)                                                                                                             |
+| **Production container envelope**: one API worker holds 997 MB steady / 1,064 MB peak and is routable 18.7 s after start; the frontend fits 512 MiB with 92% headroom over three cold starts | [`production-envelope.json`](docs/evidence/production-envelope.json) · [ADR 0009](docs/adr/0009-deployment-architecture.md)                                                        |
+| **Dataset bootstrap needs no PostgreSQL superuser** — verified against a role with `superuser=f`, after the obvious `pg_restore --disable-triggers` was shown to fail on one                 | [`restore-dataset.sh`](infra/production-smoke/restore-dataset.sh) · [KI-8](docs/development/KNOWN_ISSUES.md)                                                                       |
+
+### Tests, by suite
+
+Counted separately on purpose — these suites overlap in what they cover, and adding them up would be a bigger
+number describing less.
+
+| Suite                                   | Count                                                                 | Command                                                    |
+| --------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Backend, unit + PostGIS integration     | **727 passed, 1 skipped**, 89.09% coverage in CI against an 86% floor | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
+| Frontend unit (Vitest)                  | **220 passed**, 92.83% statements                                     | `pnpm --filter @pathable/web test:unit`                    |
+| Browser, stubbed API (Playwright + axe) | **80 passed**                                                         | `pnpm --filter @pathable/web test:e2e`                     |
+| Browser, full stack, nothing stubbed    | **16 passed**                                                         | `pnpm --filter @pathable/web test:e2e:fullstack`           |
+
+Coverage is quoted from CI, on Linux. The same command on the author's Windows machine reports 89.13%, because
+one test covering non-Windows event-loop behaviour is skipped there — a platform difference, not a discrepancy to
+choose between.
+
+The backend integration tests run against real PostgreSQL/PostGIS, never a mock. The full-stack suite drives a
+real browser through real containers. Nine of its sixteen tests need the real Waterloo network and
+[skip with a printed reason](docs/evidence/DEMO_SCRIPT.md) where it is absent, which includes CI.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+  subgraph ingest["Ingestion — run once per dataset version"]
+    direction TB
+    OSM["OpenStreetMap extract<br/>Geofabrik .osm.pbf"] --> NORM["Normalise tags<br/>unknown is a value"]
+    NORM --> VALID["Validate<br/>errors block activation"]
+    VALID --> WRITE[("Write a new<br/>dataset version")]
+    HRDEM["NRCan HRDEM<br/>1 m LiDAR"] --> ELEV["Sample elevation,<br/>derive gradient"]
+    ELEV --> WRITE
+    WRITE --> ACT["Activate in one<br/>transaction"]
+  end
+
+  subgraph store["Storage"]
+    PG[("PostgreSQL 17 + PostGIS 3.5<br/>nodes · segments · versions")]
+  end
+
+  subgraph request["Every route request"]
+    direction TB
+    WEB["Next.js 16 · React 19<br/>MapLibre GL"] -->|"POST /routes/compare"| API["FastAPI · Pydantic v2"]
+    API --> GRAPH["In-memory graph<br/>NetworkX, cached per<br/>dataset version"]
+    GRAPH --> COST["Snap · Dijkstra and A*<br/>accessibility cost model"]
+    COST --> EXPL["Deterministic explanation<br/>+ per-category unknowns"]
+    EXPL -->|"routes, evidence,<br/>attribution"| WEB
+  end
+
+  ACT --> PG
+  PG -->|"loaded once at startup"| GRAPH
+
+  classDef future stroke-dasharray: 5 5
+  DEPLOY["Proposed hosting — not deployed<br/>see ADR 0009"]:::future
+```
+
+Solid boxes are implemented and measured. The dashed box is a costed proposal in
+[ADR 0009](docs/adr/0009-deployment-architecture.md) and nothing has been bought or provisioned.
+
+The backend's Pydantic models are the single source of truth for the HTTP contract: they generate
+`openapi.json`, which generates the frontend's TypeScript types, and CI fails if the committed output drifts. A
+dataset is immutable once activated — ingestion writes a _new_ version and swaps activation in one transaction —
+which is why a cached graph can never go stale.
+
+## Where to go next
+
+| If you want to…                        | Read                                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Run it yourself                        | [Local setup](docs/development/LOCAL_SETUP.md) · [production smoke](docs/deployment/PRODUCTION_SMOKE.md) |
+| See the numbers and how they were made | [Evidence index](docs/evidence/README.md)                                                                |
+| Understand the engineering decisions   | [Architecture](docs/architecture/OVERVIEW.md) · [ADRs](docs/adr/)                                        |
+| Interrogate the claims                 | [Project defence](docs/PROJECT_DEFENSE.md) · [claims ledger](docs/CLAIMS_LEDGER.md)                      |
+| Know what is deliberately missing      | [Known issues](docs/development/KNOWN_ISSUES.md) · [phases](docs/product/PHASES.md)                      |
+| Give the demo                          | [Demo script](docs/evidence/DEMO_SCRIPT.md)                                                              |
+
+## Status, licence and attribution
+
+**Gate A and Gate B are passed** — a real regional network with elevation, and accessibility-aware routing that
+defensibly beats a shortest path. Gate C (machine learning) and Gate D (production credibility) are not, and
+nothing in this repository claims otherwise. See [phases](docs/product/PHASES.md).
+
+**Source code: © Sandeep Kumar. All rights reserved.** This repository is _source-visible_ — readable by anyone
+who opens it — which is not a grant of any right to use, copy, modify or redistribute the code. It is **not open
+source**. See [`LICENSING.md`](LICENSING.md).
+
+**The data is licensed separately and more generously, and its obligations are unaffected by the above.** Map data
+© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/);
+the pedestrian graph derived from it is a derived database under ODbL. Basemap tiles in the screenshots and
+recording: [OpenFreeMap](https://openfreemap.org) © [OpenMapTiles](https://www.openmaptiles.org/) Data from
+[OpenStreetMap](https://www.openstreetmap.org/copyright). Gradients derived from NRCan's High Resolution Digital
+Elevation Model: _Contains information licensed under the
+[Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada)._ The measurement
+files in [`docs/evidence/`](docs/evidence/README.md) are OSM-derived data. Full detail in
+[`docs/licensing/DATA_SOURCES.md`](docs/licensing/DATA_SOURCES.md).
 
 ---
+
+# Engineering documentation
+
+Everything below is the working documentation for people running or extending the project.
 
 ## Screenshots
 

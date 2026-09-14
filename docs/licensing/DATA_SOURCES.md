@@ -74,6 +74,16 @@ Three obligations:
 account, no API key and no billing relationship. The style and software are open;
 the underlying data is OSM under ODbL.
 
+**Attribution, including in media.** OpenFreeMap's own page states the required
+credit verbatim — **OpenFreeMap © OpenMapTiles Data from OpenStreetMap** — says
+the requirement extends to printed media and video, answers "yes" to commercial
+use, and notes that MapLibre adds the credit automatically. PathAble's map uses
+MapLibre's attribution control, so the string is rendered in every frame of
+every screenshot and of the recorded demo in
+[`docs/evidence/`](../evidence/README.md); the surrounding documents repeat it
+in text as OpenMapTiles asks. Checked against <https://openfreemap.org/>
+2026-09-13.
+
 > **Not approved for production.** A free community service offers no
 > availability guarantee, no support relationship and no capacity commitment.
 > PathAble is intended to help people decide whether they can physically make a

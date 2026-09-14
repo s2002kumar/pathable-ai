@@ -362,3 +362,35 @@ could need a change to
 
 **Check when:** the first real managed database exists. Run the script against
 it before believing the bootstrap works, and record what differed.
+
+---
+
+## KI-9 — The demo journey is not covered by CI
+
+**Status: Open** · 2026-09-13
+
+`apps/web/tests/fullstack/recruiter-demo.spec.ts` is the suite that proves the
+recruiter demo shows what the API actually returned. All nine of its tests
+need the real Waterloo network, and CI loads the nine-node synthetic fixture —
+ingesting a 970 MB extract on every pull request would cost more than it is
+worth. Those tests therefore probe the API once and **skip with a printed
+reason** rather than fail.
+
+**What that means honestly:** the single most recruiter-visible path in the
+product — one press, a live comparison, the uncertainty banner — is verified
+locally and on demand, not on every commit. A regression in it would reach
+`main` green. The stubbed browser suite covers the same components against
+fixed responses, so a rendering regression would still be caught; a regression
+in how the real engine's numbers reach the screen would not be.
+
+**Reproduce the gap:** run the suite with the synthetic fixture loaded and read
+the skip reasons; then bring up
+[`infra/production-smoke/compose.yaml`](../../infra/production-smoke/compose.yaml)
+with the Waterloo dataset restored and watch the same eight tests execute.
+
+**Check when:** a cached Waterloo dataset can be restored into CI in under a
+couple of minutes — the 31 MB `pg_restore` archive already used by
+[`restore-dataset.sh`](../../infra/production-smoke/restore-dataset.sh) is the
+obvious candidate, held as a workflow artifact or a release asset rather than
+re-ingested from the extract. Until then, do not describe this path as
+continuously verified.

@@ -28,7 +28,9 @@ no PathAble deployment to test against.
 
 ## Supported versions
 
-Only the `main` branch. There are no releases yet.
+Only the `main` branch. Tags mark audited points in its history —
+`v0.3.0-public-release` is the first one published with the repository — but
+they are not maintained branches, and no fix will be backported to one.
 
 ## What the foundation enforces
 
