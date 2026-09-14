@@ -63,12 +63,16 @@ is estimated.
 Counted separately on purpose — these suites overlap in what they cover, and adding them up would be a bigger
 number describing less.
 
-| Suite                                   | Count                                                           | Command                                                    |
-| --------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------- |
-| Backend, unit + PostGIS integration     | **727 passed, 1 skipped**, 89.09% coverage against an 86% floor | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
-| Frontend unit (Vitest)                  | **220 passed**, 92.83% statements                               | `pnpm --filter @pathable/web test:unit`                    |
-| Browser, stubbed API (Playwright + axe) | **80 passed**                                                   | `pnpm --filter @pathable/web test:e2e`                     |
-| Browser, full stack, nothing stubbed    | **16 passed**                                                   | `pnpm --filter @pathable/web test:e2e:fullstack`           |
+| Suite                                   | Count                                                                 | Command                                                    |
+| --------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Backend, unit + PostGIS integration     | **727 passed, 1 skipped**, 89.09% coverage in CI against an 86% floor | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
+| Frontend unit (Vitest)                  | **220 passed**, 92.83% statements                                     | `pnpm --filter @pathable/web test:unit`                    |
+| Browser, stubbed API (Playwright + axe) | **80 passed**                                                         | `pnpm --filter @pathable/web test:e2e`                     |
+| Browser, full stack, nothing stubbed    | **16 passed**                                                         | `pnpm --filter @pathable/web test:e2e:fullstack`           |
+
+Coverage is quoted from CI, on Linux. The same command on the author's Windows machine reports 89.13%, because
+one test covering non-Windows event-loop behaviour is skipped there — a platform difference, not a discrepancy to
+choose between.
 
 The backend integration tests run against real PostgreSQL/PostGIS, never a mock. The full-stack suite drives a
 real browser through real containers. Nine of its sixteen tests need the real Waterloo network and

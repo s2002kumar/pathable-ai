@@ -12,16 +12,22 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Fixed
 
-- **Three published figures that the evidence did not support.** Building the
+- **Four published claims that the evidence did not support.** Building the
   claims ledger meant checking every number against the file behind it, which
-  caught them: the median detour across the twenty-journey corpus was published
-  as 70 m and is 86.1 m across the eighteen journeys that change (83.8 m across
-  all nineteen routable) — recomputing from the corpus at the commit that first
-  published it gives the same 86.05, so it was wrong when written rather than
-  stale; backend coverage was quoted at 89.13% and is 89.09%; and the full-stack
-  demo suite was described as skipping eight of nine tests in CI when it skips
-  all nine. None of the three changes an argument, which is exactly why they
-  survived until something checked them.
+  caught them. The median detour across the twenty-journey corpus was published
+  as 70 m and is 86.1 m across the eighteen journeys that change, 83.8 m across
+  all nineteen routable — recomputing from the corpus at the commit that first
+  published 70 m gives the same 86.05, so it was wrong when written rather than
+  left behind. Backend coverage was quoted as 89.13% with no measurement
+  context; it is 89.09% in CI and 89.13% locally on Windows, where one
+  platform-specific test is skipped, and the README now says which. The
+  full-stack demo suite was described as skipping eight of nine tests in CI when
+  the guard skips all nine. And `06-snapped-away-from-the-chosen-point.png` was
+  listed in the evidence index as a distinct capture when it was byte-identical
+  to `05-missing-evidence.png` — the spec's no-route attempt produced a route —
+  so the file is deleted and the index says what happened. None of the four
+  changes an argument, which is exactly why they survived until something
+  checked them.
 
 ### Added
 
