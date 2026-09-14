@@ -9,16 +9,22 @@ records: steps, surfaces, gradients, kerbs. Where nothing has been recorded, it 
 [![CI](https://github.com/s2002kumar/pathable-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/s2002kumar/pathable-ai/actions/workflows/ci.yml)
 [![Security](https://github.com/s2002kumar/pathable-ai/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/s2002kumar/pathable-ai/actions/workflows/security.yml)
 
-## Recorded demo · 67 seconds
+## Recorded demo
 
-[![One press loads a journey from the evaluation corpus: 287 m with four stairways against 354 m with none, and a
-banner stating that OpenStreetMap records no accessibility detail for 100% of this
-route](docs/evidence/screenshots/demo-desktop-02-comparison.png)](docs/evidence/media/pathable-demo.webm)
+![One press loads a journey from the evaluation corpus. The engine answers live: 287 m with four stairways
+against 354 m with none, a banner saying OpenStreetMap records no accessibility detail for 100% of this route,
+and both routes drawn so they can be told apart without
+colour.](docs/evidence/media/pathable-demo.gif)
 
-**▶ [Watch the 67-second recording](docs/evidence/media/pathable-demo.webm)** — a real browser driving the real
-production containers against the real Waterloo network. No response is faked or spliced; the
+That is a real browser driving the real production containers against the real Waterloo network — thirteen
+seconds of it, from the press to the answer. No response is faked or spliced; the
 [full-stack test suite](apps/web/tests/fullstack/recruiter-demo.spec.ts) watches the network and asserts that the
 figures on screen are the ones the API returned.
+
+**The whole 67-second recording** is
+[`docs/evidence/media/pathable-demo.webm`](docs/evidence/media/pathable-demo.webm) — 2.23 MB, VP9. GitHub cannot
+preview a video that size in the browser, so that link downloads it; `git clone` brings it down with everything
+else. It carries the same session through to the attribution and the per-category evidence gaps.
 
 **This is a local production-build demo. PathAble is not deployed anywhere** — there is no live URL, no hosting
 account and no public service. Everything above runs from `docker compose` on one laptop.

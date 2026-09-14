@@ -12,6 +12,17 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Fixed
 
+- **The demo link was a dead end for anyone reading it on GitHub.** Verified
+  anonymously after publication: GitHub's blob view answers a 2.23 MB WebM with
+  "we can't show files that are this big right now", its raw URL sends
+  `Content-Disposition: attachment` so the browser downloads instead of playing,
+  and `<video>` is stripped from rendered README markdown. A reader who clicked
+  the recording got a page with no player on it. The README now shows a
+  13.5-second GIF excerpt inline — the press and the answer arriving, cut from
+  the same session, still carrying every required credit — and says plainly that
+  the link to the full recording downloads it. The WebM remains the evidence;
+  the GIF is a window onto it.
+
 - **Four published claims that the evidence did not support.** Building the
   claims ledger meant checking every number against the file behind it, which
   caught them. The median detour across the twenty-journey corpus was published
