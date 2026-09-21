@@ -3,7 +3,7 @@
 # PathAble web image. Build context is the repository root:
 #   docker build -f apps/web/Dockerfile .
 
-FROM node:22-bookworm-slim AS base
+FROM node:25-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm \
     PATH=/pnpm:$PATH \
     CI=true
@@ -66,7 +66,7 @@ RUN pnpm --filter @pathable/web build
 # -----------------------------------------------------------------------------
 # Runtime — standalone server only; no pnpm, no node_modules tree, no sources
 # -----------------------------------------------------------------------------
-FROM node:22-bookworm-slim AS runtime
+FROM node:25-bookworm-slim AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production \
