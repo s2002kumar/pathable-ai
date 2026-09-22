@@ -1,7 +1,8 @@
 'use client';
 
 import type { Route, RouteCompareResponse } from '@pathable/contracts';
-import { RouteDifference } from './RouteDifference';
+import type { RouteFocus } from '@/features/map/route-layers';
+import { COINCIDENT_THRESHOLD_M, RouteDifference } from './RouteDifference';
 import { formatDistance, formatDuration } from './types';
 import styles from './RoutePlanner.module.css';
 
@@ -12,16 +13,34 @@ import styles from './RoutePlanner.module.css';
  * its own. Somebody using a screen reader, or looking at a phone in bright sun,
  * or deciding whether a journey is possible before leaving the house, gets the
  * whole story here without ever interpreting two coloured lines.
+ *
+ * Order matters: the headline and the figures first, the per-route cards and
+ * cautions next, and the fuller detail — what is on the route, where the data
+ * came from — behind labelled disclosures. Nothing is removed; the parts a
+ * viewer opens are the parts they asked for.
  */
-export function RouteComparisonView({ comparison }: { readonly comparison: RouteCompareResponse }) {
+export function RouteComparisonView({
+  comparison,
+  focusedRoute = null,
+  onFocusRoute = () => {},
+}: {
+  readonly comparison: RouteCompareResponse;
+  readonly focusedRoute?: RouteFocus;
+  readonly onFocusRoute?: (focus: RouteFocus) => void;
+}) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
   const bothRoutes = Boolean(standard && accessible);
 
   return (
     <div className={styles.results}>
-      <RouteHeadline comparison={comparison} />
-
-      <RouteDifference comparison={comparison} />
+      <div className={styles.result}>
+        <RouteHeadline comparison={comparison} />
+        <RouteDifference
+          comparison={comparison}
+          focusedRoute={focusedRoute}
+          onFocusRoute={onFocusRoute}
+        />
+      </div>
 
       <div className={styles.routeCards}>
         {accessible ? (
@@ -70,24 +89,37 @@ export function RouteComparisonView({ comparison }: { readonly comparison: Route
         </section>
       ) : null}
 
-      <ObstacleBreakdown route={accessible ?? standard ?? null} />
+      <details className="disclosure" data-testid="route-detail">
+        <summary>What is on this route</summary>
+        <div className={styles.disclosureBody}>
+          <ObstacleBreakdown route={accessible ?? standard ?? null} />
+        </div>
+      </details>
 
-      <footer className={styles.provenance}>
-        <p>
-          Routing uses recorded map attributes only — no predictions, no scoring, no machine
-          learning. PathAble advises; it cannot guarantee a journey is passable.
-        </p>
-        <MapAge dataset={comparison.dataset} />
-        <p className={styles.attribution}>
-          {comparison.dataset.attribution} · dataset{' '}
-          <code>{comparison.dataset.checksum.slice(0, 8)}</code>
-        </p>
-        {comparison.dataset.elevation_attribution ? (
-          <p className={styles.attribution} data-testid="elevation-attribution">
-            {comparison.dataset.elevation_attribution}
+      <details className="disclosure" data-testid="route-provenance">
+        <summary>Where this comes from</summary>
+        <div className={`${styles.disclosureBody} ${styles.provenance}`}>
+          <MapAge dataset={comparison.dataset} />
+          <p className={styles.attribution}>
+            {comparison.dataset.attribution} · dataset{' '}
+            <code>{comparison.dataset.checksum.slice(0, 8)}</code>
           </p>
-        ) : null}
-      </footer>
+          {comparison.dataset.elevation_attribution ? (
+            <p className={styles.attribution} data-testid="elevation-attribution">
+              {comparison.dataset.elevation_attribution}
+            </p>
+          ) : null}
+          <p>
+            Routing policy <code>{comparison.routing_policy_version}</code>. Machine-learning
+            predictions used: <code>{String(comparison.ml_predictions_used)}</code>.
+          </p>
+        </div>
+      </details>
+
+      <p className={styles.noModel}>
+        Routing uses recorded map attributes only — no predictions, no scoring, no machine learning.
+        PathAble advises; it cannot guarantee a journey is passable.
+      </p>
     </div>
   );
 }
@@ -138,7 +170,7 @@ function RouteHeadline({ comparison }: { readonly comparison: RouteCompareRespon
   }
 
   const extra = comparison.extra_distance_m ?? 0;
-  if (Math.abs(extra) < 15) {
+  if (Math.abs(extra) < COINCIDENT_THRESHOLD_M) {
     return (
       <p className={styles.headlineGood} role="status">
         The accessible route is the same length as the shortest route.
@@ -149,7 +181,7 @@ function RouteHeadline({ comparison }: { readonly comparison: RouteCompareRespon
   const fraction = comparison.extra_distance_fraction ?? 0;
   return (
     <p className={styles.headline} role="status">
-      The accessible route is <strong>{formatDistance(Math.abs(extra))}</strong>{' '}
+      The accessible route is <strong className="tabular">{formatDistance(Math.abs(extra))}</strong>{' '}
       {extra > 0 ? 'longer' : 'shorter'} than the shortest route
       {Math.abs(fraction) >= 0.01 ? ` (${Math.round(Math.abs(fraction) * 100)}%)` : ''}.
     </p>
@@ -286,10 +318,7 @@ function ObstacleBreakdown({ route }: { readonly route: Route | null }) {
   if (route === null) return null;
 
   return (
-    <section className={styles.section} aria-labelledby="route-detail-heading">
-      <h3 className={styles.sectionHeading} id="route-detail-heading">
-        What is on this route
-      </h3>
+    <section className={styles.section} aria-label="What is on this route">
       <dl className={styles.stats}>
         <div className={styles.stat}>
           <dt>Road crossings</dt>

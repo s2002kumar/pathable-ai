@@ -1,16 +1,16 @@
 /*
- * Mobile first: the map is the primary surface but does not consume the
- * viewport, and the planner sits below it in normal document flow. Nothing
- * overlaps, so the map's own controls can never cover the route description —
- * which on a phone is the part somebody actually reads.
+ * Mobile first: a compact map, then the planner as a sheet in normal document
+ * flow. Nothing overlaps and nothing needs dragging, so the map's own controls
+ * can never cover the route description — which on a phone is the part
+ * somebody actually reads — and the whole panel is reachable by scrolling the
+ * page like any other page.
  */
 
 .workspace {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-3);
+  min-height: calc(100dvh - var(--header-height));
   /* Belt-and-braces against a stray wide child; the page never scrolls sideways. */
   max-width: 100%;
   overflow-x: hidden;
@@ -19,29 +19,55 @@
 .mapArea {
   position: relative;
   flex: 0 0 auto;
-  height: 52dvh;
-  min-height: 15rem;
+  /* Compact on purpose: the sheet below has to show the answer on the first
+     screen, and a phone-height map is for orientation, not for reading. */
+  height: 36dvh;
+  min-height: 13rem;
 }
 
+/* The sheet. It looks like one, and it behaves like a page: no drag handle to
+   find, no snap points, no second scroll region competing with the document. */
 .panelArea {
-  flex: 0 0 auto;
+  position: relative;
+  z-index: 3;
+  flex: 1 1 auto;
+  margin-top: calc(-1 * var(--space-4));
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: 0 -8px 24px -12px rgb(41 33 20 / 25%);
+}
+
+.grip {
+  display: block;
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: var(--space-2) auto 0;
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+
+.panelInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4) var(--space-8);
 }
 
 /* --- The legend ----------------------------------------------------------- */
 
 .legend {
   position: absolute;
-  right: var(--space-3);
-  /* Top, not bottom: on a narrow screen the map's attribution wraps to two
-     lines and would run underneath a legend anchored to the bottom edge, and
-     the OpenStreetMap credit is not something a decoration may cover. The
-     desktop rule below moves it back down, where there is room. */
+  /* Top-left: MapLibre's navigation is top-right, and the scale and the
+     attribution share the bottom edge, where on a narrow screen the credit
+     wraps to two lines and would run under anything anchored there. */
   top: var(--space-3);
+  left: var(--space-3);
   z-index: 4;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   background: var(--color-surface-overlay);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -60,7 +86,7 @@
 .legendList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
   padding: 0;
   margin: 0;
   list-style: none;
@@ -72,6 +98,15 @@
   align-items: center;
   font-size: var(--text-xs);
   color: var(--color-text);
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.legendItem[data-dimmed='true'] {
+  opacity: 0.55;
+}
+
+.legendNote {
+  color: var(--color-text-muted);
 }
 
 /* Line styling, not a colour chip: the dash pattern is what distinguishes the
@@ -86,64 +121,64 @@
 }
 
 .legendSwatch[data-variant='accessible'] {
-  border-top-color: #0b6bcb;
+  border-top-color: var(--color-route-accessible);
 }
 
 .legendSwatch[data-variant='standard'] {
   border-top-style: dashed;
-  border-top-color: #5b6470;
+  border-top-color: var(--color-route-standard);
 }
 
 /*
- * Desktop: the map fills the workspace and the planner floats over it as a card,
- * anchored top-left and clear of MapLibre's own chrome (navigation top-right,
- * scale bottom-left, attribution bottom-right).
+ * Desktop: a stable planner column beside the map, both always visible. The
+ * map takes every pixel the column does not, and nothing floats over it, so a
+ * fitted route is never tucked under a card.
+ *
+ * Gated on height as well as width: at 200% zoom or on a short window a fixed
+ * two-pane layout stops being usable, and the page falls back to the flow
+ * layout above, which scrolls.
  */
 
-@media (min-width: 64rem) {
+@media (min-width: 64rem) and (min-height: 32rem) {
   .workspace {
-    position: relative;
-    display: block;
+    display: grid;
+    grid-template-columns: var(--panel-width) minmax(0, 1fr);
+    grid-template-areas: 'panel map';
+    height: calc(100dvh - var(--header-height));
     min-height: 0;
-    padding: var(--space-4);
-    height: 100%;
+    overflow: hidden;
   }
 
   .mapArea {
-    position: absolute;
-    inset: var(--space-4);
+    grid-area: map;
     height: auto;
+    min-height: 0;
   }
 
-  /* Anchored top *and* bottom so the available height is definite. That is what
-     lets a long comparison scroll inside the card rather than running off the
-     bottom of the viewport — a percentage max-height would resolve against the
-     containing block instead of the space actually left over. */
   .panelArea {
-    position: absolute;
-    top: var(--space-8);
-    bottom: var(--space-8);
-    left: var(--space-8);
-    z-index: 5;
-    display: flex;
-    align-items: flex-start;
-    width: var(--panel-width);
-    /* The strip is not interactive; only the card is. Otherwise this invisible
-       column would swallow drags meant for the map beside it. */
-    pointer-events: none;
-  }
-
-  .panelArea > * {
-    max-height: 100%;
+    grid-area: panel;
+    min-height: 0;
+    margin-top: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-    pointer-events: auto;
+    border-top: 0;
+    border-right: 1px solid var(--color-border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .grip {
+    display: none;
+  }
+
+  .panelInner {
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5) var(--space-8);
   }
 
   .legend {
-    right: var(--space-6);
-    top: auto;
-    bottom: var(--space-10);
+    top: var(--space-4);
+    left: var(--space-4);
   }
 }
 

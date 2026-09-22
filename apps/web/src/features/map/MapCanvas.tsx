@@ -4,6 +4,7 @@ import { useId, useRef } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Route } from '@pathable/contracts';
 import { MapStatusOverlay } from './MapStatusOverlay';
+import type { RouteFocus } from './route-layers';
 import { useMapClick } from './useMapClick';
 import { useMapLibre } from './useMapLibre';
 import { useRouteLayers } from './useRouteLayers';
@@ -27,6 +28,8 @@ export type MapCanvasProps = {
   readonly origin?: MapPoint | null;
   readonly destination?: MapPoint | null;
   readonly showStandardRoute?: boolean;
+  /** Which route to bring forward on the map, if the viewer asked for one. */
+  readonly focusedRoute?: RouteFocus;
   /**
    * Called with the clicked position. Absent when the map is decorative, which
    * is what keeps this component usable outside the planner.
@@ -53,6 +56,7 @@ export function MapCanvas({
   origin = null,
   destination = null,
   showStandardRoute = true,
+  focusedRoute = null,
   onSelectPoint,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,7 +70,15 @@ export function MapCanvas({
     attribution,
   });
 
-  useRouteLayers({ map, standardRoute, accessibleRoute, origin, destination, showStandardRoute });
+  useRouteLayers({
+    map,
+    standardRoute,
+    accessibleRoute,
+    origin,
+    destination,
+    showStandardRoute,
+    focus: focusedRoute,
+  });
   useMapClick(map, onSelectPoint ?? noop);
 
   return (

@@ -34,24 +34,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <AppHeader apiBaseUrl={config.apiBaseUrl} pilotRegionName={config.pilotRegionName} />
 
       <main className={styles.main} id="main-content">
-        <div className={styles.intro}>
-          <h1 className={styles.pageTitle}>Walking routes in {config.pilotRegionName}</h1>
-          {/* The text alternative the map region points at. It states what the
-              map conveys rather than pointing at it, so it stands alone for
-              anyone who cannot see the map or render WebGL. */}
-          <p
-            className={styles.instructions}
-            id={PILOT_DESCRIPTION_ID}
-            data-testid="pilot-description"
-          >
-            Click the map to set a start and an end. PathAble compares the shortest walking route
-            with one that suits how you travel, and explains the difference using what OpenStreetMap
-            actually records — steps, surfaces, gradients and kerbs. Where nothing has been recorded
-            it says so: missing information is never treated as a clear path, and no route here is a
-            guarantee that a journey is passable.
-          </p>
-        </div>
-
         <RouteWorkspace
           apiBaseUrl={config.apiBaseUrl}
           region={config.pilotRegionSlug}
@@ -63,24 +45,66 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           attribution={MAP_ATTRIBUTION}
           describedById={PILOT_DESCRIPTION_ID}
           initialExample={example}
+          title={<h1 className={styles.pageTitle}>Walking routes in {config.pilotRegionName}</h1>}
+          intro={<PageIntro />}
+          footer={<DataAttribution />}
         />
-
-        <p className={styles.attribution} data-testid="attribution">
-          Map data ©{' '}
-          <a
-            href="https://www.openstreetmap.org/copyright"
-            rel="noreferrer noopener"
-            target="_blank"
-          >
-            OpenStreetMap
-          </a>{' '}
-          contributors, ODbL 1.0. Development tiles served by{' '}
-          <a href="https://openfreemap.org/" rel="noreferrer noopener" target="_blank">
-            OpenFreeMap
-          </a>
-          , which has not been approved for production use.
-        </p>
       </main>
     </div>
+  );
+}
+
+/**
+ * What the page is for, in two sentences, and the longer explanation behind a
+ * disclosure.
+ *
+ * The short statement is also the text alternative the map region points at,
+ * so it states what the map conveys rather than pointing at it, and it keeps
+ * the two sentences that make this product safe to read: missing data is not a
+ * clear path, and no route is a guarantee. It sits below the answer rather
+ * than above it: on a phone the answer has to fit the first screen, and a
+ * viewer who has just pressed the example is reading a result, not a preface.
+ */
+function PageIntro() {
+  return (
+    <div className={styles.intro}>
+      <p className={styles.purpose} id={PILOT_DESCRIPTION_ID} data-testid="pilot-description">
+        PathAble compares the shortest walking route with one that suits how you travel, using what
+        OpenStreetMap actually records. Missing information is never treated as a clear path, and no
+        route here is a guarantee that a journey is passable.
+      </p>
+      <details className="disclosure" data-testid="how-it-works">
+        <summary>How it works</summary>
+        <div className={styles.introBody}>
+          <p>
+            Click the map, or search for a place, to set a start and an end. Choose how you travel,
+            and PathAble computes both routes over the recorded network and explains where they
+            differ: steps, surfaces, gradients and kerbs.
+          </p>
+          <p>
+            Every statement is labelled by where it came from — recorded in OpenStreetMap, your
+            profile&rsquo;s rules, derived from an elevation model, or not recorded at all. The
+            routing is deterministic rules over map attributes; nothing is predicted or scored by a
+            model.
+          </p>
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function DataAttribution() {
+  return (
+    <p className={styles.attribution} data-testid="attribution">
+      Map data ©{' '}
+      <a href="https://www.openstreetmap.org/copyright" rel="noreferrer noopener" target="_blank">
+        OpenStreetMap
+      </a>{' '}
+      contributors, ODbL 1.0. Development tiles served by{' '}
+      <a href="https://openfreemap.org/" rel="noreferrer noopener" target="_blank">
+        OpenFreeMap
+      </a>
+      , which has not been approved for production use.
+    </p>
   );
 }

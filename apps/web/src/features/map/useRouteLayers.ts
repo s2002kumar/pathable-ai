@@ -4,21 +4,32 @@ import { useEffect, useRef } from 'react';
 import type { Route } from '@pathable/contracts';
 import type { MapInstance } from './useMapLibre';
 import {
+  ACCESSIBLE_CASING_LAYER_ID,
   ACCESSIBLE_LAYER_ID,
   ACCESSIBLE_SOURCE_ID,
   EMPTY_LINES,
   EMPTY_POINTS,
+  FIT_PADDING,
+  POINTS_HALO_LAYER_ID,
   POINTS_LABEL_LAYER_ID,
   POINTS_LAYER_ID,
   POINTS_SOURCE_ID,
+  type RouteFocus,
+  STANDARD_CASING_LAYER_ID,
   STANDARD_LAYER_ID,
   STANDARD_SOURCE_ID,
+  accessibleCasingLayer,
   accessibleLineLayer,
   boundsOf,
+  cameraDuration,
+  lineOpacity,
   pointCircleLayer,
+  pointHaloLayer,
   pointLabelLayer,
   pointsToGeoJson,
+  prefersReducedMotion,
   routeToGeoJson,
+  standardCasingLayer,
   standardLineLayer,
 } from './route-layers';
 
@@ -32,6 +43,8 @@ export type UseRouteLayersOptions = {
   readonly destination: { longitude: number; latitude: number } | null;
   /** Whether the standard route is drawn at all. */
   readonly showStandardRoute?: boolean;
+  /** Which route to bring forward; the other fades but stays. */
+  readonly focus?: RouteFocus;
 };
 
 /**
@@ -49,6 +62,7 @@ export function useRouteLayers({
   origin,
   destination,
   showStandardRoute = true,
+  focus = null,
 }: UseRouteLayersOptions): void {
   // The last bounds we fitted to. Refitting on every render would fight the user
   // for control of the viewport; refitting only when the route actually changes
@@ -79,13 +93,26 @@ export function useRouteLayers({
     lastFitted.current = signature;
 
     map.fitBounds(bounds, {
-      // Enough room that the route is not tucked under the panel or the
-      // attribution control.
-      padding: { top: 60, bottom: 80, left: 60, right: 60 },
+      padding: FIT_PADDING,
       maxZoom: 17,
-      duration: 500,
+      // Capped, and nothing at all for a viewer who asked for less motion.
+      duration: cameraDuration(prefersReducedMotion()),
     });
   }, [map, standardRoute, accessibleRoute, origin, destination, showStandardRoute]);
+
+  // Focus is paint only. It never touches the sources and never moves the
+  // camera, so bringing one route forward cannot undo a viewer's pan or zoom.
+  useEffect(() => {
+    if (map === null) return;
+    ensureLayers(map);
+
+    const standardOpacity = lineOpacity('standard', focus);
+    const accessibleOpacity = lineOpacity('accessible', focus);
+    map.setPaintProperty(STANDARD_LAYER_ID, 'line-opacity', standardOpacity);
+    map.setPaintProperty(STANDARD_CASING_LAYER_ID, 'line-opacity', standardOpacity * 0.9);
+    map.setPaintProperty(ACCESSIBLE_LAYER_ID, 'line-opacity', accessibleOpacity);
+    map.setPaintProperty(ACCESSIBLE_CASING_LAYER_ID, 'line-opacity', accessibleOpacity * 0.9);
+  }, [map, focus]);
 
   // Layers belong to the map, and the map is torn down with its container — so
   // there is deliberately no removal here. Removing them on unmount would race
@@ -98,9 +125,13 @@ function ensureLayers(map: MapInstance): void {
   addEmptySource(map, POINTS_SOURCE_ID, EMPTY_POINTS);
 
   // Order matters: the standard route is a reference line and must sit beneath
-  // the route the user is actually being offered.
+  // the route the user is actually being offered, and each casing sits directly
+  // under its own line.
+  addLayerOnce(map, STANDARD_CASING_LAYER_ID, standardCasingLayer());
   addLayerOnce(map, STANDARD_LAYER_ID, standardLineLayer());
+  addLayerOnce(map, ACCESSIBLE_CASING_LAYER_ID, accessibleCasingLayer());
   addLayerOnce(map, ACCESSIBLE_LAYER_ID, accessibleLineLayer());
+  addLayerOnce(map, POINTS_HALO_LAYER_ID, pointHaloLayer());
   addLayerOnce(map, POINTS_LAYER_ID, pointCircleLayer());
   addLayerOnce(map, POINTS_LABEL_LAYER_ID, pointLabelLayer());
 }

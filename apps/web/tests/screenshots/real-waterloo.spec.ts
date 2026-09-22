@@ -75,6 +75,9 @@ test.describe('real Waterloo network', () => {
     await page.setViewportSize({ width: 1440, height: 1400 });
     await routeBetween(page, WIDE, /wheelchair/i);
 
+    // The per-category gaps sit behind a disclosure; open it so the capture
+    // shows them rather than implying they are absent.
+    await page.getByTestId('route-detail').locator('summary').click();
     await expect(page.getByRole('heading', { name: /What the map does not say/i })).toBeVisible();
     await capture(page, '05-missing-evidence');
   });

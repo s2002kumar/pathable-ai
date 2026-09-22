@@ -27,6 +27,11 @@ function BrandMark() {
   );
 }
 
+/**
+ * A compact instrument bar: identity on the left, where the system is and how
+ * it is doing on the right. It is deliberately one row high so the map and the
+ * planner get the rest of the viewport.
+ */
 export function AppHeader({ apiBaseUrl, pilotRegionName, statusPollIntervalMs }: AppHeaderProps) {
   const { status } = useSystemStatus({
     apiBaseUrl,

@@ -1,7 +1,9 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { ProfileKey } from '@pathable/contracts';
 import { PlaceSearch } from '@/features/geocoding/PlaceSearch';
+import type { RouteFocus } from '@/features/map/route-layers';
 import { RouteComparisonView } from './RouteComparisonView';
 import { VerifiedExampleCard } from './VerifiedExample';
 import type { VerifiedExample } from './verified-example';
@@ -44,6 +46,9 @@ export type RoutePlannerProps = {
   readonly region: string;
   readonly example: VerifiedExample;
   readonly exampleActive: boolean;
+  /** Which route is brought forward on the map; optional for callers without a map. */
+  readonly focusedRoute?: RouteFocus;
+  readonly onFocusRoute?: (focus: RouteFocus) => void;
   readonly onRunExample: (example: VerifiedExample) => void;
   readonly onProfileChange: (key: ProfileKey) => void;
   readonly onClearPoints: () => void;
@@ -51,6 +56,8 @@ export type RoutePlannerProps = {
   readonly onRetry: () => void;
   readonly onSelectPlace: (position: LngLat) => void;
   readonly fetchImpl?: typeof fetch;
+  /** The page's purpose statement, placed after the answer and before the controls. */
+  readonly intro?: ReactNode;
 };
 
 export function RoutePlanner({
@@ -61,6 +68,8 @@ export function RoutePlanner({
   region,
   example,
   exampleActive,
+  focusedRoute = null,
+  onFocusRoute = () => {},
   onRunExample,
   onProfileChange,
   onClearPoints,
@@ -68,20 +77,17 @@ export function RoutePlanner({
   onRetry,
   onSelectPlace,
   fetchImpl,
+  intro,
 }: RoutePlannerProps) {
+  const awaitingEnd = points.origin !== null && points.destination === null;
+
   return (
     <section className={styles.panel} aria-labelledby="route-planner-heading">
-      <header className={styles.header}>
-        <p className={styles.eyebrow}>Plan a journey</p>
-        <h2 className={styles.title} id="route-planner-heading">
-          Compare routes
-        </h2>
-      </header>
-
       <VerifiedExampleCard
         example={example}
         onRun={onRunExample}
         active={exampleActive}
+        journeyStarted={points.origin !== null || points.destination !== null}
         busy={state.status === 'loading'}
       />
 
@@ -102,10 +108,16 @@ export function RoutePlanner({
         data-route-state={state.status}
         data-testid="route-status"
       >
-        {state.status === 'idle' ? (
+        {state.status === 'idle' && !awaitingEnd ? (
           <p className={styles.hint}>
             Choose a start and an end on the map, or press the example above, and PathAble will
             compare the shortest walking route with one that suits how you travel.
+          </p>
+        ) : null}
+
+        {state.status === 'idle' && awaitingEnd ? (
+          <p className={styles.hint} data-testid="awaiting-end">
+            Start is set. Click the map again, or search for a place, to set the end.
           </p>
         ) : null}
 
@@ -125,41 +137,55 @@ export function RoutePlanner({
           </div>
         ) : null}
 
-        {state.status === 'success' ? <RouteComparisonView comparison={state.comparison} /> : null}
+        {state.status === 'success' ? (
+          <RouteComparisonView
+            comparison={state.comparison}
+            focusedRoute={focusedRoute}
+            onFocusRoute={onFocusRoute}
+          />
+        ) : null}
       </div>
 
-      <PlaceSearch
-        apiBaseUrl={apiBaseUrl}
-        region={region}
-        onSelect={onSelectPlace}
-        {...(fetchImpl ? { fetchImpl } : {})}
-      />
+      {intro}
 
-      <PointFields points={points} onClear={onClearPoints} onSwap={onSwapPoints} />
+      <div className={styles.plan}>
+        <h2 className={styles.planHeading} id="route-planner-heading">
+          Plan your own journey
+        </h2>
 
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>How do you travel?</legend>
-        <div className={styles.profiles} role="radiogroup" aria-label="Mobility profile">
-          {PROFILE_OPTIONS.map((option) => (
-            <label
-              key={option.key}
-              className={styles.profileOption}
-              data-selected={option.key === profileKey}
-            >
-              <input
-                type="radio"
-                name="mobility-profile"
-                value={option.key}
-                checked={option.key === profileKey}
-                onChange={() => onProfileChange(option.key)}
-                className={styles.profileInput}
-              />
-              <span className={styles.profileLabel}>{option.label}</span>
-              <span className={styles.profileHint}>{option.hint}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+        <PlaceSearch
+          apiBaseUrl={apiBaseUrl}
+          region={region}
+          onSelect={onSelectPlace}
+          {...(fetchImpl ? { fetchImpl } : {})}
+        />
+
+        <PointFields points={points} onClear={onClearPoints} onSwap={onSwapPoints} />
+
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>How do you travel?</legend>
+          <div className={styles.profiles} role="radiogroup" aria-label="Mobility profile">
+            {PROFILE_OPTIONS.map((option) => (
+              <label
+                key={option.key}
+                className={styles.profileOption}
+                data-selected={option.key === profileKey}
+              >
+                <input
+                  type="radio"
+                  name="mobility-profile"
+                  value={option.key}
+                  checked={option.key === profileKey}
+                  onChange={() => onProfileChange(option.key)}
+                  className={styles.profileInput}
+                />
+                <span className={styles.profileLabel}>{option.label}</span>
+                <span className={styles.profileHint}>{option.hint}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </div>
     </section>
   );
 }

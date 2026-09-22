@@ -18,6 +18,7 @@
 .input {
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 2.75rem;
   padding: var(--space-2) var(--space-3);
   font: inherit;
   font-size: var(--text-sm);
@@ -25,15 +26,21 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.input::placeholder {
+  color: var(--color-text-subtle);
 }
 
 .input:focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 3px solid var(--color-focus);
   outline-offset: 1px;
 }
 
 .button {
   flex: 0 0 auto;
+  min-height: 2.75rem;
   padding: var(--space-2) var(--space-4);
   font: inherit;
   font-size: var(--text-sm);
@@ -43,6 +50,7 @@
   background: var(--color-brand);
   border: 1px solid var(--color-brand);
   border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .button:hover:not(:disabled) {
@@ -50,7 +58,7 @@
 }
 
 .button:focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -93,6 +101,7 @@
    page rather than navigating anywhere. */
 .match {
   width: 100%;
+  min-height: 2.75rem;
   padding: var(--space-2) var(--space-3);
   font: inherit;
   font-size: var(--text-xs);
@@ -103,6 +112,7 @@
   background: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 .match:hover {
@@ -110,6 +120,6 @@
 }
 
 .match:focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }

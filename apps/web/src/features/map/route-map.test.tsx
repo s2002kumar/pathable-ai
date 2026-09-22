@@ -8,13 +8,18 @@
  * click reach the planner.
  */
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouteWorkspace } from '@/features/routing/RouteWorkspace';
 import {
+  ACCESSIBLE_CASING_LAYER_ID,
   ACCESSIBLE_LAYER_ID,
   ACCESSIBLE_SOURCE_ID,
   POINTS_SOURCE_ID,
+  POINTS_HALO_LAYER_ID,
+  POINTS_LAYER_ID,
+  STANDARD_CASING_LAYER_ID,
   STANDARD_LAYER_ID,
   STANDARD_SOURCE_ID,
 } from './route-layers';
@@ -28,6 +33,8 @@ class FakeMap {
   sources = new Map<string, { type: string; data: unknown }>();
   layerIds: string[] = [];
   fitted: Array<[[number, number], [number, number]]> = [];
+  paint: Array<{ layer: string; name: string; value: unknown }> = [];
+  layout: Array<{ layer: string; name: string; value: unknown }> = [];
   removed = false;
 
   constructor() {
@@ -87,6 +94,16 @@ class FakeMap {
 
   removeLayer(id: string) {
     this.layerIds = this.layerIds.filter((existing) => existing !== id);
+  }
+
+  setPaintProperty(layer: string, name: string, value: unknown) {
+    if (!this.layerIds.includes(layer)) throw new Error(`layer ${layer} does not exist`);
+    this.paint.push({ layer, name, value });
+  }
+
+  setLayoutProperty(layer: string, name: string, value: unknown) {
+    if (!this.layerIds.includes(layer)) throw new Error(`layer ${layer} does not exist`);
+    this.layout.push({ layer, name, value });
   }
 
   fitBounds(bounds: [[number, number], [number, number]]) {
@@ -281,6 +298,75 @@ describe('route layers', () => {
     await clickMap(map, -80.54, 43.47);
 
     await waitFor(() => expect(map.fitted.length).toBeGreaterThan(0));
+  });
+
+  it('cases each line directly beneath it, and halos the markers', async () => {
+    // A casing above its own line would hide it; a casing under the *other*
+    // route would draw a pale stripe through it. Each sits immediately below
+    // the line it belongs to, and the marker halo below the marker.
+    render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const { layerIds } = FakeMap.instances[0]!;
+    expect(layerIds.indexOf(STANDARD_LAYER_ID)).toBe(
+      layerIds.indexOf(STANDARD_CASING_LAYER_ID) + 1,
+    );
+    expect(layerIds.indexOf(ACCESSIBLE_LAYER_ID)).toBe(
+      layerIds.indexOf(ACCESSIBLE_CASING_LAYER_ID) + 1,
+    );
+    expect(layerIds.indexOf(POINTS_LAYER_ID)).toBe(layerIds.indexOf(POINTS_HALO_LAYER_ID) + 1);
+  });
+
+  it('highlights a route by paint alone, without moving the camera', async () => {
+    const user = userEvent.setup();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+    const fitsBefore = map.fitted.length;
+    const paintsBefore = map.paint.length;
+
+    await user.click(screen.getByTestId('focus-accessible'));
+
+    await waitFor(() => expect(map.paint.length).toBeGreaterThan(paintsBefore));
+    const latest = Object.fromEntries(
+      map.paint.slice(paintsBefore).map(({ layer, value }) => [layer, value]),
+    );
+    expect(latest[ACCESSIBLE_LAYER_ID]).toBe(1);
+    expect(latest[STANDARD_LAYER_ID]).toBeLessThan(1);
+    expect(latest[STANDARD_LAYER_ID]).toBeGreaterThan(0);
+    // No refit and no new map: a highlight must not undo the viewer's pan.
+    expect(map.fitted.length).toBe(fitsBefore);
+    expect(FakeMap.instances).toHaveLength(1);
+  });
+
+  it('keeps one map instance across form and result updates', async () => {
+    // Remounting the canvas on a profile change would flash the loading
+    // overlay, drop the viewer's viewport and re-download the style.
+    const user = userEvent.setup();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+
+    await user.click(screen.getByRole('radio', { name: /Crutches or cane/ }));
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+    await user.click(screen.getByRole('button', { name: 'Swap' }));
+
+    expect(FakeMap.instances).toHaveLength(1);
+    expect(map.removed).toBe(false);
   });
 });
 
