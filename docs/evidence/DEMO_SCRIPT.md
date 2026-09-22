@@ -34,8 +34,13 @@ wheelchair profile, and sends a real request. Measured at 2.8 s desktop and
 3.5 s mobile from page load to the comparison on screen.
 
 **0:20 — The map.** Two routes, distinguishable without colour: the wheelchair
-route is a solid line, the shortest walking route is dashed, and the key beside
-the map names both in words.
+route is a solid line, the shortest walking route is dashed, and the key on the
+map names both in words. The camera frames both routes in the map area, which
+the planner never covers: on a desktop the planner is the column beside the
+map, on a phone it is the sheet below it. Each figure has a _Highlight_ control
+that brings one line forward and fades the other; the key says which is
+highlighted, and the note beside the figures says the other route stays drawn
+and neither is certified.
 
 **0:30 — The answer.** _Why are they different?_
 
@@ -55,8 +60,12 @@ judge any of them:
   produces it.
 - **Derived from an elevation model** — slope came from NRCan's terrain model of
   the ground, not from a survey of the path.
-- **Not recorded** — OpenStreetMap has no accessibility details for 100% of this
-  route. Missing information, not a clear path.
+- **Not recorded** — on 100% of this route at least one accessibility attribute
+  (surface, surface condition, gradient, steps or kerb) has no record, and the
+  line above the figures names the largest single gap. Missing information, not
+  a clear path — and not "nothing is known": the four stairways are recorded.
+  What the figure counts is written down in
+  [`FRONTEND_POLISH.md`](FRONTEND_POLISH.md).
 
 **0:55 — The point.** That last label is the product. Every routing system can
 draw a line; this one distinguishes what was observed, what was inferred, what

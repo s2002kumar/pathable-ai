@@ -1,5 +1,11 @@
 # Demo screenshot provenance
 
+**These captures show the interface as released in `v0.3.0-public-release`.**
+The PA-UX-01 candidate (`feat/premium-map-experience`) changes the layout; its
+before/after captures and their provenance are in
+[`../FRONTEND_POLISH.md`](../FRONTEND_POLISH.md). The files below are kept as
+the record of what was released, not refreshed to the candidate.
+
 **These are not pictures of a deployment. PathAble is not deployed anywhere.**
 Every image below was captured from the production container images running on
 one laptop, against the real Waterloo dataset, with the routes computed live by
