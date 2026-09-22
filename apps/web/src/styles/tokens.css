@@ -2,17 +2,26 @@
  * Design tokens.
  *
  * Semantic names only at the point of use — components reference `--color-text`,
- * never `--teal-700`. That is what makes the dark theme a token swap rather than a
- * rewrite, and it is what will let a future high-contrast mode drop in.
+ * never `--ivory-100`. That is what makes the dark theme a token swap rather than
+ * a rewrite, and it is what will let a future high-contrast mode drop in.
+ *
+ * The palette is a navigation instrument's: warm ivory surfaces, ink-coloured
+ * text, one restrained teal accent for controls, and two route colours chosen to
+ * sit on a muted basemap. Nothing on the page competes with the two route lines.
  *
  * Contrast: every text/background pairing below meets WCAG 2.1 AA (4.5:1 for body
- * text, 3:1 for large text and UI boundaries) in both themes.
+ * text, 3:1 for large text and UI boundaries) in both themes. Figures quoted in
+ * comments were computed for the pairing named; the axe e2e scan checks the
+ * rendered result.
  */
 
 :root {
   color-scheme: light dark;
 
   /* --- Type ------------------------------------------------------------- */
+  /* The platform's own UI face, on purpose. It is already installed, already
+     hinted for the screen it is on, and costs no bytes; a webfont here would be
+     novelty with a licence to track. */
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     'Noto Sans', sans-serif;
@@ -56,104 +65,127 @@
   --radius-pill: 999px;
 
   /* --- Elevation --------------------------------------------------------- */
-  --shadow-sm: 0 1px 2px rgb(9 30 34 / 8%);
-  --shadow-md: 0 4px 12px -2px rgb(9 30 34 / 12%), 0 2px 4px -2px rgb(9 30 34 / 8%);
-  --shadow-lg: 0 16px 40px -12px rgb(9 30 34 / 22%), 0 4px 12px -4px rgb(9 30 34 / 10%);
+  --shadow-sm: 0 1px 2px rgb(41 33 20 / 8%);
+  --shadow-md: 0 4px 12px -2px rgb(41 33 20 / 12%), 0 2px 4px -2px rgb(41 33 20 / 8%);
+  --shadow-lg: 0 16px 40px -12px rgb(41 33 20 / 22%), 0 4px 12px -4px rgb(41 33 20 / 10%);
 
-  /* --- Motion ------------------------------------------------------------ */
+  /* --- Motion ------------------------------------------------------------
+   * Short and decelerating. Panel and focus changes use --duration-base; the
+   * only longer movement on the page is the map camera, which is capped in
+   * `route-layers.ts` at CAMERA_DURATION_MS. Reduced motion collapses all of it
+   * in globals.css, and the camera reads the same preference.
+   */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --duration-fast: 120ms;
-  --duration-base: 220ms;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
 
   /* --- Layout ------------------------------------------------------------ */
-  --header-height: 3.5rem;
-  --panel-width: 22.5rem;
+  --header-height: 3rem;
+  /* The planner column beside the map: between 340 and 400 px, following the
+     viewport in between so a 1024 px tablet keeps most of its width for the map. */
+  --panel-width: clamp(21.25rem, 26vw, 25rem);
   --content-max: 78rem;
 
   /* --- Colour: light ----------------------------------------------------- */
-  --color-canvas: #eef2f3;
-  --color-surface: #ffffff;
-  --color-surface-sunken: #f5f8f9;
-  --color-surface-overlay: rgb(255 255 255 / 94%);
-  --color-border: #d5dee1;
-  --color-border-strong: #b3c2c7;
+  --color-canvas: #f3eee5;
+  --color-surface: #fffdf9;
+  --color-surface-sunken: #f6f1e8;
+  --color-surface-overlay: rgb(255 253 249 / 92%);
+  --color-border: #e1d9ca;
+  --color-border-strong: #c4b9a5;
 
-  --color-text: #10262b;
-  --color-text-muted: #4c5f65;
-  /* 5.9:1 on --color-surface and 5.6:1 on --color-surface-sunken. The lighter
-     #66787e this replaced measured 4.32:1 against the sunken surface, which fails
-     AA for the 12px labels that use it. Verified by the axe e2e scan. */
-  --color-text-subtle: #55676d;
-  --color-text-inverse: #f2f8f9;
+  /* Ink, not black: warm surfaces make pure black look blue. */
+  --color-text: #1f1b15;
+  /* 7.0:1 on --color-surface, 6.4:1 on --color-surface-sunken. */
+  --color-text-muted: #524b40;
+  /* 5.2:1 on --color-surface-sunken, the lightest ground it is used on. */
+  --color-text-subtle: #675f52;
+  --color-text-inverse: #fbf8f2;
 
-  --color-brand: #0b5c68;
-  --color-brand-strong: #084751;
-  --color-brand-soft: #e2f0f2;
-  --color-brand-border: #a8ccd2;
+  --color-brand: #0f5f6c;
+  --color-brand-strong: #0b4952;
+  --color-brand-soft: #e2eeee;
+  --color-brand-border: #a6c8cc;
 
-  --color-focus: #0b5c68;
+  --color-focus: #0f5f6c;
 
-  --color-ok-text: #17603a;
-  --color-ok-surface: #e3f4ea;
-  --color-ok-border: #9dcfb4;
+  /* --- Route colours -------------------------------------------------------
+   * Shared by the map layers and the legend swatches so the key is the same
+   * signal in both places. The two routes also differ in dash pattern, so the
+   * comparison survives colour-vision deficiency and a greyscale print. Both
+   * reach 3:1 against the muted basemap, and each line is cased in the surface
+   * colour so it stays legible over any road.
+   */
+  --color-route-accessible: #1d4fc4;
+  --color-route-standard: #4b463e;
+  --color-marker-origin: #1d4fc4;
+  --color-marker-destination: #b3261e;
+
+  --color-ok-text: #1a5c38;
+  --color-ok-surface: #e4f2e8;
+  --color-ok-border: #a3cdb2;
   --color-ok-dot: #1f8a4d;
 
-  --color-warn-text: #7a4b00;
-  --color-warn-surface: #fdf1dc;
-  --color-warn-border: #e4bf7f;
+  --color-warn-text: #74470a;
+  --color-warn-surface: #fbf0da;
+  --color-warn-border: #e2c07f;
   --color-warn-dot: #b87400;
 
-  --color-danger-text: #8f2323;
-  --color-danger-surface: #fbe8e8;
-  --color-danger-border: #e0a4a4;
+  --color-danger-text: #8c2323;
+  --color-danger-surface: #fae8e5;
+  --color-danger-border: #dfa6a0;
   --color-danger-dot: #bb3232;
 
-  --color-neutral-text: #4c5f65;
-  --color-neutral-surface: #eef2f3;
-  --color-neutral-border: #c9d4d7;
-  --color-neutral-dot: #7b8d93;
+  --color-neutral-text: #524b40;
+  --color-neutral-surface: #efe9de;
+  --color-neutral-border: #cfc5b3;
+  --color-neutral-dot: #857b6b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-canvas: #060d0f;
-    --color-surface: #0f191c;
-    --color-surface-sunken: #0a1214;
-    --color-surface-overlay: rgb(15 25 28 / 94%);
-    --color-border: #23383d;
-    --color-border-strong: #35525a;
+    --color-canvas: #100f0d;
+    --color-surface: #1a1816;
+    --color-surface-sunken: #131211;
+    --color-surface-overlay: rgb(26 24 22 / 92%);
+    --color-border: #322e29;
+    --color-border-strong: #4b453d;
 
-    --color-text: #e9f2f3;
-    --color-text-muted: #a5babf;
-    --color-text-subtle: #8299a0;
-    --color-text-inverse: #08181c;
+    --color-text: #f1ece3;
+    --color-text-muted: #b9b0a2;
+    --color-text-subtle: #978e7f;
+    --color-text-inverse: #15130f;
 
-    --color-brand: #5cc6d8;
-    --color-brand-strong: #8ddced;
-    --color-brand-soft: #123036;
-    --color-brand-border: #2c565f;
+    --color-brand: #63c6d4;
+    --color-brand-strong: #92dce8;
+    --color-brand-soft: #16313a;
+    --color-brand-border: #2f5a64;
 
-    --color-focus: #7cd8e8;
+    --color-focus: #7fd8e6;
 
-    --color-ok-text: #7fe0aa;
-    --color-ok-surface: #0e2a1c;
-    --color-ok-border: #2c6244;
+    /* Route and marker colours are deliberately not re-themed: the basemap is
+       the same light cartography in both schemes, and the legend has to match
+       what is drawn on it, not the panel around it. */
+
+    --color-ok-text: #86e0ae;
+    --color-ok-surface: #102b1d;
+    --color-ok-border: #2d6446;
     --color-ok-dot: #4ecf88;
 
-    --color-warn-text: #f5c877;
-    --color-warn-surface: #2c2011;
-    --color-warn-border: #6a5127;
+    --color-warn-text: #f3c97c;
+    --color-warn-surface: #2d2211;
+    --color-warn-border: #6b5327;
     --color-warn-dot: #e0a33f;
 
-    --color-danger-text: #ffa9a9;
-    --color-danger-surface: #2e1414;
-    --color-danger-border: #6d3434;
+    --color-danger-text: #ffaba6;
+    --color-danger-surface: #2f1614;
+    --color-danger-border: #6f3733;
     --color-danger-dot: #e46767;
 
-    --color-neutral-text: #a5babf;
-    --color-neutral-surface: #162427;
-    --color-neutral-border: #2b4248;
-    --color-neutral-dot: #7e979d;
+    --color-neutral-text: #b9b0a2;
+    --color-neutral-surface: #232019;
+    --color-neutral-border: #3d382f;
+    --color-neutral-dot: #8f8676;
 
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
     --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 50%);
