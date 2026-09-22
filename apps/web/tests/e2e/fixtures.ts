@@ -182,8 +182,9 @@ const COMPARISON = {
     {
       code: 'missing_accessibility_data',
       summary:
-        'OpenStreetMap has no accessibility details for some of this route (31% of its length). ' +
-        'Missing data is not evidence that a path is clear.',
+        'On some of the wheelchair route (31% of its length) at least one accessibility ' +
+        'attribute — surface, surface condition, gradient, steps or kerb — has no record in ' +
+        'OpenStreetMap. Missing data is not evidence that a path is clear.',
       evidence: { unknown_data_fraction: 0.31 },
     },
   ],

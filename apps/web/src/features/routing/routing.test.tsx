@@ -83,8 +83,9 @@ const COMPARISON = {
     {
       code: 'missing_accessibility_data',
       summary:
-        'OpenStreetMap has no accessibility details for some of this route (31% of its length). ' +
-        'Missing data is not evidence that a path is clear.',
+        'On some of the wheelchair route (31% of its length) at least one accessibility ' +
+        'attribute — surface, surface condition, gradient, steps or kerb — has no record in ' +
+        'OpenStreetMap. Missing data is not evidence that a path is clear.',
       evidence: {},
     },
   ],
@@ -156,7 +157,7 @@ describe('RoutePlanner', () => {
     renderPlanner();
 
     expect(screen.getByTestId('route-status')).toHaveTextContent(
-      /accessible route is 226 m longer than the shortest route/i,
+      /wheelchair route is 226 m longer than the shortest walking route/i,
     );
   });
 

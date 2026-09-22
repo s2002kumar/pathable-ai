@@ -1,9 +1,9 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback, useRef } from 'react';
 import type { ProfileKey } from '@pathable/contracts';
 import { PlaceSearch } from '@/features/geocoding/PlaceSearch';
-import type { RouteFocus } from '@/features/map/route-layers';
+import { type RouteFocus, prefersReducedMotion } from '@/features/map/route-layers';
 import { RouteComparisonView } from './RouteComparisonView';
 import { VerifiedExampleCard } from './VerifiedExample';
 import type { VerifiedExample } from './verified-example';
@@ -80,6 +80,21 @@ export function RoutePlanner({
   intro,
 }: RoutePlannerProps) {
   const awaitingEnd = points.origin !== null && points.destination === null;
+  const planRef = useRef<HTMLDivElement>(null);
+
+  // "Edit journey or profile" from the result: scroll the planning section
+  // into view and move focus to it. Nothing about the request changes — the
+  // comparison stays rendered and the map keeps its routes — the viewer is
+  // simply taken to the controls that are already there. A reduced-motion
+  // preference makes the scroll instant.
+  const handleEditJourney = useCallback(() => {
+    const plan = planRef.current;
+    if (plan === null) return;
+    if (typeof plan.scrollIntoView === 'function') {
+      plan.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+    }
+    plan.focus({ preventScroll: true });
+  }, []);
 
   return (
     <section className={styles.panel} aria-labelledby="route-planner-heading">
@@ -142,13 +157,24 @@ export function RoutePlanner({
             comparison={state.comparison}
             focusedRoute={focusedRoute}
             onFocusRoute={onFocusRoute}
+            onEditJourney={handleEditJourney}
           />
         ) : null}
       </div>
 
       {intro}
 
-      <div className={styles.plan}>
+      {/* Focusable as a landmark, not as a control: "Edit journey or profile"
+          lands here, the heading is announced, and the next Tab reaches the
+          search box. */}
+      <div
+        className={styles.plan}
+        ref={planRef}
+        tabIndex={-1}
+        role="region"
+        aria-labelledby="route-planner-heading"
+        data-testid="plan-journey"
+      >
         <h2 className={styles.planHeading} id="route-planner-heading">
           Plan your own journey
         </h2>

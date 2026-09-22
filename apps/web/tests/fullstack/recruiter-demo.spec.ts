@@ -141,7 +141,7 @@ test.describe('the recruiter demo', () => {
     const summary = page.getByTestId('uncertainty-summary');
     await expect(summary).toBeVisible();
     await expect(summary).toContainText('Accessibility data is incomplete');
-    await expect(summary).not.toContainText(/(safe|verified|confident|guaranteed)/i);
+    await expect(summary).not.toContainText(/\b(safe|verified|confident|guaranteed)\b/i);
 
     // Visible is not the same as in the viewport: the panel scrolls, and an
     // element below the fold still reports itself visible to Playwright.

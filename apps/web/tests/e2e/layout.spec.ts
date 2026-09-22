@@ -119,6 +119,51 @@ test.describe('layout', () => {
     await expect(highlight).toHaveAttribute('aria-pressed', 'false');
   });
 
+  test('"Edit journey or profile" reaches the controls without touching the result', async ({
+    page,
+  }) => {
+    // PA-UX-01F. The answer sits above the planning controls; this is the one
+    // way back down. It moves focus and scrolls; it changes nothing else — no
+    // new request, no map reset, the same comparison still on screen.
+    const requests: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/api/v1/routes/compare')) requests.push(request.url());
+    });
+
+    await page.goto('/');
+    await waitForMapReady(page);
+    await runExample(page);
+    const requestsAfterExample = requests.length;
+    await page.evaluate(() => {
+      const frame = document.querySelector('[data-testid="map-frame"]');
+      const states: string[] = [];
+      (window as unknown as { __mapStates: string[] }).__mapStates = states;
+      new MutationObserver(() => {
+        states.push(frame?.getAttribute('data-map-state') ?? '');
+      }).observe(frame!, { attributes: true, attributeFilter: ['data-map-state'] });
+    });
+
+    const edit = page.getByRole('button', { name: /edit journey or profile/i });
+    await expect(edit).toBeVisible();
+    await edit.focus();
+    await page.keyboard.press('Enter');
+
+    const plan = page.getByTestId('plan-journey');
+    await expect(plan).toBeFocused();
+    await expect(plan).toBeInViewport();
+    // The next stop from the landing is a real control.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('searchbox')).toBeFocused();
+
+    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+    await expect(page.getByTestId('route-difference')).toBeAttached();
+    await expect(page.getByRole('radio', { name: /Wheelchair/ })).toBeChecked();
+    expect(requests.length).toBe(requestsAfterExample);
+    expect(
+      await page.evaluate(() => (window as unknown as { __mapStates: string[] }).__mapStates),
+    ).toEqual([]);
+  });
+
   test('ordinary updates never recreate the map', async ({ page }) => {
     await page.goto('/');
     await waitForMapReady(page);

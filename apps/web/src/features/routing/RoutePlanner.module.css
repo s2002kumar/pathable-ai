@@ -27,6 +27,40 @@
   color: var(--color-text);
 }
 
+/* The planning section is a focus target for "Edit journey or profile". The
+   ring is drawn here, on the whole section, so the landing is visible. */
+.plan:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* One compact way back to the controls from the answer, styled as the
+   secondary action it is: the figures are the point, this is the exit. */
+.editButton {
+  align-self: flex-start;
+  min-height: 2.5rem;
+  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-brand);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-brand-border);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.editButton:hover {
+  background: var(--color-brand-soft);
+}
+
+.editButton:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .points {
   display: flex;
   flex-direction: column;

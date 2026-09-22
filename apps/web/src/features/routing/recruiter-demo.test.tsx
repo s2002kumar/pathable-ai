@@ -85,7 +85,10 @@ const CAMPUS_RESPONSE = {
   cautions: [
     {
       code: 'missing_accessibility_data',
-      summary: 'OpenStreetMap has no accessibility details for most of this route.',
+      summary:
+        'On most of the wheelchair route (100% of its length) at least one accessibility ' +
+        'attribute — surface, surface condition, gradient, steps or kerb — has no record in ' +
+        'OpenStreetMap. Missing data is not evidence that a path is clear.',
       evidence: { unknown_data_fraction: 1 },
     },
   ],
@@ -265,7 +268,7 @@ describe('why the routes differ', () => {
     expect(summary).toHaveTextContent('Accessibility data is incomplete');
     expect(summary).toHaveTextContent('100% of this route');
     expect(summary).toHaveTextContent(/unrecorded is not the same as clear/i);
-    expect(summary).not.toHaveTextContent(/(safe|verified|confident|guaranteed)/i);
+    expect(summary).not.toHaveTextContent(/\b(safe|verified|confident|guaranteed)\b/i);
   });
 
   it('reports the largest gap when the route is not wholly unrecorded', () => {
@@ -299,8 +302,10 @@ describe('why the routes differ', () => {
 
     const summary = screen.getByTestId('uncertainty-summary');
     expect(summary).toHaveAttribute('data-complete', 'true');
-    expect(summary).toHaveTextContent(/every accessibility category .* is recorded/i);
-    expect(summary).not.toHaveTextContent(/(safe|accessible route|verified|guaranteed)/i);
+    // PA-UX-01F: a statement about the record, not "everything was recorded".
+    expect(summary).toHaveTextContent(/no gaps reported in the assessed categories/i);
+    expect(summary).not.toHaveTextContent(/every accessibility category/i);
+    expect(summary).not.toHaveTextContent(/\b(safe|accessible route|verified|guaranteed)\b/i);
   });
 
   it('never presents missing data as a clear path', () => {

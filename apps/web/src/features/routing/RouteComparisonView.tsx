@@ -2,7 +2,8 @@
 
 import type { Route, RouteCompareResponse } from '@pathable/contracts';
 import type { RouteFocus } from '@/features/map/route-layers';
-import { COINCIDENT_THRESHOLD_M, RouteDifference } from './RouteDifference';
+import { RouteDifference } from './RouteDifference';
+import { differenceIsBelowDisplayPrecision } from './route-identity';
 import { formatDistance, formatDuration } from './types';
 import styles from './RoutePlanner.module.css';
 
@@ -23,10 +24,13 @@ export function RouteComparisonView({
   comparison,
   focusedRoute = null,
   onFocusRoute = () => {},
+  onEditJourney,
 }: {
   readonly comparison: RouteCompareResponse;
   readonly focusedRoute?: RouteFocus;
   readonly onFocusRoute?: (focus: RouteFocus) => void;
+  /** Takes the viewer to the planning controls below, keeping this result. */
+  readonly onEditJourney?: () => void;
 }) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
   const bothRoutes = Boolean(standard && accessible);
@@ -40,6 +44,16 @@ export function RouteComparisonView({
           focusedRoute={focusedRoute}
           onFocusRoute={onFocusRoute}
         />
+        {onEditJourney ? (
+          <button
+            type="button"
+            className={styles.editButton}
+            onClick={onEditJourney}
+            data-testid="edit-journey"
+          >
+            Edit journey or profile
+          </button>
+        ) : null}
       </div>
 
       <div className={styles.routeCards}>
@@ -151,12 +165,26 @@ function MapAge({ dataset }: { readonly dataset: RouteCompareResponse['dataset']
   );
 }
 
+/**
+ * The one-sentence answer.
+ *
+ * It states the difference the response reports, in the profile's own name,
+ * and it never rounds a real difference away: a 10 m detour is "10 m longer".
+ * The only time it says "the same length" is when the two distances display
+ * as the same number — differences under half a metre, the display precision
+ * of `formatDistance` — and then it says "to the nearest metre". A missing
+ * difference is reported as missing, not as equality. Nothing here says the
+ * routes are the same path; that is a question of geometry, answered by
+ * `routesSharePath` from the response's own segments.
+ */
 function RouteHeadline({ comparison }: { readonly comparison: RouteCompareResponse }) {
+  const profile = comparison.profile_display_name.toLowerCase();
+
   if (comparison.accessible_route === null) {
     return (
       <p className={styles.headlineBad} role="status">
         {comparison.accessible_failure ??
-          `No route meets the ${comparison.profile_display_name.toLowerCase()} profile between these points.`}
+          `No route meets the ${profile} profile between these points.`}
       </p>
     );
   }
@@ -164,16 +192,25 @@ function RouteHeadline({ comparison }: { readonly comparison: RouteCompareRespon
   if (comparison.standard_route === null) {
     return (
       <p className={styles.headline} role="status">
-        A route was found for {comparison.profile_display_name.toLowerCase()}.
+        A route was found for {profile}.
       </p>
     );
   }
 
-  const extra = comparison.extra_distance_m ?? 0;
-  if (Math.abs(extra) < COINCIDENT_THRESHOLD_M) {
+  const extra = comparison.extra_distance_m;
+  if (typeof extra !== 'number') {
+    return (
+      <p className={styles.headline} role="status">
+        A {profile} route and the shortest walking route were both found; the response did not
+        report the difference in length.
+      </p>
+    );
+  }
+
+  if (differenceIsBelowDisplayPrecision(extra)) {
     return (
       <p className={styles.headlineGood} role="status">
-        The accessible route is the same length as the shortest route.
+        The {profile} route and the shortest walking route are the same length to the nearest metre.
       </p>
     );
   }
@@ -181,8 +218,8 @@ function RouteHeadline({ comparison }: { readonly comparison: RouteCompareRespon
   const fraction = comparison.extra_distance_fraction ?? 0;
   return (
     <p className={styles.headline} role="status">
-      The accessible route is <strong className="tabular">{formatDistance(Math.abs(extra))}</strong>{' '}
-      {extra > 0 ? 'longer' : 'shorter'} than the shortest route
+      The {profile} route is <strong className="tabular">{formatDistance(Math.abs(extra))}</strong>{' '}
+      {extra > 0 ? 'longer' : 'shorter'} than the shortest walking route
       {Math.abs(fraction) >= 0.01 ? ` (${Math.round(Math.abs(fraction) * 100)}%)` : ''}.
     </p>
   );

@@ -2,6 +2,7 @@
 
 import type { Route, RouteCompareResponse } from '@pathable/contracts';
 import type { RouteFocus } from '@/features/map/route-layers';
+import { routesSharePath } from './route-identity';
 import { formatDistance } from './types';
 import styles from './RoutePlanner.module.css';
 
@@ -14,8 +15,24 @@ const GAP_NAMES: Readonly<Record<string, string>> = {
   kerb: 'kerb',
 };
 
-/** Below this, two routes are the same journey drawn twice. */
-export const COINCIDENT_THRESHOLD_M = 15;
+/** The categories `evidence_coverage` assesses, for the sentence that names them. */
+const ASSESSED_CATEGORIES =
+  'surface, surface condition, gradient, path width, and kerbs at crossings';
+
+/** Explanation codes that are consequences of the profile's rules, not observations. */
+const PROFILE_RULE_CODES = new Set(['distance_difference', 'same_distance']);
+
+/**
+ * The share of a category that is missing, worded with its own denominator.
+ * Kerb coverage is measured over crossings, not route length, and the sentence
+ * has to say so or "kerb, 100%" reads as the whole route.
+ */
+function gapPhrase(category: string, share: number): string {
+  const pct = Math.round(share * 100);
+  return category === 'kerb'
+    ? `${GAP_NAMES[category]}, ${pct}% of crossings`
+    : `${GAP_NAMES[category]}, ${pct}%`;
+}
 
 /**
  * One line, above the fold, saying how much of this route the map is silent
@@ -31,37 +48,51 @@ export const COINCIDENT_THRESHOLD_M = 15;
  * single gap from `evidence_coverage` so the reader knows which fact is
  * absent, not just how much.
  *
+ * When the response reports no gaps, the line says exactly that and no more:
+ * no gaps in the categories that were assessed. It does not say everything was
+ * recorded — a gradient can be present because a terrain model supplied it —
+ * and it does not say the route is clear. When the response carries no
+ * per-category coverage at all, the gaps are unknown and the line says so.
+ *
  * It is deliberately not a score. "38% unknown" as a headline number invites
  * being read as a confidence rating, so the wording names the thing that is
  * missing and states plainly that an absence is not a clearance.
  */
 function UncertaintySummary({ route }: { readonly route: Route }) {
   const unknownShare = route.unknown_data_fraction ?? 0;
-  const coverage = route.evidence_coverage ?? {};
-  const [largestGap] =
-    Object.entries(coverage)
-      .filter(([category, share]) => share > 0 && category in GAP_NAMES)
-      .sort(([, a], [, b]) => b - a) ?? [];
+  const coverage = route.evidence_coverage;
+  const coverageReported = coverage !== undefined && coverage !== null;
+  const [largestGap] = Object.entries(coverage ?? {})
+    .filter(([category, share]) => share > 0 && category in GAP_NAMES)
+    .sort(([, a], [, b]) => b - a);
 
-  if (unknownShare <= 0 && largestGap === undefined) {
+  if (unknownShare <= 0 && !coverageReported) {
     return (
-      <p className={styles.uncertainty} data-testid="uncertainty-summary" data-complete="true">
-        Every accessibility category this route touches is recorded in OpenStreetMap.
+      <p className={styles.uncertainty} data-testid="uncertainty-summary" data-complete="unknown">
+        <strong>Coverage not reported.</strong> The response carries no per-category record of what
+        is missing on this route, so its gaps are unknown. Unknown is not the same as clear.
       </p>
     );
   }
 
-  const gapClause =
-    largestGap !== undefined
-      ? `; largest gap: ${GAP_NAMES[largestGap[0]]}, ${Math.round(largestGap[1] * 100)}%`
-      : '';
+  if (unknownShare <= 0 && largestGap === undefined) {
+    return (
+      <p className={styles.uncertainty} data-testid="uncertainty-summary" data-complete="true">
+        <strong>No gaps reported</strong> in the assessed categories ({ASSESSED_CATEGORIES}). That
+        is a statement about the record, not a certification: a gradient may still come from an
+        elevation model rather than a survey, and PathAble advises rather than guarantees.
+      </p>
+    );
+  }
+
+  const gapClause = largestGap !== undefined ? `; largest gap: ${gapPhrase(...largestGap)}` : '';
 
   return (
     <p className={styles.uncertainty} data-testid="uncertainty-summary" data-complete="false">
       <strong>Accessibility data is incomplete.</strong>{' '}
       {unknownShare > 0
         ? `At least one accessibility attribute is unrecorded on ${Math.round(unknownShare * 100)}% of this route${gapClause}`
-        : `The biggest gap is ${GAP_NAMES[largestGap![0]]}, missing for ${Math.round(largestGap![1] * 100)}% of this route`}
+        : `The biggest gap is ${gapPhrase(...largestGap!)} of this route`}
       . Unrecorded is not the same as clear.
     </p>
   );
@@ -157,8 +188,12 @@ export function RouteDifference({
   if (!standard || !accessible) return null;
 
   const avoided = comparison.explanations.filter(
-    (explanation) => explanation.code !== 'distance_difference',
+    (explanation) => !PROFILE_RULE_CODES.has(explanation.code),
   );
+  // The distance statement is a consequence of the profile, and the headline
+  // above already states the exact figure. The engine's `same_distance`
+  // explanation ("essentially the same length") is not repeated here: the
+  // headline carries the number, and "essentially" is not a number.
   const distance = comparison.explanations.find(
     (explanation) => explanation.code === 'distance_difference',
   );
@@ -167,7 +202,9 @@ export function RouteDifference({
     accessible.gradient_source === 'derived_elevation' || accessible.gradient_source === 'mixed';
   const unknownShare = accessible.unknown_data_fraction ?? 0;
   const extra = comparison.extra_distance_m;
-  const coincident = typeof extra === 'number' && Math.abs(extra) < COINCIDENT_THRESHOLD_M;
+  // Identity comes from the response's segments or geometry, never from the
+  // distance: two routes can measure the same and be different paths.
+  const samePath = routesSharePath(standard, accessible);
 
   return (
     <section
@@ -203,7 +240,7 @@ export function RouteDifference({
         <span className={`${styles.extraValue} tabular`}>
           {typeof extra === 'number'
             ? `${extra >= 0 ? '+' : '−'}${formatDistance(Math.abs(extra))}`
-            : 'None'}
+            : 'Not reported'}
         </span>
         {stairsAvoided > 0 ? (
           <span>
@@ -212,10 +249,10 @@ export function RouteDifference({
         ) : null}
       </p>
 
-      {coincident ? (
-        <p className={styles.coincident} data-testid="coincident-note">
-          The two routes follow the same path here, so their lines overlap on the map; the dashed
-          line sits underneath the solid one.
+      {samePath ? (
+        <p className={styles.coincident} data-testid="same-path-note">
+          Both routes use the same segments, so their lines overlap on the map; the dashed line sits
+          underneath the solid one.
         </p>
       ) : null}
 

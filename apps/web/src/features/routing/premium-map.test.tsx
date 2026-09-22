@@ -73,6 +73,12 @@ const CAMPUS_COMPARISON = {
     effective_distance_m: 287.4,
     stairway_count: 4,
     step_count: 16,
+    // A different path from the wheelchair route's, as the real one is.
+    coordinates: [
+      [-80.5424, 43.4728],
+      [-80.5436, 43.4722],
+      [-80.5449, 43.4715],
+    ],
   }),
   accessible_route: buildRoute(),
   standard_failure: null,
@@ -108,7 +114,15 @@ const CAMPUS_COMPARISON = {
 function coincident(): RouteCompareResponse {
   return {
     ...CAMPUS_COMPARISON,
-    standard_route: buildRoute({ profile: 'standard', distance_m: 300 }),
+    standard_route: buildRoute({
+      profile: 'standard',
+      distance_m: 300,
+      coordinates: [
+        [-80.5424, 43.4728],
+        [-80.5436, 43.4722],
+        [-80.5449, 43.4715],
+      ],
+    }),
     accessible_route: buildRoute({ distance_m: 302 }),
     extra_distance_m: 2,
     extra_distance_fraction: 0.006,
@@ -239,18 +253,22 @@ describe('what "unrecorded" means', () => {
   });
 });
 
-describe('coincident routes', () => {
-  it('explains that two overlapping lines are one path, not a missing route', () => {
+describe('nearly equal routes', () => {
+  it('states a 2 m difference as 2 m, and infers nothing about the path from it', () => {
+    // PA-UX-01F. A distance under a threshold once produced "the same length"
+    // and "the same path". Neither follows from a number.
     render(<RouteComparisonView comparison={coincident()} />);
 
-    expect(screen.getByRole('status')).toHaveTextContent(/same length as the shortest route/i);
-    expect(screen.getByTestId('coincident-note')).toHaveTextContent(/overlap on the map/i);
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent(/wheelchair route is 2 m longer than the shortest walking/i);
+    expect(status).not.toHaveTextContent(/same length/i);
+    expect(screen.queryByTestId('same-path-note')).not.toBeInTheDocument();
   });
 
   it('says nothing about overlap when the routes differ', () => {
     render(<RouteComparisonView comparison={CAMPUS_COMPARISON} />);
 
-    expect(screen.queryByTestId('coincident-note')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('same-path-note')).not.toBeInTheDocument();
   });
 });
 
