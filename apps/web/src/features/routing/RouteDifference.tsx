@@ -176,10 +176,13 @@ export function RouteDifference({
   comparison,
   focusedRoute = null,
   onFocusRoute = () => {},
+  onEditJourney,
 }: {
   readonly comparison: RouteCompareResponse;
   readonly focusedRoute?: RouteFocus;
   readonly onFocusRoute?: (focus: RouteFocus) => void;
+  /** Takes the viewer to the planning controls below, keeping this result. */
+  readonly onEditJourney?: () => void;
 }) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
 
@@ -264,6 +267,17 @@ export function RouteDifference({
       ) : null}
 
       <UncertaintySummary route={accessible} />
+
+      {onEditJourney ? (
+        <button
+          type="button"
+          className={styles.editButton}
+          onClick={onEditJourney}
+          data-testid="edit-journey"
+        >
+          Edit journey or profile
+        </button>
+      ) : null}
 
       <ul className={styles.evidenceList}>
         {avoided.map((explanation) => (

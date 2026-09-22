@@ -43,17 +43,8 @@ export function RouteComparisonView({
           comparison={comparison}
           focusedRoute={focusedRoute}
           onFocusRoute={onFocusRoute}
+          {...(onEditJourney ? { onEditJourney } : {})}
         />
-        {onEditJourney ? (
-          <button
-            type="button"
-            className={styles.editButton}
-            onClick={onEditJourney}
-            data-testid="edit-journey"
-          >
-            Edit journey or profile
-          </button>
-        ) : null}
       </div>
 
       <div className={styles.routeCards}>
