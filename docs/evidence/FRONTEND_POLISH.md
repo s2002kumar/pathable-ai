@@ -49,19 +49,93 @@ condition and width are missing on 100%), while the four stairways are fully
 recorded. The interface now says exactly that, and names the largest single gap
 from `evidence_coverage`, which is reported per category for this reason.
 
-Not changed, and worth knowing: the backend caution
-`missing_accessibility_data` still reads "OpenStreetMap has no accessibility
-details for most of this route (100% of its length)". It is shown verbatim
-under "Before you rely on this". Its wording has the same ambiguity and is a
-backend string; this card did not touch the API.
+The backend caution `missing_accessibility_data` said the same thing in the
+older words — "no accessibility details for most of this route" — and is
+shown verbatim under "Before you rely on this". Its text was corrected in the
+review round below; its code, threshold, evidence fields and the route it
+describes are unchanged.
+
+## Review corrections (PA-UX-01F)
+
+A review of the candidate found three claims the data did not support and one
+control that was hard to reach. Each is fixed on the same branch; the visual
+direction is unchanged.
+
+**"The two routes follow the same path" was inferred from distance.** The
+note appeared whenever the two distances differed by under 15 m. Equal length
+does not establish equal geometry — a detour can measure the same as the
+direct path — so the note now comes from identity the response already
+carries, and from nothing else. The rule (`route-identity.ts`) is
+conservative: when both routes carry segments, their ordered `edge_identity`
+lists must be equal; when neither does, their ordered coordinate sequences
+must be equal and nonempty; anything else — one side without segments, empty
+geometry, any mismatch — makes no claim. Distance is never consulted, and no
+geospatial dependency or endpoint was added.
+
+**"The same length" was a 15 m threshold, before this PR as well.** The
+headline now states the difference the response reports, in the profile's
+name: "The wheelchair route is 10 m longer than the shortest walking route
+(3%)". It says "the same length" only when the two figures display as the same
+number — a difference under 0.5 m, the display precision of the metre figures
+— and then it says "to the nearest metre". A missing difference is reported as
+not reported, never as equality. The engine's own `same_distance` explanation
+("essentially the same length") is no longer repeated in the evidence list;
+the headline carries the number.
+
+**The backend caution said "no accessibility details".** The API's
+`missing_accessibility_data` caution is the route's `unknown_data_fraction` in
+words, and the fraction counts segments missing at least one attribute. The
+text at its source (`routing/comparison.py`) now reads "On most of the
+wheelchair route (100% of its length) at least one accessibility attribute —
+surface, surface condition, gradient, steps or kerb — has no record in
+OpenStreetMap. Missing data is not evidence that a path is clear." It names the
+route it describes (the accessible route when there is one, else the standard
+route — the same referent as before) and keeps its length denominator. Code,
+threshold, evidence fields, schema and routing are untouched, so the contract
+drift check and every benchmark JSON are unaffected; the older wording in
+`waterloo-routes.json` is what those runs produced at the time and is kept as
+such. Fixtures on the frontend carry the new sentence; the assertions they
+protect ("not evidence that a path is clear" stays on screen) are unchanged.
+
+**"Every accessibility category this route touches is recorded" claimed too
+much.** With no gaps in `evidence_coverage`, the line now says "No gaps
+reported in the assessed categories (surface, surface condition, gradient,
+path width, and kerbs at crossings)", that this is a statement about the
+record and not a certification, and that a gradient may still come from an
+elevation model. When the response carries no coverage at all, the line says
+the gaps are unknown. Where kerb is the largest gap, the sentence says "of
+crossings", because that is its denominator.
+
+**Getting back to the controls.** The answer sits above the planning
+controls, so changing the profile or the endpoints meant scrolling to find
+them. "Edit journey or profile", at the foot of the answer, scrolls the
+planning section into view and moves focus to it; the next Tab lands on the
+search box. It sends no request and resets nothing — the comparison and the
+routes on the map stay as they were — and the scroll is instant under reduced
+motion. Measured in the browser suite: no `compare` request, no map lifecycle
+transition, the same result still rendered.
+
+The "after" captures and `frontend-polish-candidate.json` were refreshed from
+the review head, so they show the corrected wording and the edit control; the
+"before" captures are unchanged. The performance study was not repeated: the
+changes are text, one button and a pure function over data the page already
+had, and the refreshed capture's timings sit inside the earlier ranges.
+
+Two things found on the way. The `\b` word boundaries in two "never say
+safe/verified" assertions had become literal backspace characters, so those
+regexes could match nothing and the assertions could not fail; they are
+restored. And the verified journey still returns 287.4 m with four stairways
+against 354.1 m with none from the rebuilt API — read from the response, not
+the screen.
 
 ## States
 
 Initial · selecting (start set, end awaited: the row is outlined and the status
 line says what the next click sets) · preparing (badge reads "Preparing routes";
 a request during that window fails with the API's message and a retry) ·
-loading · success · coincident (headline says same length; a note says the two
-lines overlap and the dashed one sits underneath) · no route (the API's reason,
+loading · success · same path (only when the response's segments establish it:
+a note says the two lines overlap and the dashed one sits underneath) · no
+route (the API's reason,
 the standard route still drawn) · API error (message plus "Try again", points
 kept) · search empty / disabled · map unavailable (overlay, planner still
 usable). The stubbed browser suite exercises each of these against fixed
