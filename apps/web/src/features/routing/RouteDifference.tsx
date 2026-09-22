@@ -53,7 +53,7 @@ function UncertaintySummary({ route }: { readonly route: Route }) {
 
   const gapClause =
     largestGap !== undefined
-      ? `; the largest single gap is ${GAP_NAMES[largestGap[0]]}, unrecorded for ${Math.round(largestGap[1] * 100)}%`
+      ? `; largest gap: ${GAP_NAMES[largestGap[0]]}, ${Math.round(largestGap[1] * 100)}%`
       : '';
 
   return (

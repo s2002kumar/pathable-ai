@@ -226,7 +226,7 @@ describe('what "unrecorded" means', () => {
     // smoothness and width are both 100%; the sort is stable, so the first
     // 100% entry in contract order (smoothness) wins.
     expect(screen.getByTestId('uncertainty-summary')).toHaveTextContent(
-      /largest single gap is surface condition, unrecorded for 100%/i,
+      /largest gap: surface condition, 100%/i,
     );
   });
 

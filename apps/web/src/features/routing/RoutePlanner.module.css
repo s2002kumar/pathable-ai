@@ -207,7 +207,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-3) var(--space-4);
   background: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -231,6 +231,19 @@
   font-size: var(--text-base);
   line-height: var(--leading-snug);
   color: var(--color-text);
+}
+
+/* A phone-width column: the same block, a little tighter, so the figures and
+   the uncertainty line share the first screen with the map. */
+@media (max-width: 40rem) {
+  .headline,
+  .headlineGood {
+    font-size: var(--text-sm);
+  }
+
+  .difference {
+    gap: var(--space-2);
+  }
 }
 
 .headlineGood {
@@ -591,10 +604,9 @@
 
 .figureFooter {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: flex-start;
 }
 
 .figureValue {

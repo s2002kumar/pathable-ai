@@ -203,6 +203,22 @@ test.describe('reflow', () => {
     await runExample(page);
 
     expect(await hasHorizontalOverflow(page)).toBe(false);
+
+    // The map's own attribution has to sit inside the map, not under the
+    // sheet. Regression cover: the frame's minimum height was once taller
+    // than the phone-height map area, so the frame overflowed beneath the
+    // sheet and the credit was covered on a 320 px screen.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const frame = await page.getByTestId('map-frame').boundingBox();
+    const credit = await page.locator('.maplibregl-ctrl-attrib').boundingBox();
+    const sheet = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+    expect(frame).not.toBeNull();
+    expect(credit).not.toBeNull();
+    expect(sheet).not.toBeNull();
+    if (frame === null || credit === null || sheet === null) return;
+    expect(credit.y + credit.height).toBeLessThanOrEqual(frame.y + frame.height + 1);
+    expect(credit.y + credit.height).toBeLessThanOrEqual(sheet.y + 1);
+
     await page.getByTestId('route-provenance').scrollIntoViewIfNeeded();
     await expect(page.getByTestId('attribution')).toBeVisible();
     await expect(page.locator('.maplibregl-ctrl-attrib')).toBeVisible();

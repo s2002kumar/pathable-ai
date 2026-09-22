@@ -21,7 +21,7 @@
   flex: 0 0 auto;
   /* Compact on purpose: the sheet below has to show the answer on the first
      screen, and a phone-height map is for orientation, not for reading. */
-  height: 36dvh;
+  height: 34dvh;
   min-height: 13rem;
 }
 
@@ -31,7 +31,8 @@
   position: relative;
   z-index: 3;
   flex: 1 1 auto;
-  margin-top: calc(-1 * var(--space-4));
+  /* Flush with the map, not tucked under it: the map's attribution sits on
+     its bottom edge, and a sheet lip over it would hide the credit. */
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
@@ -42,7 +43,7 @@
   display: block;
   width: 2.5rem;
   height: 0.25rem;
-  margin: var(--space-2) auto 0;
+  margin: var(--space-1) auto 0;
   background: var(--color-border-strong);
   border-radius: var(--radius-pill);
 }
@@ -50,8 +51,8 @@
 .panelInner {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-2) var(--space-4) var(--space-8);
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-4) var(--space-8);
 }
 
 /* --- The legend ----------------------------------------------------------- */

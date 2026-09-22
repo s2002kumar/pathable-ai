@@ -43,7 +43,7 @@ export function VerifiedExampleCard({
       >
         <p className={styles.exampleDetail} id="verified-example-detail">
           <strong>Example journey:</strong> {example.originLabel} to {example.destinationLabel}
-          {active ? ', approximate positions, computed live.' : '. Computed live when you run it.'}
+          {active ? ', computed live.' : '. Computed live when you run it.'}
         </p>
         <button
           type="button"
@@ -72,7 +72,7 @@ export function VerifiedExampleCard({
         Try a wheelchair route example
       </button>
       <p className={styles.exampleDetail} id="verified-example-detail">
-        {example.originLabel} to {example.destinationLabel}: {example.description.toLowerCase()}.{' '}
+        {example.originLabel} to {example.destinationLabel}. {example.description}.{' '}
         {example.provenance} The comparison is computed live by the routing engine each time.
       </p>
     </section>
