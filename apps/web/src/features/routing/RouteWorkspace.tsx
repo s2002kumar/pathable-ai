@@ -168,11 +168,15 @@ export function RouteWorkspace({
   // CSS places the map key and MapLibre's own credit clear of the panel from
   // the first paint; this replaces that estimate with the measurement. Only the
   // side actually covered is written, so the other keeps its CSS default.
+  //
+  // Rounded up, never to nearest. A panel edge lands on a fractional pixel all
+  // the time, and rounding down leaves the ODbL credit a fraction of a pixel
+  // underneath it — which is still covered, and still a licence term.
   const insetStyle = useMemo<CSSProperties>(() => {
     const { side, amount } = fit.inset;
     if (amount <= 0 || (side !== 'bottom' && side !== 'left')) return {};
     const property = side === 'bottom' ? '--map-inset-bottom' : '--map-inset-left';
-    return { [property]: `${Math.round(amount)}px` } as CSSProperties;
+    return { [property]: `${Math.ceil(amount)}px` } as CSSProperties;
   }, [fit.inset]);
 
   return (
@@ -224,7 +228,7 @@ export function RouteWorkspace({
         </div>
 
         <div className={styles.panelInner} id="route-planner-panel">
-          {title}
+          <div className={styles.panelTitle}>{title}</div>
           <RoutePlanner
             intro={intro}
             points={points}

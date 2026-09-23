@@ -203,8 +203,12 @@
     bottom: 0;
     left: var(--panel-gap);
     /* Tall enough for the figures, the detour and the uncertainty line
-       together; short enough that the map is still a map. */
-    max-height: min(58dvh, 31rem);
+       together, with room to spare; short enough that the map is still a map.
+       The slack is the point: text metrics differ between platforms, and at
+       58dvh this fitted on Windows and clipped the uncertainty line on the
+       Linux runner by a few pixels. A layout that depends on a font's exact
+       line height is not a layout. */
+    max-height: min(62dvh, 33rem);
     border-bottom: 0;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     /* The safe area on a phone with a home indicator, so the last control is
@@ -212,9 +216,36 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  /*
+   * The panel's own label, hidden from the sheet but not from the page.
+   *
+   * The bar above it already names what the sheet holds, and the header names
+   * the product and the pilot region, so on a phone this line is two lines of
+   * pure repetition in the one place with no room for them. It stays in the
+   * DOM and in the accessibility tree: it is the page's only level-1 heading.
+   */
+  .panelTitle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .panelInner {
+    padding-top: var(--space-2);
+  }
+
   .workspace {
-    /* First-paint estimate, replaced by the measured sheet height. */
-    --map-inset-bottom: 45dvh;
+    /* First-paint estimate, replaced by the measured sheet height. It matches
+       the cap above rather than approximating it, because the sheet reaches
+       that cap as soon as it has a planner in it — so in practice the estimate
+       and the measurement agree and nothing moves. */
+    --map-inset-bottom: min(62dvh, 33rem);
   }
 
   .sheetBar {
