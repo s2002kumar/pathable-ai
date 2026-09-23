@@ -164,7 +164,14 @@ test.describe('PA-UX-02A candidate', () => {
       });
 
       observations.push({ viewport: viewport.name, environment, answeredMs, layout, problems });
-      await writeFile(`${OUT}/observations.json`, JSON.stringify(observations, null, 2), 'utf8');
+      await writeFile(
+        `${OUT}/observations.json`,
+        // Trailing newline: this file is committed, and `prettier --check .`
+        // is a required CI gate.
+        `${JSON.stringify(observations, null, 2)}
+`,
+        'utf8',
+      );
 
       // The images are the deliverable, but a capture that quietly lost the
       // answer is worse than no capture, so the run asserts it too.
