@@ -205,10 +205,13 @@ describe('the verified example', () => {
     await user.click(screen.getByTestId('run-verified-example'));
     await screen.findByTestId('route-difference');
 
-    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await user.click(screen.getByTestId('clear-journey'));
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent(/click the map to set/i);
-    expect(screen.getByTestId('point-end')).toHaveTextContent(/not set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent(/not set/i);
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
+    // Clearing clears the request too: the answer for the example's journey
+    // must not be left on screen with nothing naming it.
+    expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'idle');
   });
 });
 
@@ -231,13 +234,17 @@ describe('why the routes differ', () => {
       within(screen.getByTestId('difference-shortest')).getByText('287 m'),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByTestId('difference-shortest')).getByText('4 stairways (16 steps)'),
+      // "recorded" is load-bearing: step_count sums only the stairways
+      // somebody counted, and two of these four have no recorded count.
+      within(screen.getByTestId('difference-shortest')).getByText(
+        '4 stairways (16 recorded steps)',
+      ),
     ).toBeInTheDocument();
     expect(
       within(screen.getByTestId('difference-accessible')).getByText('354 m'),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByTestId('difference-accessible')).getByText('no stairways'),
+      within(screen.getByTestId('difference-accessible')).getByText('no recorded stairways'),
     ).toBeInTheDocument();
 
     const extra = screen.getByTestId('difference-extra');

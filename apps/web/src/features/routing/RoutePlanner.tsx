@@ -2,18 +2,12 @@
 
 import { type ReactNode, useCallback, useRef } from 'react';
 import type { ProfileKey } from '@pathable/contracts';
-import { PlaceSearch } from '@/features/geocoding/PlaceSearch';
 import { type RouteFocus, prefersReducedMotion } from '@/features/map/route-layers';
+import { EndpointField } from './EndpointField';
 import { RouteComparisonView } from './RouteComparisonView';
 import { VerifiedExampleCard } from './VerifiedExample';
 import type { VerifiedExample } from './verified-example';
-import {
-  type LngLat,
-  type PlannerPoints,
-  type RouteRequestState,
-  formatCoordinate,
-  nextRole,
-} from './types';
+import type { LngLat, PlannerPoints, PointRole, RouteRequestState, StairsTarget } from './types';
 import styles from './RoutePlanner.module.css';
 
 /**
@@ -23,6 +17,11 @@ import styles from './RoutePlanner.module.css';
  * immediately and stays usable when the backend is down — the profile list is
  * part of the contract, and a network round trip to learn five stable labels
  * would trade a real cost for no benefit. The API still validates the key.
+ *
+ * The hints are deliberately client-side: the API's `description` is a full
+ * sentence rather than a one-line rule summary, and there is no short-hint
+ * field to read. They describe what the profile does to the route, and they
+ * are engineering judgement rather than a measurement of how anybody travels.
  */
 const PROFILE_OPTIONS: ReadonlyArray<{ key: ProfileKey; label: string; hint: string }> = [
   { key: 'wheelchair', label: 'Wheelchair', hint: 'No steps, paved surfaces, gentle grades' },
@@ -46,17 +45,31 @@ export type RoutePlannerProps = {
   readonly region: string;
   readonly example: VerifiedExample;
   readonly exampleActive: boolean;
+  /** True once both endpoints are set and a comparison can be asked for. */
+  readonly canCompare: boolean;
+  /** True when the draft has moved away from the journey on screen. */
+  readonly pendingEdits: boolean;
+  /** Which endpoint the next map click fills, if the viewer asked for one. */
+  readonly pickTarget: PointRole | null;
+  /** The journey the result on screen belongs to, for labelling it. */
+  readonly submittedSummary: string | null;
+  /** Which route's recorded stairs are highlighted, if any. */
+  readonly stairsTarget: StairsTarget;
   /** Which route is brought forward on the map; optional for callers without a map. */
   readonly focusedRoute?: RouteFocus;
   readonly onFocusRoute?: (focus: RouteFocus) => void;
+  readonly onShowStairs?: (target: StairsTarget) => void;
   readonly onRunExample: (example: VerifiedExample) => void;
   readonly onProfileChange: (key: ProfileKey) => void;
-  readonly onClearPoints: () => void;
+  readonly onCompare: () => void;
+  readonly onClearPoint: (role: PointRole) => void;
+  readonly onClearAll: () => void;
   readonly onSwapPoints: () => void;
   readonly onRetry: () => void;
-  readonly onSelectPlace: (position: LngLat) => void;
+  readonly onSelectPlace: (role: PointRole, position: LngLat, label: string) => void;
+  readonly onPickOnMap: (role: PointRole) => void;
   readonly fetchImpl?: typeof fetch;
-  /** The page's purpose statement, placed after the answer and before the controls. */
+  /** The page's purpose statement, placed after the controls. */
   readonly intro?: ReactNode;
 };
 
@@ -68,18 +81,26 @@ export function RoutePlanner({
   region,
   example,
   exampleActive,
+  canCompare,
+  pendingEdits,
+  pickTarget,
+  submittedSummary,
+  stairsTarget,
   focusedRoute = null,
   onFocusRoute = () => {},
+  onShowStairs = () => {},
   onRunExample,
   onProfileChange,
-  onClearPoints,
+  onCompare,
+  onClearPoint,
+  onClearAll,
   onSwapPoints,
   onRetry,
   onSelectPlace,
+  onPickOnMap,
   fetchImpl,
   intro,
 }: RoutePlannerProps) {
-  const awaitingEnd = points.origin !== null && points.destination === null;
   const planRef = useRef<HTMLDivElement>(null);
 
   // "Edit journey or profile" from the result: scroll the planning section
@@ -99,19 +120,11 @@ export function RoutePlanner({
   return (
     <section className={styles.panel} aria-labelledby="route-planner-heading">
       {/* The answer, at the top of the panel.
-
-          PA-RR-06 measured the failure this avoids: with the *inputs* above
-          it, pressing the example changed the map and left the panel showing
-          the coordinates it had just filled in, with the comparison two
-          screens down. Putting the result first is that finding taken
-          further — it is what makes the figures, the detour and the
-          uncertainty line fit together inside a phone's sheet.
-
-          Before there is an answer this is one line of instruction, and the
-          offer below it is still the first thing the keyboard reaches. The
-          region is always rendered and never empty: an aria-live container
-          has to exist before anything is put into it, and an empty box is
-          not something a viewer can see. */}
+          Before there is one this is a single line of instruction, and the
+          controls below it are what the viewer came for. The region is always
+          rendered and never empty: an aria-live container has to exist before
+          anything is put into it, and an empty box is not something a viewer
+          can see. */}
       <div
         className={styles.status}
         // Results replace one another in place, so the region has to announce
@@ -121,15 +134,11 @@ export function RoutePlanner({
         data-route-state={state.status}
         data-testid="route-status"
       >
-        {state.status === 'idle' && !awaitingEnd ? (
+        {state.status === 'idle' ? (
           <p className={styles.hint}>
-            Click the map to set a start and an end, or run the example below.
-          </p>
-        ) : null}
-
-        {state.status === 'idle' && awaitingEnd ? (
-          <p className={styles.hint} data-testid="awaiting-end">
-            Start is set. Click the map again, or search for a place, to set the end.
+            {canCompare
+              ? 'Both ends are set. Compare routes to see the difference.'
+              : 'Name a start and a destination, or set them on the map.'}
           </p>
         ) : null}
 
@@ -155,25 +164,17 @@ export function RoutePlanner({
             focusedRoute={focusedRoute}
             onFocusRoute={onFocusRoute}
             onEditJourney={handleEditJourney}
+            stairsTarget={stairsTarget}
+            onShowStairs={onShowStairs}
+            {...(submittedSummary ? { journeySummary: submittedSummary } : {})}
+            pendingEdits={pendingEdits}
           />
         ) : null}
       </div>
 
-      {/* One slot, whatever the state. Rendering it above the result while
-          planning and below it afterwards would move it in the DOM, and a
-          keyboard user who pressed it would have their focus dropped on the
-          floor the moment the answer arrived. */}
-      <VerifiedExampleCard
-        example={example}
-        onRun={onRunExample}
-        active={exampleActive}
-        journeyStarted={points.origin !== null || points.destination !== null}
-        busy={state.status === 'loading'}
-      />
-
       {/* Focusable as a landmark, not as a control: "Edit journey or profile"
           lands here, the heading is announced, and the next Tab reaches the
-          search box. */}
+          start field. */}
       <div
         className={styles.plan}
         ref={planRef}
@@ -183,19 +184,75 @@ export function RoutePlanner({
         data-testid="plan-journey"
       >
         <h2 className={styles.planHeading} id="route-planner-heading">
-          Plan your own journey
+          Plan a journey
         </h2>
 
-        <PlaceSearch
+        <EndpointField
+          role="origin"
+          endpoint={points.origin}
           apiBaseUrl={apiBaseUrl}
           region={region}
-          onSelect={onSelectPlace}
+          picking={pickTarget === 'origin'}
+          onSelectPlace={onSelectPlace}
+          onPickOnMap={onPickOnMap}
+          onClear={onClearPoint}
           {...(fetchImpl ? { fetchImpl } : {})}
         />
 
-        <PointFields points={points} onClear={onClearPoints} onSwap={onSwapPoints} />
+        <div className={styles.swapRow}>
+          <button
+            type="button"
+            className={styles.quietButton}
+            onClick={onSwapPoints}
+            disabled={points.origin === null && points.destination === null}
+            data-testid="swap-points"
+          >
+            Swap start and destination
+          </button>
+        </div>
+
+        <EndpointField
+          role="destination"
+          endpoint={points.destination}
+          apiBaseUrl={apiBaseUrl}
+          region={region}
+          picking={pickTarget === 'destination'}
+          onSelectPlace={onSelectPlace}
+          onPickOnMap={onPickOnMap}
+          onClear={onClearPoint}
+          {...(fetchImpl ? { fetchImpl } : {})}
+        />
 
         <ProfileChooser selected={profileKey} onChange={onProfileChange} />
+
+        <div className={styles.submitRow}>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={onCompare}
+            disabled={!canCompare}
+            data-testid="compare-routes"
+          >
+            {state.status === 'loading' ? 'Comparing…' : 'Compare routes'}
+          </button>
+          <button
+            type="button"
+            className={styles.quietButton}
+            onClick={onClearAll}
+            disabled={points.origin === null && points.destination === null}
+            data-testid="clear-journey"
+          >
+            Clear
+          </button>
+        </div>
+
+        <VerifiedExampleCard
+          example={example}
+          onRun={onRunExample}
+          active={exampleActive}
+          journeyStarted={points.origin !== null || points.destination !== null}
+          busy={state.status === 'loading'}
+        />
       </div>
 
       {intro}
@@ -206,17 +263,15 @@ export function RoutePlanner({
 /**
  * The five profiles, as a row of chips and one line of rules.
  *
- * Every profile stays offered and keyboard operation is the browser's own —
- * a real radiogroup, so arrow keys move between them and one Tab stop covers
- * the set. What changed is that only the *chosen* profile explains itself:
- * five permanently expanded cards, each with its own rule summary, pushed the
- * answer off the first screen of a floating panel, and four of those summaries
+ * Every profile stays offered and keyboard operation is the browser's own — a
+ * real radiogroup, so arrow keys move between them and one Tab stop covers the
+ * set. Only the *chosen* profile explains itself: five permanently expanded
+ * rule summaries pushed the controls off the first screen, and four of them
  * describe a journey the viewer is not taking.
  *
- * The rule line is not hidden behind anything. Which constraints are being
- * applied is the difference between two routes, and a viewer who cannot see it
- * cannot read the comparison — and these constraints are engineering judgement,
- * not measurements of how people with these aids actually travel, so they have
+ * The rule line is not hidden behind anything. Which constraints are applied
+ * is the difference between the two routes, and they are engineering judgement
+ * rather than measurements of how people with these aids travel — so they have
  * to be inspectable.
  */
 function ProfileChooser({
@@ -256,85 +311,5 @@ function ProfileChooser({
         </p>
       ) : null}
     </fieldset>
-  );
-}
-
-function PointFields({
-  points,
-  onClear,
-  onSwap,
-}: {
-  readonly points: PlannerPoints;
-  readonly onClear: () => void;
-  readonly onSwap: () => void;
-}) {
-  const pending = nextRole(points);
-
-  return (
-    <div className={styles.points}>
-      <PointRow
-        label="Start"
-        marker="A"
-        point={points.origin}
-        awaiting={points.origin === null && pending === 'origin'}
-      />
-      <PointRow
-        label="End"
-        marker="B"
-        point={points.destination}
-        awaiting={points.destination === null && pending === 'destination'}
-      />
-
-      <div className={styles.pointActions}>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          onClick={onSwap}
-          disabled={points.origin === null || points.destination === null}
-        >
-          Swap
-        </button>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          onClick={onClear}
-          disabled={points.origin === null && points.destination === null}
-        >
-          Clear
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function PointRow({
-  label,
-  marker,
-  point,
-  awaiting,
-}: {
-  readonly label: string;
-  readonly marker: string;
-  readonly point: LngLat | null;
-  readonly awaiting: boolean;
-}) {
-  return (
-    <div
-      className={styles.point}
-      data-awaiting={awaiting}
-      data-testid={`point-${label.toLowerCase()}`}
-    >
-      <span className={styles.pointMarker} data-marker={marker} aria-hidden="true">
-        {marker}
-      </span>
-      <span className={styles.pointLabel}>{label}</span>
-      <span className={styles.pointValue}>
-        {point === null ? (
-          <span className={styles.pointEmpty}>{awaiting ? 'Click the map to set' : 'Not set'}</span>
-        ) : (
-          formatCoordinate(point)
-        )}
-      </span>
-    </div>
   );
 }

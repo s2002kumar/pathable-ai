@@ -15,7 +15,11 @@ import {
   POINTS_LABEL_LAYER_ID,
   POINTS_LAYER_ID,
   POINTS_SOURCE_ID,
+  type RecordedStairs,
   type RouteFocus,
+  STAIRS_CASING_LAYER_ID,
+  STAIRS_LAYER_ID,
+  STAIRS_SOURCE_ID,
   STANDARD_CASING_LAYER_ID,
   STANDARD_LAYER_ID,
   STANDARD_SOURCE_ID,
@@ -30,6 +34,9 @@ import {
   pointsToGeoJson,
   prefersReducedMotion,
   routeToGeoJson,
+  stairsCasingLayer,
+  stairsLineLayer,
+  stairsToGeoJson,
   standardCasingLayer,
   standardLineLayer,
 } from './route-layers';
@@ -53,6 +60,12 @@ export type UseRouteLayersOptions = {
    * taller, has not asked for the camera to move.
    */
   readonly fitPadding?: Padding;
+  /**
+   * Recorded stairways to draw over the route, or null to draw none. Paint and
+   * data only — showing them never moves the camera, because a viewer asking
+   * "where are the stairs" is asking about the route already on screen.
+   */
+  readonly stairs?: RecordedStairs | null;
 };
 
 /**
@@ -72,6 +85,7 @@ export function useRouteLayers({
   showStandardRoute = true,
   focus = null,
   fitPadding,
+  stairs = null,
 }: UseRouteLayersOptions): void {
   // The last bounds we fitted to. Refitting on every render would fight the user
   // for control of the viewport; refitting only when the route actually changes
@@ -118,6 +132,16 @@ export function useRouteLayers({
     });
   }, [map, standardRoute, accessibleRoute, origin, destination, showStandardRoute]);
 
+  // The stairway overlay, like focus, is data and paint only: no camera move,
+  // no refit. Setting the source to an empty collection is what removes it,
+  // rather than deleting the layer, so there is nothing to recreate — and no
+  // way to end up with a duplicate source after a style reload.
+  useEffect(() => {
+    if (map === null) return;
+    ensureLayers(map);
+    setData(map, STAIRS_SOURCE_ID, stairs ? stairsToGeoJson(stairs) : EMPTY_LINES);
+  }, [map, stairs]);
+
   // Focus is paint only. It never touches the sources and never moves the
   // camera, so bringing one route forward cannot undo a viewer's pan or zoom.
   useEffect(() => {
@@ -140,6 +164,7 @@ export function useRouteLayers({
 function ensureLayers(map: MapInstance): void {
   addEmptySource(map, STANDARD_SOURCE_ID, EMPTY_LINES);
   addEmptySource(map, ACCESSIBLE_SOURCE_ID, EMPTY_LINES);
+  addEmptySource(map, STAIRS_SOURCE_ID, EMPTY_LINES);
   addEmptySource(map, POINTS_SOURCE_ID, EMPTY_POINTS);
 
   // Order matters: the standard route is a reference line and must sit beneath
@@ -149,6 +174,10 @@ function ensureLayers(map: MapInstance): void {
   addLayerOnce(map, STANDARD_LAYER_ID, standardLineLayer());
   addLayerOnce(map, ACCESSIBLE_CASING_LAYER_ID, accessibleCasingLayer());
   addLayerOnce(map, ACCESSIBLE_LAYER_ID, accessibleLineLayer());
+  // Above both routes so the stairs are visible on whichever one carries them,
+  // below the endpoint markers so it never covers A or B.
+  addLayerOnce(map, STAIRS_CASING_LAYER_ID, stairsCasingLayer());
+  addLayerOnce(map, STAIRS_LAYER_ID, stairsLineLayer());
   addLayerOnce(map, POINTS_HALO_LAYER_ID, pointHaloLayer());
   addLayerOnce(map, POINTS_LAYER_ID, pointCircleLayer());
   addLayerOnce(map, POINTS_LABEL_LAYER_ID, pointLabelLayer());

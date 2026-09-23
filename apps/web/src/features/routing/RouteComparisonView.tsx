@@ -4,6 +4,7 @@ import type { Route, RouteCompareResponse } from '@pathable/contracts';
 import type { RouteFocus } from '@/features/map/route-layers';
 import { RouteDifference } from './RouteDifference';
 import { differenceIsBelowDisplayPrecision } from './route-identity';
+import type { StairsTarget } from './types';
 import { formatDistance, formatDuration } from './types';
 import styles from './RoutePlanner.module.css';
 
@@ -25,12 +26,22 @@ export function RouteComparisonView({
   focusedRoute = null,
   onFocusRoute = () => {},
   onEditJourney,
+  stairsTarget = null,
+  onShowStairs = () => {},
+  journeySummary,
+  pendingEdits = false,
 }: {
   readonly comparison: RouteCompareResponse;
   readonly focusedRoute?: RouteFocus;
   readonly onFocusRoute?: (focus: RouteFocus) => void;
   /** Takes the viewer to the planning controls below, keeping this result. */
   readonly onEditJourney?: () => void;
+  readonly stairsTarget?: StairsTarget;
+  readonly onShowStairs?: (target: StairsTarget) => void;
+  /** The journey this answer belongs to, named. */
+  readonly journeySummary?: string;
+  /** True when the panel's draft has moved on from that journey. */
+  readonly pendingEdits?: boolean;
 }) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
   const bothRoutes = Boolean(standard && accessible);
@@ -38,11 +49,31 @@ export function RouteComparisonView({
   return (
     <div className={styles.results}>
       <div className={styles.result}>
+        {/* The answer names the journey it answered. Without this, editing an
+            endpoint would leave a figure on screen that looks current and is
+            not — the one way a comparison can lie without a single wrong
+            number in it. */}
+        {journeySummary ? (
+          <p className={styles.journeyLine} data-testid="journey-summary">
+            <span className={styles.journeyPlaces}>{journeySummary}</span>
+            <span className={styles.journeyProfile}>{comparison.profile_display_name}</span>
+          </p>
+        ) : null}
+
+        {pendingEdits ? (
+          <p className={styles.staleNote} role="status" data-testid="stale-result">
+            You have changed the journey. This answer is still for the one named above — press
+            Compare routes to update it.
+          </p>
+        ) : null}
+
         <RouteHeadline comparison={comparison} />
         <RouteDifference
           comparison={comparison}
           focusedRoute={focusedRoute}
           onFocusRoute={onFocusRoute}
+          stairsTarget={stairsTarget}
+          onShowStairs={onShowStairs}
           {...(onEditJourney ? { onEditJourney } : {})}
         />
       </div>

@@ -128,3 +128,12 @@
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/* The geocoding provider's own credit, shown with the results it produced.
+   Required by the data source's terms, not a nicety. */
+.attribution {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--color-text-subtle);
+}

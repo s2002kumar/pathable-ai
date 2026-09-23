@@ -4,11 +4,14 @@ import {
   ACCESSIBLE_LAYER_ID,
   EMPTY_LINES,
   FIT_PADDING,
+  NO_RECORDED_STAIRS,
   STANDARD_LAYER_ID,
   accessibleLineLayer,
   boundsOf,
   paddingForPanel,
   pointsToGeoJson,
+  recordedStairs,
+  stairsToGeoJson,
   routeToGeoJson,
   standardLineLayer,
 } from './route-layers';
@@ -222,5 +225,117 @@ describe('fitting a route around the panel', () => {
     expect(paddingForPanel(null, null)).toEqual({ ...FIT_PADDING });
     expect(paddingForPanel(MAP, null)).toEqual({ ...FIT_PADDING });
     expect(paddingForPanel(box(0, 0, 0, 0), SIDE_PANEL)).toEqual({ ...FIT_PADDING });
+  });
+});
+
+/**
+ * Reading the stairway evidence off a response.
+ *
+ * The whole product turns on one distinction here: a segment nobody has
+ * surveyed is not a segment without stairs. `steps` is a three-valued enum for
+ * that reason, and every case below exists because collapsing it to a boolean
+ * would produce a confident, wrong answer.
+ */
+describe('recorded stairways', () => {
+  const segment = (overrides: Record<string, unknown> = {}) =>
+    ({
+      edge_identity: '1->2#0',
+      name: null,
+      length_m: 4,
+      effective_metres: 4,
+      coordinates: [
+        [-80.54, 43.47],
+        [-80.5401, 43.4701],
+      ],
+      highway: 'footway',
+      surface: null,
+      surface_class: 'unknown',
+      smoothness_class: 'unknown',
+      steps: 'no',
+      step_count: null,
+      incline_percent: null,
+      kerb: 'unknown',
+      is_crossing: false,
+      width_m: null,
+      unknown_attributes: [],
+      cost_components: [],
+      ...overrides,
+    }) as unknown as Route['segments'][number];
+
+  const routeWith = (segments: Array<Route['segments'][number]>) =>
+    ({ ...route([[-80.54, 43.47]]), segments }) as Route;
+
+  it('counts only what the map records as a stairway', () => {
+    const result = recordedStairs(
+      routeWith([
+        segment({ steps: 'yes', step_count: 5 }),
+        segment({ steps: 'no' }),
+        segment({ steps: 'yes', step_count: 11 }),
+      ]),
+    );
+
+    expect(result.stairways).toBe(2);
+    expect(result.recordedSteps).toBe(16);
+  });
+
+  it('never treats an unrecorded step state as "no stairs"', () => {
+    // The failure this guards against is silent: an `unknown` segment counted
+    // as `no` would make a route look confirmed step-free when nobody has
+    // looked at it. It is neither a stairway nor evidence of the absence of
+    // one, and it is reported separately so the UI can say so.
+    const result = recordedStairs(
+      routeWith([segment({ steps: 'unknown' }), segment({ steps: 'unknown', step_count: 9 })]),
+    );
+
+    expect(result.stairways).toBe(0);
+    expect(result.segments).toHaveLength(0);
+    expect(result.unknownSegments).toBe(2);
+    // Even a step count on an unknown segment does not promote it to a stairway.
+    expect(result.recordedSteps).toBe(0);
+  });
+
+  it('reports the recorded step total as a floor, not a total', () => {
+    // Two counted stairways and two uncounted ones: "16 steps" would be a
+    // statement about the whole route that the data does not support.
+    const result = recordedStairs(
+      routeWith([
+        segment({ steps: 'yes', step_count: 5 }),
+        segment({ steps: 'yes', step_count: null }),
+        segment({ steps: 'yes', step_count: 11 }),
+        segment({ steps: 'yes', step_count: null }),
+      ]),
+    );
+
+    expect(result.stairways).toBe(4);
+    expect(result.recordedSteps).toBe(16);
+    expect(result.unknownStepCount).toBe(2);
+  });
+
+  it('ignores a stairway with no geometry to draw', () => {
+    const result = recordedStairs(routeWith([segment({ steps: 'yes', coordinates: [] })]));
+
+    expect(result.stairways).toBe(0);
+  });
+
+  it('is empty for a missing route rather than throwing', () => {
+    expect(recordedStairs(null)).toEqual(NO_RECORDED_STAIRS);
+    expect(recordedStairs(undefined)).toEqual(NO_RECORDED_STAIRS);
+  });
+
+  it('draws each stairway as its own line, keyed by position not identity', () => {
+    // `edge_identity` is undirected and repeats on an out-and-back route, so
+    // it cannot be the feature id.
+    const shared = { steps: 'yes', edge_identity: 'same->same#0' };
+    const collection = stairsToGeoJson(
+      recordedStairs(routeWith([segment(shared), segment(shared)])),
+    );
+
+    expect(collection.features).toHaveLength(2);
+    expect(collection.features.map((f) => f.properties.index)).toEqual([0, 1]);
+    expect(collection.features[0]?.geometry.type).toBe('LineString');
+  });
+
+  it('draws nothing when nothing is recorded', () => {
+    expect(stairsToGeoJson(NO_RECORDED_STAIRS).features).toHaveLength(0);
   });
 });

@@ -9,10 +9,11 @@
  * layer with that ID actually exists. On any other style, including the
  * source-less one the browser tests use, this is a no-op.
  *
- * The intent is a navigation instrument rather than a postcard: a crisp neutral
- * ground, parks and water present but quiet, buildings given just enough edge to
- * read as blocks, roads kept pale with softer casings, and the route lines the
- * only saturated marks on the page. Labels, one-way arrows, transit icons and
+ * The intent is a navigation product rather than a postcard: a cool near-white
+ * ground, water and parks given real colour because a map whose water is grey
+ * is not a map, buildings with just enough edge to read as blocks, roads kept
+ * pale with soft casings, and the route lines the most saturated marks on the
+ * page. Labels, one-way arrows, transit icons and
  * attribution are left exactly as the style draws them — pedestrian detail is
  * what a route is read against, and none of it is decoration.
  *
@@ -47,38 +48,47 @@ export type LayoutOverride = {
   readonly value: string;
 };
 
-const GROUND = '#eef0f2';
-const GREEN_MUTED = '#dde7da';
-const GREEN_SOFT = '#e4ebe2';
-const WATER = '#c3d6e3';
-const BUILDING = '#e0e4e8';
-const BUILDING_EDGE = '#ccd2d8';
-const CASING_MINOR = '#dbdfe3';
-const CASING_MAJOR = '#ccd3d9';
-const ROAD_MAJOR = '#f8fafb';
-const ROAD_MOTORWAY = '#eef2f5';
-const RAIL = '#c2c8cd';
-const LABEL_ROAD = '#4c545b';
-const LABEL_POI = '#525a61';
+const GROUND = '#f4f7fa';
+const GREEN_MUTED = '#d6e9d3';
+const GREEN_SOFT = '#e0efdd';
+const WATER = '#bfe2f4';
+const BUILDING = '#e4e6eb';
+const BUILDING_EDGE = '#d2d6dd';
+const CASING_MINOR = '#dde3ea';
+const CASING_MAJOR = '#ccd5df';
+const ROAD_MAJOR = '#ffffff';
+const ROAD_MOTORWAY = '#f2f6fa';
+const RAIL = '#c4ccd4';
+const LABEL_ROAD = '#526274';
+const LABEL_POI = '#5b6b7d';
 
 /**
  * The pedestrian network: a cool grey-blue, darker than any road, so a footway
  * crossing a white service road is still a footway. Deliberately unsaturated —
  * it has to stay clearly subordinate to the two route lines drawn over it.
  */
-const PATH = '#9aa7b2';
-const PATH_CASING = '#e7eaee';
-const LABEL_PATH = '#5a636b';
+const PATH = '#94a6b8';
+const PATH_CASING = '#e8eef4';
+const LABEL_PATH = '#526274';
 
-/** Wider than Liberty draws them, on the same exponential ramp it uses. */
+/**
+ * Wider than Liberty draws them, on the same exponential ramp it uses.
+ *
+ * Tuned by zoom rather than flat. At a city overview a footway is context and
+ * stays hairline; at the zoom a campus route is actually read at, it is the
+ * thing being read and earns real width. The route lines are wider again at
+ * every stop, so the network never competes with the answer drawn over it.
+ */
 const PATH_WIDTH = [
   'interpolate',
   ['exponential', 1.2],
   ['zoom'],
-  14,
-  1.6,
+  13,
+  1,
+  15,
+  1.9,
   17,
-  3.2,
+  3.4,
   20,
   11,
 ] as const;
@@ -87,10 +97,12 @@ const PATH_CASING_WIDTH = [
   'interpolate',
   ['exponential', 1.2],
   ['zoom'],
-  14,
-  2.6,
+  13,
+  1.8,
+  15,
+  3.1,
   17,
-  5,
+  5.2,
   20,
   15,
 ] as const;
@@ -99,16 +111,16 @@ export const BASEMAP_PAINT: readonly PaintOverride[] = [
   { layer: 'background', property: 'background-color', value: GROUND },
 
   { layer: 'park', property: 'fill-color', value: GREEN_MUTED },
-  { layer: 'park_outline', property: 'line-color', value: '#cfdccb' },
-  { layer: 'landcover_wood', property: 'fill-color', value: 'rgba(210, 225, 208, 0.7)' },
+  { layer: 'park_outline', property: 'line-color', value: '#c3ddbe' },
+  { layer: 'landcover_wood', property: 'fill-color', value: 'rgba(200, 224, 196, 0.75)' },
   { layer: 'landcover_grass', property: 'fill-color', value: GREEN_MUTED },
-  { layer: 'landcover_sand', property: 'fill-color', value: '#ecebe0' },
+  { layer: 'landcover_sand', property: 'fill-color', value: '#f0ecdd' },
   { layer: 'landuse_pitch', property: 'fill-color', value: GREEN_SOFT },
   { layer: 'landuse_track', property: 'fill-color', value: GREEN_SOFT },
   { layer: 'landuse_cemetery', property: 'fill-color', value: GREEN_SOFT },
-  { layer: 'landuse_hospital', property: 'fill-color', value: '#eee4e4' },
-  { layer: 'landuse_school', property: 'fill-color', value: '#e9ebe4' },
-  { layer: 'landuse_residential', property: 'fill-color', value: '#eaedef' },
+  { layer: 'landuse_hospital', property: 'fill-color', value: '#f3e6e6' },
+  { layer: 'landuse_school', property: 'fill-color', value: '#eaeee6' },
+  { layer: 'landuse_residential', property: 'fill-color', value: '#eef2f7' },
 
   { layer: 'water', property: 'fill-color', value: WATER },
   { layer: 'waterway_river', property: 'line-color', value: WATER },

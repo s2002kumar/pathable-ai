@@ -11,7 +11,7 @@
  * answer; the standard route is the comparison. Each line is cased in the
  * page's surface colour so it stays legible over any road the basemap draws.
  */
-import type { Route } from '@pathable/contracts';
+import type { Route, RouteSegment } from '@pathable/contracts';
 
 export const STANDARD_SOURCE_ID = 'pathable-standard-route';
 export const ACCESSIBLE_SOURCE_ID = 'pathable-accessible-route';
@@ -19,6 +19,9 @@ export const STANDARD_CASING_LAYER_ID = 'pathable-standard-route-casing';
 export const STANDARD_LAYER_ID = 'pathable-standard-route-line';
 export const ACCESSIBLE_CASING_LAYER_ID = 'pathable-accessible-route-casing';
 export const ACCESSIBLE_LAYER_ID = 'pathable-accessible-route-line';
+export const STAIRS_SOURCE_ID = 'pathable-recorded-stairs';
+export const STAIRS_CASING_LAYER_ID = 'pathable-recorded-stairs-casing';
+export const STAIRS_LAYER_ID = 'pathable-recorded-stairs-line';
 export const POINTS_SOURCE_ID = 'pathable-route-points';
 export const POINTS_HALO_LAYER_ID = 'pathable-route-points-halo';
 export const POINTS_LAYER_ID = 'pathable-route-points-circle';
@@ -36,10 +39,21 @@ export const POINTS_LABEL_LAYER_ID = 'pathable-route-points-label';
  * vision deficiency and a greyscale print. Both meet 3:1 against the muted
  * basemap.
  */
-export const STANDARD_COLOUR = '#4b463e';
-export const ACCESSIBLE_COLOUR = '#1d4fc4';
-export const ORIGIN_COLOUR = '#1d4fc4';
+export const STANDARD_COLOUR = '#515c6b';
+export const ACCESSIBLE_COLOUR = '#2456e6';
+export const ORIGIN_COLOUR = '#2456e6';
 export const DESTINATION_COLOUR = '#b3261e';
+
+/**
+ * Recorded stairways, drawn over the route they belong to.
+ *
+ * Mirrors `--color-stairs`. Chosen to be unmistakable against the cobalt route
+ * rather than to be pretty, and used for nothing else on the map, so the
+ * colour itself carries the meaning. It marks segments OpenStreetMap records
+ * as stairways — never a hazard the product inferred, and never a claim about
+ * segments whose step state is unknown.
+ */
+export const STAIRS_COLOUR = '#b54708';
 /** The page surface, so a cased line reads as drawn on the map rather than glowing. */
 export const CASING_COLOUR = '#ffffff';
 
@@ -254,6 +268,88 @@ export function pointsToGeoJson(
   return { type: 'FeatureCollection', features };
 }
 
+/**
+ * What OpenStreetMap records about stairways on one route.
+ *
+ * `steps` is a three-valued enum on the wire — `yes`, `no`, `unknown` — and the
+ * three are counted separately here on purpose. A segment nobody has surveyed
+ * is not a segment without stairs, and the one place this product must never
+ * blur is exactly that one.
+ *
+ * `step_count` is independent of it: a recorded stairway may carry no step
+ * count at all, so the recorded total below is a floor, never a complete
+ * count. `unknownStepCount` is how many stairways it is a floor by.
+ */
+export type RecordedStairs = {
+  /** Segments the map records as stairways, in travel order. */
+  readonly segments: readonly RouteSegment[];
+  /** How many of those segments there are. */
+  readonly stairways: number;
+  /** Steps actually written down, summed. Not the total number of steps. */
+  readonly recordedSteps: number;
+  /** Recorded stairways with no recorded step count. */
+  readonly unknownStepCount: number;
+  /** Segments whose step state nobody has recorded. Neither stairs nor not. */
+  readonly unknownSegments: number;
+};
+
+export const NO_RECORDED_STAIRS: RecordedStairs = {
+  segments: [],
+  stairways: 0,
+  recordedSteps: 0,
+  unknownStepCount: 0,
+  unknownSegments: 0,
+};
+
+/**
+ * Read the stairway evidence straight off the response's segments.
+ *
+ * Deliberately not derived from `stairway_count`, from an explanation's prose,
+ * or from `cost_components`: the first two cannot supply geometry, and a
+ * `steps` cost component only exists when the chosen profile happens to price
+ * steps, so a profile that does not would appear to have no stairs at all.
+ */
+export function recordedStairs(route: Route | null | undefined): RecordedStairs {
+  if (!route) return NO_RECORDED_STAIRS;
+
+  const segments = (route.segments ?? []).filter(
+    (segment) => segment.steps === 'yes' && (segment.coordinates?.length ?? 0) >= 2,
+  );
+
+  return {
+    segments,
+    stairways: segments.length,
+    recordedSteps: segments.reduce((total, segment) => total + (segment.step_count ?? 0), 0),
+    unknownStepCount: segments.filter(
+      (segment) => segment.step_count === null || segment.step_count === undefined,
+    ).length,
+    unknownSegments: (route.segments ?? []).filter((segment) => segment.steps === 'unknown').length,
+  };
+}
+
+/** The recorded stairways as drawable geometry. */
+export function stairsToGeoJson(stairs: RecordedStairs): LineFeatureCollection {
+  if (stairs.segments.length === 0) return EMPTY_LINES;
+
+  return {
+    type: 'FeatureCollection',
+    features: stairs.segments.map((segment, index) => ({
+      type: 'Feature',
+      // `edge_identity` is undirected and repeats on an out-and-back route, so
+      // it cannot be the feature id; position in the route can.
+      properties: {
+        index,
+        edge_identity: segment.edge_identity,
+        steps: segment.step_count ?? null,
+      },
+      geometry: {
+        type: 'LineString',
+        coordinates: segment.coordinates.map(([longitude, latitude]) => [longitude, latitude]),
+      },
+    })),
+  };
+}
+
 /** Bounding box covering every coordinate, or null when there is nothing to fit. */
 export function boundsOf(
   ...collections: Array<LineFeatureCollection | PointFeatureCollection>
@@ -414,6 +510,43 @@ export function pointCircleLayer(): Record<string, unknown> {
       ],
       'circle-stroke-color': CASING_COLOUR,
       'circle-stroke-width': 2.5,
+    },
+  };
+}
+
+/**
+ * Recorded stairways, drawn over the route they sit on.
+ *
+ * Above the route lines and below the endpoint markers: the viewer needs to
+ * see which part of the line the stairs are, so it cannot sit underneath, and
+ * it must not cover A and B. Dashed as well as coloured, because the whole
+ * point is that it reads as a different kind of mark from the route.
+ */
+export function stairsCasingLayer(): Record<string, unknown> {
+  return {
+    id: STAIRS_CASING_LAYER_ID,
+    type: 'line',
+    source: STAIRS_SOURCE_ID,
+    layout: ROUND_LINE,
+    paint: {
+      'line-color': CASING_COLOUR,
+      'line-width': 13,
+      'line-opacity': 0.95,
+    },
+  };
+}
+
+export function stairsLineLayer(): Record<string, unknown> {
+  return {
+    id: STAIRS_LAYER_ID,
+    type: 'line',
+    source: STAIRS_SOURCE_ID,
+    layout: ROUND_LINE,
+    paint: {
+      'line-color': STAIRS_COLOUR,
+      'line-width': 9,
+      'line-opacity': 1,
+      'line-dasharray': [0.9, 0.7],
     },
   };
 }

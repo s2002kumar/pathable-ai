@@ -5,14 +5,17 @@
  * never `--ivory-100`. That is what makes the dark theme a token swap rather than
  * a rewrite, and it is what will let a future high-contrast mode drop in.
  *
- * The palette is a navigation instrument's: crisp neutral surfaces, ink-coloured
- * text, one restrained teal accent for controls, and two route colours chosen to
- * sit on a muted basemap. Nothing on the page competes with the two route lines.
+ * The palette is a navigation product's: a cool near-white ground, solid white
+ * controls, deep-teal identity, and a clear cobalt route over distinctly
+ * coloured water, parks and buildings. Colour carries meaning here — teal is
+ * selection and identity, cobalt is the route for your profile, amber is
+ * missing information and burnt orange is a recorded stairway. None of them
+ * ever means a route is safe.
  *
- * Neutral rather than warm, deliberately. An ivory ground read as a printed
- * document — paper with a map inset — which is the opposite of what this is.
- * The surfaces are now near-white with a cool cast, so a floating control panel
- * reads as glass over the map rather than as a page the map sits on.
+ * Contrast figures in the comments were computed for the named pairing from
+ * these sRGB values. They are arithmetic, not a certification of the rendered
+ * UI: opacity, focus rings, disabled states and anything drawn over live
+ * cartography are checked in a browser instead.
  *
  * Contrast: every text/background pairing below meets WCAG 2.1 AA (4.5:1 for body
  * text, 3:1 for large text and UI boundaries) in both themes. Figures quoted in
@@ -104,29 +107,32 @@
   --content-max: 78rem;
 
   /* --- Colour: light ----------------------------------------------------- */
-  --color-canvas: #eceef0;
+  --color-canvas: #f4f7fa;
   --color-surface: #ffffff;
-  --color-surface-sunken: #f2f4f6;
+  --color-surface-sunken: #eef2f7;
   /* Opaque enough that route lines never show through a control that has text
      on it; the blur behind it does the rest of the work. */
-  --color-surface-overlay: rgb(255 255 255 / 94%);
-  --color-border: #dee2e6;
-  --color-border-strong: #b4bcc2;
+  --color-surface-overlay: rgb(255 255 255 / 95%);
+  --color-border: #d9e0e8;
+  --color-border-strong: #aab6c2;
 
-  /* Ink, not black: a hair of blue keeps it from looking like a hole. */
-  --color-text: #15191d;
-  /* 9.4:1 on --color-surface, 8.7:1 on --color-surface-sunken. */
-  --color-text-muted: #495057;
-  /* 5.6:1 on --color-surface-sunken, the lightest ground it is used on. */
-  --color-text-subtle: #5d666d;
+  /* Ink with a blue cast, to sit with the cobalt route rather than fight it.
+     15.0:1 on white. */
+  --color-text: #15283a;
+  /* 6.3:1 on --color-surface. */
+  --color-text-muted: #526274;
+  /* 4.6:1 on --color-surface; supporting labels only, never body copy. */
+  --color-text-subtle: #66788c;
   --color-text-inverse: #ffffff;
 
-  --color-brand: #0d5e6b;
-  --color-brand-strong: #094751;
-  --color-brand-soft: #e3f0f2;
-  --color-brand-border: #a2c8ce;
+  /* 6.4:1 for white text on brand. */
+  --color-brand: #006a68;
+  --color-brand-strong: #005654;
+  /* 5.7:1 for brand text on the selected tint. */
+  --color-brand-soft: #e6f4f1;
+  --color-brand-border: #9ecdc6;
 
-  --color-focus: #0d5e6b;
+  --color-focus: #006a68;
 
   /* --- Route colours -------------------------------------------------------
    * Shared by the map layers and the legend swatches so the key is the same
@@ -135,19 +141,33 @@
    * reach 3:1 against the muted basemap, and each line is cased in the surface
    * colour so it stays legible over any road.
    */
-  --color-route-accessible: #1d4fc4;
-  --color-route-standard: #4b463e;
-  --color-marker-origin: #1d4fc4;
+  /* 5.9:1 on white, so the legend swatch's label and the line agree. */
+  --color-route-accessible: #2456e6;
+  --color-route-standard: #515c6b;
+  --color-marker-origin: #2456e6;
   --color-marker-destination: #b3261e;
+
+  /* A recorded stairway drawn over the route it belongs to. Chosen to be
+     unmistakable against the cobalt route rather than to be pretty, and never
+     used for anything else, so the colour itself carries the meaning. */
+  --color-stairs: #b54708;
+  --color-stairs-soft: #fdead7;
+
+  /* Cartography. Water and parks are allowed real colour — a map whose water
+     is grey is not a map — while buildings stay subordinate to the routes. */
+  --color-map-water: #bfe2f4;
+  --color-map-park: #d6e9d3;
+  --color-map-building: #e4e6eb;
 
   --color-ok-text: #15603a;
   --color-ok-surface: #e3f3e9;
   --color-ok-border: #a0ceb2;
   --color-ok-dot: #1d8a4c;
 
-  --color-warn-text: #6f4708;
-  --color-warn-surface: #fcf1dc;
-  --color-warn-border: #e3c184;
+  /* 7.3:1. Missing information, and nothing else. */
+  --color-warn-text: #704900;
+  --color-warn-surface: #fff4db;
+  --color-warn-border: #e8c986;
   --color-warn-dot: #b47300;
 
   --color-danger-text: #8a2323;
@@ -163,24 +183,29 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-canvas: #0d0f11;
-    --color-surface: #17191c;
-    --color-surface-sunken: #111316;
-    --color-surface-overlay: rgb(23 25 28 / 94%);
-    --color-border: #2b2f34;
-    --color-border-strong: #454b52;
+    --color-canvas: #0d1117;
+    --color-surface: #171d25;
+    --color-surface-sunken: #11161d;
+    --color-surface-overlay: rgb(23 29 37 / 95%);
+    --color-border: #2a323c;
+    --color-border-strong: #45505d;
 
-    --color-text: #eceef0;
-    --color-text-muted: #b0b6bc;
-    --color-text-subtle: #8d949b;
-    --color-text-inverse: #12151a;
+    --color-text: #eaeff5;
+    --color-text-muted: #aab6c2;
+    --color-text-subtle: #8593a1;
+    --color-text-inverse: #101720;
 
-    --color-brand: #5cc4d3;
-    --color-brand-strong: #8eddea;
-    --color-brand-soft: #123039;
-    --color-brand-border: #2c5964;
+    /* The teal lifts for a dark ground; the identity is the same hue family. */
+    --color-brand: #4fc2be;
+    --color-brand-strong: #7fd8d4;
+    --color-brand-soft: #123330;
+    --color-brand-border: #2a5f5b;
 
-    --color-focus: #7ad7e5;
+    --color-focus: #7fd8d4;
+
+    /* Stairs and cartography are NOT re-themed. The basemap is the same light
+       cartography in both schemes, so anything drawn on it has to keep
+       matching what is under it rather than the panel beside it. */
 
     /* Route and marker colours are deliberately not re-themed: the basemap is
        the same light cartography in both schemes, and the legend has to match
@@ -191,9 +216,9 @@
     --color-ok-border: #2b6345;
     --color-ok-dot: #4ccf87;
 
-    --color-warn-text: #f2c87b;
-    --color-warn-surface: #2b2212;
-    --color-warn-border: #685226;
+    --color-warn-text: #f5cf87;
+    --color-warn-surface: #2c2312;
+    --color-warn-border: #6a5427;
     --color-warn-dot: #dfa23e;
 
     --color-danger-text: #ffaaa5;

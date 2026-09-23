@@ -146,6 +146,12 @@
   border-top-color: var(--color-route-standard);
 }
 
+.legendSwatch[data-variant='stairs'] {
+  border-top-style: dashed;
+  border-top-width: 5px;
+  border-top-color: var(--color-stairs);
+}
+
 /* ===========================================================================
  * Overlay layouts. The map fills the workspace and the panel floats over it.
  *

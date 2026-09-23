@@ -31,8 +31,16 @@ vi.mock('maplibre-gl', () => ({
   AttributionControl: class {},
 }));
 
-const ORIGIN = { longitude: -80.5424, latitude: 43.4728 };
-const DESTINATION = { longitude: -80.5449, latitude: 43.4715 };
+const ORIGIN = {
+  position: { longitude: -80.5424, latitude: 43.4728 },
+  label: 'Davis Centre library',
+  source: 'example' as const,
+};
+const DESTINATION = {
+  position: { longitude: -80.5449, latitude: 43.4715 },
+  label: 'Student Life Centre',
+  source: 'example' as const,
+};
 
 function buildRoute(overrides: Record<string, unknown> = {}) {
   return {
@@ -326,7 +334,7 @@ describe('the answer as one block', () => {
 });
 
 describe('planner guidance', () => {
-  it('tells the viewer what the next click sets once the start is placed', () => {
+  it('shows a half-finished journey as one end named and one end empty', () => {
     render(
       <RoutePlanner
         points={{ origin: ORIGIN, destination: null }}
@@ -336,18 +344,30 @@ describe('planner guidance', () => {
         region="waterloo"
         example={CAMPUS_EXAMPLE}
         exampleActive={false}
+        canCompare={false}
+        pendingEdits={false}
+        pickTarget={null}
+        submittedSummary="Davis Centre library to Student Life Centre"
+        stairsTarget={null}
         onRunExample={() => {}}
         onProfileChange={() => {}}
-        onClearPoints={() => {}}
+        onCompare={() => {}}
+        onClearPoint={() => {}}
+        onClearAll={() => {}}
         onSwapPoints={() => {}}
         onRetry={() => {}}
+        onPickOnMap={() => {}}
         onSelectPlace={() => {}}
       />,
     );
 
+    // There is no "what does the next click set?" question any more: each end
+    // is its own field, so the answer is which field is empty. The status line
+    // stays idle because nothing has been asked for yet.
     expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'idle');
-    expect(screen.getByTestId('awaiting-end')).toHaveTextContent(/set the end/i);
-    expect(screen.getByTestId('point-end')).toHaveTextContent(/click the map to set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('Davis Centre library');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
+    expect(screen.getByTestId('compare-routes')).toBeDisabled();
   });
 });
 

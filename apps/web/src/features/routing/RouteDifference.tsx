@@ -1,8 +1,9 @@
 'use client';
 
 import type { Route, RouteCompareResponse } from '@pathable/contracts';
-import type { RouteFocus } from '@/features/map/route-layers';
+import { type RouteFocus, recordedStairs } from '@/features/map/route-layers';
 import { routesSharePath } from './route-identity';
+import type { StairsTarget } from './types';
 import { formatDistance, formatDuration } from './types';
 import styles from './RoutePlanner.module.css';
 
@@ -101,16 +102,100 @@ function UncertaintySummary({ route }: { readonly route: Route }) {
 /**
  * The stairways on a route, with the step count where the map records one.
  *
- * "1 stairway (14 steps)" and "1 stairway" are different facts: the second
- * means nobody wrote down how many steps there are, and a reader deciding
- * whether they can manage it needs to know which of the two they are looking
- * at. Omitting the number silently would turn an unrecorded count into an
- * implied small one.
+ * "1 stairway (14 recorded steps)" and "1 stairway" are different facts: the
+ * second means nobody wrote down how many steps there are, and a reader
+ * deciding whether they can manage it needs to know which of the two they are
+ * looking at. Omitting the number silently would turn an unrecorded count into
+ * an implied small one.
+ *
+ * The count says "recorded" because it is a floor, not a total. `step_count`
+ * sums only the stairways somebody counted; a route with two counted stairways
+ * and two uncounted ones reports the two.
  */
+/**
+ * "Show the recorded stairs" — the one evidence overlay.
+ *
+ * It draws the segments OpenStreetMap records as stairways on whichever route
+ * carries them, and says in words what it drew. Three things it deliberately
+ * is not: it is not a hazard layer, it is not a claim about segments whose
+ * step state nobody recorded, and it is not a complete count of steps.
+ *
+ * The segments come from the response, read as data — never from an
+ * explanation's prose and never from the cost breakdown, because a `steps`
+ * cost component only exists when the chosen profile happens to price steps,
+ * so a profile that does not would look like a route with no stairs at all.
+ */
+function RecordedStairsControl({
+  comparison,
+  target,
+  onShow,
+}: {
+  readonly comparison: RouteCompareResponse;
+  readonly target: StairsTarget;
+  readonly onShow: (target: StairsTarget) => void;
+}) {
+  const { standard_route: standard, accessible_route: accessible } = comparison;
+  const shown = target === 'standard' ? standard : target === 'accessible' ? accessible : null;
+  const stairs = recordedStairs(shown);
+
+  // Offered for the route that has any. Almost always the shortest one — that
+  // is usually the whole reason the two routes differ.
+  const candidate = recordedStairs(standard).stairways > 0 ? 'standard' : 'accessible';
+  const candidateRoute = candidate === 'standard' ? standard : accessible;
+  const available = recordedStairs(candidateRoute).stairways;
+
+  if (!standard || !accessible) return null;
+
+  const label = candidate === 'standard' ? 'the shortest walking route' : 'your route';
+
+  return (
+    <div className={styles.stairs} data-testid="recorded-stairs">
+      {available === 0 ? (
+        <p className={styles.stairsNote} data-testid="recorded-stairs-none">
+          <strong>No recorded stairs</strong> on either route. OpenStreetMap records no stairway on
+          the segments these routes use; it has not been confirmed that there are none.
+        </p>
+      ) : (
+        <>
+          <button
+            type="button"
+            className={styles.stairsButton}
+            aria-pressed={target !== null}
+            onClick={() => onShow(target === null ? candidate : null)}
+            data-testid="show-recorded-stairs"
+          >
+            {target === null ? `Show the recorded stairs` : 'Hide the recorded stairs'}
+          </button>
+          <p className={styles.stairsNote} data-testid="recorded-stairs-note">
+            {target === null ? (
+              <>
+                {available} {available === 1 ? 'stairway is' : 'stairways are'} recorded on {label}.
+              </>
+            ) : (
+              <>
+                Highlighted on the map: {stairs.stairways}{' '}
+                {stairs.stairways === 1 ? 'stairway' : 'stairways'} recorded on {label}
+                {stairs.recordedSteps > 0 ? `, ${stairs.recordedSteps} recorded steps` : ''}
+                {stairs.unknownStepCount > 0
+                  ? `. ${stairs.unknownStepCount} of them ${stairs.unknownStepCount === 1 ? 'has' : 'have'} no recorded step count, so that total is a floor rather than the number of steps`
+                  : ''}
+                .
+                {stairs.unknownSegments > 0
+                  ? ` A further ${stairs.unknownSegments} ${stairs.unknownSegments === 1 ? 'segment has' : 'segments have'} no recorded step information at all — neither stairs nor no stairs.`
+                  : ''}
+              </>
+            )}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 function stairwayNote(route: Route): string {
-  if (route.stairway_count === 0) return 'no stairways';
+  if (route.stairway_count === 0) return 'no recorded stairways';
   const stairways = `${route.stairway_count} ${route.stairway_count === 1 ? 'stairway' : 'stairways'}`;
-  return route.step_count > 0 ? `${stairways} (${route.step_count} steps)` : stairways;
+  return route.step_count > 0 ? `${stairways} (${route.step_count} recorded steps)` : stairways;
 }
 
 /**
@@ -150,8 +235,11 @@ function RouteFigure({
         {label}
       </span>
       <span className={`${styles.figureValue} tabular`}>{formatDistance(route.distance_m)}</span>
+      {/* "Est." and not "takes": the figure is distance divided by an assumed
+          pace plus fixed allowances, which the schema itself describes as not
+          measured and not specific to any individual. */}
       <span className={styles.figureMeta}>
-        {formatDuration(route.estimated_duration_seconds)} walk
+        Est. {formatDuration(route.estimated_duration_seconds)}
       </span>
       <span className={styles.figureFooter}>
         <span className={styles.figureNote}>{stairwayNote(route)}</span>
@@ -190,12 +278,16 @@ export function RouteDifference({
   focusedRoute = null,
   onFocusRoute = () => {},
   onEditJourney,
+  stairsTarget = null,
+  onShowStairs = () => {},
 }: {
   readonly comparison: RouteCompareResponse;
   readonly focusedRoute?: RouteFocus;
   readonly onFocusRoute?: (focus: RouteFocus) => void;
   /** Takes the viewer to the planning controls below, keeping this result. */
   readonly onEditJourney?: () => void;
+  readonly stairsTarget?: StairsTarget;
+  readonly onShowStairs?: (target: StairsTarget) => void;
 }) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
 
@@ -278,6 +370,8 @@ export function RouteDifference({
           certified passable.
         </p>
       ) : null}
+
+      <RecordedStairsControl comparison={comparison} target={stairsTarget} onShow={onShowStairs} />
 
       <UncertaintySummary route={accessible} />
 

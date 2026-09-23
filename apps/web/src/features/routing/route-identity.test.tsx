@@ -20,8 +20,16 @@ import {
 } from './route-identity';
 import { CAMPUS_EXAMPLE } from './verified-example';
 
-const ORIGIN = { longitude: -80.5424, latitude: 43.4728 };
-const DESTINATION = { longitude: -80.5449, latitude: 43.4715 };
+const ORIGIN = {
+  position: { longitude: -80.5424, latitude: 43.4728 },
+  label: 'Davis Centre library',
+  source: 'example' as const,
+};
+const DESTINATION = {
+  position: { longitude: -80.5449, latitude: 43.4715 },
+  label: 'Student Life Centre',
+  source: 'example' as const,
+};
 
 const DIRECT: Array<[number, number]> = [
   [-80.5424, 43.4728],
@@ -341,11 +349,19 @@ describe('editing the journey from the result', () => {
         region="waterloo"
         example={CAMPUS_EXAMPLE}
         exampleActive
+        canCompare
+        pendingEdits={false}
+        pickTarget={null}
+        submittedSummary="Davis Centre library to Student Life Centre"
+        stairsTarget={null}
         onRunExample={() => {}}
         onProfileChange={onProfileChange}
-        onClearPoints={onClearPoints}
+        onCompare={() => {}}
+        onClearPoint={onClearPoints}
+        onClearAll={onClearPoints}
         onSwapPoints={() => {}}
         onRetry={() => {}}
+        onPickOnMap={() => {}}
         onSelectPlace={() => {}}
       />,
     );
@@ -356,7 +372,7 @@ describe('editing the journey from the result', () => {
 
     const plan = screen.getByTestId('plan-journey');
     expect(plan).toHaveFocus();
-    expect(plan).toHaveAccessibleName(/plan your own journey/i);
+    expect(plan).toHaveAccessibleName(/plan a journey/i);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
 
     // The result is still there, and nothing about the journey was reset.
@@ -382,11 +398,19 @@ describe('editing the journey from the result', () => {
         region="waterloo"
         example={CAMPUS_EXAMPLE}
         exampleActive={false}
+        canCompare
+        pendingEdits={false}
+        pickTarget={null}
+        submittedSummary="Davis Centre library to Student Life Centre"
+        stairsTarget={null}
         onRunExample={() => {}}
         onProfileChange={() => {}}
-        onClearPoints={() => {}}
+        onCompare={() => {}}
+        onClearPoint={() => {}}
+        onClearAll={() => {}}
         onSwapPoints={() => {}}
         onRetry={() => {}}
+        onPickOnMap={() => {}}
         onSelectPlace={() => {}}
       />,
     );

@@ -136,19 +136,22 @@ describe('HomePage', () => {
     // Two ways in, in the order a first-time viewer should meet them: a journey
     // they can run immediately, and the map they can use instead.
     expect(screen.getByTestId('run-verified-example')).toBeInTheDocument();
-    expect(screen.getByTestId('route-status')).toHaveTextContent(/click the map to set a start/i);
+    expect(screen.getByTestId('route-status')).toHaveTextContent(
+      /name a start and a destination, or set them on the map/i,
+    );
   });
 
-  it('shows a map key explaining the two route lines', async () => {
-    // The legend is real text outside the canvas: one painted into WebGL would
-    // be invisible to a screen reader and unselectable.
+  it('holds the map key back until there are route lines to explain', async () => {
+    // The legend is real text outside the canvas — one painted into WebGL
+    // would be invisible to a screen reader and unselectable — but a key to
+    // two lines that do not exist yet is furniture on top of the map. It
+    // appears with the routes it explains; `routing.test.tsx` covers the
+    // wording, and the browser suite covers it appearing after a comparison.
     setEnv(VALID_ENV);
 
     render(await homePage());
 
-    const legend = screen.getByTestId('map-legend');
-    expect(legend).toHaveTextContent(/Route for your profile/i);
-    expect(legend).toHaveTextContent(/Shortest walking route/i);
+    expect(screen.queryByTestId('map-legend')).not.toBeInTheDocument();
   });
 
   it('shows backend status in the shell', async () => {

@@ -225,6 +225,19 @@ async function clickMap(map: FakeMap, lng: number, lat: number) {
   });
 }
 
+/**
+ * Ask for the comparison.
+ *
+ * Placing two points is now a draft, not a request: the planner commits a
+ * journey when the viewer presses Compare. These tests exercise the map's
+ * click handling, so they still click — and then say so.
+ */
+async function compare() {
+  await act(async () => {
+    screen.getByTestId('compare-routes').click();
+  });
+}
+
 beforeEach(() => {
   FakeMap.instances.length = 0;
   // jsdom has no WebGL, so the real capability check would report "unsupported"
@@ -271,6 +284,7 @@ describe('route layers', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
 
     // FakeMap.addSource throws on a duplicate, so reaching here proves it.
     await waitFor(() => expect(map.dataOf(POINTS_SOURCE_ID).features).toHaveLength(2));
@@ -283,6 +297,7 @@ describe('route layers', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
 
     await waitFor(() => {
       expect(map.dataOf(ACCESSIBLE_SOURCE_ID).features).toHaveLength(1);
@@ -325,6 +340,7 @@ describe('route layers', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
@@ -355,6 +371,7 @@ describe('route layers', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
@@ -363,7 +380,7 @@ describe('route layers', () => {
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
-    await user.click(screen.getByRole('button', { name: 'Swap' }));
+    await user.click(screen.getByTestId('swap-points'));
 
     expect(FakeMap.instances).toHaveLength(1);
     expect(map.removed).toBe(false);
@@ -377,14 +394,23 @@ describe('choosing points on the map', () => {
 
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
-    expect(screen.getByTestId('point-start')).toHaveTextContent('43.47000, -80.54000');
-    expect(screen.getByTestId('point-end')).toHaveTextContent(/click the map to set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('Selected map point');
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('43.47000, -80.54000');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
 
     await clickMap(map, -80.536, 43.471);
-    expect(screen.getByTestId('point-end')).toHaveTextContent('43.47100, -80.53600');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(
+      'Selected map point',
+    );
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(
+      '43.47100, -80.53600',
+    );
   });
 
-  it('requests a comparison once both points are set', async () => {
+  it('asks for nothing until the viewer presses Compare', async () => {
+    // Placing points is drafting, not asking. It used to fire the moment two
+    // existed, which was fine while a point was only ever a map click and
+    // wrong once an endpoint is a named thing somebody is still typing.
     const fetchImpl = respondWithComparison();
     render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
     await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
@@ -394,7 +420,24 @@ describe('choosing points on the map', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
 
     await clickMap(map, -80.536, 43.47);
+    expect(fetchImpl).not.toHaveBeenCalled();
+
+    await compare();
     await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+  });
+
+  it('sends exactly one request for one Compare press', async () => {
+    const fetchImpl = respondWithComparison();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+
+    await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it('shows the comparison the API returned', async () => {
@@ -404,6 +447,7 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
 
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
@@ -420,8 +464,8 @@ describe('choosing points on the map', () => {
     await clickMap(map, -80.536, 43.47);
     await clickMap(map, -80.53, 43.475);
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent('43.47500, -80.53000');
-    expect(screen.getByTestId('point-end')).toHaveTextContent(/click the map to set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('43.47500, -80.53000');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
   });
 
   it('re-requests when the mobility profile changes', async () => {
@@ -432,6 +476,7 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
     await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
 
     const radio = screen.getByRole('radio', { name: /Crutches or cane/ }) as HTMLInputElement;
@@ -454,13 +499,14 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
     await waitFor(() => expect(map.dataOf(ACCESSIBLE_SOURCE_ID).features).toHaveLength(1));
 
     await act(async () => {
-      screen.getByRole('button', { name: 'Clear' }).click();
+      screen.getByTestId('clear-journey').click();
     });
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent(/click the map to set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent(/not set/i);
     await waitFor(() => expect(map.dataOf(POINTS_SOURCE_ID).features).toHaveLength(0));
     expect(map.dataOf(ACCESSIBLE_SOURCE_ID).features).toHaveLength(0);
   });
@@ -472,13 +518,16 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.471);
+    await compare();
 
     await act(async () => {
-      screen.getByRole('button', { name: 'Swap' }).click();
+      screen.getByTestId('swap-points').click();
     });
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent('43.47100, -80.53600');
-    expect(screen.getByTestId('point-end')).toHaveTextContent('43.47000, -80.54000');
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('43.47100, -80.53600');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(
+      '43.47000, -80.54000',
+    );
   });
 
   it('surfaces a failed request without losing the chosen points', async () => {
@@ -495,8 +544,10 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('No route was found.'));
-    expect(screen.getByTestId('point-start')).toHaveTextContent('43.47000, -80.54000');
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('Selected map point');
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('43.47000, -80.54000');
   });
 });

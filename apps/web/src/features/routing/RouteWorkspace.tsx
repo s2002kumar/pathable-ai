@@ -3,16 +3,22 @@
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import type { ProfileKey } from '@pathable/contracts';
 import { MapPanel } from '@/features/map/MapPanel';
-import type { RouteFocus } from '@/features/map/route-layers';
+import { type RouteFocus, recordedStairs } from '@/features/map/route-layers';
 import { usePanelFit } from '@/features/map/usePanelFit';
+import { MAP_POINT_LABEL } from './EndpointField';
 import { RoutePlanner } from './RoutePlanner';
 import { useRouteComparison } from './useRouteComparison';
 import {
+  type Endpoint,
+  type Journey,
   type LngLat,
   type PlannerPoints,
-  type ProfileSelection,
+  type PointRole,
   type RouteRequestState,
+  type StairsTarget,
   formatDistance,
+  hasPendingEndpointEdits,
+  journeyOf,
 } from './types';
 import { CAMPUS_EXAMPLE, type VerifiedExample } from './verified-example';
 import styles from './RouteWorkspace.module.css';
@@ -46,18 +52,41 @@ export type RouteWorkspaceProps = {
 const EMPTY_POINTS: PlannerPoints = { origin: null, destination: null };
 
 /**
+ * The example's endpoints, carrying the corpus's own names for the places.
+ *
+ * Typed non-null so the journey built from it needs no assertion: the preset
+ * always has both ends, which is the whole reason it is one press.
+ */
+function exampleEndpoints(example: VerifiedExample): {
+  readonly origin: Endpoint;
+  readonly destination: Endpoint;
+} {
+  return {
+    origin: { position: example.origin, label: example.originLabel, source: 'example' },
+    destination: {
+      position: example.destination,
+      label: example.destinationLabel,
+      source: 'example',
+    },
+  };
+}
+
+/**
  * Owns the planning state shared by the map and the panel.
  *
  * The routes have to be drawn *and* described, so neither the map nor the panel
- * can own them without reaching into the other. This component holds the two
- * endpoints, the chosen profile, the request, and which route (if any) the
- * viewer has brought forward, and hands both children exactly what they need.
+ * can own them without reaching into the other.
+ *
+ * Two pieces of state, not one. `points` is the draft the viewer is assembling;
+ * `submitted` is the journey they asked to compare. Keeping them apart is what
+ * lets an answer stay truthfully attributed to the journey that produced it
+ * while a different one is being typed above it — and it is why a half-finished
+ * destination no longer fires a request.
  *
  * Layout: the map is the product, so it fills the workspace and everything else
- * floats over it — a planning surface against one edge, a map key against
- * another. What the panel covers is measured rather than assumed, because a
- * route framed underneath the panel is the same failure as a route drawn
- * off-screen.
+ * floats over it. What the panel covers is measured rather than assumed,
+ * because a route framed underneath the panel is the same failure as a route
+ * drawn off-screen.
  */
 export function RouteWorkspace({
   apiBaseUrl,
@@ -76,17 +105,24 @@ export function RouteWorkspace({
   footer,
 }: RouteWorkspaceProps) {
   const [points, setPoints] = useState<PlannerPoints>(
+    initialExample ? exampleEndpoints(initialExample) : EMPTY_POINTS,
+  );
+  // A deep-linked example is submitted from the first render, not pressed by a
+  // simulated click in an effect: the page already knows the journey, so the
+  // request goes out with everything else rather than a frame later.
+  const [submitted, setSubmitted] = useState<Journey | null>(
     initialExample
-      ? { origin: initialExample.origin, destination: initialExample.destination }
-      : EMPTY_POINTS,
+      ? { ...exampleEndpoints(initialExample), profileKey: 'wheelchair' as ProfileKey }
+      : null,
   );
   const [profileKey, setProfileKey] = useState<ProfileKey>('wheelchair');
   const [activeExampleId, setActiveExampleId] = useState<string | null>(initialExample?.id ?? null);
   const [focusedRoute, setFocusedRoute] = useState<RouteFocus>(null);
+  const [stairsTarget, setStairsTarget] = useState<StairsTarget>(null);
+  const [pickTarget, setPickTarget] = useState<PointRole | null>(null);
   // Only meaningful where the panel is a bottom sheet; the side layout ignores
   // it in CSS. Open by default, because the answer is the reason to be here.
   const [sheetOpen, setSheetOpen] = useState(true);
-  const profile = useMemo<ProfileSelection>(() => ({ key: profileKey }), [profileKey]);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -95,63 +131,112 @@ export function RouteWorkspace({
   const { state, retry } = useRouteComparison({
     apiBaseUrl,
     region,
-    points,
-    profile,
+    journey: submitted,
     ...(fetchImpl ? { fetchImpl } : {}),
   });
 
-  const handleRunExample = useCallback((example: VerifiedExample) => {
-    // Inputs only. Both endpoints and the profile land together, which is all
-    // the comparison hook needs to issue the real request.
+  /** Commit a journey, and drop anything that described the previous one. */
+  const commit = useCallback((journey: Journey) => {
+    setSubmitted(journey);
     setFocusedRoute(null);
-    setPoints({ origin: example.origin, destination: example.destination });
-    setProfileKey('wheelchair');
-    setActiveExampleId(example.id);
+    setStairsTarget(null);
+    setPickTarget(null);
     setSheetOpen(true);
+  }, []);
+
+  const handleRunExample = useCallback(
+    (example: VerifiedExample) => {
+      // One press: the endpoints, the profile and the request all land in the
+      // same interaction. The journey is built here rather than read back from
+      // state, because these setStates have not been applied yet.
+      const endpoints = exampleEndpoints(example);
+      setPoints(endpoints);
+      setProfileKey('wheelchair');
+      setActiveExampleId(example.id);
+      commit({ ...endpoints, profileKey: 'wheelchair' });
+    },
+    [commit],
+  );
+
+  const handleSelectPlace = useCallback((role: PointRole, position: LngLat, label: string) => {
+    const endpoint: Endpoint = { position, label, source: 'search' };
+    setActiveExampleId(null);
+    setPickTarget(null);
+    setPoints((current) => ({ ...current, [role]: endpoint }));
+  }, []);
+
+  const handlePickOnMap = useCallback((role: PointRole) => {
+    setPickTarget((current) => (current === role ? null : role));
   }, []);
 
   const handleSelectPoint = useCallback(
     (position: LngLat) => {
-      setFocusedRoute(null);
+      const endpoint: Endpoint = { position, label: MAP_POINT_LABEL, source: 'map' };
       setActiveExampleId(null);
 
-      if (points.origin === null) {
-        setPoints({ ...points, origin: position });
+      if (pickTarget !== null) {
+        const role = pickTarget;
+        setPickTarget(null);
+        setPoints((current) => ({ ...current, [role]: endpoint }));
         return;
       }
-      if (points.destination === null) {
-        // This click completes the pair, so a request follows it. A shut sheet
-        // has its contents removed from the page, live region and all, so an
-        // answer arriving into one would be announced to nobody — open it now,
-        // while there is still only a "comparing routes" message to show.
-        // Setting the first point deliberately does not: somebody who pulled
-        // the sheet down to see more map is still placing points on it.
-        setPoints({ ...points, destination: position });
-        setSheetOpen(true);
-        return;
-      }
-      // Both already set: start a new journey from here rather than making the
-      // user press Clear first.
-      setPoints({ origin: position, destination: null });
+
+      // No field asked for this click, so fall back to filling the first empty
+      // one. Convenient, and unambiguous only because every field also has an
+      // explicit "Set on map" that says where a click will land.
+      setPoints((current) => {
+        if (current.origin === null) return { ...current, origin: endpoint };
+        if (current.destination === null) return { ...current, destination: endpoint };
+        return { origin: endpoint, destination: null };
+      });
     },
-    [points],
+    [pickTarget],
   );
 
-  const handleClear = useCallback(() => {
-    setFocusedRoute(null);
+  const handleClearPoint = useCallback((role: PointRole) => {
     setActiveExampleId(null);
+    setPoints((current) => ({ ...current, [role]: null }));
+  }, []);
+
+  const handleClearAll = useCallback(() => {
+    // Clearing has to clear the *request* too. Dropping the points alone would
+    // leave the previous answer drawn on the map with nothing naming it.
     setPoints(EMPTY_POINTS);
+    setSubmitted(null);
+    setActiveExampleId(null);
+    setFocusedRoute(null);
+    setStairsTarget(null);
+    setPickTarget(null);
   }, []);
 
   const handleSwap = useCallback(() => {
-    setFocusedRoute(null);
+    // Labels travel with their coordinates; swapping one without the other
+    // would route to a place under another place's name.
     setPoints((current) => ({ origin: current.destination, destination: current.origin }));
   }, []);
 
-  const handleProfileChange = useCallback((key: ProfileKey) => {
-    setFocusedRoute(null);
-    setProfileKey(key);
-  }, []);
+  const pendingEdits = hasPendingEndpointEdits(points, submitted);
+
+  const handleProfileChange = useCallback(
+    (key: ProfileKey) => {
+      setProfileKey(key);
+      setFocusedRoute(null);
+      setStairsTarget(null);
+      // Re-run for the journey already on screen, but only while the endpoints
+      // still match it. With an endpoint half-edited, re-running would answer a
+      // question that is a mixture of two — so that case waits for Compare.
+      if (submitted !== null && !hasPendingEndpointEdits(points, submitted)) {
+        setSubmitted({ ...submitted, profileKey: key });
+      }
+    },
+    [points, submitted],
+  );
+
+  const handleCompare = useCallback(() => {
+    const journey = journeyOf(points, profileKey);
+    if (journey === null) return;
+    commit(journey);
+  }, [points, profileKey, commit]);
 
   const comparison = state.status === 'success' ? state.comparison : null;
 
@@ -164,6 +249,13 @@ export function RouteWorkspace({
       : focusedRoute === 'accessible' && comparison?.accessible_route
         ? 'accessible'
         : null;
+
+  const stairs = useMemo(() => {
+    if (comparison === null || stairsTarget === null) return null;
+    const route =
+      stairsTarget === 'standard' ? comparison.standard_route : comparison.accessible_route;
+    return recordedStairs(route);
+  }, [comparison, stairsTarget]);
 
   // CSS places the map key and MapLibre's own credit clear of the panel from
   // the first paint; this replaces that estimate with the measurement. Only the
@@ -179,6 +271,9 @@ export function RouteWorkspace({
     return { [property]: `${Math.ceil(amount)}px` } as CSSProperties;
   }, [fit.inset]);
 
+  const submittedSummary =
+    submitted === null ? null : `${submitted.origin.label} to ${submitted.destination.label}`;
+
   return (
     <div className={styles.workspace} style={insetStyle} data-testid="route-workspace">
       <div className={styles.mapArea} ref={mapRef}>
@@ -192,15 +287,20 @@ export function RouteWorkspace({
           {...(describedById !== undefined ? { describedById } : {})}
           standardRoute={comparison?.standard_route ?? null}
           accessibleRoute={comparison?.accessible_route ?? null}
-          origin={points.origin}
-          destination={points.destination}
+          origin={points.origin?.position ?? null}
+          destination={points.destination?.position ?? null}
           focusedRoute={effectiveFocus}
           fitPadding={fit.padding}
+          stairs={stairs}
           onSelectPoint={handleSelectPoint}
         />
       </div>
 
-      <MapLegend focus={effectiveFocus} />
+      <MapLegend
+        focus={effectiveFocus}
+        stairs={stairsTarget !== null}
+        hasRoutes={comparison !== null}
+      />
 
       <aside
         className={styles.panelArea}
@@ -238,14 +338,23 @@ export function RouteWorkspace({
             region={region}
             example={CAMPUS_EXAMPLE}
             exampleActive={activeExampleId === CAMPUS_EXAMPLE.id}
+            canCompare={points.origin !== null && points.destination !== null}
+            pendingEdits={pendingEdits}
+            pickTarget={pickTarget}
+            submittedSummary={submittedSummary}
+            stairsTarget={stairsTarget}
             focusedRoute={effectiveFocus}
             onFocusRoute={setFocusedRoute}
+            onShowStairs={setStairsTarget}
             onRunExample={handleRunExample}
             onProfileChange={handleProfileChange}
-            onClearPoints={handleClear}
+            onCompare={handleCompare}
+            onClearPoint={handleClearPoint}
+            onClearAll={handleClearAll}
             onSwapPoints={handleSwap}
             onRetry={retry}
-            onSelectPlace={handleSelectPoint}
+            onSelectPlace={handleSelectPlace}
+            onPickOnMap={handlePickOnMap}
             {...(fetchImpl ? { fetchImpl } : {})}
           />
           {footer}
@@ -286,10 +395,24 @@ function sheetSummary(state: RouteRequestState): string {
  *
  * Outside the canvas so it is real text: a legend painted into WebGL is
  * invisible to a screen reader and unselectable, and this one carries the only
- * explanation of what the two lines mean. When one route is brought forward it
- * says so in words, because a faded line is not a label.
+ * explanation of what the lines mean. When one route is brought forward it says
+ * so in words, because a faded line is not a label.
+ *
+ * Hidden until there is something on the map to explain. A key to two routes
+ * that do not exist yet is furniture, and on a phone it is furniture sitting on
+ * the map.
  */
-function MapLegend({ focus }: { readonly focus: RouteFocus }) {
+function MapLegend({
+  focus,
+  stairs,
+  hasRoutes,
+}: {
+  readonly focus: RouteFocus;
+  readonly stairs: boolean;
+  readonly hasRoutes: boolean;
+}) {
+  if (!hasRoutes) return null;
+
   return (
     <div className={styles.legend} data-testid="map-legend">
       <h2 className={styles.legendHeading}>Map key</h2>
@@ -320,6 +443,12 @@ function MapLegend({ focus }: { readonly focus: RouteFocus }) {
             ) : null}
           </span>
         </li>
+        {stairs ? (
+          <li className={styles.legendItem} data-testid="legend-stairs">
+            <span className={styles.legendSwatch} data-variant="stairs" aria-hidden="true" />
+            <span>Stairway recorded in OpenStreetMap</span>
+          </li>
+        ) : null}
       </ul>
     </div>
   );

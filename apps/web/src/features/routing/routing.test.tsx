@@ -7,7 +7,13 @@ import { RoutePlanner } from './RoutePlanner';
 import { CAMPUS_EXAMPLE } from './verified-example';
 import { RouteWorkspace } from './RouteWorkspace';
 import { compareRoutes } from './compare-routes';
-import { formatDistance, formatDuration, nextRole } from './types';
+import {
+  formatDistance,
+  formatDuration,
+  hasPendingEndpointEdits,
+  journeyOf,
+  nextRole,
+} from './types';
 
 vi.mock('maplibre-gl', () => ({
   setWorkerUrl: () => {},
@@ -23,8 +29,15 @@ vi.mock('maplibre-gl', () => ({
   AttributionControl: class {},
 }));
 
-const ORIGIN = { longitude: -80.54, latitude: 43.47 };
-const DESTINATION = { longitude: -80.534, latitude: 43.47 };
+const ORIGIN_AT = { longitude: -80.54, latitude: 43.47 };
+const DESTINATION_AT = { longitude: -80.534, latitude: 43.47 };
+/** Endpoints now carry the name of the place as well as its position. */
+const ORIGIN = { position: ORIGIN_AT, label: 'Davis Centre library', source: 'search' as const };
+const DESTINATION = {
+  position: DESTINATION_AT,
+  label: 'Student Life Centre',
+  source: 'search' as const,
+};
 
 function buildRoute(overrides: Record<string, unknown> = {}) {
   return {
@@ -68,6 +81,33 @@ const COMPARISON = {
     stairway_count: 1,
     step_count: 14,
     unknown_kerb_crossing_count: 1,
+    // A real stairway segment behind the aggregate: the overlay reads the
+    // segments, not the counts, so a fixture with an empty `segments` array
+    // would silently exercise the "nothing recorded" branch instead.
+    segments: [
+      {
+        edge_identity: '1->2#0',
+        name: null,
+        length_m: 4.2,
+        effective_metres: 4.2,
+        coordinates: [
+          [-80.537, 43.47],
+          [-80.5369, 43.4701],
+        ],
+        highway: 'steps',
+        surface: null,
+        surface_class: 'unknown',
+        smoothness_class: 'unknown',
+        steps: 'yes',
+        step_count: 14,
+        incline_percent: null,
+        kerb: 'unknown',
+        is_crossing: false,
+        width_m: null,
+        unknown_attributes: ['smoothness'],
+        cost_components: [],
+      },
+    ],
   }),
   accessible_route: buildRoute(),
   standard_failure: null,
@@ -115,12 +155,20 @@ function renderPlanner(overrides: Partial<Parameters<typeof RoutePlanner>[0]> = 
     region: 'waterloo',
     example: CAMPUS_EXAMPLE,
     exampleActive: false,
+    canCompare: true,
+    pendingEdits: false,
+    pickTarget: null,
+    submittedSummary: 'Davis Centre library to Student Life Centre',
+    stairsTarget: null,
     onRunExample: vi.fn(),
     onProfileChange: vi.fn(),
-    onClearPoints: vi.fn(),
+    onCompare: vi.fn(),
+    onClearPoint: vi.fn(),
+    onClearAll: vi.fn(),
     onSwapPoints: vi.fn(),
     onRetry: vi.fn(),
     onSelectPlace: vi.fn(),
+    onPickOnMap: vi.fn(),
     fetchImpl: vi.fn() as unknown as typeof fetch,
     ...overrides,
   };
@@ -176,19 +224,25 @@ describe('RoutePlanner', () => {
   it('reports the walking time the response gave for each route', () => {
     renderPlanner();
 
-    // 746 s and 508 s in the fixture. Carried over from the route cards this
-    // block replaced, so removing them lost no figure.
-    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('12 min walk');
-    expect(screen.getByTestId('difference-shortest')).toHaveTextContent('8 min walk');
+    // 746 s and 508 s in the fixture. Read as an estimate, not a measurement:
+    // the figure is distance over an assumed pace plus fixed allowances, which
+    // the schema itself describes as "not measured, and not specific to any
+    // individual" — so the UI says "Est." rather than asserting a duration.
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('Est. 12 min');
+    expect(screen.getByTestId('difference-shortest')).toHaveTextContent('Est. 8 min');
   });
 
   it('reports the stairway the shortest route uses, with its step count', () => {
     renderPlanner();
 
-    // "1 stairway" and "1 stairway (14 steps)" are different facts: the first
-    // means nobody recorded how many steps there are.
-    expect(screen.getByTestId('difference-shortest')).toHaveTextContent('1 stairway (14 steps)');
-    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('no stairways');
+    // "1 stairway" and "1 stairway (14 recorded steps)" are different facts:
+    // the first means nobody recorded how many steps there are. "recorded"
+    // is load-bearing in the second — step_count sums only the stairways
+    // somebody counted, so it is a floor and never a total.
+    expect(screen.getByTestId('difference-shortest')).toHaveTextContent(
+      '1 stairway (14 recorded steps)',
+    );
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('no recorded stairways');
   });
 
   it('lists the evidence-backed reasons for the detour', () => {
@@ -310,24 +364,79 @@ describe('RoutePlanner', () => {
     expect(screen.getByTestId('route-status')).toHaveAttribute('aria-busy', 'true');
   });
 
-  it('disables swap and clear until there is something to act on', () => {
+  it('offers nothing to act on until an endpoint exists', () => {
     renderPlanner({
       points: { origin: null, destination: null },
       state: { status: 'idle' },
+      canCompare: false,
     });
 
-    expect(screen.getByRole('button', { name: 'Swap' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled();
+    expect(screen.getByTestId('swap-points')).toBeDisabled();
+    expect(screen.getByTestId('clear-journey')).toBeDisabled();
+    // Nothing to compare, so the control that would ask says so rather than
+    // sending an incomplete journey.
+    expect(screen.getByTestId('compare-routes')).toBeDisabled();
   });
 
-  it('tells the user which point the next click will set', () => {
+  it('names each endpoint separately instead of one implicit next point', () => {
+    // The old planner had a single search that filled "whichever point is
+    // empty", so a person searching for their destination had no way to say
+    // so. Each end is now its own labelled field with its own state.
     renderPlanner({
       points: { origin: null, destination: null },
       state: { status: 'idle' },
+      canCompare: false,
     });
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent(/click the map to set/i);
-    expect(screen.getByTestId('point-end')).toHaveTextContent(/not set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent(/not set/i);
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
+    // Two fields, each with its own label, and two submit controls with
+    // distinct accessible names — a page with two buttons both called
+    // "Search" is a page where neither can be addressed.
+    expect(screen.getByLabelText('Start')).toBeInTheDocument();
+    expect(screen.getByLabelText('Destination')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Search for a start' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Search for a destination' })).toBeInTheDocument();
+  });
+
+  it('says which field a map click will fill once one has asked for it', () => {
+    renderPlanner({
+      points: { origin: null, destination: null },
+      state: { status: 'idle' },
+      canCompare: false,
+      pickTarget: 'destination',
+    });
+
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(
+      /click the map to set this point/i,
+    );
+    expect(screen.getByTestId('pick-destination')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('pick-origin')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('shows a committed endpoint by name, with the coordinate as detail', () => {
+    renderPlanner({ points: { origin: ORIGIN, destination: null }, canCompare: false });
+
+    const origin = screen.getByTestId('endpoint-origin-value');
+    expect(origin).toHaveTextContent('Davis Centre library');
+    // The coordinate stays visible, but as what the name resolved to.
+    expect(origin).toHaveTextContent('43.47000');
+  });
+
+  it('labels the answer with the journey it answered', () => {
+    renderPlanner();
+
+    expect(screen.getByTestId('journey-summary')).toHaveTextContent(
+      'Davis Centre library to Student Life Centre',
+    );
+  });
+
+  it('says an answer is out of date rather than letting it look current', () => {
+    // The one way a comparison can mislead without a single wrong number in
+    // it: the figures stay on screen while the journey above them changes.
+    renderPlanner({ pendingEdits: true });
+
+    expect(screen.getByTestId('stale-result')).toHaveTextContent(/press compare routes to update/i);
   });
 });
 
@@ -335,8 +444,10 @@ describe('compareRoutes', () => {
   const options = {
     apiBaseUrl: 'http://api.test',
     region: 'waterloo',
-    origin: ORIGIN,
-    destination: DESTINATION,
+    // The wire takes positions; the name an endpoint carries is the panel's
+    // business and is deliberately not sent.
+    origin: ORIGIN_AT,
+    destination: DESTINATION_AT,
     profile: { key: 'wheelchair' as const },
   };
 
@@ -450,10 +561,12 @@ describe('RouteWorkspace', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('shows the map key alongside the map', () => {
+  it('shows no map key until there are routes for it to explain', () => {
+    // A key to two lines that do not exist yet is furniture, and on a phone it
+    // is furniture sitting on the map.
     render(<RouteWorkspace {...config} fetchImpl={vi.fn() as unknown as typeof fetch} />);
 
-    expect(screen.getByTestId('map-legend')).toBeInTheDocument();
+    expect(screen.queryByTestId('map-legend')).not.toBeInTheDocument();
   });
 });
 
@@ -531,5 +644,94 @@ describe('evidence gaps', () => {
     render(<RouteComparisonView comparison={COMPARISON} />);
 
     expect(screen.getByText(/It means nobody has recorded it/)).toBeInTheDocument();
+  });
+});
+
+/**
+ * What the panel commits, and when.
+ *
+ * A draft is not a request. These cover the rule that decides whether a
+ * profile change may re-run on its own or has to wait for Compare — the one
+ * place the two pieces of state can produce an answer to a question nobody
+ * asked.
+ */
+describe('draft versus submitted journey', () => {
+  const journey = { origin: ORIGIN, destination: DESTINATION, profileKey: 'wheelchair' as const };
+
+  it('is not a journey until both ends exist', () => {
+    expect(journeyOf({ origin: null, destination: null }, 'wheelchair')).toBeNull();
+    expect(journeyOf({ origin: ORIGIN, destination: null }, 'wheelchair')).toBeNull();
+    expect(journeyOf({ origin: ORIGIN, destination: DESTINATION }, 'wheelchair')).toEqual(journey);
+  });
+
+  it('sees no pending edit while the draft still matches what was asked', () => {
+    expect(hasPendingEndpointEdits({ origin: ORIGIN, destination: DESTINATION }, journey)).toBe(
+      false,
+    );
+  });
+
+  it('sees a pending edit when an endpoint moves', () => {
+    const moved = {
+      position: { longitude: -80.5, latitude: 43.5 },
+      label: 'Somewhere else',
+      source: 'map' as const,
+    };
+
+    expect(hasPendingEndpointEdits({ origin: moved, destination: DESTINATION }, journey)).toBe(
+      true,
+    );
+  });
+
+  it('sees a pending edit when only the name changes', () => {
+    // Same coordinate under a different name is a different answer to "where
+    // am I going?", and the result on screen would be labelled with the old
+    // one. Treating it as unchanged is how a route acquires somebody else's
+    // name.
+    const renamed = { ...DESTINATION, label: 'Somewhere else entirely' };
+
+    expect(hasPendingEndpointEdits({ origin: ORIGIN, destination: renamed }, journey)).toBe(true);
+  });
+
+  it('has nothing to be pending against before anything is submitted', () => {
+    expect(hasPendingEndpointEdits({ origin: ORIGIN, destination: DESTINATION }, null)).toBe(false);
+  });
+});
+
+describe('the recorded-stairs overlay', () => {
+  it('offers the route that has stairs, and says how many', () => {
+    renderPlanner();
+
+    expect(screen.getByTestId('show-recorded-stairs')).toHaveTextContent(
+      /show the recorded stairs/i,
+    );
+    expect(screen.getByTestId('recorded-stairs-note')).toHaveTextContent(
+      /1 stairway is recorded on the shortest walking route/i,
+    );
+  });
+
+  it('says what it highlighted, and that the step total is a floor', () => {
+    renderPlanner({ stairsTarget: 'standard' });
+
+    const note = screen.getByTestId('recorded-stairs-note');
+    expect(note).toHaveTextContent(/1 stairway recorded/i);
+    expect(note).toHaveTextContent(/14 recorded steps/i);
+  });
+
+  it('calls zero "no recorded stairs" rather than "no stairs"', () => {
+    // OpenStreetMap recording no stairway is not the same as somebody having
+    // checked that there is none, and the difference is the whole product.
+    const noStairs = {
+      ...COMPARISON,
+      standard_route: { ...COMPARISON.standard_route, segments: [], stairway_count: 0 },
+      accessible_route: { ...COMPARISON.accessible_route, segments: [], stairway_count: 0 },
+    } as unknown as RouteCompareResponse;
+
+    renderPlanner({ state: { status: 'success', comparison: noStairs } });
+
+    expect(screen.getByTestId('recorded-stairs-none')).toHaveTextContent(/no recorded stairs/i);
+    expect(screen.getByTestId('recorded-stairs-none')).toHaveTextContent(
+      /has not been confirmed that there are none/i,
+    );
+    expect(screen.queryByTestId('show-recorded-stairs')).not.toBeInTheDocument();
   });
 });
