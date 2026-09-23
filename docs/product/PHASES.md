@@ -200,8 +200,12 @@ another roadmap.
 (the PA-UX-01/01F candidate). Base `main` at `29a7749`.
 
 **Preview.** Isolated envelope stack — API `8001`, database `5434`, web `3001`.
-The dataset is `pathable-envelope-db-data` at migration `0005_kerb_tiers`,
-155,714 nodes and 180,554 segments. See `docs/deployment/PRODUCTION_SMOKE.md`.
+Open it at **`http://127.0.0.1:3001`**, not `localhost:3001`: Docker Desktop's
+IPv6 proxy resets the connection on this host, and the browser does not fall
+back. From that address the page reaches the API with no flags; the status
+badge reads "API online". The dataset is `pathable-envelope-db-data` at
+migration `0005_kerb_tiers`, 155,714 nodes and 180,554 segments. See
+`docs/deployment/PRODUCTION_SMOKE.md`.
 
 **Evidence.** `docs/evidence/FRONTEND_POLISH.md` — the PA-UX-02A revision entry
 records what changed, at which viewports it was checked, and against which
