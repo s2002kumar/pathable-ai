@@ -3,7 +3,7 @@
 import type { Route, RouteCompareResponse } from '@pathable/contracts';
 import type { RouteFocus } from '@/features/map/route-layers';
 import { routesSharePath } from './route-identity';
-import { formatDistance } from './types';
+import { formatDistance, formatDuration } from './types';
 import styles from './RoutePlanner.module.css';
 
 /** How each category reads when it is the largest gap on a route. */
@@ -98,9 +98,19 @@ function UncertaintySummary({ route }: { readonly route: Route }) {
   );
 }
 
+/**
+ * The stairways on a route, with the step count where the map records one.
+ *
+ * "1 stairway (14 steps)" and "1 stairway" are different facts: the second
+ * means nobody wrote down how many steps there are, and a reader deciding
+ * whether they can manage it needs to know which of the two they are looking
+ * at. Omitting the number silently would turn an unrecorded count into an
+ * implied small one.
+ */
 function stairwayNote(route: Route): string {
   if (route.stairway_count === 0) return 'no stairways';
-  return `${route.stairway_count} ${route.stairway_count === 1 ? 'stairway' : 'stairways'}`;
+  const stairways = `${route.stairway_count} ${route.stairway_count === 1 ? 'stairway' : 'stairways'}`;
+  return route.step_count > 0 ? `${stairways} (${route.step_count} steps)` : stairways;
 }
 
 /**
@@ -140,6 +150,9 @@ function RouteFigure({
         {label}
       </span>
       <span className={`${styles.figureValue} tabular`}>{formatDistance(route.distance_m)}</span>
+      <span className={styles.figureMeta}>
+        {formatDuration(route.estimated_duration_seconds)} walk
+      </span>
       <span className={styles.figureFooter}>
         <span className={styles.figureNote}>{stairwayNote(route)}</span>
         <button

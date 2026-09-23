@@ -1,12 +1,34 @@
 /*
- * Mobile first: a compact map, then the planner as a sheet in normal document
- * flow. Nothing overlaps and nothing needs dragging, so the map's own controls
- * can never cover the route description — which on a phone is the part
- * somebody actually reads — and the whole panel is reachable by scrolling the
- * page like any other page.
+ * The map is the product, so the map is the page.
+ *
+ * Three layouts, in this order of preference:
+ *
+ *   1. Side    — the map fills the viewport; the planner floats against its
+ *                left edge. Anything wide enough for a panel and a usable map
+ *                beside it, which starts well below a 1024 px laptop window.
+ *   2. Sheet   — the map still fills the viewport; the planner is a bottom
+ *                sheet with a real expand/collapse control. Phones.
+ *   3. Flow    — map block, planner underneath, the document scrolls. Only
+ *                where the viewport is too short to float anything over the
+ *                map without burying it: 200% zoom, landscape phones.
+ *
+ * Flow is written first and the other two are layered on, so the fallback is
+ * the thing that needs no media query to work.
+ *
+ * What the panel covers is published as --map-inset-left / --map-inset-bottom.
+ * The map key, MapLibre's own controls and the camera's fit padding all read
+ * it, which is what keeps a fitted route, the scale bar and the ODbL credit out
+ * from under the panel. The values here are the first-paint estimate; the
+ * workspace overwrites the one that applies with the measured pixels.
  */
 
 .workspace {
+  --map-inset-left: 0px;
+  --map-inset-bottom: 0px;
+
+  /* The containing block for the map key in every layout, including the flow
+     fallback where the map is a block rather than the whole workspace. */
+  position: relative;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -19,51 +41,42 @@
 .mapArea {
   position: relative;
   flex: 0 0 auto;
-  /* Compact on purpose: the sheet below has to show the answer on the first
-     screen, and a phone-height map is for orientation, not for reading. */
   height: 34dvh;
   min-height: 13rem;
 }
 
-/* The sheet. It looks like one, and it behaves like a page: no drag handle to
-   find, no snap points, no second scroll region competing with the document. */
 .panelArea {
   position: relative;
   z-index: 3;
   flex: 1 1 auto;
-  /* Flush with the map, not tucked under it: the map's attribution sits on
-     its bottom edge, and a sheet lip over it would hide the credit. */
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  box-shadow: 0 -8px 24px -12px rgb(41 33 20 / 25%);
 }
 
-.grip {
-  display: block;
-  width: 2.5rem;
-  height: 0.25rem;
-  margin: var(--space-1) auto 0;
-  background: var(--color-border-strong);
-  border-radius: var(--radius-pill);
+/* Only a sheet has something to expand. In flow and side layouts the panel is
+   simply there, and a control that claims otherwise would be a lie. */
+.sheetBar {
+  display: none;
 }
 
 .panelInner {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-1) var(--space-4) var(--space-8);
+  padding: var(--space-4) var(--space-4) var(--space-8);
 }
 
-/* --- The legend ----------------------------------------------------------- */
+/* --- The map key ----------------------------------------------------------
+ * Anchored to the top of whatever part of the map is not covered, so it moves
+ * aside for the panel instead of arguing with it. MapLibre's navigation lives
+ * top-right and its scale and attribution along the bottom, so this corner is
+ * the one piece of map chrome PathAble can have without a collision.
+ */
 
 .legend {
   position: absolute;
-  /* Top-left: MapLibre's navigation is top-right, and the scale and the
-     attribution share the bottom edge, where on a narrow screen the credit
-     wraps to two lines and would run under anything anchored there. */
   top: var(--space-3);
-  left: var(--space-3);
+  left: calc(var(--map-inset-left) + var(--space-3));
   z-index: 4;
   display: flex;
   flex-direction: column;
@@ -72,8 +85,11 @@
   background: var(--color-surface-overlay);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  /* Never more than a corner of a phone screen. */
+  max-width: min(15rem, calc(100% - var(--space-8)));
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
+  transition: left var(--duration-base) var(--ease-out);
 }
 
 .legendHeading {
@@ -130,57 +146,136 @@
   border-top-color: var(--color-route-standard);
 }
 
-/*
- * Desktop: a stable planner column beside the map, both always visible. The
- * map takes every pixel the column does not, and nothing floats over it, so a
- * fitted route is never tucked under a card.
+/* ===========================================================================
+ * Overlay layouts. The map fills the workspace and the panel floats over it.
  *
- * Gated on height as well as width: at 200% zoom or on a short window a fixed
- * two-pane layout stops being usable, and the page falls back to the flow
- * layout above, which scrolls.
- */
+ * Gated on height, not width: what makes a floating panel wrong is a viewport
+ * too short to hold one and still show map, which is exactly the 200% zoom and
+ * landscape-phone case. Above that the map is always full-bleed, so a 390 px
+ * phone and a 1366 px laptop are the same product with the panel on a
+ * different edge.
+ * ========================================================================= */
 
-@media (min-width: 64rem) and (min-height: 32rem) {
+@media (min-height: 34rem) {
   .workspace {
-    display: grid;
-    grid-template-columns: var(--panel-width) minmax(0, 1fr);
-    grid-template-areas: 'panel map';
+    position: relative;
+    display: block;
     height: calc(100dvh - var(--header-height));
     min-height: 0;
     overflow: hidden;
   }
 
   .mapArea {
-    grid-area: map;
+    position: absolute;
+    inset: 0;
     height: auto;
     min-height: 0;
   }
 
   .panelArea {
-    grid-area: panel;
-    min-height: 0;
-    margin-top: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    border-top: 0;
-    border-right: 1px solid var(--color-border);
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .grip {
-    display: none;
+    position: absolute;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-panel);
+    /* Its own scroll region, which is the point of floating it: the panel can
+       be longer than the viewport without the map scrolling away with it. */
+    overflow: hidden;
   }
 
   .panelInner {
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-5) var(--space-8);
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: var(--space-3);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+}
+
+/* --- Sheet: the map, and the planner across the bottom --------------------- */
+
+@media (min-height: 34rem) and (max-width: 47.999rem) {
+  .panelArea {
+    right: var(--panel-gap);
+    bottom: 0;
+    left: var(--panel-gap);
+    /* Tall enough for the figures, the detour and the uncertainty line
+       together; short enough that the map is still a map. */
+    max-height: min(58dvh, 31rem);
+    border-bottom: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    /* The safe area on a phone with a home indicator, so the last control is
+       not under it. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  .legend {
-    top: var(--space-4);
-    left: var(--space-4);
+  .workspace {
+    /* First-paint estimate, replaced by the measured sheet height. */
+    --map-inset-bottom: 45dvh;
   }
+
+  .sheetBar {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sheetSummary {
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sheetToggle {
+    flex: 0 0 auto;
+    min-height: 2.25rem;
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+  }
+
+  .sheetToggle:hover {
+    background: var(--color-neutral-surface);
+  }
+
+  /* Collapsed is a drawer that is shut, not a drawer that is empty: the
+     content is hidden, the bar that reopens it is not. */
+  .panelArea[data-sheet-open='false'] .panelInner {
+    display: none;
+  }
+}
+
+/* --- Side: the map, and the planner against its left edge ------------------ */
+
+@media (min-height: 34rem) and (min-width: 48rem) {
+  .workspace {
+    --map-inset-left: calc(var(--panel-width) + var(--panel-gap) * 2);
+  }
+
+  .panelArea {
+    top: var(--panel-gap);
+    bottom: var(--panel-gap);
+    left: var(--panel-gap);
+    width: var(--panel-width);
+    max-height: none;
+  }
+
 }
 
 @media (prefers-reduced-transparency: reduce) {

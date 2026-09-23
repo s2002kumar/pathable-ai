@@ -62,9 +62,14 @@
   outline-offset: 2px;
 }
 
+/* Inert rather than faded. Dropping a filled button to 55% opacity left white
+   text on a pale teal that was hard to read against the panel; a neutral
+   surface says "nothing to search for yet" and stays legible. */
 .button:disabled {
+  color: var(--color-text-subtle);
   cursor: not-allowed;
-  opacity: 0.55;
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border);
 }
 
 .results {

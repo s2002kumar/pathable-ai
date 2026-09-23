@@ -231,7 +231,7 @@ describe('why the routes differ', () => {
       within(screen.getByTestId('difference-shortest')).getByText('287 m'),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByTestId('difference-shortest')).getByText('4 stairways'),
+      within(screen.getByTestId('difference-shortest')).getByText('4 stairways (16 steps)'),
     ).toBeInTheDocument();
     expect(
       within(screen.getByTestId('difference-accessible')).getByText('354 m'),

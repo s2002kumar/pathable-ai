@@ -40,8 +40,8 @@ export const STANDARD_COLOUR = '#4b463e';
 export const ACCESSIBLE_COLOUR = '#1d4fc4';
 export const ORIGIN_COLOUR = '#1d4fc4';
 export const DESTINATION_COLOUR = '#b3261e';
-/** The page surface, so a cased line reads as drawn on the paper rather than glowing. */
-export const CASING_COLOUR = '#fffdf9';
+/** The page surface, so a cased line reads as drawn on the map rather than glowing. */
+export const CASING_COLOUR = '#ffffff';
 
 /**
  * Camera movement is the one animation on the page longer than a transition,
@@ -50,11 +50,112 @@ export const CASING_COLOUR = '#fffdf9';
 export const CAMERA_DURATION_MS = 600;
 
 /**
- * Room around a fitted route. The map area is never covered by the planner, so
- * this only has to clear MapLibre's own chrome and the legend: navigation
- * top-right, scale and attribution along the bottom, legend top-left.
+ * Room around a fitted route, before anything is floating over the map.
+ *
+ * Clears MapLibre's own chrome: navigation top-right, scale and attribution
+ * along the bottom.
  */
 export const FIT_PADDING = { top: 72, bottom: 72, left: 64, right: 72 } as const;
+
+export type Padding = { top: number; bottom: number; left: number; right: number };
+
+/** Just enough of an element to know where it is. */
+export type Rect = {
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly width: number;
+  readonly height: number;
+};
+
+/**
+ * Padding that keeps a fitted route out from under the floating panel.
+ *
+ * The map now fills the viewport and the planning surface floats over one of
+ * its edges — beside it on a laptop, across the bottom on a phone. Fitting to
+ * the whole map would centre the route under that panel, which is the exact
+ * failure the previous layout was built to avoid; the panel only moved, it did
+ * not stop existing.
+ *
+ * Which edge the panel is anchored to is decided by asking which inset leaves
+ * the most map behind, not by which one is smallest. A bottom sheet spans the
+ * full width and is usually taller than it is wide, so "smallest reach" picks
+ * its width and insets the wrong axis — a real bug, caught on a 390 x 844
+ * phone where it pushed the camera sideways off the route entirely.
+ *
+ * A panel that does not overlap the map at all — the document-flow fallback on
+ * a short window — gets the base padding untouched.
+ *
+ * The result is clamped to leave a real viewport behind: MapLibre given padding
+ * wider than the map has nothing left to fit a route into.
+ */
+export function paddingForPanel(
+  map: Rect | null,
+  panel: Rect | null,
+  base: Padding = { ...FIT_PADDING },
+): Padding {
+  const padding: Padding = { ...base };
+  if (map === null || panel === null || map.width <= 0 || map.height <= 0) return padding;
+
+  // No overlap, nothing to allow for.
+  const overlapWidth = Math.min(map.right, panel.right) - Math.max(map.left, panel.left);
+  const overlapHeight = Math.min(map.bottom, panel.bottom) - Math.max(map.top, panel.top);
+  if (overlapWidth <= 0 || overlapHeight <= 0) return padding;
+
+  const reaches: ReadonlyArray<readonly [keyof Padding, number]> = [
+    ['left', panel.right - map.left],
+    ['right', map.right - panel.left],
+    ['top', panel.bottom - map.top],
+    ['bottom', map.bottom - panel.top],
+  ];
+
+  // How much map each inset would leave behind.
+  const candidates = reaches.map(([side, inset]) => ({
+    side,
+    inset,
+    free:
+      side === 'left' || side === 'right'
+        ? Math.max(0, map.width - inset) * map.height
+        : Math.max(0, map.height - inset) * map.width,
+  }));
+
+  let best = candidates[0]!;
+  for (const candidate of candidates) {
+    if (candidate.inset <= 0) continue;
+    // More map left over wins; a tie goes to the smaller inset.
+    if (candidate.free > best.free || (candidate.free === best.free && candidate.inset < best.inset))
+      best = candidate;
+  }
+
+  if (best.inset > 0 && best.free > 0) padding[best.side] = base[best.side] + best.inset;
+
+  // Never demand more room than there is. Padding wider than the map leaves
+  // MapLibre nothing to fit into, and a route that cannot be framed is a route
+  // nobody sees.
+  [padding.left, padding.right] = clampAxis(padding.left, padding.right, map.width);
+  [padding.top, padding.bottom] = clampAxis(padding.top, padding.bottom, map.height);
+
+  return padding;
+}
+
+/** The smallest strip of map a fitted route may be squeezed into. */
+const MIN_FIT_PX = 64;
+
+/**
+ * Keep one axis's padding inside the map, shrinking both sides together.
+ *
+ * Proportional rather than clipping the larger side: the larger side is
+ * normally the one the panel is against, and cutting that first would put the
+ * route back underneath the panel, which is the whole thing this is for.
+ */
+function clampAxis(start: number, end: number, size: number): [number, number] {
+  const available = size - MIN_FIT_PX;
+  if (start + end <= available) return [start, end];
+  if (available <= 0) return [0, 0];
+  const scale = available / (start + end);
+  return [start * scale, end * scale];
+}
 
 /** Which route, if any, the viewer has asked to see on its own. */
 export type RouteFocus = 'standard' | 'accessible' | null;

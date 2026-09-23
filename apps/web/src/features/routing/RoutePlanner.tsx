@@ -96,24 +96,34 @@ export function RoutePlanner({
     plan.focus({ preventScroll: true });
   }, []);
 
+  // The example is the way in, so until there is an answer it comes first.
+  // Once there is one, the answer takes the top of the panel and the example
+  // becomes a compact "run it again" underneath it.
+  //
+  // PA-RR-06 measured the failure this avoids: with the *inputs* above it,
+  // pressing the example changed the map and left the panel showing the
+  // coordinates it had just filled in, with the comparison two screens down.
+  // Putting the result first is that finding taken further — it is what makes
+  // the figures, the detour and the uncertainty line fit together inside a
+  // phone's sheet without scrolling.
+  const exampleCard = (
+    <VerifiedExampleCard
+      example={example}
+      onRun={onRunExample}
+      active={exampleActive}
+      journeyStarted={points.origin !== null || points.destination !== null}
+      busy={state.status === 'loading'}
+    />
+  );
+  const answered = state.status === 'success';
+
   return (
     <section className={styles.panel} aria-labelledby="route-planner-heading">
-      <VerifiedExampleCard
-        example={example}
-        onRun={onRunExample}
-        active={exampleActive}
-        journeyStarted={points.origin !== null || points.destination !== null}
-        busy={state.status === 'loading'}
-      />
+      {answered ? null : exampleCard}
 
-      {/* Directly under the example, because that is where the answer to
-          pressing it belongs. Measured during the PA-RR-06 audit: with the
-          inputs above it, pressing the example changed the map and left the
-          panel showing the coordinates it had just filled in, with the
-          comparison two screens down. The region is always rendered and
-          never empty — an aria-live container has to exist before anything
-          is put into it, and an empty box is not something a viewer can
-          see. */}
+      {/* The region is always rendered and never empty — an aria-live
+          container has to exist before anything is put into it, and an empty
+          box is not something a viewer can see. */}
       <div
         className={styles.status}
         // Results replace one another in place, so the region has to announce
@@ -125,8 +135,7 @@ export function RoutePlanner({
       >
         {state.status === 'idle' && !awaitingEnd ? (
           <p className={styles.hint}>
-            Choose a start and an end on the map, or press the example above, and PathAble will
-            compare the shortest walking route with one that suits how you travel.
+            Click the map to set a start and an end, or run the example above.
           </p>
         ) : null}
 
@@ -162,7 +171,7 @@ export function RoutePlanner({
         ) : null}
       </div>
 
-      {intro}
+      {answered ? exampleCard : null}
 
       {/* Focusable as a landmark, not as a control: "Edit journey or profile"
           lands here, the heading is announced, and the next Tab reaches the
@@ -188,31 +197,67 @@ export function RoutePlanner({
 
         <PointFields points={points} onClear={onClearPoints} onSwap={onSwapPoints} />
 
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>How do you travel?</legend>
-          <div className={styles.profiles} role="radiogroup" aria-label="Mobility profile">
-            {PROFILE_OPTIONS.map((option) => (
-              <label
-                key={option.key}
-                className={styles.profileOption}
-                data-selected={option.key === profileKey}
-              >
-                <input
-                  type="radio"
-                  name="mobility-profile"
-                  value={option.key}
-                  checked={option.key === profileKey}
-                  onChange={() => onProfileChange(option.key)}
-                  className={styles.profileInput}
-                />
-                <span className={styles.profileLabel}>{option.label}</span>
-                <span className={styles.profileHint}>{option.hint}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <ProfileChooser selected={profileKey} onChange={onProfileChange} />
       </div>
+
+      {intro}
     </section>
+  );
+}
+
+/**
+ * The five profiles, as a row of chips and one line of rules.
+ *
+ * Every profile stays offered and keyboard operation is the browser's own —
+ * a real radiogroup, so arrow keys move between them and one Tab stop covers
+ * the set. What changed is that only the *chosen* profile explains itself:
+ * five permanently expanded cards, each with its own rule summary, pushed the
+ * answer off the first screen of a floating panel, and four of those summaries
+ * describe a journey the viewer is not taking.
+ *
+ * The rule line is not hidden behind anything. Which constraints are being
+ * applied is the difference between two routes, and a viewer who cannot see it
+ * cannot read the comparison — and these constraints are engineering judgement,
+ * not measurements of how people with these aids actually travel, so they have
+ * to be inspectable.
+ */
+function ProfileChooser({
+  selected,
+  onChange,
+}: {
+  readonly selected: ProfileKey;
+  readonly onChange: (key: ProfileKey) => void;
+}) {
+  const chosen = PROFILE_OPTIONS.find((option) => option.key === selected);
+
+  return (
+    <fieldset className={styles.fieldset}>
+      <legend className={styles.legend}>How do you travel?</legend>
+      <div className={styles.profiles} role="radiogroup" aria-label="Mobility profile">
+        {PROFILE_OPTIONS.map((option) => (
+          <label
+            key={option.key}
+            className={styles.profileOption}
+            data-selected={option.key === selected}
+          >
+            <input
+              type="radio"
+              name="mobility-profile"
+              value={option.key}
+              checked={option.key === selected}
+              onChange={() => onChange(option.key)}
+              className={styles.profileInput}
+            />
+            <span className={styles.profileLabel}>{option.label}</span>
+          </label>
+        ))}
+      </div>
+      {chosen ? (
+        <p className={styles.profileRule} data-testid="profile-rule">
+          {chosen.hint}
+        </p>
+      ) : null}
+    </fieldset>
   );
 }
 

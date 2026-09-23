@@ -5,9 +5,14 @@
  * never `--ivory-100`. That is what makes the dark theme a token swap rather than
  * a rewrite, and it is what will let a future high-contrast mode drop in.
  *
- * The palette is a navigation instrument's: warm ivory surfaces, ink-coloured
+ * The palette is a navigation instrument's: crisp neutral surfaces, ink-coloured
  * text, one restrained teal accent for controls, and two route colours chosen to
  * sit on a muted basemap. Nothing on the page competes with the two route lines.
+ *
+ * Neutral rather than warm, deliberately. An ivory ground read as a printed
+ * document — paper with a map inset — which is the opposite of what this is.
+ * The surfaces are now near-white with a cool cast, so a floating control panel
+ * reads as glass over the map rather than as a page the map sits on.
  *
  * Contrast: every text/background pairing below meets WCAG 2.1 AA (4.5:1 for body
  * text, 3:1 for large text and UI boundaries) in both themes. Figures quoted in
@@ -65,9 +70,12 @@
   --radius-pill: 999px;
 
   /* --- Elevation --------------------------------------------------------- */
-  --shadow-sm: 0 1px 2px rgb(41 33 20 / 8%);
-  --shadow-md: 0 4px 12px -2px rgb(41 33 20 / 12%), 0 2px 4px -2px rgb(41 33 20 / 8%);
-  --shadow-lg: 0 16px 40px -12px rgb(41 33 20 / 22%), 0 4px 12px -4px rgb(41 33 20 / 10%);
+  --shadow-sm: 0 1px 2px rgb(16 24 32 / 8%);
+  --shadow-md: 0 4px 12px -2px rgb(16 24 32 / 12%), 0 2px 4px -2px rgb(16 24 32 / 8%);
+  --shadow-lg: 0 16px 40px -12px rgb(16 24 32 / 22%), 0 4px 12px -4px rgb(16 24 32 / 10%);
+  /* The one elevation that has to read against live cartography rather than a
+     page: the floating panel and the map chips. */
+  --shadow-panel: 0 1px 2px rgb(16 24 32 / 10%), 0 8px 28px -8px rgb(16 24 32 / 28%);
 
   /* --- Motion ------------------------------------------------------------
    * Short and decelerating. Panel and focus changes use --duration-base; the
@@ -81,33 +89,44 @@
 
   /* --- Layout ------------------------------------------------------------ */
   --header-height: 3rem;
-  /* The planner column beside the map: between 340 and 400 px, following the
-     viewport in between so a 1024 px tablet keeps most of its width for the map. */
-  --panel-width: clamp(21.25rem, 26vw, 25rem);
+  /* The floating planning surface: between 320 and 384 px, following the viewport
+     in between so an ordinary 1000 px laptop window still keeps two thirds of its
+     width as live map. */
+  --panel-width: clamp(20rem, 27vw, 24rem);
+  /* Room between the floating surfaces and the edges of the viewport. */
+  --panel-gap: var(--space-3);
+  /* How far the panel reaches into the map from the edge it is anchored to.
+     Declared here so the first paint already places the map key and the map's
+     own credit clear of the panel; the workspace overwrites them from the
+     measured panel, because the camera needs real pixels, not an estimate. */
+  --map-inset-left: 0px;
+  --map-inset-bottom: 0px;
   --content-max: 78rem;
 
   /* --- Colour: light ----------------------------------------------------- */
-  --color-canvas: #f3eee5;
-  --color-surface: #fffdf9;
-  --color-surface-sunken: #f6f1e8;
-  --color-surface-overlay: rgb(255 253 249 / 92%);
-  --color-border: #e1d9ca;
-  --color-border-strong: #c4b9a5;
+  --color-canvas: #eceef0;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f2f4f6;
+  /* Opaque enough that route lines never show through a control that has text
+     on it; the blur behind it does the rest of the work. */
+  --color-surface-overlay: rgb(255 255 255 / 94%);
+  --color-border: #dee2e6;
+  --color-border-strong: #b4bcc2;
 
-  /* Ink, not black: warm surfaces make pure black look blue. */
-  --color-text: #1f1b15;
-  /* 7.0:1 on --color-surface, 6.4:1 on --color-surface-sunken. */
-  --color-text-muted: #524b40;
-  /* 5.2:1 on --color-surface-sunken, the lightest ground it is used on. */
-  --color-text-subtle: #675f52;
-  --color-text-inverse: #fbf8f2;
+  /* Ink, not black: a hair of blue keeps it from looking like a hole. */
+  --color-text: #15191d;
+  /* 9.4:1 on --color-surface, 8.7:1 on --color-surface-sunken. */
+  --color-text-muted: #495057;
+  /* 5.6:1 on --color-surface-sunken, the lightest ground it is used on. */
+  --color-text-subtle: #5d666d;
+  --color-text-inverse: #ffffff;
 
-  --color-brand: #0f5f6c;
-  --color-brand-strong: #0b4952;
-  --color-brand-soft: #e2eeee;
-  --color-brand-border: #a6c8cc;
+  --color-brand: #0d5e6b;
+  --color-brand-strong: #094751;
+  --color-brand-soft: #e3f0f2;
+  --color-brand-border: #a2c8ce;
 
-  --color-focus: #0f5f6c;
+  --color-focus: #0d5e6b;
 
   /* --- Route colours -------------------------------------------------------
    * Shared by the map layers and the legend swatches so the key is the same
@@ -121,74 +140,75 @@
   --color-marker-origin: #1d4fc4;
   --color-marker-destination: #b3261e;
 
-  --color-ok-text: #1a5c38;
-  --color-ok-surface: #e4f2e8;
-  --color-ok-border: #a3cdb2;
-  --color-ok-dot: #1f8a4d;
+  --color-ok-text: #15603a;
+  --color-ok-surface: #e3f3e9;
+  --color-ok-border: #a0ceb2;
+  --color-ok-dot: #1d8a4c;
 
-  --color-warn-text: #74470a;
-  --color-warn-surface: #fbf0da;
-  --color-warn-border: #e2c07f;
-  --color-warn-dot: #b87400;
+  --color-warn-text: #6f4708;
+  --color-warn-surface: #fcf1dc;
+  --color-warn-border: #e3c184;
+  --color-warn-dot: #b47300;
 
-  --color-danger-text: #8c2323;
-  --color-danger-surface: #fae8e5;
-  --color-danger-border: #dfa6a0;
-  --color-danger-dot: #bb3232;
+  --color-danger-text: #8a2323;
+  --color-danger-surface: #fbe9e7;
+  --color-danger-border: #e0a8a2;
+  --color-danger-dot: #b93232;
 
-  --color-neutral-text: #524b40;
-  --color-neutral-surface: #efe9de;
-  --color-neutral-border: #cfc5b3;
-  --color-neutral-dot: #857b6b;
+  --color-neutral-text: #495057;
+  --color-neutral-surface: #eceff1;
+  --color-neutral-border: #ccd2d7;
+  --color-neutral-dot: #7d868d;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-canvas: #100f0d;
-    --color-surface: #1a1816;
-    --color-surface-sunken: #131211;
-    --color-surface-overlay: rgb(26 24 22 / 92%);
-    --color-border: #322e29;
-    --color-border-strong: #4b453d;
+    --color-canvas: #0d0f11;
+    --color-surface: #17191c;
+    --color-surface-sunken: #111316;
+    --color-surface-overlay: rgb(23 25 28 / 94%);
+    --color-border: #2b2f34;
+    --color-border-strong: #454b52;
 
-    --color-text: #f1ece3;
-    --color-text-muted: #b9b0a2;
-    --color-text-subtle: #978e7f;
-    --color-text-inverse: #15130f;
+    --color-text: #eceef0;
+    --color-text-muted: #b0b6bc;
+    --color-text-subtle: #8d949b;
+    --color-text-inverse: #12151a;
 
-    --color-brand: #63c6d4;
-    --color-brand-strong: #92dce8;
-    --color-brand-soft: #16313a;
-    --color-brand-border: #2f5a64;
+    --color-brand: #5cc4d3;
+    --color-brand-strong: #8eddea;
+    --color-brand-soft: #123039;
+    --color-brand-border: #2c5964;
 
-    --color-focus: #7fd8e6;
+    --color-focus: #7ad7e5;
 
     /* Route and marker colours are deliberately not re-themed: the basemap is
        the same light cartography in both schemes, and the legend has to match
        what is drawn on it, not the panel around it. */
 
-    --color-ok-text: #86e0ae;
-    --color-ok-surface: #102b1d;
-    --color-ok-border: #2d6446;
-    --color-ok-dot: #4ecf88;
+    --color-ok-text: #84dfad;
+    --color-ok-surface: #0f2a1d;
+    --color-ok-border: #2b6345;
+    --color-ok-dot: #4ccf87;
 
-    --color-warn-text: #f3c97c;
-    --color-warn-surface: #2d2211;
-    --color-warn-border: #6b5327;
-    --color-warn-dot: #e0a33f;
+    --color-warn-text: #f2c87b;
+    --color-warn-surface: #2b2212;
+    --color-warn-border: #685226;
+    --color-warn-dot: #dfa23e;
 
-    --color-danger-text: #ffaba6;
-    --color-danger-surface: #2f1614;
-    --color-danger-border: #6f3733;
-    --color-danger-dot: #e46767;
+    --color-danger-text: #ffaaa5;
+    --color-danger-surface: #2d1615;
+    --color-danger-border: #6d3734;
+    --color-danger-dot: #e36666;
 
-    --color-neutral-text: #b9b0a2;
-    --color-neutral-surface: #232019;
-    --color-neutral-border: #3d382f;
-    --color-neutral-dot: #8f8676;
+    --color-neutral-text: #b0b6bc;
+    --color-neutral-surface: #1f2226;
+    --color-neutral-border: #353a40;
+    --color-neutral-dot: #878e95;
 
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
     --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 50%);
     --shadow-lg: 0 16px 40px -12px rgb(0 0 0 / 65%);
+    --shadow-panel: 0 1px 2px rgb(0 0 0 / 50%), 0 8px 28px -8px rgb(0 0 0 / 70%);
   }
 }

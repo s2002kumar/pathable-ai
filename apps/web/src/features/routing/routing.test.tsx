@@ -62,6 +62,9 @@ const COMPARISON = {
     profile_display_name: 'Standard walking',
     distance_m: 483,
     effective_distance_m: 483,
+    // Distinct from the accessible route's, so a figure showing the wrong
+    // route's walking time cannot pass by coincidence.
+    estimated_duration_seconds: 508,
     stairway_count: 1,
     step_count: 14,
     unknown_kerb_crossing_count: 1,
@@ -164,15 +167,28 @@ describe('RoutePlanner', () => {
   it('shows both routes with their own figures', () => {
     renderPlanner();
 
-    expect(screen.getByTestId('route-card-accessible')).toHaveTextContent('709 m');
-    expect(screen.getByTestId('route-card-standard')).toHaveTextContent('483 m');
+    // The figures beside the highlight controls, which is where both routes'
+    // numbers live now that the duplicate pair of cards below them is gone.
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('709 m');
+    expect(screen.getByTestId('difference-shortest')).toHaveTextContent('483 m');
   });
 
-  it('reports the stairway the shortest route uses', () => {
+  it('reports the walking time the response gave for each route', () => {
     renderPlanner();
 
-    expect(screen.getByTestId('route-card-standard')).toHaveTextContent('1 (14 steps)');
-    expect(screen.getByTestId('route-card-accessible')).toHaveTextContent('None');
+    // 746 s and 508 s in the fixture. Carried over from the route cards this
+    // block replaced, so removing them lost no figure.
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('12 min walk');
+    expect(screen.getByTestId('difference-shortest')).toHaveTextContent('8 min walk');
+  });
+
+  it('reports the stairway the shortest route uses, with its step count', () => {
+    renderPlanner();
+
+    // "1 stairway" and "1 stairway (14 steps)" are different facts: the first
+    // means nobody recorded how many steps there are.
+    expect(screen.getByTestId('difference-shortest')).toHaveTextContent('1 stairway (14 steps)');
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('no stairways');
   });
 
   it('lists the evidence-backed reasons for the detour', () => {

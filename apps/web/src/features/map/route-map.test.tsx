@@ -408,7 +408,7 @@ describe('choosing points on the map', () => {
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
-    expect(screen.getByTestId('route-card-accessible')).toHaveTextContent('709 m');
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('709 m');
   });
 
   it('a third click starts a new journey instead of doing nothing', async () => {

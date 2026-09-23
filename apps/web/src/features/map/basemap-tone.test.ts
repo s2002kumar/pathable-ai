@@ -81,8 +81,49 @@ describe('basemap tone', () => {
       'fill-color',
       'fill-outline-color',
       'line-color',
+      'line-width',
       'text-color',
     ]);
+  });
+
+  it('never makes a feature disappear by painting it away', () => {
+    // The property allow-list above is the first guard; this is the second.
+    // Toning the map may not remove anything from it — a footway painted to
+    // zero width or zero opacity is a footway the reader cannot see, which on
+    // a pedestrian router is indistinguishable from a path that is not there.
+    for (const override of BASEMAP_PAINT) {
+      expect(override.property).not.toMatch(/opacity|visibility/);
+      if (override.property === 'line-width') {
+        const widths = (override.value as unknown[]).filter(
+          (item): item is number => typeof item === 'number',
+        );
+        expect(widths.length).toBeGreaterThan(0);
+        for (const width of widths) expect(width).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('draws pedestrian paths at least as wide as the style would', () => {
+    // The reason this module widens anything. Liberty's footway ramp is
+    // 1 px at z14 rising to 10 px at z20; PathAble's must not be thinner at
+    // any stop it declares, or a restyle would quietly bury the network the
+    // product exists to route over.
+    const LIBERTY_FOOTWAY = new Map([
+      [14, 1],
+      [20, 10],
+    ]);
+    const ramp = BASEMAP_PAINT.find(
+      (override) => override.layer === 'road_path_pedestrian' && override.property === 'line-width',
+    );
+    expect(ramp).toBeDefined();
+
+    const stops = ramp!.value as unknown[];
+    for (let i = 3; i < stops.length - 1; i += 2) {
+      const zoom = stops[i] as number;
+      const width = stops[i + 1] as number;
+      const liberty = LIBERTY_FOOTWAY.get(zoom);
+      if (liberty !== undefined) expect(width).toBeGreaterThanOrEqual(liberty);
+    }
   });
 });
 

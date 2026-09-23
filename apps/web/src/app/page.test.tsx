@@ -136,7 +136,7 @@ describe('HomePage', () => {
     // Two ways in, in the order a first-time viewer should meet them: a journey
     // they can run immediately, and the map they can use instead.
     expect(screen.getByTestId('run-verified-example')).toBeInTheDocument();
-    expect(screen.getByTestId('route-status')).toHaveTextContent(/choose a start and an end/i);
+    expect(screen.getByTestId('route-status')).toHaveTextContent(/click the map to set a start/i);
   });
 
   it('shows a map key explaining the two route lines', async () => {

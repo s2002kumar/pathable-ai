@@ -192,6 +192,32 @@ a:hover {
  * their own behaviour and accessible names.
  */
 
+/*
+ * Keep the library's own chrome out from under the floating panel.
+ *
+ * ODbL requires the credit to be visible, and a panel drawn over the bottom of
+ * the map would cover it — quietly, and in exactly the screenshot somebody
+ * would publish. The scale bar has the same problem for a different reason: a
+ * distance legend the reader cannot see is worse than none. Both corners are
+ * pushed in by whatever the workspace says the panel is covering, so this
+ * tracks the real panel rather than a guess about it.
+ *
+ * Only the two bottom corners move. Navigation is top-right, which no layout
+ * covers.
+ */
+.maplibregl-ctrl-bottom-left {
+  bottom: var(--map-inset-bottom, 0px);
+  left: var(--map-inset-left, 0px);
+  transition:
+    bottom var(--duration-base) var(--ease-out),
+    left var(--duration-base) var(--ease-out);
+}
+
+.maplibregl-ctrl-bottom-right {
+  bottom: var(--map-inset-bottom, 0px);
+  transition: bottom var(--duration-base) var(--ease-out);
+}
+
 .maplibregl-ctrl-group {
   border-radius: var(--radius-md) !important;
   box-shadow: var(--shadow-md) !important;

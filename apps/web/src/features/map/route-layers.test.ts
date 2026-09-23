@@ -3,13 +3,20 @@ import type { Route } from '@pathable/contracts';
 import {
   ACCESSIBLE_LAYER_ID,
   EMPTY_LINES,
+  FIT_PADDING,
   STANDARD_LAYER_ID,
   accessibleLineLayer,
   boundsOf,
+  paddingForPanel,
   pointsToGeoJson,
   routeToGeoJson,
   standardLineLayer,
 } from './route-layers';
+
+/** A DOMRect-shaped box, from the two corners. */
+function box(left: number, top: number, width: number, height: number) {
+  return { left, top, right: left + width, bottom: top + height, width, height };
+}
 
 function route(coordinates: Array<[number, number]>): Route {
   return {
@@ -136,5 +143,84 @@ describe('layer definitions', () => {
     const accessible = accessibleLineLayer().paint as Record<string, number>;
 
     expect(accessible['line-width']).toBeGreaterThan(standard['line-width'] ?? 0);
+  });
+});
+
+/**
+ * Framing a route around the panel that floats over the map.
+ *
+ * The map fills the viewport now, so "fit the route to the map" and "fit the
+ * route to the part of the map a person can see" are different instructions.
+ * Getting this wrong puts the answer under the panel — the exact failure the
+ * previous layout was built to avoid — and it is invisible to every test that
+ * only asks whether a route was drawn.
+ */
+describe('fitting a route around the panel', () => {
+  // A 1000 x 700 laptop window: header gone, panel floating against the left.
+  const MAP = box(0, 48, 1000, 652);
+  const SIDE_PANEL = box(12, 60, 320, 628);
+  // A 390 x 844 phone: the same map, the panel across the bottom.
+  const PHONE_MAP = box(0, 48, 390, 796);
+  const SHEET = box(12, 480, 366, 364);
+
+  it('leaves room on the side the panel is against', () => {
+    const padding = paddingForPanel(MAP, SIDE_PANEL);
+
+    // The panel's right edge is 332 px into the map.
+    expect(padding.left).toBe(FIT_PADDING.left + 332);
+    expect(padding.right).toBe(FIT_PADDING.right);
+    expect(padding.top).toBe(FIT_PADDING.top);
+    expect(padding.bottom).toBe(FIT_PADDING.bottom);
+  });
+
+  it('leaves room underneath when the panel is a bottom sheet', () => {
+    // Regression: the anchored edge used to be whichever one the panel
+    // reached into least. For a bottom sheet on a 390 x 844 phone that is its
+    // width (366 px), not its height (517 px), so the camera was told to
+    // inset the *left* edge by almost the whole map and framed the route
+    // off-screen. The edge is now the one whose inset leaves the most map.
+    const padding = paddingForPanel(PHONE_MAP, SHEET);
+
+    expect(padding.bottom).toBe(FIT_PADDING.bottom + 364);
+    expect(padding.left).toBe(FIT_PADDING.left);
+    expect(padding.right).toBe(FIT_PADDING.right);
+  });
+
+  it('insets the bottom for a sheet taller than it is wide', () => {
+    // The shape that produced the bug: the sheet covers 517 px of a 796 px
+    // map and spans all 390 px of it. Insetting the width would leave a
+    // 12 px strip; insetting the height leaves 279 px of usable map.
+    const tallSheet = box(12, 327, 366, 517);
+    const padding = paddingForPanel(PHONE_MAP, tallSheet);
+
+    expect(padding.bottom).toBeGreaterThan(FIT_PADDING.bottom);
+    expect(padding.left).toBe(FIT_PADDING.left);
+    expect(padding.right).toBe(FIT_PADDING.right);
+    expect(PHONE_MAP.height - padding.top - padding.bottom).toBeGreaterThan(100);
+  });
+
+  it('adds nothing when the panel sits below the map instead of over it', () => {
+    // The document-flow fallback: a short window, map above, planner beneath.
+    const flowMap = box(0, 48, 720, 208);
+    const flowPanel = box(0, 256, 720, 900);
+
+    expect(paddingForPanel(flowMap, flowPanel)).toEqual({ ...FIT_PADDING });
+  });
+
+  it('never demands more room than the map has', () => {
+    // A panel wider than the viewport it floats in. Padding that exceeds the
+    // map leaves MapLibre nothing to fit into, and a route that cannot be
+    // framed is a route nobody sees.
+    const padding = paddingForPanel(MAP, box(0, 48, 1200, 652));
+
+    expect(padding.left).toBeLessThan(MAP.width);
+    expect(padding.left + padding.right).toBeLessThan(MAP.width);
+    expect(padding.top + padding.bottom).toBeLessThan(MAP.height);
+  });
+
+  it('falls back to the base padding before anything has been measured', () => {
+    expect(paddingForPanel(null, null)).toEqual({ ...FIT_PADDING });
+    expect(paddingForPanel(MAP, null)).toEqual({ ...FIT_PADDING });
+    expect(paddingForPanel(box(0, 0, 0, 0), SIDE_PANEL)).toEqual({ ...FIT_PADDING });
   });
 });

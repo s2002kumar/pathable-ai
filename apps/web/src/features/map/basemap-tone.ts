@@ -9,12 +9,20 @@
  * layer with that ID actually exists. On any other style, including the
  * source-less one the browser tests use, this is a no-op.
  *
- * The intent is a navigation instrument rather than a postcard: warm ivory
- * ground, parks and buildings pushed back to a murmur, water desaturated, roads
- * kept white with softer casings, and the route lines the only saturated marks
- * on the page. Labels, one-way arrows, transit icons and attribution are left
- * exactly as the style draws them — pedestrian detail is what a route is read
- * against, and none of it is decoration.
+ * The intent is a navigation instrument rather than a postcard: a crisp neutral
+ * ground, parks and water present but quiet, buildings given just enough edge to
+ * read as blocks, roads kept pale with softer casings, and the route lines the
+ * only saturated marks on the page. Labels, one-way arrows, transit icons and
+ * attribution are left exactly as the style draws them — pedestrian detail is
+ * what a route is read against, and none of it is decoration.
+ *
+ * Pedestrian paths are the exception to "quieter". Liberty draws footways as a
+ * thin white dash, which disappears against a white road on a pale ground — on
+ * a pedestrian router that is the single most important class of line on the
+ * map. They are given their own tint and a wider stroke, so the network a route
+ * is drawn over is visible as a network. This changes how paths are *drawn*,
+ * never which ones exist: no path is added, removed or reclassified, and a
+ * drawn path is not a claim that it is in PathAble's routing graph.
  *
  * The 3D building extrusion Liberty draws at high zoom is switched off. It is
  * decorative, it is expensive on the software renderer the browser suite uses,
@@ -24,7 +32,13 @@
 export type PaintOverride = {
   readonly layer: string;
   readonly property: string;
-  readonly value: string;
+  /**
+   * A colour, or a MapLibre style expression. Widths are zoom ramps, so this
+   * cannot be narrowed to `string` — but nothing here may set a visibility or
+   * an opacity that would remove a feature, which `basemap-tone.test.ts`
+   * asserts against the list rather than trusting the type.
+   */
+  readonly value: unknown;
 };
 
 export type LayoutOverride = {
@@ -33,34 +47,68 @@ export type LayoutOverride = {
   readonly value: string;
 };
 
-const IVORY = '#f4efe6';
-const GREEN_MUTED = '#e2e7d4';
-const GREEN_SOFT = '#e8ebdc';
-const WATER = '#cddbe4';
-const BUILDING = '#e5ddcf';
-const BUILDING_EDGE = '#d6ccbb';
-const CASING_MINOR = '#dcd4c6';
-const CASING_MAJOR = '#d9c8a8';
-const ROAD_MAJOR = '#f7f0dd';
-const ROAD_MOTORWAY = '#f2dfc0';
-const RAIL = '#c9c2b6';
-const LABEL_ROAD = '#5c554a';
-const LABEL_POI = '#6a6358';
+const GROUND = '#eef0f2';
+const GREEN_MUTED = '#dde7da';
+const GREEN_SOFT = '#e4ebe2';
+const WATER = '#c3d6e3';
+const BUILDING = '#e0e4e8';
+const BUILDING_EDGE = '#ccd2d8';
+const CASING_MINOR = '#dbdfe3';
+const CASING_MAJOR = '#ccd3d9';
+const ROAD_MAJOR = '#f8fafb';
+const ROAD_MOTORWAY = '#eef2f5';
+const RAIL = '#c2c8cd';
+const LABEL_ROAD = '#4c545b';
+const LABEL_POI = '#525a61';
+
+/**
+ * The pedestrian network: a cool grey-blue, darker than any road, so a footway
+ * crossing a white service road is still a footway. Deliberately unsaturated —
+ * it has to stay clearly subordinate to the two route lines drawn over it.
+ */
+const PATH = '#9aa7b2';
+const PATH_CASING = '#e7eaee';
+const LABEL_PATH = '#5a636b';
+
+/** Wider than Liberty draws them, on the same exponential ramp it uses. */
+const PATH_WIDTH = [
+  'interpolate',
+  ['exponential', 1.2],
+  ['zoom'],
+  14,
+  1.6,
+  17,
+  3.2,
+  20,
+  11,
+] as const;
+
+const PATH_CASING_WIDTH = [
+  'interpolate',
+  ['exponential', 1.2],
+  ['zoom'],
+  14,
+  2.6,
+  17,
+  5,
+  20,
+  15,
+] as const;
 
 export const BASEMAP_PAINT: readonly PaintOverride[] = [
-  { layer: 'background', property: 'background-color', value: IVORY },
+  { layer: 'background', property: 'background-color', value: GROUND },
 
   { layer: 'park', property: 'fill-color', value: GREEN_MUTED },
-  { layer: 'park_outline', property: 'line-color', value: '#d5dcc4' },
-  { layer: 'landcover_wood', property: 'fill-color', value: 'rgba(215, 224, 200, 0.7)' },
+  { layer: 'park_outline', property: 'line-color', value: '#cfdccb' },
+  { layer: 'landcover_wood', property: 'fill-color', value: 'rgba(210, 225, 208, 0.7)' },
   { layer: 'landcover_grass', property: 'fill-color', value: GREEN_MUTED },
-  { layer: 'landcover_sand', property: 'fill-color', value: '#efe8d3' },
+  { layer: 'landcover_sand', property: 'fill-color', value: '#ecebe0' },
   { layer: 'landuse_pitch', property: 'fill-color', value: GREEN_SOFT },
   { layer: 'landuse_track', property: 'fill-color', value: GREEN_SOFT },
   { layer: 'landuse_cemetery', property: 'fill-color', value: GREEN_SOFT },
-  { layer: 'landuse_hospital', property: 'fill-color', value: '#f1e7e2' },
-  { layer: 'landuse_school', property: 'fill-color', value: '#efeadc' },
-  { layer: 'landuse_residential', property: 'fill-color', value: '#efe9de' },
+  { layer: 'landuse_hospital', property: 'fill-color', value: '#eee4e4' },
+  { layer: 'landuse_school', property: 'fill-color', value: '#e9ebe4' },
+  { layer: 'landuse_residential', property: 'fill-color', value: '#eaedef' },
 
   { layer: 'water', property: 'fill-color', value: WATER },
   { layer: 'waterway_river', property: 'line-color', value: WATER },
@@ -76,7 +124,6 @@ export const BASEMAP_PAINT: readonly PaintOverride[] = [
   { layer: 'tunnel_service_track_casing', property: 'line-color', value: CASING_MINOR },
   { layer: 'bridge_street_casing', property: 'line-color', value: CASING_MINOR },
   { layer: 'bridge_service_track_casing', property: 'line-color', value: CASING_MINOR },
-  { layer: 'bridge_path_pedestrian_casing', property: 'line-color', value: CASING_MINOR },
 
   { layer: 'road_secondary_tertiary_casing', property: 'line-color', value: CASING_MAJOR },
   { layer: 'road_trunk_primary_casing', property: 'line-color', value: CASING_MAJOR },
@@ -110,11 +157,25 @@ export const BASEMAP_PAINT: readonly PaintOverride[] = [
   { layer: 'bridge_motorway', property: 'line-color', value: ROAD_MOTORWAY },
   { layer: 'bridge_motorway_link', property: 'line-color', value: ROAD_MOTORWAY },
 
+  // --- The pedestrian network -------------------------------------------
+  // Drawn up, not down: this is a pedestrian router, and Liberty's thin white
+  // dash vanishes against a white road. Colour and width only — the filters,
+  // the dash patterns and which features appear are the style's.
+  { layer: 'road_path_pedestrian', property: 'line-color', value: PATH },
+  { layer: 'road_path_pedestrian', property: 'line-width', value: PATH_WIDTH },
+  { layer: 'bridge_path_pedestrian', property: 'line-color', value: PATH },
+  { layer: 'bridge_path_pedestrian', property: 'line-width', value: PATH_WIDTH },
+  { layer: 'bridge_path_pedestrian_casing', property: 'line-color', value: PATH_CASING },
+  { layer: 'bridge_path_pedestrian_casing', property: 'line-width', value: PATH_CASING_WIDTH },
+  { layer: 'tunnel_path_pedestrian', property: 'line-color', value: PATH },
+  { layer: 'tunnel_path_pedestrian', property: 'line-width', value: PATH_WIDTH },
+
   { layer: 'road_major_rail', property: 'line-color', value: RAIL },
   { layer: 'road_major_rail_hatching', property: 'line-color', value: RAIL },
   { layer: 'road_transit_rail', property: 'line-color', value: RAIL },
   { layer: 'road_transit_rail_hatching', property: 'line-color', value: RAIL },
 
+  { layer: 'highway-name-path', property: 'text-color', value: LABEL_PATH },
   { layer: 'highway-name-minor', property: 'text-color', value: LABEL_ROAD },
   { layer: 'highway-name-major', property: 'text-color', value: LABEL_ROAD },
   { layer: 'poi_r20', property: 'text-color', value: LABEL_POI },

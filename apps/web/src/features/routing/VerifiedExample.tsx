@@ -60,8 +60,6 @@ export function VerifiedExampleCard({
 
   return (
     <section className={styles.example} data-testid="verified-example" data-active="false">
-      <p className={styles.exampleEyebrow}>Start here</p>
-      <h2 className={styles.exampleTitle}>See the difference in one press</h2>
       <button
         type="button"
         className={styles.exampleButton}
@@ -71,10 +69,23 @@ export function VerifiedExampleCard({
       >
         Try a wheelchair route example
       </button>
+      {/* Short enough to read before pressing. The corpus's own caveat — these
+          are approximate positions, not surveyed points — moves behind the
+          disclosure rather than out of the product: it qualifies the inputs,
+          and the inputs are the only thing this preset supplies. */}
       <p className={styles.exampleDetail} id="verified-example-detail">
-        {example.originLabel} to {example.destinationLabel}. {example.description}.{' '}
-        {example.provenance} The comparison is computed live by the routing engine each time.
+        {example.originLabel} to {example.destinationLabel}, computed live.
       </p>
+      <details className="disclosure" data-testid="verified-example-provenance">
+        <summary>Where these points come from</summary>
+        <div className={styles.exampleProvenance}>
+          <p>
+            {example.description}. {example.provenance} PathAble snaps them to the nearest routable
+            segment exactly as it would a map click, and the comparison is computed by the routing
+            engine on every press — no distance, stairway count or explanation is stored here.
+          </p>
+        </div>
+      </details>
     </section>
   );
 }

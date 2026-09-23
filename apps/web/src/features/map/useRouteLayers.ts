@@ -10,6 +10,7 @@ import {
   EMPTY_LINES,
   EMPTY_POINTS,
   FIT_PADDING,
+  type Padding,
   POINTS_HALO_LAYER_ID,
   POINTS_LABEL_LAYER_ID,
   POINTS_LAYER_ID,
@@ -45,6 +46,13 @@ export type UseRouteLayersOptions = {
   readonly showStandardRoute?: boolean;
   /** Which route to bring forward; the other fades but stays. */
   readonly focus?: RouteFocus;
+  /**
+   * Room to leave around a fitted route, measured from the floating panel by
+   * the workspace. Deliberately not a dependency of the fitting effect: a
+   * viewer who resizes the window, or opens a disclosure that makes the panel
+   * taller, has not asked for the camera to move.
+   */
+  readonly fitPadding?: Padding;
 };
 
 /**
@@ -63,11 +71,21 @@ export function useRouteLayers({
   destination,
   showStandardRoute = true,
   focus = null,
+  fitPadding,
 }: UseRouteLayersOptions): void {
   // The last bounds we fitted to. Refitting on every render would fight the user
   // for control of the viewport; refitting only when the route actually changes
   // keeps their pan and zoom.
   const lastFitted = useRef<string | null>(null);
+
+  // Read at fit time rather than depended on, for the reason above. Synced in
+  // an effect rather than during render, and declared before the effect that
+  // reads it so a commit that changes both has the new padding by the time the
+  // camera moves.
+  const padding = useRef<Padding>({ ...FIT_PADDING });
+  useEffect(() => {
+    padding.current = fitPadding ?? { ...FIT_PADDING };
+  }, [fitPadding]);
 
   useEffect(() => {
     if (map === null) return;
@@ -93,7 +111,7 @@ export function useRouteLayers({
     lastFitted.current = signature;
 
     map.fitBounds(bounds, {
-      padding: FIT_PADDING,
+      padding: padding.current,
       maxZoom: 17,
       // Capped, and nothing at all for a viewer who asked for less motion.
       duration: cameraDuration(prefersReducedMotion()),

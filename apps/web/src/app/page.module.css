@@ -12,25 +12,39 @@
 }
 
 /* --- Purpose ---------------------------------------------------------------
- * Two sentences and a disclosure, at the top of the planner column. It is the
- * first thing read on every viewport and the text alternative the map points
- * at, so it is short enough to be read every time.
+ * The two sentences that make this product safe to read — missing data is not
+ * a clear path, no route is a guarantee — and a disclosure holding everything
+ * else. It is also the text alternative the map region points at, so it stays
+ * rendered and visible in every state rather than moving behind the control
+ * beside it.
+ *
+ * It sits at the foot of the panel, below the planning controls. The panel is
+ * now a compact surface floating over the map: the first screen belongs to the
+ * answer and the controls that produce it, and a preface above them is what
+ * pushed the result out of view in the layout this replaced.
  */
 
 .intro {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
 }
 
+/* The panel's own label, not a banner. The header above already carries the
+   product name and the pilot region; this says which of them the panel is
+   planning in, at the size a label deserves. */
 .pageTitle {
-  font-size: var(--text-lg);
-  letter-spacing: -0.01em;
-  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
 }
 
 .purpose {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   line-height: var(--leading-normal);
   color: var(--color-text-muted);
 }
@@ -40,7 +54,7 @@
   flex-direction: column;
   gap: var(--space-2);
   padding-bottom: var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   line-height: var(--leading-normal);
   color: var(--color-text-muted);
 }

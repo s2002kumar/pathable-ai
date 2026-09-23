@@ -1,12 +1,19 @@
 'use client';
 
-import { type ReactNode, useCallback, useMemo, useState } from 'react';
+import { type CSSProperties, type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import type { ProfileKey } from '@pathable/contracts';
 import { MapPanel } from '@/features/map/MapPanel';
 import type { RouteFocus } from '@/features/map/route-layers';
+import { usePanelFit } from '@/features/map/usePanelFit';
 import { RoutePlanner } from './RoutePlanner';
 import { useRouteComparison } from './useRouteComparison';
-import type { LngLat, PlannerPoints, ProfileSelection } from './types';
+import {
+  type LngLat,
+  type PlannerPoints,
+  type ProfileSelection,
+  type RouteRequestState,
+  formatDistance,
+} from './types';
 import { CAMPUS_EXAMPLE, type VerifiedExample } from './verified-example';
 import styles from './RouteWorkspace.module.css';
 
@@ -28,11 +35,11 @@ export type RouteWorkspaceProps = {
    * server-rendered like everything else rather than appearing a frame late.
    */
   readonly initialExample?: VerifiedExample | null;
-  /** Rendered at the top of the planner column: the page title. */
+  /** Rendered at the top of the planner: the page title. */
   readonly title?: ReactNode;
-  /** Rendered after the result, before the planning controls: the purpose statement. */
+  /** Rendered near the foot of the planner: the purpose line and what it means. */
   readonly intro?: ReactNode;
-  /** Rendered at the bottom of the planner column: data attribution. */
+  /** Rendered at the bottom of the planner: data attribution. */
   readonly footer?: ReactNode;
 };
 
@@ -45,6 +52,12 @@ const EMPTY_POINTS: PlannerPoints = { origin: null, destination: null };
  * can own them without reaching into the other. This component holds the two
  * endpoints, the chosen profile, the request, and which route (if any) the
  * viewer has brought forward, and hands both children exactly what they need.
+ *
+ * Layout: the map is the product, so it fills the workspace and everything else
+ * floats over it — a planning surface against one edge, a map key against
+ * another. What the panel covers is measured rather than assumed, because a
+ * route framed underneath the panel is the same failure as a route drawn
+ * off-screen.
  */
 export function RouteWorkspace({
   apiBaseUrl,
@@ -70,7 +83,14 @@ export function RouteWorkspace({
   const [profileKey, setProfileKey] = useState<ProfileKey>('wheelchair');
   const [activeExampleId, setActiveExampleId] = useState<string | null>(initialExample?.id ?? null);
   const [focusedRoute, setFocusedRoute] = useState<RouteFocus>(null);
+  // Only meaningful where the panel is a bottom sheet; the side layout ignores
+  // it in CSS. Open by default, because the answer is the reason to be here.
+  const [sheetOpen, setSheetOpen] = useState(true);
   const profile = useMemo<ProfileSelection>(() => ({ key: profileKey }), [profileKey]);
+
+  const mapRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const fit = usePanelFit(mapRef, panelRef);
 
   const { state, retry } = useRouteComparison({
     apiBaseUrl,
@@ -87,6 +107,7 @@ export function RouteWorkspace({
     setPoints({ origin: example.origin, destination: example.destination });
     setProfileKey('wheelchair');
     setActiveExampleId(example.id);
+    setSheetOpen(true);
   }, []);
 
   const handleSelectPoint = useCallback((position: LngLat) => {
@@ -129,9 +150,19 @@ export function RouteWorkspace({
         ? 'accessible'
         : null;
 
+  // CSS places the map key and MapLibre's own credit clear of the panel from
+  // the first paint; this replaces that estimate with the measurement. Only the
+  // side actually covered is written, so the other keeps its CSS default.
+  const insetStyle = useMemo<CSSProperties>(() => {
+    const { side, amount } = fit.inset;
+    if (amount <= 0 || (side !== 'bottom' && side !== 'left')) return {};
+    const property = side === 'bottom' ? '--map-inset-bottom' : '--map-inset-left';
+    return { [property]: `${Math.round(amount)}px` } as CSSProperties;
+  }, [fit.inset]);
+
   return (
-    <div className={styles.workspace}>
-      <div className={styles.mapArea}>
+    <div className={styles.workspace} style={insetStyle} data-testid="route-workspace">
+      <div className={styles.mapArea} ref={mapRef}>
         <MapPanel
           styleUrl={mapStyleUrl}
           centerLat={centerLat}
@@ -145,14 +176,39 @@ export function RouteWorkspace({
           origin={points.origin}
           destination={points.destination}
           focusedRoute={effectiveFocus}
+          fitPadding={fit.padding}
           onSelectPoint={handleSelectPoint}
         />
-        <MapLegend focus={effectiveFocus} />
       </div>
 
-      <aside className={styles.panelArea} aria-label="Route planner">
-        <span className={styles.grip} aria-hidden="true" />
-        <div className={styles.panelInner}>
+      <MapLegend focus={effectiveFocus} />
+
+      <aside
+        className={styles.panelArea}
+        ref={panelRef}
+        aria-label="Route planner"
+        data-sheet-open={sheetOpen}
+      >
+        {/* A real control, not an ornament. The previous layout drew a grip
+            that looked draggable and was not; this one says what it does and
+            does it. CSS shows it only where the panel is a bottom sheet. */}
+        <div className={styles.sheetBar}>
+          <p className={styles.sheetSummary} aria-hidden="true">
+            {sheetSummary(state)}
+          </p>
+          <button
+            type="button"
+            className={styles.sheetToggle}
+            onClick={() => setSheetOpen((open) => !open)}
+            aria-expanded={sheetOpen}
+            aria-controls="route-planner-panel"
+            data-testid="sheet-toggle"
+          >
+            {sheetOpen ? 'Collapse' : 'Expand'}
+          </button>
+        </div>
+
+        <div className={styles.panelInner} id="route-planner-panel">
           {title}
           <RoutePlanner
             intro={intro}
@@ -178,6 +234,32 @@ export function RouteWorkspace({
       </aside>
     </div>
   );
+}
+
+/**
+ * What the collapsed sheet says it is holding.
+ *
+ * Hidden from assistive technology: the panel it summarises stays in the
+ * accessibility tree behind the toggle, and repeating the headline here would
+ * announce the same figure twice. It is a visual label for a collapsed drawer,
+ * so it never states a difference or a caution — those belong in the panel,
+ * beside the evidence for them.
+ */
+function sheetSummary(state: RouteRequestState): string {
+  switch (state.status) {
+    case 'loading':
+      return 'Comparing routes…';
+    case 'error':
+      return 'Could not compare these points';
+    case 'success': {
+      const route = state.comparison.accessible_route;
+      return route
+        ? `${state.comparison.profile_display_name} · ${formatDistance(route.distance_m)}`
+        : state.comparison.profile_display_name;
+    }
+    default:
+      return 'Plan a walking route';
+  }
 }
 
 /**

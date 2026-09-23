@@ -4,7 +4,7 @@ import { useId, useRef } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Route } from '@pathable/contracts';
 import { MapStatusOverlay } from './MapStatusOverlay';
-import type { RouteFocus } from './route-layers';
+import type { Padding, RouteFocus } from './route-layers';
 import { useMapClick } from './useMapClick';
 import { useMapLibre } from './useMapLibre';
 import { useRouteLayers } from './useRouteLayers';
@@ -30,6 +30,9 @@ export type MapCanvasProps = {
   readonly showStandardRoute?: boolean;
   /** Which route to bring forward on the map, if the viewer asked for one. */
   readonly focusedRoute?: RouteFocus;
+  /** Room to leave around a fitted route, so the panel floating over the map
+   *  never sits on top of the answer. */
+  readonly fitPadding?: Padding;
   /**
    * Called with the clicked position. Absent when the map is decorative, which
    * is what keeps this component usable outside the planner.
@@ -57,6 +60,7 @@ export function MapCanvas({
   destination = null,
   showStandardRoute = true,
   focusedRoute = null,
+  fitPadding,
   onSelectPoint,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,6 +82,7 @@ export function MapCanvas({
     destination,
     showStandardRoute,
     focus: focusedRoute,
+    ...(fitPadding ? { fitPadding } : {}),
   });
   useMapClick(map, onSelectPoint ?? noop);
 

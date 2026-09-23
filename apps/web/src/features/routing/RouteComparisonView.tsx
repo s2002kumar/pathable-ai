@@ -47,19 +47,26 @@ export function RouteComparisonView({
         />
       </div>
 
-      <div className={styles.routeCards}>
-        {accessible ? (
-          <RouteCard
-            route={accessible}
-            label={comparison.profile_display_name}
-            variant="accessible"
-            emphasis
-          />
-        ) : null}
-        {standard ? (
-          <RouteCard route={standard} label="Shortest walking route" variant="standard" />
-        ) : null}
-      </div>
+      {/* Only where there is nothing to compare against. With both routes
+          present, `RouteDifference` above already carries each route's
+          distance, walking time and stairways beside the control that
+          highlights it on the map; a second pair of cards repeating those
+          figures was the longest block in the panel and said nothing new. */}
+      {bothRoutes ? null : (
+        <div className={styles.routeCards}>
+          {accessible ? (
+            <RouteCard
+              route={accessible}
+              label={comparison.profile_display_name}
+              variant="accessible"
+              emphasis
+            />
+          ) : null}
+          {standard ? (
+            <RouteCard route={standard} label="Shortest walking route" variant="standard" />
+          ) : null}
+        </div>
+      )}
 
       {/* RouteDifference above already carries these statements, sorted by
           where each came from. It only renders when there are two routes to
