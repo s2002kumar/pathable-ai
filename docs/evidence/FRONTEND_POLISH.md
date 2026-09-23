@@ -261,6 +261,45 @@ crutches or cane. That last step is answered live and gives a different real
 result — **327 m, +40 m (14%), 7 minutes, no stairways** against the same
 287 m shortest route. Nothing in it is stubbed, scripted or re-timed.
 
+### Verified, at this revision
+
+On this laptop, at this branch's head, observed rather than inferred.
+
+| Gate                                                    | Result                                                                               |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Prettier, ESLint, `tsc --noEmit`                        | clean                                                                                |
+| Frontend unit (Vitest, coverage)                        | 275 passed, 18 files; statements 93.5%, branches 86.2% (floor 80%)                   |
+| Stubbed browser suite (desktop + Pixel 7, axe included) | 112 passed, 0 failed, 0 skipped (56 per project, desktop and Pixel 7)                |
+| Full-stack against the envelope stack, real Waterloo    | 16 passed, 0 skipped (9 recruiter-demo + 7 stack)                                    |
+| Contract drift                                          | generated contracts match the backend schemas                                        |
+| Production web image                                    | rebuilt from this branch; every capture and the recording above came from that image |
+| CI on this head                                         | see the pull request checks — pending at the time of writing, not inferred here      |
+
+Checked by hand in the captures and the recording rather than by a machine:
+the map full-bleed behind the panel at every size above the flow fallback; the
+route framed in the part of the map the panel does not cover; the ODbL credit
+and the map key clear of the panel; the profile chips reachable by arrow key
+as one Tab stop; a visible focus ring on every control; reduced motion
+collapsing the panel transitions and the camera move (measured at 1e-05 s);
+the dark scheme rendering a dark panel over the same light cartography, which
+is deliberate — the map key has to match what is drawn on the map, not the
+surface around it.
+
+Two things a machine would not have caught, both found by looking:
+
+- Under SwiftShader the basemap needs several seconds after `fitBounds` before
+  a capture is meaningful. Screenshots taken too early came back with the route
+  and most labels missing, which is indistinguishable from a product that
+  failed to draw its answer. The committed capture spec waits for network idle
+  and then eight seconds, and says why.
+- One browser-suite failure in an earlier run — the status badge reading
+  "unreachable" against a 15 s expectation — was contention from screenshot
+  captures running alongside the suite, not a regression.
+  `system-status.spec.ts` passes 10/10 on its own.
+
+Automated axe passing is a floor, not a claim of accessibility compliance, and
+nobody who uses a mobility aid has reviewed this interface.
+
 ### Still outstanding
 
 The visual direction has **not** been accepted. This revision is a candidate for
