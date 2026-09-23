@@ -223,7 +223,7 @@ The images are beside it.
 | ---------- | ---------- | ------------------ | ------------------ | ------------------------ | ------------------- | -------------- |
 | 1000 × 700 | 1000 × 652 | 320 × 628, at left | **false**          | yes                      | none                | none           |
 | 1366 × 768 | 1366 × 720 | 369 × 696, at left | true               | yes                      | none                | none           |
-| 390 × 844  | 390 × 796  | 366 × 490, a sheet | false              | yes                      | none                | none           |
+| 390 × 844  | 390 × 796  | 366 × 523, a sheet | false              | yes                      | none                | none           |
 
 "Whole answer" is both route figures, the extra-distance line and the
 uncertainty line, each entirely inside the viewport, with nothing opened and
@@ -235,8 +235,11 @@ full-bleed anyway, because the layout no longer depends on it. Under the
 previous composition that same row measured a `1000 × 287` map.
 
 The ODbL credit is clear of the planner at all three sizes. On the phone it is
-measured at `y` 314–354 with the sheet starting at `y` 354, which is the
-`--map-inset-bottom` wiring doing its job rather than a coincidence.
+measured at `y` 280–320 with the sheet starting at `y` 321, which is the
+`--map-inset-bottom` wiring doing its job rather than a coincidence — and the
+one pixel of clearance is deliberate: the inset is rounded **up**, because a
+panel edge lands on a fractional pixel routinely and rounding to nearest left
+the credit 0.07 px underneath the sheet.
 
 ### The answer behind those captures
 
@@ -254,7 +257,7 @@ this dataset and this journey, never rendering constants.
 
 The recording
 [`media/pathable-ux02a-interaction.webm`](media/pathable-ux02a-interaction.webm)
-(2.7 MB, 1000 × 700, no audio, captured from the same preview and the same
+(2.6 MB, 1000 × 700, no audio, captured from the same preview and the same
 image) runs the example, brings the shortest route forward and lets it go,
 opens and closes "What is on this route", and then changes the profile to
 crutches or cane. That last step is answered live and gives a different real
