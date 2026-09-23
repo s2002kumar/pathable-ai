@@ -300,7 +300,6 @@ describe('the answer as one block', () => {
 
     await user.click(within(provenance).getByText('Where this comes from'));
     expect(within(provenance).getByText(/Map data published 34 days ago/)).toBeVisible();
-    expect(within(provenance).getByTestId('elevation-attribution')).toBeVisible();
     expect(within(provenance).getByText(/51e75f78/)).toBeVisible();
   });
 
@@ -310,6 +309,19 @@ describe('the answer as one block', () => {
     expect(
       screen.getByText(/no predictions, no scoring, no machine learning/i).closest('details'),
     ).toBeNull();
+  });
+
+  it('keeps the elevation licence outside any disclosure too', () => {
+    // The Open Government Licence asks to be carried by anything that uses
+    // the data. A credit somebody has to open a control to find is not being
+    // carried — and this one used to sit inside "Where this comes from".
+    // OpenStreetMap's own credit is always on the map canvas; this is the one
+    // that would otherwise have been hidden.
+    render(<RouteComparisonView comparison={CAMPUS_COMPARISON} />);
+
+    const elevation = screen.getByTestId('elevation-attribution');
+    expect(elevation).toHaveTextContent(/Open Government Licence/i);
+    expect(elevation.closest('details')).toBeNull();
   });
 });
 

@@ -116,17 +116,23 @@ export function RouteComparisonView({
             {comparison.dataset.attribution} · dataset{' '}
             <code>{comparison.dataset.checksum.slice(0, 8)}</code>
           </p>
-          {comparison.dataset.elevation_attribution ? (
-            <p className={styles.attribution} data-testid="elevation-attribution">
-              {comparison.dataset.elevation_attribution}
-            </p>
-          ) : null}
           <p>
             Routing policy <code>{comparison.routing_policy_version}</code>. Machine-learning
             predictions used: <code>{String(comparison.ml_predictions_used)}</code>.
           </p>
         </div>
       </details>
+
+      {/* Outside the disclosure above, deliberately. The elevation licence
+          asks to be carried by anything that uses the data, and a credit
+          somebody has to open a control to find is not being carried. The
+          map's own OpenStreetMap attribution is always on the canvas; this is
+          the one that would otherwise have been hidden. */}
+      {comparison.dataset.elevation_attribution ? (
+        <p className={styles.attribution} data-testid="elevation-attribution">
+          {comparison.dataset.elevation_attribution}
+        </p>
+      ) : null}
 
       <p className={styles.noModel}>
         Routing uses recorded map attributes only — no predictions, no scoring, no machine learning.
