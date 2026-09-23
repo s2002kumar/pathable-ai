@@ -278,12 +278,12 @@ On this laptop, at this branch's head, observed rather than inferred.
 | Gate                                                    | Result                                                                               |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | Prettier, ESLint, `tsc --noEmit`                        | clean                                                                                |
-| Frontend unit (Vitest, coverage)                        | 275 passed, 18 files; statements 93.5%, branches 86.2% (floor 80%)                   |
+| Frontend unit (Vitest, coverage)                        | 276 passed, 18 files; statements 93.5%, branches 86.2% (floor 80%)                   |
 | Stubbed browser suite (desktop + Pixel 7, axe included) | 112 passed, 0 failed, 0 skipped (56 per project, desktop and Pixel 7)                |
 | Full-stack against the envelope stack, real Waterloo    | 16 passed, 0 skipped (9 recruiter-demo + 7 stack)                                    |
 | Contract drift                                          | generated contracts match the backend schemas                                        |
 | Production web image                                    | rebuilt from this branch; every capture and the recording above came from that image |
-| CI on this head                                         | see the pull request checks — pending at the time of writing, not inferred here      |
+| CI on this head (`6e78656`)                             | 16 of 16 checks pass, both workflows green — observed on the pull request            |
 
 Checked by hand in the captures and the recording rather than by a machine:
 the map full-bleed behind the panel at every size above the flow fallback; the
@@ -306,6 +306,13 @@ Two things a machine would not have caught, both found by looking:
   "unreachable" against a 15 s expectation — was contention from screenshot
   captures running alongside the suite, not a regression.
   `system-status.spec.ts` passes 10/10 on its own.
+
+CI's full-stack job reports **7 passed, 9 skipped**. That is the known
+synthetic-fixture gap (KI-9), unchanged by this work: the runner loads the
+synthetic dataset, so the nine recruiter-demo tests that need the real Waterloo
+network skip there. All sixteen ran locally against the real dataset, which is
+where the 287.4 m / 354.1 m figures above come from. No new skip was
+introduced.
 
 Automated axe passing is a floor, not a claim of accessibility compliance, and
 nobody who uses a mobility aid has reviewed this interface.
