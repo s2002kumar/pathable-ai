@@ -145,6 +145,13 @@ was measured. Everything before it is kept as the history it is.
 
 ### What was actually wrong
 
+**These viewports are stand-ins.** The founder's own browser was not available
+to this work, and a screenshot does not record its window size, its zoom level
+or its root font size — so nothing here can claim to be _their_ viewport. What
+it can do is measure the breakpoint. 1000 × 700 and 1366 × 768 CSS pixels are
+ordinary laptop windows chosen to sit either side of the gate that failed, and
+390 × 844 is a common phone. Every figure below names the size it was taken at.
+
 Reproduced in a browser at 1000 × 700 CSS pixels, which is an ordinary laptop
 window: `RouteWorkspace.module.css` gated its two-pane desktop layout at
 `min-width: 64rem` — 1024 px at a 16 px root. A 1000 px window missed it by
