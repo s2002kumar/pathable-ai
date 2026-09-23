@@ -1,0 +1,149 @@
+[
+  {
+    "viewport": "1000x700",
+    "environment": {
+      "innerWidth": 1000,
+      "innerHeight": 700,
+      "devicePixelRatio": 1,
+      "rootFontPx": 16,
+      "visualViewport": {
+        "width": 1000,
+        "height": 700,
+        "scale": 1
+      },
+      "matched": {
+        "min-width: 48rem": true,
+        "min-width: 64rem": false,
+        "min-height: 34rem": true
+      }
+    },
+    "answeredMs": 769,
+    "layout": {
+      "map": {
+        "x": 0,
+        "y": 48,
+        "width": 1000,
+        "height": 652
+      },
+      "panel": {
+        "x": 12,
+        "y": 60,
+        "width": 320,
+        "height": 628
+      },
+      "credit": {
+        "x": 503,
+        "y": 680,
+        "width": 497,
+        "height": 20
+      },
+      "horizontalOverflow": false,
+      "answerInViewport": {
+        "accessible": true,
+        "shortest": true,
+        "detour": true,
+        "uncertainty": true,
+        "mapKey": true
+      }
+    },
+    "problems": []
+  },
+  {
+    "viewport": "1366x768",
+    "environment": {
+      "innerWidth": 1366,
+      "innerHeight": 768,
+      "devicePixelRatio": 1,
+      "rootFontPx": 16,
+      "visualViewport": {
+        "width": 1366,
+        "height": 768,
+        "scale": 1
+      },
+      "matched": {
+        "min-width: 48rem": true,
+        "min-width: 64rem": true,
+        "min-height: 34rem": true
+      }
+    },
+    "answeredMs": 655,
+    "layout": {
+      "map": {
+        "x": 0,
+        "y": 48,
+        "width": 1366,
+        "height": 720
+      },
+      "panel": {
+        "x": 12,
+        "y": 60,
+        "width": 369,
+        "height": 696
+      },
+      "credit": {
+        "x": 869,
+        "y": 748,
+        "width": 497,
+        "height": 20
+      },
+      "horizontalOverflow": false,
+      "answerInViewport": {
+        "accessible": true,
+        "shortest": true,
+        "detour": true,
+        "uncertainty": true,
+        "mapKey": true
+      }
+    },
+    "problems": []
+  },
+  {
+    "viewport": "390x844",
+    "environment": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "devicePixelRatio": 1,
+      "rootFontPx": 16,
+      "visualViewport": {
+        "width": 390,
+        "height": 844,
+        "scale": 1
+      },
+      "matched": {
+        "min-width: 48rem": false,
+        "min-width: 64rem": false,
+        "min-height: 34rem": true
+      }
+    },
+    "answeredMs": 415,
+    "layout": {
+      "map": {
+        "x": 0,
+        "y": 48,
+        "width": 390,
+        "height": 796
+      },
+      "panel": {
+        "x": 12,
+        "y": 354,
+        "width": 366,
+        "height": 490
+      },
+      "credit": {
+        "x": 0,
+        "y": 314,
+        "width": 390,
+        "height": 40
+      },
+      "horizontalOverflow": false,
+      "answerInViewport": {
+        "accessible": true,
+        "shortest": true,
+        "detour": true,
+        "uncertainty": true,
+        "mapKey": true
+      }
+    },
+    "problems": []
+  }
+]

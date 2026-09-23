@@ -163,26 +163,26 @@ paper, with a map on it.
 
 ### What changed
 
-| Before                                                                 | After                                                                                                               | Why                                                                                                                                                                           |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Desktop two-pane grid gated at `min-width: 64rem`                      | Three layouts gated on **height**: side panel (≥ 48rem wide), bottom sheet (narrower), document flow (< 34rem tall) | What makes a floating panel wrong is a window too short to hold one and still show map — 200% zoom, landscape phones. Width was the wrong question.                            |
-| Map is a block in the page; on desktop, a column beside it             | Map fills the workspace at every size above the flow fallback; everything else floats over it                       | The map is the product. At 1000 × 700 the map area went from `1000 × 287` to `1000 × 652`.                                                                                    |
-| A full-height planner rail                                             | A floating panel, 20–24 rem wide, with its own scroll                                                               | The rail owned a third of the screen whether or not it had anything in it.                                                                                                     |
-| Warm ivory surfaces (`#f3eee5` / `#fffdf9`)                            | Crisp neutral (`#eceef0` / `#ffffff`), same restrained teal accent                                                  | A control panel over live cartography, not a page. The rejected composition was not rebuilt as translucent cards.                                                              |
+| Before                                                                  | After                                                                                                               | Why                                                                                                                                                                                     |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Desktop two-pane grid gated at `min-width: 64rem`                       | Three layouts gated on **height**: side panel (≥ 48rem wide), bottom sheet (narrower), document flow (< 34rem tall) | What makes a floating panel wrong is a window too short to hold one and still show map — 200% zoom, landscape phones. Width was the wrong question.                                     |
+| Map is a block in the page; on desktop, a column beside it              | Map fills the workspace at every size above the flow fallback; everything else floats over it                       | The map is the product. At 1000 × 700 the map area went from `1000 × 287` to `1000 × 652`.                                                                                              |
+| A full-height planner rail                                              | A floating panel, 20–24 rem wide, with its own scroll                                                               | The rail owned a third of the screen whether or not it had anything in it.                                                                                                              |
+| Warm ivory surfaces (`#f3eee5` / `#fffdf9`)                             | Crisp neutral (`#eceef0` / `#ffffff`), same restrained teal accent                                                  | A control panel over live cartography, not a page. The rejected composition was not rebuilt as translucent cards.                                                                       |
 | Five permanently expanded profile cards, each with its own rule summary | A row of chips, and one rule line for the chosen profile                                                            | Four of those summaries describe a journey the viewer is not taking. All five profiles stay offered, and it is still a `radiogroup` — arrow keys and the single Tab stop are unchanged. |
-| Two route figures **and** two route cards repeating the same distances  | Figures only, now carrying walking time and step count                                                              | The cards were the longest block in the panel and said nothing new. No figure was lost. They remain for the single-route cases, where there is nothing to compare against.     |
-| A "Start here / See the difference in one press" welcome card          | A compact action; the corpus's "approximate positions, not surveyed points" caveat behind a labelled disclosure     | The caveat moved behind a control, not out of the product.                                                                                                                     |
-| Purpose and "How it works" above the planning controls                 | Below them; the two safety sentences stay visible in every state                                                    | A viewer who has pressed the example is reading a result, not a preface. The purpose line is still the map's `aria-describedby` target.                                        |
-| Example card, then the answer, then the controls                       | Once there is an answer it takes the top of the panel; the example becomes "Run it again" beneath it                | This is what makes the figures, the detour and the uncertainty line fit together inside a phone sheet. Until there is an answer, the example is still first.                   |
-| `FIT_PADDING` assumed nothing covered the map                          | `paddingForPanel()` measures the panel and frames the route in the **unobscured** area                              | The panel moved; it did not stop existing. A route centred underneath it is the failure the previous layout was built to avoid.                                                |
-| A drag handle that did not drag                                        | A labelled Collapse / Expand control on the sheet                                                                   | A control that looks operable and is not is a lie about the interface.                                                                                                         |
-| MapLibre's scale and ODbL credit anchored to the viewport corners       | Both inset by `--map-inset-left` / `--map-inset-bottom`, published from the measured panel                          | A full-bleed map with a panel across its bottom would have covered the credit — quietly, and in exactly the screenshot somebody would publish.                                 |
+| Two route figures **and** two route cards repeating the same distances  | Figures only, now carrying walking time and step count                                                              | The cards were the longest block in the panel and said nothing new. No figure was lost. They remain for the single-route cases, where there is nothing to compare against.              |
+| A "Start here / See the difference in one press" welcome card           | A compact action; the corpus's "approximate positions, not surveyed points" caveat behind a labelled disclosure     | The caveat moved behind a control, not out of the product.                                                                                                                              |
+| Purpose and "How it works" above the planning controls                  | Below them; the two safety sentences stay visible in every state                                                    | A viewer who has pressed the example is reading a result, not a preface. The purpose line is still the map's `aria-describedby` target.                                                 |
+| Example card, then the answer, then the controls                        | Once there is an answer it takes the top of the panel; the example becomes "Run it again" beneath it                | This is what makes the figures, the detour and the uncertainty line fit together inside a phone sheet. Until there is an answer, the example is still first.                            |
+| `FIT_PADDING` assumed nothing covered the map                           | `paddingForPanel()` measures the panel and frames the route in the **unobscured** area                              | The panel moved; it did not stop existing. A route centred underneath it is the failure the previous layout was built to avoid.                                                         |
+| A drag handle that did not drag                                         | A labelled Collapse / Expand control on the sheet                                                                   | A control that looks operable and is not is a lie about the interface.                                                                                                                  |
+| MapLibre's scale and ODbL credit anchored to the viewport corners       | Both inset by `--map-inset-left` / `--map-inset-bottom`, published from the measured panel                          | A full-bleed map with a panel across its bottom would have covered the credit — quietly, and in exactly the screenshot somebody would publish.                                          |
 
 ### The bug the phone found
 
 The first implementation chose the panel's anchored edge as the one it reached
-into **least**. For a bottom sheet on a 390 × 844 phone that is its *width*
-(366 px), not its *height* (517 px), so the camera was told to inset the left
+into **least**. For a bottom sheet on a 390 × 844 phone that is its _width_
+(366 px), not its _height_ (517 px), so the camera was told to inset the left
 edge by almost the whole map, and framed the route off-screen entirely — the
 capture showed a stormwater pond a kilometre from the journey. The edge is now
 chosen by which inset leaves the most map behind, and `route-layers.test.ts`
@@ -207,21 +207,41 @@ pedestrian ramp is never thinner than Liberty's own.
 
 ### Measured, at this revision
 
-Observed in Playwright Chromium (SwiftShader) against the **dev server** on port
-3001 and the real envelope API on 8001 — dataset `pathable-envelope-db-data` at
-`0005_kerb_tiers`, 155,714 nodes and 180,554 segments. These are layout and
-visibility measurements. They are not performance figures, and a dev build is
-not the production image.
+Captured by
+[`tests/screenshots/ux-02a-states.spec.ts`](../../apps/web/tests/screenshots/ux-02a-states.spec.ts),
+which stubs nothing, against the **production web image** built from this
+branch and running in the isolated envelope stack — web `3001`, API `8001`,
+database `5434`, dataset `pathable-envelope-db-data` at `0005_kerb_tiers`,
+155,714 nodes and 180,554 segments. Browser: Playwright Chromium with
+SwiftShader, device pixel ratio 1, root font size 16 px.
 
-| Viewport   | Map area   | Both figures, the detour and the uncertainty line fully in viewport | Horizontal overflow | Console errors |
-| ---------- | ---------- | -------------------------------------------------------------------- | ------------------- | -------------- |
-| 1000 × 700 | 1000 × 652 | yes                                                                  | none                | none           |
-| 1366 × 768 | 1366 × 720 | yes                                                                  | none                | none           |
-| 390 × 844  | 390 × 796  | yes                                                                  | none                | none           |
+The raw run, including the matched media queries and every box below, is
+[`screenshots/ux-02a/observations.json`](screenshots/ux-02a/observations.json).
+The images are beside it.
 
-The example is still **one press**, and the answer is still the live API's. The
-response for the campus journey, fetched directly from the envelope API on the
-same dataset:
+| Viewport   | Map area   | Planner            | `min-width: 64rem` | Whole answer in viewport | Horizontal overflow | Console errors |
+| ---------- | ---------- | ------------------ | ------------------ | ------------------------ | ------------------- | -------------- |
+| 1000 × 700 | 1000 × 652 | 320 × 628, at left | **false**          | yes                      | none                | none           |
+| 1366 × 768 | 1366 × 720 | 369 × 696, at left | true               | yes                      | none                | none           |
+| 390 × 844  | 390 × 796  | 366 × 490, a sheet | false              | yes                      | none                | none           |
+
+"Whole answer" is both route figures, the extra-distance line and the
+uncertainty line, each entirely inside the viewport, with nothing opened and
+nothing scrolled.
+
+The 1000 × 700 row is the point of the revision: `min-width: 64rem` is still
+`false` at that size — the media query has not moved — and the map is
+full-bleed anyway, because the layout no longer depends on it. Under the
+previous composition that same row measured a `1000 × 287` map.
+
+The ODbL credit is clear of the planner at all three sizes. On the phone it is
+measured at `y` 314–354 with the sheet starting at `y` 354, which is the
+`--map-inset-bottom` wiring doing its job rather than a coincidence.
+
+### The answer behind those captures
+
+The example is **one press**, and what appears is the live engine's. Fetched
+directly from the envelope API on the same dataset, for the campus journey:
 
 - shortest route **287.4 m**, **4 stairways** (16 recorded steps, plus 2
   stairways with no recorded step count)
@@ -230,7 +250,16 @@ same dataset:
   `derived_elevation`, kerb coverage **0.0**, `ml_predictions_used` **false**
 
 Those are the figures the browser tests assert against. They are properties of
-this dataset and this journey, and never rendering constants.
+this dataset and this journey, never rendering constants.
+
+The recording
+[`media/pathable-ux02a-interaction.webm`](media/pathable-ux02a-interaction.webm)
+(2.7 MB, 1000 × 700, no audio, captured from the same preview and the same
+image) runs the example, brings the shortest route forward and lets it go,
+opens and closes "What is on this route", and then changes the profile to
+crutches or cane. That last step is answered live and gives a different real
+result — **327 m, +40 m (14%), 7 minutes, no stairways** against the same
+287 m shortest route. Nothing in it is stubbed, scripted or re-timed.
 
 ### Still outstanding
 
@@ -366,18 +395,31 @@ own evidence and is not restated as current.
 
 ### Reproducing
 
-The harness lives outside the repository (a one-off, like the demo capture
-script before it). The commands that matter are the repository's own: the
-production-smoke stack per
-[`PRODUCTION_SMOKE.md`](../deployment/PRODUCTION_SMOKE.md), the stubbed
-browser suite (`pnpm --filter @pathable/web test:e2e`, which now includes
-`tests/e2e/layout.spec.ts`), and the full-stack suite against the Compose
-stack. Chromium on this laptop needs
-`--host-resolver-rules=MAP localhost 127.0.0.1`; see the smoke guide.
+The PA-UX-01 harness was a one-off outside the repository, like the demo
+capture script before it. **PA-UX-02A's is committed**, so its figures can be
+re-run rather than taken on trust:
+
+```bash
+# The envelope stack, per PRODUCTION_SMOKE.md, serving this branch on 3001.
+docker compose -f infra/production-smoke/compose.yaml build web
+docker compose -f infra/production-smoke/compose.yaml up -d --no-deps web
+
+PLAYWRIGHT_CHROMIUM_ARGS="--host-resolver-rules=MAP localhost 127.0.0.1" SCREENSHOT_BASE_URL=http://localhost:3001   pnpm --filter @pathable/web exec playwright test   --config=playwright.screenshots.config.ts ux-02a-states
+```
+
+The other commands are the repository's own: the stubbed browser suite
+(`pnpm --filter @pathable/web test:e2e`) and the full-stack suite against the
+Compose stack. Chromium on this laptop needs the resolver flag above because
+the container publishes on `127.0.0.1` only while `localhost` resolves to
+`::1` first; see the smoke guide.
 
 ## Verification
 
-All on this branch at its final commit, on this laptop, observed rather than
+> These are the **PA-UX-01/01F** figures, at that revision's final commit. The
+> map-first revision has its own, in
+> [Verified, at this revision](#verified-at-this-revision) above.
+
+All on this branch at that commit, on this laptop, observed rather than
 inferred.
 
 | Gate                                                    | Result                                                                       |

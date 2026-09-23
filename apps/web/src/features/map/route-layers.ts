@@ -155,7 +155,9 @@ export function paddingForPanel(
   base: Padding = { ...FIT_PADDING },
 ): Padding {
   const padding: Padding = { ...base };
-  if (map === null) return padding;
+  // A map with no box yet has nothing to clamp against, and clamping to it
+  // would hand MapLibre a padding of zero on every side.
+  if (map === null || map.width <= 0 || map.height <= 0) return padding;
 
   const inset = panelInset(map, panel);
   if (inset.amount > 0) padding[inset.side] = base[inset.side] + inset.amount;

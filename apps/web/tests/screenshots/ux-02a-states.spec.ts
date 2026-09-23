@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 /**
  * The two states PA-UX-02A exists to prove, at the three viewports it was
@@ -23,7 +24,15 @@ import { mkdir, writeFile } from 'node:fs/promises';
  * run rather than from a reading of the CSS.
  */
 
-const OUT = 'docs/evidence/screenshots/ux-02a';
+/**
+ * Anchored on the test root rather than on the working directory, so the
+ * images land in the repository's evidence folder however the run is invoked.
+ * A bare relative path wrote them under apps/web the first time.
+ */
+function outputDir(testInfo: { config: { rootDir: string } }): string {
+  // <repo>/apps/web/tests/screenshots -> <repo>
+  return path.resolve(testInfo.config.rootDir, '../../../..', 'docs/evidence/screenshots/ux-02a');
+}
 
 /**
  * The viewports the direction was reviewed at.
@@ -46,7 +55,8 @@ test.describe('PA-UX-02A candidate', () => {
   test.slow();
 
   for (const viewport of VIEWPORTS) {
-    test(`initial and result at ${viewport.name}`, async ({ page }) => {
+    test(`initial and result at ${viewport.name}`, async ({ page }, testInfo) => {
+      const OUT = outputDir(testInfo);
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await mkdir(OUT, { recursive: true });
 

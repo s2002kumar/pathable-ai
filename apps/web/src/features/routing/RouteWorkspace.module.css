@@ -278,7 +278,6 @@
        surface sitting on top of the map. */
     max-height: calc(100% - var(--panel-gap) * 2);
   }
-
 }
 
 @media (prefers-reduced-transparency: reduce) {

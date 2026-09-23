@@ -110,17 +110,32 @@ export function RouteWorkspace({
     setSheetOpen(true);
   }, []);
 
-  const handleSelectPoint = useCallback((position: LngLat) => {
-    setFocusedRoute(null);
-    setActiveExampleId(null);
-    setPoints((current) => {
-      if (current.origin === null) return { ...current, origin: position };
-      if (current.destination === null) return { ...current, destination: position };
+  const handleSelectPoint = useCallback(
+    (position: LngLat) => {
+      setFocusedRoute(null);
+      setActiveExampleId(null);
+
+      if (points.origin === null) {
+        setPoints({ ...points, origin: position });
+        return;
+      }
+      if (points.destination === null) {
+        // This click completes the pair, so a request follows it. A shut sheet
+        // has its contents removed from the page, live region and all, so an
+        // answer arriving into one would be announced to nobody — open it now,
+        // while there is still only a "comparing routes" message to show.
+        // Setting the first point deliberately does not: somebody who pulled
+        // the sheet down to see more map is still placing points on it.
+        setPoints({ ...points, destination: position });
+        setSheetOpen(true);
+        return;
+      }
       // Both already set: start a new journey from here rather than making the
       // user press Clear first.
-      return { origin: position, destination: null };
-    });
-  }, []);
+      setPoints({ origin: position, destination: null });
+    },
+    [points],
+  );
 
   const handleClear = useCallback(() => {
     setFocusedRoute(null);

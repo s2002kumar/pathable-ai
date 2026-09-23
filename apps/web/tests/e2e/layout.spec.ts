@@ -372,6 +372,37 @@ test.describe('reflow', () => {
     await expect(page.getByTestId('difference-accessible')).toBeVisible();
   });
 
+  test('an answer arriving into a shut sheet still opens it', async ({ page }) => {
+    // A shut sheet has its contents removed from the page, live region and
+    // all. Planning a journey by map click with it pulled down would otherwise
+    // compute a comparison that is announced to nobody and drawn with no
+    // figures beside it.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await waitForMapReady(page);
+
+    const toggle = page.getByTestId('sheet-toggle');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    const map = await page.getByTestId('map-frame').boundingBox();
+    expect(map).not.toBeNull();
+    if (map === null) return;
+
+    // Well clear of the collapsed bar along the bottom.
+    await page.mouse.click(map.x + map.width * 0.3, map.y + map.height * 0.25);
+    await expect(page.getByTestId('point-start')).not.toContainText(/click the map to set/i);
+    // Setting only the start leaves it shut: somebody who pulled the sheet
+    // down to see more map is still placing points on it.
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    await page.mouse.click(map.x + map.width * 0.7, map.y + map.height * 0.35);
+
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+    await expect(page.getByTestId('difference-accessible')).toBeVisible();
+  });
+
   test('320 px wide, nothing overflows and everything is reachable', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });
     await page.goto('/');

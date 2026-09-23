@@ -189,11 +189,11 @@ interface, then publish a truthful showcase. It builds no new routing
 capability and moves no phase gate. Status is recorded here rather than in
 another roadmap.
 
-| Card     | Deliverable                                    | Status                                      |
-| -------- | ---------------------------------------------- | ------------------------------------------- |
+| Card      | Deliverable                                                      | Status                                                                            |
+| --------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | PA-UX-02A | Map-led initial and comparison states, proven in the running app | **In progress** — candidate built, awaiting the founder's visual-direction review |
-| PA-UX-02B | The accepted interface finished and merged     | Blocked on A's acceptance                   |
-| PA-UX-02C | Static showcase, refreshed demo, interview handoff | Blocked on B                             |
+| PA-UX-02B | The accepted interface finished and merged                       | Blocked on A's acceptance                                                         |
+| PA-UX-02C | Static showcase, refreshed demo, interview handoff               | Blocked on B                                                                      |
 
 **Branch / worktree.** `feat/premium-map-experience`, PR #64 (draft), in
 `../pathable-ai-wt/premium-map-experience`. Baseline for this sprint: `f099aaf`
