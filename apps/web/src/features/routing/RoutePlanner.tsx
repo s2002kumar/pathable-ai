@@ -96,34 +96,22 @@ export function RoutePlanner({
     plan.focus({ preventScroll: true });
   }, []);
 
-  // The example is the way in, so until there is an answer it comes first.
-  // Once there is one, the answer takes the top of the panel and the example
-  // becomes a compact "run it again" underneath it.
-  //
-  // PA-RR-06 measured the failure this avoids: with the *inputs* above it,
-  // pressing the example changed the map and left the panel showing the
-  // coordinates it had just filled in, with the comparison two screens down.
-  // Putting the result first is that finding taken further — it is what makes
-  // the figures, the detour and the uncertainty line fit together inside a
-  // phone's sheet without scrolling.
-  const exampleCard = (
-    <VerifiedExampleCard
-      example={example}
-      onRun={onRunExample}
-      active={exampleActive}
-      journeyStarted={points.origin !== null || points.destination !== null}
-      busy={state.status === 'loading'}
-    />
-  );
-  const answered = state.status === 'success';
-
   return (
     <section className={styles.panel} aria-labelledby="route-planner-heading">
-      {answered ? null : exampleCard}
+      {/* The answer, at the top of the panel.
 
-      {/* The region is always rendered and never empty — an aria-live
-          container has to exist before anything is put into it, and an empty
-          box is not something a viewer can see. */}
+          PA-RR-06 measured the failure this avoids: with the *inputs* above
+          it, pressing the example changed the map and left the panel showing
+          the coordinates it had just filled in, with the comparison two
+          screens down. Putting the result first is that finding taken
+          further — it is what makes the figures, the detour and the
+          uncertainty line fit together inside a phone's sheet.
+
+          Before there is an answer this is one line of instruction, and the
+          offer below it is still the first thing the keyboard reaches. The
+          region is always rendered and never empty: an aria-live container
+          has to exist before anything is put into it, and an empty box is
+          not something a viewer can see. */}
       <div
         className={styles.status}
         // Results replace one another in place, so the region has to announce
@@ -135,7 +123,7 @@ export function RoutePlanner({
       >
         {state.status === 'idle' && !awaitingEnd ? (
           <p className={styles.hint}>
-            Click the map to set a start and an end, or run the example above.
+            Click the map to set a start and an end, or run the example below.
           </p>
         ) : null}
 
@@ -171,7 +159,17 @@ export function RoutePlanner({
         ) : null}
       </div>
 
-      {answered ? exampleCard : null}
+      {/* One slot, whatever the state. Rendering it above the result while
+          planning and below it afterwards would move it in the DOM, and a
+          keyboard user who pressed it would have their focus dropped on the
+          floor the moment the answer arrived. */}
+      <VerifiedExampleCard
+        example={example}
+        onRun={onRunExample}
+        active={exampleActive}
+        journeyStarted={points.origin !== null || points.destination !== null}
+        busy={state.status === 'loading'}
+      />
 
       {/* Focusable as a landmark, not as a control: "Edit journey or profile"
           lands here, the heading is announced, and the next Tab reaches the

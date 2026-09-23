@@ -1,22 +1,27 @@
 'use client';
 
 import { type RefObject, useCallback, useEffect, useState } from 'react';
-import { FIT_PADDING, type Padding, type Rect, paddingForPanel } from './route-layers';
-
-/** Which edge of the map the panel is covering, and by how many pixels. */
-export type PanelInset = {
-  readonly side: keyof Padding;
-  readonly amount: number;
-};
+import {
+  FIT_PADDING,
+  NO_PANEL_INSET,
+  type Padding,
+  type PanelInset,
+  type Rect,
+  paddingForPanel,
+  panelInset,
+} from './route-layers';
 
 export type PanelFit = {
-  /** Room to leave around a fitted route, for `fitBounds`. */
+  /** Room to leave around a fitted route, for `fitBounds`. Clamped to fit. */
   readonly padding: Padding;
-  /** The same measurement, for placing the map's own chrome clear of the panel. */
+  /**
+   * Where the panel actually is, unclamped, for placing the map's own chrome
+   * clear of it. Deliberately not derived from `padding`: squeezing the
+   * camera's allowance to fit a small window would drag the ODbL credit back
+   * under the panel with it, which a 320 px browser test caught.
+   */
   readonly inset: PanelInset;
 };
-
-const NO_INSET: PanelInset = { side: 'left', amount: 0 };
 
 function rectOf(element: Element | null): Rect | null {
   if (element === null) return null;
@@ -56,23 +61,18 @@ export function usePanelFit(
   mapRef: RefObject<HTMLElement | null>,
   panelRef: RefObject<HTMLElement | null>,
 ): PanelFit {
-  const [fit, setFit] = useState<PanelFit>({ padding: { ...FIT_PADDING }, inset: NO_INSET });
+  const [fit, setFit] = useState<PanelFit>({
+    padding: { ...FIT_PADDING },
+    inset: NO_PANEL_INSET,
+  });
 
   const measure = useCallback(() => {
     const map = rectOf(mapRef.current);
     const panel = rectOf(panelRef.current);
-    const padding = paddingForPanel(map, panel);
-
-    // Which side grew, and by how much. Derived from the same function the
-    // camera uses so the map key and the credit cannot drift from the fit.
-    const base = FIT_PADDING;
-    let inset: PanelInset = NO_INSET;
-    for (const side of ['left', 'right', 'top', 'bottom'] as const) {
-      const amount = padding[side] - base[side];
-      if (amount > inset.amount) inset = { side, amount };
-    }
-
-    const next = { padding, inset };
+    const next = {
+      padding: paddingForPanel(map, panel),
+      inset: panelInset(map, panel),
+    };
     setFit((current) => (sameFit(current, next) ? current : next));
   }, [mapRef, panelRef]);
 

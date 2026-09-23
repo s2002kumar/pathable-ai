@@ -11,6 +11,14 @@ a field measurement.
 contract and the dataset (`51e75f78…`) are unchanged; nothing below touches a
 route's numbers.
 
+> **Superseded in part.** The two sections below record the PA-UX-01/01F
+> candidate as it was reviewed. The founder rejected that composition; the
+> palette and the layout it describes were replaced by
+> [the map-first revision](#the-map-first-revision-pa-ux-02a) further down. The
+> correctness work in "Review corrections (PA-UX-01F)" is unchanged and still
+> current. Nothing here is rewritten, because it is the record of what was
+> actually built and measured at the time.
+
 ## The direction: quiet, precise cartography
 
 The page is a navigation instrument. Warm ivory surfaces, ink-coloured text, one
@@ -127,6 +135,107 @@ regexes could match nothing and the assertions could not fail; they are
 restored. And the verified journey still returns 287.4 m with four stairways
 against 354.1 m with none from the rebuilt API — read from the response, not
 the screen.
+
+## The map-first revision (PA-UX-02A)
+
+The founder rejected the composition above. The objection was not a detail: on
+an ordinary laptop window the product read as a **document with a map inset**,
+not as a map. This section records what was diagnosed, what changed, and what
+was measured. Everything before it is kept as the history it is.
+
+### What was actually wrong
+
+Reproduced in a browser at 1000 × 700 CSS pixels, which is an ordinary laptop
+window: `RouteWorkspace.module.css` gated its two-pane desktop layout at
+`min-width: 64rem` — 1024 px at a 16 px root. A 1000 px window missed it by
+24 px and fell all the way back to the phone layout: a **34dvh map strip** above
+a long scrolling page. The measured map area at that size was `1000 × 287`,
+under a third of the viewport.
+
+The screenshots the founder was looking at could not settle this on their own —
+a capture does not record a browser's zoom level — so the layout was measured
+directly instead: at 1000 × 700, `matchMedia('(min-width: 64rem)')` reported
+`false`. Changing the founder's zoom would not have been a fix. The breakpoint
+was in the wrong place, and the composition behind it was the wrong shape.
+
+The warm ivory palette (`--color-canvas: #f3eee5`) reinforced the impression:
+paper, with a map on it.
+
+### What changed
+
+| Before                                                                 | After                                                                                                               | Why                                                                                                                                                                           |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Desktop two-pane grid gated at `min-width: 64rem`                      | Three layouts gated on **height**: side panel (≥ 48rem wide), bottom sheet (narrower), document flow (< 34rem tall) | What makes a floating panel wrong is a window too short to hold one and still show map — 200% zoom, landscape phones. Width was the wrong question.                            |
+| Map is a block in the page; on desktop, a column beside it             | Map fills the workspace at every size above the flow fallback; everything else floats over it                       | The map is the product. At 1000 × 700 the map area went from `1000 × 287` to `1000 × 652`.                                                                                    |
+| A full-height planner rail                                             | A floating panel, 20–24 rem wide, with its own scroll                                                               | The rail owned a third of the screen whether or not it had anything in it.                                                                                                     |
+| Warm ivory surfaces (`#f3eee5` / `#fffdf9`)                            | Crisp neutral (`#eceef0` / `#ffffff`), same restrained teal accent                                                  | A control panel over live cartography, not a page. The rejected composition was not rebuilt as translucent cards.                                                              |
+| Five permanently expanded profile cards, each with its own rule summary | A row of chips, and one rule line for the chosen profile                                                            | Four of those summaries describe a journey the viewer is not taking. All five profiles stay offered, and it is still a `radiogroup` — arrow keys and the single Tab stop are unchanged. |
+| Two route figures **and** two route cards repeating the same distances  | Figures only, now carrying walking time and step count                                                              | The cards were the longest block in the panel and said nothing new. No figure was lost. They remain for the single-route cases, where there is nothing to compare against.     |
+| A "Start here / See the difference in one press" welcome card          | A compact action; the corpus's "approximate positions, not surveyed points" caveat behind a labelled disclosure     | The caveat moved behind a control, not out of the product.                                                                                                                     |
+| Purpose and "How it works" above the planning controls                 | Below them; the two safety sentences stay visible in every state                                                    | A viewer who has pressed the example is reading a result, not a preface. The purpose line is still the map's `aria-describedby` target.                                        |
+| Example card, then the answer, then the controls                       | Once there is an answer it takes the top of the panel; the example becomes "Run it again" beneath it                | This is what makes the figures, the detour and the uncertainty line fit together inside a phone sheet. Until there is an answer, the example is still first.                   |
+| `FIT_PADDING` assumed nothing covered the map                          | `paddingForPanel()` measures the panel and frames the route in the **unobscured** area                              | The panel moved; it did not stop existing. A route centred underneath it is the failure the previous layout was built to avoid.                                                |
+| A drag handle that did not drag                                        | A labelled Collapse / Expand control on the sheet                                                                   | A control that looks operable and is not is a lie about the interface.                                                                                                         |
+| MapLibre's scale and ODbL credit anchored to the viewport corners       | Both inset by `--map-inset-left` / `--map-inset-bottom`, published from the measured panel                          | A full-bleed map with a panel across its bottom would have covered the credit — quietly, and in exactly the screenshot somebody would publish.                                 |
+
+### The bug the phone found
+
+The first implementation chose the panel's anchored edge as the one it reached
+into **least**. For a bottom sheet on a 390 × 844 phone that is its *width*
+(366 px), not its *height* (517 px), so the camera was told to inset the left
+edge by almost the whole map, and framed the route off-screen entirely — the
+capture showed a stormwater pond a kilometre from the journey. The edge is now
+chosen by which inset leaves the most map behind, and `route-layers.test.ts`
+carries the case that failed.
+
+### Cartography
+
+The basemap is still OpenFreeMap's "Liberty", still toned at runtime by layer ID
+rather than copied into this repository. Two changes: the ground and its fills
+move from ivory to neutral, and **pedestrian paths are drawn up rather than
+down**. Liberty renders footways as a thin white dash, which disappears against
+a white road on a pale ground; on a pedestrian router that hides the network the
+product exists to route over. They now carry their own cool grey tint and a
+wider stroke on the style's own exponential ramp, and `highway-name-path` is
+darkened enough to read.
+
+This changes how paths are **drawn**, never which ones exist. No path is added,
+removed or reclassified, and a drawn path is still not a claim that it is in
+PathAble's routing graph. `basemap-tone.test.ts` asserts that no override sets a
+visibility or an opacity, that no width ramp reaches zero, and that the
+pedestrian ramp is never thinner than Liberty's own.
+
+### Measured, at this revision
+
+Observed in Playwright Chromium (SwiftShader) against the **dev server** on port
+3001 and the real envelope API on 8001 — dataset `pathable-envelope-db-data` at
+`0005_kerb_tiers`, 155,714 nodes and 180,554 segments. These are layout and
+visibility measurements. They are not performance figures, and a dev build is
+not the production image.
+
+| Viewport   | Map area   | Both figures, the detour and the uncertainty line fully in viewport | Horizontal overflow | Console errors |
+| ---------- | ---------- | -------------------------------------------------------------------- | ------------------- | -------------- |
+| 1000 × 700 | 1000 × 652 | yes                                                                  | none                | none           |
+| 1366 × 768 | 1366 × 720 | yes                                                                  | none                | none           |
+| 390 × 844  | 390 × 796  | yes                                                                  | none                | none           |
+
+The example is still **one press**, and the answer is still the live API's. The
+response for the campus journey, fetched directly from the envelope API on the
+same dataset:
+
+- shortest route **287.4 m**, **4 stairways** (16 recorded steps, plus 2
+  stairways with no recorded step count)
+- wheelchair route **354.1 m**, **0 stairways**
+- detour **+66.7 m** (23%), `unknown_data_fraction` **1.0**, `gradient_source`
+  `derived_elevation`, kerb coverage **0.0**, `ml_predictions_used` **false**
+
+Those are the figures the browser tests assert against. They are properties of
+this dataset and this journey, and never rendering constants.
+
+### Still outstanding
+
+The visual direction has **not** been accepted. This revision is a candidate for
+one review; PA-UX-02B does not begin until it is accepted or redirected.
 
 ## States
 

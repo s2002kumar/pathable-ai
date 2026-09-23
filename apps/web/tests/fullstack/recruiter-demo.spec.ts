@@ -168,8 +168,8 @@ test.describe('the recruiter demo', () => {
     await expect(legend).toContainText('Route for your profile');
     await expect(legend).toContainText('Shortest walking route');
 
-    await expect(page.getByTestId('route-card-accessible')).toBeVisible();
-    await expect(page.getByTestId('route-card-standard')).toBeVisible();
+    await expect(page.getByTestId('difference-accessible')).toBeVisible();
+    await expect(page.getByTestId('difference-shortest')).toBeVisible();
   });
 
   test('the deep link starts the same live request', async ({ page }) => {

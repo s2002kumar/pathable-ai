@@ -182,6 +182,41 @@ a public launch.
 
 ---
 
+## Recruiting presentation sprint (PA-UX-02)
+
+A short, self-contained sprint: make the engineering visible through the
+interface, then publish a truthful showcase. It builds no new routing
+capability and moves no phase gate. Status is recorded here rather than in
+another roadmap.
+
+| Card     | Deliverable                                    | Status                                      |
+| -------- | ---------------------------------------------- | ------------------------------------------- |
+| PA-UX-02A | Map-led initial and comparison states, proven in the running app | **In progress** — candidate built, awaiting the founder's visual-direction review |
+| PA-UX-02B | The accepted interface finished and merged     | Blocked on A's acceptance                   |
+| PA-UX-02C | Static showcase, refreshed demo, interview handoff | Blocked on B                             |
+
+**Branch / worktree.** `feat/premium-map-experience`, PR #64 (draft), in
+`../pathable-ai-wt/premium-map-experience`. Baseline for this sprint: `f099aaf`
+(the PA-UX-01/01F candidate). Base `main` at `29a7749`.
+
+**Preview.** Isolated envelope stack — API `8001`, database `5434`, web `3001`.
+The dataset is `pathable-envelope-db-data` at migration `0005_kerb_tiers`,
+155,714 nodes and 180,554 segments. See `docs/deployment/PRODUCTION_SMOKE.md`.
+
+**Evidence.** `docs/evidence/FRONTEND_POLISH.md` — the PA-UX-02A revision entry
+records what changed, at which viewports it was checked, and against which
+build.
+
+**Blocker.** One visual-direction review. The founder rejected the previous
+composition, so the direction is confirmed on two functioning states before the
+rest of the interface is finished.
+
+**Next executable action.** On acceptance, start PA-UX-02B: finish the
+remaining states (swap, clear, deep link, no-route, error, map-unavailable)
+across devices, then merge through the normal workflow.
+
+---
+
 ## Standing rules
 
 1. **Never claim a capability before the phase that builds it.**

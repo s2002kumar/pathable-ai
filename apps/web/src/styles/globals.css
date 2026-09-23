@@ -205,16 +205,23 @@ a:hover {
  * Only the two bottom corners move. Navigation is top-right, which no layout
  * covers.
  */
+/*
+ * !important, like the rules above it, and for the same reason: MapLibre's
+ * stylesheet is imported inside the dynamically loaded map component, so it is
+ * injected after this file and wins on order at equal specificity. Without it
+ * the credit stays pinned to the viewport corner and a bottom sheet covers it
+ * — which is exactly how a 320 px browser test caught this.
+ */
 .maplibregl-ctrl-bottom-left {
-  bottom: var(--map-inset-bottom, 0px);
-  left: var(--map-inset-left, 0px);
+  bottom: var(--map-inset-bottom, 0px) !important;
+  left: var(--map-inset-left, 0px) !important;
   transition:
     bottom var(--duration-base) var(--ease-out),
     left var(--duration-base) var(--ease-out);
 }
 
 .maplibregl-ctrl-bottom-right {
-  bottom: var(--map-inset-bottom, 0px);
+  bottom: var(--map-inset-bottom, 0px) !important;
   transition: bottom var(--duration-base) var(--ease-out);
 }
 

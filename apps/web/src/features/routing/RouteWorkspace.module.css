@@ -270,10 +270,13 @@
 
   .panelArea {
     top: var(--panel-gap);
-    bottom: var(--panel-gap);
     left: var(--panel-gap);
     width: var(--panel-width);
-    max-height: none;
+    /* Hugs its content, up to the height available. Pinning the bottom edge
+       as well would make it a full-height rail again — the thing this layout
+       exists to get rid of — and on a tall display that is a column of empty
+       surface sitting on top of the map. */
+    max-height: calc(100% - var(--panel-gap) * 2);
   }
 
 }

@@ -69,39 +69,36 @@ export type Rect = {
   readonly height: number;
 };
 
+export type PanelInset = {
+  /** The edge of the map the panel is against. */
+  readonly side: keyof Padding;
+  /** How far it reaches in from that edge, in pixels. Zero when it does not. */
+  readonly amount: number;
+};
+
+export const NO_PANEL_INSET: PanelInset = { side: 'left', amount: 0 };
+
 /**
- * Padding that keeps a fitted route out from under the floating panel.
+ * Which edge of the map the panel covers, and by how much.
  *
- * The map now fills the viewport and the planning surface floats over one of
- * its edges — beside it on a laptop, across the bottom on a phone. Fitting to
- * the whole map would centre the route under that panel, which is the exact
- * failure the previous layout was built to avoid; the panel only moved, it did
- * not stop existing.
+ * Decided by asking which inset leaves the most map behind, not by which one
+ * is smallest. A bottom sheet spans the full width and is usually taller than
+ * it is wide, so 'smallest reach' picks its width and insets the wrong axis —
+ * a real bug, caught on a 390 x 844 phone where it pushed the camera sideways
+ * off the route entirely.
  *
- * Which edge the panel is anchored to is decided by asking which inset leaves
- * the most map behind, not by which one is smallest. A bottom sheet spans the
- * full width and is usually taller than it is wide, so "smallest reach" picks
- * its width and insets the wrong axis — a real bug, caught on a 390 x 844
- * phone where it pushed the camera sideways off the route entirely.
- *
- * A panel that does not overlap the map at all — the document-flow fallback on
- * a short window — gets the base padding untouched.
- *
- * The result is clamped to leave a real viewport behind: MapLibre given padding
- * wider than the map has nothing left to fit a route into.
+ * Deliberately unclamped. This is the geometric truth about the panel, and it
+ * is what the map key and MapLibre's own credit are positioned against; the
+ * camera's allowance is built from it separately, because a padding that has
+ * been squeezed to fit is not a statement about where the panel is.
  */
-export function paddingForPanel(
-  map: Rect | null,
-  panel: Rect | null,
-  base: Padding = { ...FIT_PADDING },
-): Padding {
-  const padding: Padding = { ...base };
-  if (map === null || panel === null || map.width <= 0 || map.height <= 0) return padding;
+export function panelInset(map: Rect | null, panel: Rect | null): PanelInset {
+  if (map === null || panel === null || map.width <= 0 || map.height <= 0) return NO_PANEL_INSET;
 
   // No overlap, nothing to allow for.
   const overlapWidth = Math.min(map.right, panel.right) - Math.max(map.left, panel.left);
   const overlapHeight = Math.min(map.bottom, panel.bottom) - Math.max(map.top, panel.top);
-  if (overlapWidth <= 0 || overlapHeight <= 0) return padding;
+  if (overlapWidth <= 0 || overlapHeight <= 0) return NO_PANEL_INSET;
 
   const reaches: ReadonlyArray<readonly [keyof Padding, number]> = [
     ['left', panel.right - map.left],
@@ -111,28 +108,58 @@ export function paddingForPanel(
   ];
 
   // How much map each inset would leave behind.
-  const candidates = reaches.map(([side, inset]) => ({
+  const candidates = reaches.map(([side, amount]) => ({
     side,
-    inset,
+    amount,
     free:
       side === 'left' || side === 'right'
-        ? Math.max(0, map.width - inset) * map.height
-        : Math.max(0, map.height - inset) * map.width,
+        ? Math.max(0, map.width - amount) * map.height
+        : Math.max(0, map.height - amount) * map.width,
   }));
 
   let best = candidates[0]!;
   for (const candidate of candidates) {
-    if (candidate.inset <= 0) continue;
+    if (candidate.amount <= 0) continue;
     // More map left over wins; a tie goes to the smaller inset.
-    if (candidate.free > best.free || (candidate.free === best.free && candidate.inset < best.inset))
+    if (
+      candidate.free > best.free ||
+      (candidate.free === best.free && candidate.amount < best.amount)
+    )
       best = candidate;
   }
 
-  if (best.inset > 0 && best.free > 0) padding[best.side] = base[best.side] + best.inset;
+  if (best.amount <= 0 || best.free <= 0) return NO_PANEL_INSET;
+  return { side: best.side, amount: best.amount };
+}
 
-  // Never demand more room than there is. Padding wider than the map leaves
-  // MapLibre nothing to fit into, and a route that cannot be framed is a route
-  // nobody sees.
+/**
+ * Padding that keeps a fitted route out from under the floating panel.
+ *
+ * The map fills the viewport and the planning surface floats over one of its
+ * edges — beside it on a laptop, across the bottom on a phone. Fitting to the
+ * whole map would centre the route under that panel, which is the exact
+ * failure the previous layout was built to avoid; the panel only moved, it did
+ * not stop existing.
+ *
+ * A panel that does not overlap the map at all — the document-flow fallback on
+ * a short window — gets the base padding untouched.
+ *
+ * The result is clamped to leave a real viewport behind: MapLibre given
+ * padding wider than the map has nothing left to fit a route into. That clamp
+ * is why this is a separate figure from `panelInset` above, and why the map's
+ * own chrome is positioned from that one rather than from this.
+ */
+export function paddingForPanel(
+  map: Rect | null,
+  panel: Rect | null,
+  base: Padding = { ...FIT_PADDING },
+): Padding {
+  const padding: Padding = { ...base };
+  if (map === null) return padding;
+
+  const inset = panelInset(map, panel);
+  if (inset.amount > 0) padding[inset.side] = base[inset.side] + inset.amount;
+
   [padding.left, padding.right] = clampAxis(padding.left, padding.right, map.width);
   [padding.top, padding.bottom] = clampAxis(padding.top, padding.bottom, map.height);
 

@@ -139,7 +139,7 @@ test.describe('application shell', () => {
 
     const status = page.getByTestId('route-status');
     await expect(status).toHaveAttribute('data-route-state', 'idle');
-    await expect(status).toContainText(/choose a start and an end/i);
+    await expect(status).toContainText(/click the map to set a start and an end/i);
   });
 
   test('gives keyboard focus a visible indicator', async ({ page }) => {

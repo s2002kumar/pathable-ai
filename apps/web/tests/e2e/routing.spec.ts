@@ -26,15 +26,15 @@ test.describe('route comparison', () => {
     await page.goto('/');
     await waitForMapReady(page);
 
-    const map = page.getByTestId('map-frame');
-    const box = await map.boundingBox();
-    expect(box).not.toBeNull();
-    if (box === null) return;
+    const [start, end] = await usableMapPoints(page);
+    expect(start).toBeDefined();
+    expect(end).toBeDefined();
+    if (start === undefined || end === undefined) return;
 
-    await map.click({ position: { x: box.width * 0.35, y: box.height * 0.5 } });
+    await page.mouse.click(start.x, start.y);
     await expect(page.getByTestId('point-start')).not.toContainText(/click the map to set/i);
 
-    await map.click({ position: { x: box.width * 0.65, y: box.height * 0.5 } });
+    await page.mouse.click(end.x, end.y);
 
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
   });
@@ -44,8 +44,8 @@ test.describe('route comparison', () => {
     await waitForMapReady(page);
     await chooseTwoPoints(page);
 
-    await expect(page.getByTestId('route-card-accessible')).toContainText('709 m');
-    await expect(page.getByTestId('route-card-standard')).toContainText('483 m');
+    await expect(page.getByTestId('difference-accessible')).toContainText('709 m');
+    await expect(page.getByTestId('difference-shortest')).toContainText('483 m');
   });
 
   test('states the trade-off the accessible route made', async ({ page }) => {
@@ -164,7 +164,7 @@ test.describe('visual evidence of a comparison', () => {
     await waitForMapReady(page);
     await chooseTwoPoints(page);
 
-    await expect(page.getByTestId('route-card-accessible')).toBeVisible();
+    await expect(page.getByTestId('difference-accessible')).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
   });
 
@@ -178,7 +178,7 @@ test.describe('visual evidence of a comparison', () => {
     await page.goto('/');
     await waitForMapReady(page);
     await chooseTwoPoints(page);
-    await expect(page.getByTestId('route-card-accessible')).toBeVisible();
+    await expect(page.getByTestId('difference-accessible')).toBeVisible();
 
     // Let the camera finish flying to the route before capturing. This is the
     // one place a fixed wait is right: `fitBounds` runs a timed animation, and
@@ -194,14 +194,45 @@ test.describe('visual evidence of a comparison', () => {
   });
 });
 
-/** Click a start and an end on the map, without waiting for any outcome. */
-async function clickTwoPoints(page: import('@playwright/test').Page): Promise<void> {
-  const map = page.getByTestId('map-frame');
-  const box = await map.boundingBox();
+/**
+ * Two points to click, inside the part of the map the planner does not cover.
+ *
+ * That is the only part a person can click. The panel floats over one edge of
+ * a full-bleed map — beside it on a laptop, across the bottom on a phone — so
+ * a fixed fraction of the map *element* lands on the panel on one of the two
+ * and stops being a map-click test at all.
+ */
+async function usableMapPoints(
+  page: import('@playwright/test').Page,
+): Promise<Array<{ x: number; y: number }>> {
+  const box = await page.getByTestId('map-frame').boundingBox();
+  const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
   if (box === null) throw new Error('map frame has no layout box');
 
-  await map.click({ position: { x: box.width * 0.35, y: box.height * 0.5 } });
-  await map.click({ position: { x: box.width * 0.65, y: box.height * 0.5 } });
+  // Shrink the map box away from whichever edge the panel is against.
+  const { y } = box;
+  let { x, width, height } = box;
+  if (panel !== null) {
+    const fromLeft = panel.x + panel.width - x;
+    const fromBottom = y + height - panel.y;
+    if (fromLeft > 0 && fromLeft < width / 2) {
+      x += fromLeft;
+      width -= fromLeft;
+    } else if (fromBottom > 0 && fromBottom < height) {
+      height -= fromBottom;
+    }
+  }
+
+  if (width < 40 || height < 40) throw new Error('no usable map area outside the planner');
+
+  return [0.3, 0.7].map((fraction) => ({ x: x + width * fraction, y: y + height * 0.5 }));
+}
+
+/** Click a start and an end on the map, without waiting for any outcome. */
+async function clickTwoPoints(page: import('@playwright/test').Page): Promise<void> {
+  for (const point of await usableMapPoints(page)) {
+    await page.mouse.click(point.x, point.y);
+  }
 }
 
 /** Click two points and wait for the comparison to arrive. */

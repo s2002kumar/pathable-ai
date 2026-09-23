@@ -37,27 +37,85 @@ test.describe('layout', () => {
     await stubRouteComparison(page);
   });
 
-  test('the planner never covers the map', async ({ page }) => {
+  test('the map fills the window behind the panel', async ({ page }) => {
+    // PA-UX-02A. The previous layout gave the map a column beside the planner
+    // and, below 64rem, a 34dvh strip above it. The map is the product: above
+    // the document-flow fallback it takes the whole workspace and the planner
+    // floats over it.
     await page.goto('/');
     await waitForMapReady(page);
 
     const map = await page.getByTestId('map-frame').boundingBox();
-    const planner = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+    const viewport = page.viewportSize();
     expect(map).not.toBeNull();
-    expect(planner).not.toBeNull();
-    if (map === null || planner === null) return;
+    expect(viewport).not.toBeNull();
+    if (map === null || viewport === null) return;
 
-    const overlapX = Math.max(
-      0,
-      Math.min(map.x + map.width, planner.x + planner.width) - Math.max(map.x, planner.x),
-    );
-    const overlapY = Math.max(
-      0,
-      Math.min(map.y + map.height, planner.y + planner.height) - Math.max(map.y, planner.y),
-    );
-    // On a phone the sheet's rounded top tucks under the map by design; the
-    // budget below allows that lip and nothing more.
-    expect(overlapX * overlapY).toBeLessThanOrEqual(planner.width * 20);
+    expect(map.width).toBe(viewport.width);
+    // Everything but the header row.
+    expect(map.height).toBeGreaterThan(viewport.height * 0.9);
+  });
+
+  test('what the panel covers is published to the map chrome', async ({ page }) => {
+    // The panel floats over the map, so the map's own furniture — the scale
+    // bar, the ODbL credit, the map key — and the camera's fit padding all
+    // have to know how much of the map is behind it. That figure is measured
+    // from the panel and written to a custom property; this is the wiring
+    // between the measurement and everything that reads it.
+    await page.goto('/');
+    await waitForMapReady(page);
+
+    const measured = await page.evaluate(() => {
+      const workspace = document.querySelector('[data-testid="route-workspace"]');
+      const panel = document.querySelector('[aria-label="Route planner"]');
+      const map = document.querySelector('[data-testid="map-frame"]');
+      if (!workspace || !panel || !map) return null;
+
+      const panelBox = panel.getBoundingClientRect();
+      const mapBox = map.getBoundingClientRect();
+      const style = getComputedStyle(workspace);
+      return {
+        insetLeft: Number.parseFloat(style.getPropertyValue('--map-inset-left')),
+        insetBottom: Number.parseFloat(style.getPropertyValue('--map-inset-bottom')),
+        panelReachFromLeft: panelBox.right - mapBox.left,
+        panelReachFromBottom: mapBox.bottom - panelBox.top,
+      };
+    });
+    expect(measured).not.toBeNull();
+    if (measured === null) return;
+
+    // One of the two axes is the one the panel is anchored to, and that one
+    // has to match what the panel actually covers. Rounded to whole pixels.
+    const insetLeftMatches = Math.abs(measured.insetLeft - measured.panelReachFromLeft) <= 2;
+    const insetBottomMatches = Math.abs(measured.insetBottom - measured.panelReachFromBottom) <= 2;
+    expect(insetLeftMatches || insetBottomMatches).toBe(true);
+    expect(measured.insetLeft + measured.insetBottom).toBeGreaterThan(0);
+  });
+
+  test('the map key and the ODbL credit stay out from under the panel', async ({ page }) => {
+    // ODbL requires the credit to be visible. A full-bleed map with a panel
+    // over one edge would cover it quietly, and in exactly the screenshot
+    // somebody would publish.
+    await page.goto('/');
+    await waitForMapReady(page);
+
+    const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+    const legend = await page.getByTestId('map-legend').boundingBox();
+    const credit = await page.locator('.maplibregl-ctrl-attrib').boundingBox();
+    expect(panel).not.toBeNull();
+    expect(legend).not.toBeNull();
+    expect(credit).not.toBeNull();
+    if (panel === null || legend === null || credit === null) return;
+
+    const overlapArea = (a: typeof panel, b: typeof panel) => {
+      const x = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+      const y = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+      return x * y;
+    };
+
+    expect(overlapArea(panel, legend)).toBe(0);
+    expect(overlapArea(panel, credit)).toBe(0);
+    await expect(page.locator('.maplibregl-ctrl-attrib')).toBeVisible();
   });
 
   test('the answer is on screen without scrolling or opening anything', async ({ page }) => {
@@ -239,6 +297,79 @@ test.describe('reflow', () => {
   test.beforeEach(async ({ page }) => {
     await stubHealthyApi(page);
     await stubRouteComparison(page);
+  });
+
+  test('an ordinary 1000 px laptop window gets the map-led layout', async ({ page }) => {
+    // The bug the founder was looking at. The two-pane desktop layout was
+    // gated at `min-width: 64rem` — 1024 px at a 16 px root — so a 1000 px
+    // window missed it by 24 px and fell all the way back to the phone
+    // composition: a 34dvh map strip above a long scrolling page. The map
+    // area measured 1000 x 287.
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('/');
+    await waitForMapReady(page);
+    await runExample(page);
+
+    const map = await page.getByTestId('map-frame').boundingBox();
+    const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+    expect(map).not.toBeNull();
+    expect(panel).not.toBeNull();
+    if (map === null || panel === null) return;
+
+    expect(map.width).toBe(1000);
+    expect(map.height).toBeGreaterThan(600);
+    // Beside the map, not stacked above a page that scrolls.
+    expect(panel.width).toBeLessThan(map.width / 2);
+
+    // And the whole answer is on screen at that size, which is the point of
+    // the panel being compact rather than a full-height rail.
+    expect(await fullyInViewport(page, 'difference-accessible')).toBe(true);
+    expect(await fullyInViewport(page, 'difference-shortest')).toBe(true);
+    expect(await fullyInViewport(page, 'difference-extra')).toBe(true);
+    expect(await fullyInViewport(page, 'uncertainty-summary')).toBe(true);
+    expect(await hasHorizontalOverflow(page)).toBe(false);
+  });
+
+  test('a phone gets the same map, with the planner as a sheet it can shut', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await waitForMapReady(page);
+    await runExample(page);
+
+    const viewport = page.viewportSize()!;
+    const map = await page.getByTestId('map-frame').boundingBox();
+    expect(map).not.toBeNull();
+    if (map === null) return;
+    expect(map.width).toBe(viewport.width);
+    expect(map.height).toBeGreaterThan(viewport.height * 0.9);
+
+    // The whole answer, inside the sheet, without scrolling it.
+    expect(await fullyInViewport(page, 'difference-accessible')).toBe(true);
+    expect(await fullyInViewport(page, 'difference-shortest')).toBe(true);
+    expect(await fullyInViewport(page, 'difference-extra')).toBe(true);
+    expect(await fullyInViewport(page, 'uncertainty-summary')).toBe(true);
+
+    // The control says what it does and does it — the layout this replaced
+    // drew a grip that looked draggable and was not.
+    const toggle = page.getByTestId('sheet-toggle');
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+    const open = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(toggle).toHaveText(/expand/i);
+    const shut = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+    expect(open).not.toBeNull();
+    expect(shut).not.toBeNull();
+    if (open === null || shut === null) return;
+    expect(shut.height).toBeLessThan(open.height);
+
+    // And it opens again, with the same answer still in it.
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+    await expect(page.getByTestId('difference-accessible')).toBeVisible();
   });
 
   test('320 px wide, nothing overflows and everything is reachable', async ({ page }) => {
