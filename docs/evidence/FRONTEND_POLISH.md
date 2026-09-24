@@ -458,7 +458,7 @@ the images are beside it, including the recorded-stairs overlay at each size.
 | ---------- | ---------- | ------------------ | ------------------------ | ------------------- | -------------- |
 | 1000 × 700 | 1000 × 652 | 320 × 628, at left | yes                      | none                | none           |
 | 1366 × 768 | 1366 × 720 | 369 × 696, at left | yes                      | none                | none           |
-| 390 × 844  | 390 × 796  | 366 × 557, a sheet | yes                      | none                | none           |
+| 390 × 844  | 390 × 796  | 366 × 591, a sheet | yes                      | none                | none           |
 
 "Whole answer" is both route figures, the extra-distance line, the uncertainty
 line and the map key, each entirely inside the viewport, with nothing opened and
@@ -492,7 +492,7 @@ All from the live engine. The example is still one press.
 
 The recording
 [`media/pathable-ux02b-interaction.webm`](media/pathable-ux02b-interaction.webm)
-(4.0 MB, 1000 × 700, no audio, from the same image and the same dataset) runs
+(3.9 MB, 1000 × 700, no audio, from the same image and the same dataset) runs
 the whole path: the example, the recorded-stairs overlay, a profile change
 answered live, then claiming the Start field for the next map click — which
 resolves to `Selected map point 43.47249, -80.54333`, because the product does
@@ -523,6 +523,26 @@ the two search fields are exercised against stubbed provider responses in the
 browser suite and degrade honestly here: "Place search is not enabled on this
 deployment. Click the map to choose points." That message stays distinct from
 "nothing matched", because the two lead a person to do different things.
+
+**What CI found that this laptop could not, again.** The phone sheet fitted the
+uncertainty line — the sentence that says unrecorded is not the same as clear —
+with eleven pixels to spare here, and clipped it on the Linux runner. The same
+class of failure as PA-UX-02A's, which is the point: a layout whose
+correctness depends on a font's line height is not a layout.
+
+Fixed by measurement rather than by nudging. Stacking the two figures
+full-width on a phone was tried first and measured _worse_ — 190 px against
+171, because each stacked figure then spends a row on its own highlight
+control — so it was reverted. The room came from shortening the edit control's
+glyphs on narrow screens, its accessible name unchanged at every width, and
+from the sheet cap. Slack below the uncertainty line went from 11 px to 63 px
+on the phone, 84 px at 1000 × 700 and 196 px at 1366 × 768, with 205 px of map
+still visible above the phone sheet.
+
+The more useful half of the fix is the gate. `layout.spec.ts` no longer asks
+whether the answer fits; it asserts at least 24 px of room beneath it, so a
+near-miss fails loudly instead of passing silently on one renderer and failing
+on another.
 
 Three things checked by looking rather than by a machine:
 

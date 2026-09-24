@@ -17,7 +17,7 @@
         "min-height: 34rem": true
       }
     },
-    "answeredMs": 1535,
+    "answeredMs": 2157,
     "layout": {
       "map": {
         "x": 0,
@@ -66,7 +66,7 @@
         "min-height: 34rem": true
       }
     },
-    "answeredMs": 604,
+    "answeredMs": 290,
     "layout": {
       "map": {
         "x": 0,
@@ -115,7 +115,7 @@
         "min-height: 34rem": true
       }
     },
-    "answeredMs": 627,
+    "answeredMs": 388,
     "layout": {
       "map": {
         "x": 0,
@@ -125,13 +125,13 @@
       },
       "panel": {
         "x": 12,
-        "y": 287,
+        "y": 253,
         "width": 366,
-        "height": 557
+        "height": 591
       },
       "credit": {
         "x": 0,
-        "y": 246,
+        "y": 213,
         "width": 390,
         "height": 40
       },

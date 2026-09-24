@@ -21,6 +21,22 @@ async function runExample(page: Page): Promise<void> {
   await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
 }
 
+/**
+ * How much room is left below an element before the viewport ends.
+ *
+ * "It fits" is not a useful gate on its own: a layout that clears the fold by
+ * one pixel here clears it by minus four on a runner whose text metrics
+ * differ, which is exactly how CI caught this twice. Asserting the *slack*
+ * turns a silent near-miss into a loud one.
+ */
+async function roomBelow(page: Page, testId: string): Promise<number> {
+  return page.evaluate((id) => {
+    const element = document.querySelector(`[data-testid="${id}"]`);
+    if (!element) return -1;
+    return Math.round(window.innerHeight - element.getBoundingClientRect().bottom);
+  }, testId);
+}
+
 /** Whole element inside the viewport, not merely attached and unhidden. */
 async function fullyInViewport(page: Page, testId: string): Promise<boolean> {
   return page.evaluate((id) => {
@@ -344,6 +360,7 @@ test.describe('reflow', () => {
     expect(await fullyInViewport(page, 'difference-shortest')).toBe(true);
     expect(await fullyInViewport(page, 'difference-extra')).toBe(true);
     expect(await fullyInViewport(page, 'uncertainty-summary')).toBe(true);
+    expect(await roomBelow(page, 'uncertainty-summary')).toBeGreaterThanOrEqual(24);
     expect(await hasHorizontalOverflow(page)).toBe(false);
   });
 
@@ -365,6 +382,8 @@ test.describe('reflow', () => {
     expect(await fullyInViewport(page, 'difference-shortest')).toBe(true);
     expect(await fullyInViewport(page, 'difference-extra')).toBe(true);
     expect(await fullyInViewport(page, 'uncertainty-summary')).toBe(true);
+    // With room to spare, not by a pixel. See `roomBelow`.
+    expect(await roomBelow(page, 'uncertainty-summary')).toBeGreaterThanOrEqual(24);
 
     // The control says what it does and does it — the layout this replaced
     // drew a grip that looked draggable and was not.

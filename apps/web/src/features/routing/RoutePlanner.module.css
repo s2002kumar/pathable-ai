@@ -1089,3 +1089,31 @@
 .profileSelect:hover {
   border-color: var(--color-brand-border);
 }
+
+/* ---------------------------------------------------------------------------
+ * The result block, on a phone.
+ *
+ * Side by side the two figures cost 171 px; stacked full-width they cost 190,
+ * because each one then spends a row on its own highlight control. Measured
+ * both ways — they stay side by side.
+ *
+ * What is cut instead is the journey line, which wrapped to three lines at
+ * 390 px because the edit control carries a five-word label. The label stays
+ * five words for anything that reads it; only the glyphs shorten.
+ * ------------------------------------------------------------------------ */
+
+@media (max-width: 47.999rem) {
+  .editLong {
+    display: none;
+  }
+
+  .journeyLine .editButton {
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 48rem) {
+  .editShort {
+    display: none;
+  }
+}

@@ -214,7 +214,7 @@
        58dvh this fitted on Windows and clipped the uncertainty line on the
        Linux runner by a few pixels. A layout that depends on a font's exact
        line height is not a layout. */
-    max-height: min(66dvh, 35rem);
+    max-height: min(70dvh, 37rem);
     border-bottom: 0;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     /* The safe area on a phone with a home indicator, so the last control is
@@ -251,7 +251,7 @@
        the cap above rather than approximating it, because the sheet reaches
        that cap as soon as it has a planner in it — so in practice the estimate
        and the measurement agree and nothing moves. */
-    --map-inset-bottom: min(66dvh, 35rem);
+    --map-inset-bottom: min(70dvh, 37rem);
   }
 
   .sheetBar {

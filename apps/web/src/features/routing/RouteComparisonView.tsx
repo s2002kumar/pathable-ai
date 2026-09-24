@@ -65,9 +65,14 @@ export function RouteComparisonView({
                 type="button"
                 className={styles.editButton}
                 onClick={onEditJourney}
+                // The accessible name is the full phrase at every width; only
+                // the glyphs shorten, because at 390 px the five-word label
+                // wrapped the journey line to three lines.
+                aria-label="Edit journey or profile"
                 data-testid="edit-journey"
               >
-                Edit journey or profile
+                <span className={styles.editLong}>Edit journey or profile</span>
+                <span className={styles.editShort}>Edit</span>
               </button>
             ) : null}
           </p>
