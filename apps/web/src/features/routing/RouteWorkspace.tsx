@@ -3,7 +3,7 @@
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import type { ProfileKey } from '@pathable/contracts';
 import { MapPanel } from '@/features/map/MapPanel';
-import { type RouteFocus, recordedStairs } from '@/features/map/route-layers';
+import { type RouteFocus, prefersReducedMotion, recordedStairs } from '@/features/map/route-layers';
 import { usePanelFit } from '@/features/map/usePanelFit';
 import { MAP_POINT_LABEL } from './EndpointField';
 import { RoutePlanner } from './RoutePlanner';
@@ -126,6 +126,7 @@ export function RouteWorkspace({
 
   const mapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
+  const panelScrollRef = useRef<HTMLDivElement>(null);
   const fit = usePanelFit(mapRef, panelRef);
 
   const { state, retry } = useRouteComparison({
@@ -142,6 +143,22 @@ export function RouteWorkspace({
     setStairsTarget(null);
     setPickTarget(null);
     setSheetOpen(true);
+
+    // Bring the answer into view.
+    //
+    // Both controls that ask for one — Compare, and the example beneath it —
+    // sit near the foot of the panel, and pressing a control scrolls it into
+    // view. The answer then renders at the top, above the fold, and the viewer
+    // is left looking at the button they just pressed. Measured: pressing the
+    // example put the figures 1,788 px above the visible area.
+    //
+    // Scroll only. Moving focus here would take it away from the control the
+    // viewer just used, and the result already announces itself through the
+    // live region.
+    const scroller = panelScrollRef.current;
+    if (scroller && typeof scroller.scrollTo === 'function') {
+      scroller.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    }
   }, []);
 
   const handleRunExample = useCallback(
@@ -162,7 +179,11 @@ export function RouteWorkspace({
     const endpoint: Endpoint = { position, label, source: 'search' };
     setActiveExampleId(null);
     setPickTarget(null);
-    setPoints((current) => ({ ...current, [role]: endpoint }));
+    setPoints((current) => {
+      const next = { ...current, [role]: endpoint };
+      if (next.origin !== null && next.destination !== null) setSheetOpen(true);
+      return next;
+    });
   }, []);
 
   const handlePickOnMap = useCallback((role: PointRole) => {
@@ -186,7 +207,14 @@ export function RouteWorkspace({
       // explicit "Set on map" that says where a click will land.
       setPoints((current) => {
         if (current.origin === null) return { ...current, origin: endpoint };
-        if (current.destination === null) return { ...current, destination: endpoint };
+        if (current.destination === null) {
+          // The click that completes the pair is the one after which there is
+          // something to ask for — and Compare lives inside the sheet, so on a
+          // phone a shut sheet would leave the viewer with a finished journey
+          // and no way to submit it.
+          setSheetOpen(true);
+          return { ...current, destination: endpoint };
+        }
         return { origin: endpoint, destination: null };
       });
     },
@@ -327,7 +355,7 @@ export function RouteWorkspace({
           </button>
         </div>
 
-        <div className={styles.panelInner} id="route-planner-panel">
+        <div className={styles.panelInner} id="route-planner-panel" ref={panelScrollRef}>
           <div className={styles.panelTitle}>{title}</div>
           <RoutePlanner
             intro={intro}

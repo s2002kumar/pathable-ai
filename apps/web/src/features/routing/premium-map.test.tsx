@@ -220,7 +220,7 @@ describe('bringing one route forward', () => {
     expect(screen.getByTestId('legend-standard')).toHaveAttribute('data-dimmed', 'true');
 
     // A new request means a new comparison; a stale highlight must not carry over.
-    await user.click(screen.getByRole('radio', { name: /Crutches or cane/ }));
+    await user.selectOptions(screen.getByTestId('mobility-profile'), 'crutches');
     await waitFor(() =>
       expect(screen.getByTestId('legend-accessible')).not.toHaveTextContent(/highlighted/),
     );

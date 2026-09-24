@@ -83,36 +83,44 @@ export function EndpointField({
           onSelect={(position, label) => onSelectPlace(role, position, label)}
           {...(fetchImpl ? { fetchImpl } : {})}
         >
-          {endpoint === null ? (
-            <p className={styles.endpointEmpty} data-testid={`endpoint-${role}-value`}>
-              {picking ? 'Click the map to set this point.' : 'Not set.'}
-            </p>
-          ) : (
-            <p className={styles.endpointValue} data-testid={`endpoint-${role}-value`}>
-              <span className={styles.endpointName}>{endpoint.label}</span>{' '}
-              <span className={styles.endpointCoords}>{formatCoordinate(endpoint.position)}</span>
-            </p>
-          )}
+          {/* What this field resolves to, and what can be done to it, share a
+              row. Two rows each cost the panel 40 px twice over, which is the
+              difference between Compare being on the first screen and not. */}
+          <div className={styles.endpointRow}>
+            {endpoint === null ? (
+              <span className={styles.endpointEmpty} data-testid={`endpoint-${role}-value`}>
+                {picking ? 'Click the map to set this point.' : 'Not set.'}
+              </span>
+            ) : (
+              <span className={styles.endpointValue} data-testid={`endpoint-${role}-value`}>
+                <span className={styles.endpointName}>{endpoint.label}</span>{' '}
+                <span className={styles.endpointCoords}>{formatCoordinate(endpoint.position)}</span>
+              </span>
+            )}
 
-          <div className={styles.endpointActions}>
-            <button
-              type="button"
-              className={styles.quietButton}
-              onClick={() => onPickOnMap(role)}
-              aria-pressed={picking}
-              data-testid={`pick-${role}`}
-            >
-              {picking ? 'Click the map…' : 'Set on map'}
-            </button>
-            <button
-              type="button"
-              className={styles.quietButton}
-              onClick={() => onClear(role)}
-              disabled={endpoint === null}
-              data-testid={`clear-${role}`}
-            >
-              Clear
-            </button>
+            <span className={styles.endpointActions}>
+              <button
+                type="button"
+                className={styles.quietButton}
+                onClick={() => onPickOnMap(role)}
+                aria-pressed={picking}
+                data-testid={`pick-${role}`}
+              >
+                {picking ? 'Click the map…' : 'Set on map'}
+              </button>
+              {/* Only once there is something to clear. An always-present
+                  disabled control is a row of panel spent on nothing. */}
+              {endpoint === null ? null : (
+                <button
+                  type="button"
+                  className={styles.quietButton}
+                  onClick={() => onClear(role)}
+                  data-testid={`clear-${role}`}
+                >
+                  Clear
+                </button>
+              )}
+            </span>
           </div>
         </PlaceSearch>
       </div>

@@ -283,7 +283,7 @@ On this laptop, at this branch's head, observed rather than inferred.
 | Full-stack against the envelope stack, real Waterloo    | 16 passed, 0 skipped (9 recruiter-demo + 7 stack)                                    |
 | Contract drift                                          | generated contracts match the backend schemas                                        |
 | Production web image                                    | rebuilt from this branch; every capture and the recording above came from that image |
-| CI on this head (`6e78656`)                             | 16 of 16 checks pass, both workflows green — observed on the pull request            |
+| CI on the PA-UX-02A head (`4743f6d`)                    | 16 of 16 checks pass, both workflows green — observed on the pull request            |
 
 Checked by hand in the captures and the recording rather than by a machine:
 the map full-bleed behind the panel at every size above the flow fallback; the
@@ -317,10 +317,124 @@ introduced.
 Automated axe passing is a floor, not a claim of accessibility compliance, and
 nobody who uses a mobility aid has reviewed this interface.
 
-### Still outstanding
+### How this revision ended
 
-The visual direction has **not** been accepted. This revision is a candidate for
-one review; PA-UX-02B does not begin until it is accepted or redirected.
+The founder reviewed it on 2026-09-23 and **approved the interaction
+direction** — Start → Destination → Travel profile → Compare → Explore why,
+with stronger colour and a more refined map — which authorised implementation
+of the full candidate as PA-UX-02B.
+
+That approval is scoped, in the founder's own words: it "is not a claim that
+the finished visual result has already been accepted." The finished interface
+returns for one further visual review before it merges. What PA-UX-02A settled
+is the shape of the thing, not its finish.
+
+## The search-led revision (PA-UX-02B)
+
+PA-UX-02A settled the shape: a full-bleed map with a compact surface floating
+over it. It did not settle how a person says where they are going. This
+revision does, and adds the one evidence interaction the routing engine has
+been able to support all along.
+
+The founder approved the interaction direction on 2026-09-23 — Start →
+Destination → Travel profile → Compare → Explore why — and was explicit that
+the approval "is not a claim that the finished visual result has already been
+accepted."
+
+### What was wrong with the planner
+
+Three things, all consequences of one design: the planner treated an endpoint
+as a coordinate.
+
+**A single search filled "whichever point is empty."** Somebody searching for
+their destination had no way to say so; the answer depended on which field
+happened to be blank.
+
+**A request fired the instant two coordinates existed.** Fine while a point
+was only ever a map click. Wrong once an endpoint is a named place somebody is
+still typing: a half-finished destination was routed to, and editing either end
+fired a request nobody asked for.
+
+**Nothing named the journey an answer belonged to.** Editing an endpoint left
+the previous figures on screen looking current — the one way a comparison can
+mislead without a single wrong number in it.
+
+### What it is now
+
+| Before                                        | After                                                                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| One search box filling the next empty point   | Two labelled fields — Start and Destination — each with its own search, its own results, its own live region                |
+| A map click filling whichever point was empty | Each field has "Set on map", which claims the next click. With no field waiting, a click still fills the first empty one    |
+| An endpoint is a coordinate                   | An endpoint is a position **and a name**. A map click is `Selected map point`; the product does not reverse-geocode a click |
+| Request fires when two points exist           | A journey is **submitted**. `points` is the draft, `submitted` is what was asked for                                        |
+| A result has nothing to attribute it to       | The result names its journey, and says plainly when the draft has moved on                                                  |
+| Five profile chips, wrapping to five rows     | One labelled `select`, with the chosen profile's rules on the line beneath                                                  |
+| "6 min walk"                                  | "Est. 6 min" — the figure is distance over an assumed pace, which the schema itself calls not measured                      |
+| "4 stairways (16 steps)"                      | "4 stairways (16 **recorded** steps)" — `step_count` sums only the stairways somebody counted                               |
+| No way to see where the stairs are            | "Show the recorded stairs" draws them on the route that carries them                                                        |
+
+Profile changes still re-run on their own — but only while the endpoints still
+match the journey on screen. With an endpoint half-edited, re-running would
+answer a question that is a mixture of two, so that case waits for Compare.
+
+The example is still one press: the endpoints, the profile and the request land
+in the same interaction, built from the preset rather than read back from state
+that has not been applied yet. The server-resolved deep link is submitted from
+the first render rather than by a simulated press in an effect.
+
+### The recorded-stairs overlay
+
+The one evidence interaction, and deliberately narrow. It reads
+`segment.steps === "yes"` off the response and draws that segment's own
+coordinates, which tile the route polyline exactly.
+
+Three things it is not. It is not a hazard layer. It is not a claim about
+segments whose step state nobody recorded — `steps` is a three-valued enum and
+`unknown` is counted and reported separately, because a segment nobody surveyed
+is neither stairs nor the absence of them. And the step total is a **floor**:
+on the campus journey it reports four stairways, sixteen recorded steps, and
+says that two of the four have no recorded count at all.
+
+The segments come from the response as data. Not from an explanation's prose,
+and not from the cost breakdown — a `steps` cost component only exists when the
+chosen profile happens to price steps, so a profile that does not would look
+like a route with no stairs.
+
+### Colour and cartography
+
+The palette is the one the card specified, with one value changed for a
+measured reason and nothing else. Water and parks are given real colour,
+because a map whose water is grey is not a map; buildings stay subordinate;
+pedestrian paths are tuned by zoom so they are context at a city overview and
+the thing being read at the zoom a campus route is read at.
+
+Colour carries meaning and keeps it: teal is selection and identity, cobalt is
+the route for your profile, amber is missing information, burnt orange is a
+recorded stairway. None of them ever means a route is safe.
+
+### What the browser found that review did not
+
+**The answer rendered off-screen.** Both controls that ask for a comparison sit
+near the foot of the panel, and pressing a control scrolls it into view — so
+the answer appeared above the fold and the viewer was left looking at the
+button they had just pressed. Measured: pressing the example put the figures
+1,788 px above the visible area. Committing a journey now scrolls the panel
+back to the answer. Scroll only; moving focus would take it off the control
+just used, and the live region already announces the result.
+
+**A contrast failure, at 4.03:1.** The third text tier was legible on white and
+not on the sunken surface behind the header's pilot chip. Recomputed to
+`#5b6b7d`: 5.5:1 on white, 4.9:1 on the sunken surface, 5.1:1 on the canvas,
+4.8:1 on the selected tint, 5.0:1 on the missing-data notice.
+
+**Compare was unreachable behind a shut sheet.** On a phone the submit control
+lives inside the sheet, so a journey planned with the sheet pulled down could
+not be submitted. Completing the pair now reopens it.
+
+**Five profile chips cost 168 px.** Measured in a 20 rem panel, they wrapped to
+five rows, which is exactly what pushed Compare and the example off the first
+screen at 1000 × 700. The native `select` is 44 px and its keyboard and
+screen-reader behaviour is the platform's rather than an imitation.
 
 ## States
 

@@ -380,7 +380,7 @@ describe('editing the journey from the result', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/67 m longer/);
     expect(onProfileChange).not.toHaveBeenCalled();
     expect(onClearPoints).not.toHaveBeenCalled();
-    expect(within(plan).getByRole('radio', { name: /Wheelchair/ })).toBeChecked();
+    expect(within(plan).getByLabelText(/how do you travel/i)).toHaveValue('wheelchair');
   });
 
   it('scrolls instantly when the viewer prefers reduced motion', async () => {

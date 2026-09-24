@@ -46,25 +46,25 @@ test.describe('real Waterloo network', () => {
 
   test('desktop, wheelchair, across the two campuses', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1400 });
-    await routeBetween(page, ACROSS, /wheelchair/i);
+    await routeBetween(page, ACROSS, 'wheelchair');
     await capture(page, '01-desktop-wheelchair');
   });
 
   test('mobile, wheelchair, across the two campuses', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 1600 });
-    await routeBetween(page, ACROSS, /wheelchair/i);
+    await routeBetween(page, ACROSS, 'wheelchair');
     await capture(page, '02-mobile-wheelchair');
   });
 
   test('a second profile on a journey of its own', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1400 });
-    await routeBetween(page, DIAGONAL, /stroller|pram/i);
+    await routeBetween(page, DIAGONAL, 'stroller');
     await capture(page, '03-desktop-stroller');
   });
 
   test('a journey where the accessible route is meaningfully different', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1400 });
-    await routeBetween(page, DIAGONAL, /wheelchair/i);
+    await routeBetween(page, DIAGONAL, 'wheelchair');
 
     // The difference has to be real, not a rounding artefact.
     await expect(page.getByTestId('route-status')).toContainText(/longer|shorter|same length/);
@@ -73,7 +73,7 @@ test.describe('real Waterloo network', () => {
 
   test('a journey with substantial missing evidence', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1400 });
-    await routeBetween(page, WIDE, /wheelchair/i);
+    await routeBetween(page, WIDE, 'wheelchair');
 
     // The per-category gaps sit behind a disclosure; open it so the capture
     // shows them rather than implying they are absent.
@@ -88,7 +88,7 @@ test.describe('real Waterloo network', () => {
     // Zoomed out far enough that the two points straddle the pilot bounding
     // box, where the network genuinely stops. Whatever the app says here it is
     // saying about real data — including, legitimately, that it cannot help.
-    await placePoints(page, WIDE, /wheelchair/i);
+    await placePoints(page, WIDE, 'wheelchair');
     await expect(page.getByTestId('route-status')).not.toHaveAttribute(
       'data-route-state',
       'loading',
@@ -111,7 +111,7 @@ test.describe('real Waterloo network', () => {
 async function placePoints(
   page: Page,
   spread: { from: Position; to: Position },
-  profile: RegExp,
+  profile: string,
 ): Promise<void> {
   await page.goto('/');
   const map = page.getByTestId('map-frame');
@@ -119,7 +119,7 @@ async function placePoints(
   // MapLibre needs its style and first tiles before a click means anything.
   await page.waitForTimeout(5_000);
 
-  await page.getByRole('radio', { name: profile }).check();
+  await page.getByLabel(/how do you travel/i).selectOption(profile);
 
   const box = await map.boundingBox();
   if (box === null) throw new Error('map frame has no layout box');
@@ -133,7 +133,7 @@ async function placePoints(
 async function routeBetween(
   page: Page,
   spread: { from: Position; to: Position },
-  profile: RegExp,
+  profile: string,
 ): Promise<void> {
   await placePoints(page, spread, profile);
   await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success', {

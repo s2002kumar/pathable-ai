@@ -136,9 +136,7 @@ export function RoutePlanner({
       >
         {state.status === 'idle' ? (
           <p className={styles.hint}>
-            {canCompare
-              ? 'Both ends are set. Compare routes to see the difference.'
-              : 'Name a start and a destination, or set them on the map.'}
+            {canCompare ? 'Both ends are set — compare the routes.' : 'Name both ends to begin.'}
           </p>
         ) : null}
 
@@ -207,7 +205,7 @@ export function RoutePlanner({
             disabled={points.origin === null && points.destination === null}
             data-testid="swap-points"
           >
-            Swap start and destination
+            Swap ends
           </button>
         </div>
 
@@ -261,13 +259,13 @@ export function RoutePlanner({
 }
 
 /**
- * The five profiles, as a row of chips and one line of rules.
+ * The five profiles, as one labelled control and one line of rules.
  *
- * Every profile stays offered and keyboard operation is the browser's own — a
- * real radiogroup, so arrow keys move between them and one Tab stop covers the
- * set. Only the *chosen* profile explains itself: five permanently expanded
- * rule summaries pushed the controls off the first screen, and four of them
- * describe a journey the viewer is not taking.
+ * A native `select`, not a custom widget. Every profile stays offered, and the
+ * keyboard and screen-reader behaviour is the platform's own rather than an
+ * imitation of it. As a row of chips this wrapped to five lines in a 20 rem
+ * panel — 168 px, measured — which is what pushed Compare and the example off
+ * the first screen at 1000 x 700.
  *
  * The rule line is not hidden behind anything. Which constraints are applied
  * is the difference between the two routes, and they are engineering judgement
@@ -284,32 +282,28 @@ function ProfileChooser({
   const chosen = PROFILE_OPTIONS.find((option) => option.key === selected);
 
   return (
-    <fieldset className={styles.fieldset}>
-      <legend className={styles.legend}>How do you travel?</legend>
-      <div className={styles.profiles} role="radiogroup" aria-label="Mobility profile">
+    <div className={styles.fieldset}>
+      <label className={styles.legend} htmlFor="mobility-profile">
+        How do you travel?
+      </label>
+      <select
+        id="mobility-profile"
+        className={styles.profileSelect}
+        value={selected}
+        onChange={(event) => onChange(event.target.value as ProfileKey)}
+        data-testid="mobility-profile"
+      >
         {PROFILE_OPTIONS.map((option) => (
-          <label
-            key={option.key}
-            className={styles.profileOption}
-            data-selected={option.key === selected}
-          >
-            <input
-              type="radio"
-              name="mobility-profile"
-              value={option.key}
-              checked={option.key === selected}
-              onChange={() => onChange(option.key)}
-              className={styles.profileInput}
-            />
-            <span className={styles.profileLabel}>{option.label}</span>
-          </label>
+          <option key={option.key} value={option.key}>
+            {option.label}
+          </option>
         ))}
-      </div>
+      </select>
       {chosen ? (
         <p className={styles.profileRule} data-testid="profile-rule">
           {chosen.hint}
         </p>
       ) : null}
-    </fieldset>
+    </div>
   );
 }

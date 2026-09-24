@@ -45,7 +45,7 @@
 
 .purpose {
   font-size: var(--text-xs);
-  line-height: var(--leading-normal);
+  line-height: var(--leading-snug);
   color: var(--color-text-muted);
 }
 

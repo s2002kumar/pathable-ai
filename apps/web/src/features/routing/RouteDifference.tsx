@@ -277,15 +277,12 @@ export function RouteDifference({
   comparison,
   focusedRoute = null,
   onFocusRoute = () => {},
-  onEditJourney,
   stairsTarget = null,
   onShowStairs = () => {},
 }: {
   readonly comparison: RouteCompareResponse;
   readonly focusedRoute?: RouteFocus;
   readonly onFocusRoute?: (focus: RouteFocus) => void;
-  /** Takes the viewer to the planning controls below, keeping this result. */
-  readonly onEditJourney?: () => void;
   readonly stairsTarget?: StairsTarget;
   readonly onShowStairs?: (target: StairsTarget) => void;
 }) {
@@ -371,20 +368,13 @@ export function RouteDifference({
         </p>
       ) : null}
 
-      <RecordedStairsControl comparison={comparison} target={stairsTarget} onShow={onShowStairs} />
-
       <UncertaintySummary route={accessible} />
 
-      {onEditJourney ? (
-        <button
-          type="button"
-          className={styles.editButton}
-          onClick={onEditJourney}
-          data-testid="edit-journey"
-        >
-          Edit journey or profile
-        </button>
-      ) : null}
+      {/* Below the uncertainty line, not above it. The figures, the detour,
+          the caution and the way back to the controls are what has to fit on
+          a phone's first screen; asking where the stairs are is a question
+          somebody chooses to ask next. */}
+      <RecordedStairsControl comparison={comparison} target={stairsTarget} onShow={onShowStairs} />
 
       <ul className={styles.evidenceList}>
         {avoided.map((explanation) => (

@@ -94,7 +94,7 @@ test.describe('full stack', () => {
 
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'ready');
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
-    await expect(page.getByRole('radiogroup', { name: /mobility profile/i })).toBeVisible();
+    await expect(page.getByLabel(/how do you travel/i)).toBeVisible();
     await expect(page.getByTestId('map-legend')).toBeVisible();
   });
 

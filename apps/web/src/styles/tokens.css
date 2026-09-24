@@ -121,8 +121,17 @@
   --color-text: #15283a;
   /* 6.3:1 on --color-surface. */
   --color-text-muted: #526274;
-  /* 4.6:1 on --color-surface; supporting labels only, never body copy. */
-  --color-text-subtle: #66788c;
+  /*
+   * Supporting labels only, never body copy — but still held to 4.5:1,
+   * because "supporting" is not a licence to be unreadable.
+   *
+   * Measured against every surface it actually sits on: 5.5:1 on white,
+   * 4.9:1 on the sunken surface, 5.1:1 on the canvas, 4.8:1 on the selected
+   * tint, 5.0:1 on the missing-data notice. The first value tried here was
+   * 4.03:1 on the sunken surface — a real axe failure on the pilot chip in
+   * the header, not a theoretical one.
+   */
+  --color-text-subtle: #5b6b7d;
   --color-text-inverse: #ffffff;
 
   /* 6.4:1 for white text on brand. */

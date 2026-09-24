@@ -376,7 +376,7 @@ describe('route layers', () => {
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
 
-    await user.click(screen.getByRole('radio', { name: /Crutches or cane/ }));
+    await user.selectOptions(screen.getByTestId('mobility-profile'), 'crutches');
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
@@ -479,9 +479,10 @@ describe('choosing points on the map', () => {
     await compare();
     await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
 
-    const radio = screen.getByRole('radio', { name: /Crutches or cane/ }) as HTMLInputElement;
+    const profile = screen.getByTestId('mobility-profile') as HTMLSelectElement;
     await act(async () => {
-      radio.click();
+      profile.value = 'crutches';
+      profile.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
     await waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(2));

@@ -347,7 +347,7 @@ describe('RoutePlanner', () => {
     const user = userEvent.setup();
     const { props } = renderPlanner();
 
-    await user.click(screen.getByRole('radio', { name: /Crutches or cane/ }));
+    await user.selectOptions(screen.getByTestId('mobility-profile'), 'crutches');
 
     expect(props.onProfileChange).toHaveBeenCalledWith('crutches');
   });

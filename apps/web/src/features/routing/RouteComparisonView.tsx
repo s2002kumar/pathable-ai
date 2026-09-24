@@ -57,6 +57,19 @@ export function RouteComparisonView({
           <p className={styles.journeyLine} data-testid="journey-summary">
             <span className={styles.journeyPlaces}>{journeySummary}</span>
             <span className={styles.journeyProfile}>{comparison.profile_display_name}</span>
+            {/* Beside the journey it edits, rather than a block of its own
+                further down: it is the same thought, and on a phone the block
+                was what pushed the caution off the first screen. */}
+            {onEditJourney ? (
+              <button
+                type="button"
+                className={styles.editButton}
+                onClick={onEditJourney}
+                data-testid="edit-journey"
+              >
+                Edit journey or profile
+              </button>
+            ) : null}
           </p>
         ) : null}
 
@@ -74,7 +87,6 @@ export function RouteComparisonView({
           onFocusRoute={onFocusRoute}
           stairsTarget={stairsTarget}
           onShowStairs={onShowStairs}
-          {...(onEditJourney ? { onEditJourney } : {})}
         />
       </div>
 

@@ -191,9 +191,16 @@ another roadmap.
 
 | Card      | Deliverable                                                      | Status                                                                            |
 | --------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| PA-UX-02A | Map-led initial and comparison states, proven in the running app | **In progress** — candidate built, awaiting the founder's visual-direction review |
-| PA-UX-02B | The accepted interface finished and merged                       | Blocked on A's acceptance                                                         |
+| PA-UX-02A | Map-led initial and comparison states, proven in the running app | **Done** — interaction direction approved 2026-09-23; the finish was not approved |
+| PA-UX-02B | The accepted interface finished and merged                       | **In progress**                                                                   |
 | PA-UX-02C | Static showcase, refreshed demo, interview handoff               | Blocked on B                                                                      |
+
+**What was approved, exactly.** The founder approved the interaction direction
+— Start → Destination → Travel profile → Compare → Explore why, with stronger
+colour and a more refined map — and authorised building the complete
+candidate. In their own words that "is not a claim that the finished visual
+result has already been accepted": PA-UX-02B returns for one further visual
+review before it merges.
 
 **Branch / worktree.** `feat/premium-map-experience`, PR #64 (draft), in
 `../pathable-ai-wt/premium-map-experience`. Baseline for this sprint: `f099aaf`
@@ -211,13 +218,14 @@ migration `0005_kerb_tiers`, 155,714 nodes and 180,554 segments. See
 records what changed, at which viewports it was checked, and against which
 build.
 
-**Blocker.** One visual-direction review. The founder rejected the previous
-composition, so the direction is confirmed on two functioning states before the
-rest of the interface is finished.
+**Blocker.** One final visual review of the finished PA-UX-02B candidate.
+Technical completion does not self-award it.
 
-**Next executable action.** On acceptance, start PA-UX-02B: finish the
-remaining states (swap, clear, deep link, no-route, error, map-unavailable)
-across devices, then merge through the normal workflow.
+**Next executable action.** Finish PA-UX-02B: the colour system and
+cartography, named endpoint controls with explicit map targets, an explicit
+Compare, the recorded-stairs evidence overlay, the remaining states across
+devices, then browser review and verification. On visual acceptance, merge
+through the normal workflow and carry PA-UX-02C.
 
 ---
 

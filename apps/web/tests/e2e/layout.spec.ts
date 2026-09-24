@@ -98,6 +98,9 @@ test.describe('layout', () => {
     // somebody would publish.
     await page.goto('/');
     await waitForMapReady(page);
+    // The map key appears with the routes it explains, so there has to be a
+    // comparison on screen before there is a key to keep clear of the panel.
+    await runExample(page);
 
     const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
     const legend = await page.getByTestId('map-legend').boundingBox();
@@ -137,6 +140,7 @@ test.describe('layout', () => {
   test('map attribution and controls stay uncovered by the legend', async ({ page }) => {
     await page.goto('/');
     await waitForMapReady(page);
+    await runExample(page);
 
     const legend = await page.getByTestId('map-legend').boundingBox();
     const attribution = await page.locator('.maplibregl-ctrl-attrib').boundingBox();
@@ -211,11 +215,11 @@ test.describe('layout', () => {
     await expect(plan).toBeInViewport();
     // The next stop from the landing is a real control.
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('searchbox')).toBeFocused();
+    await expect(page.getByRole('searchbox', { name: 'Start' })).toBeFocused();
 
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
     await expect(page.getByTestId('route-difference')).toBeAttached();
-    await expect(page.getByRole('radio', { name: /Wheelchair/ })).toBeChecked();
+    await expect(page.getByLabel(/how do you travel/i)).toHaveValue('wheelchair');
     expect(requests.length).toBe(requestsAfterExample);
     expect(
       await page.evaluate(() => (window as unknown as { __mapStates: string[] }).__mapStates),
@@ -238,9 +242,9 @@ test.describe('layout', () => {
     });
 
     await runExample(page);
-    await page.getByRole('radio', { name: /Stroller or pram/ }).check();
+    await page.getByLabel(/how do you travel/i).selectOption('stroller');
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
-    await page.getByRole('button', { name: 'Swap' }).click();
+    await page.getByTestId('swap-points').click();
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
 
     const states = await page.evaluate(
@@ -272,15 +276,16 @@ test.describe('layout', () => {
     }
   });
 
-  test('the example is the first meaningful stop for the keyboard', async ({ page }) => {
+  test('the planning controls come first for the keyboard, then the example', async ({ page }) => {
+    // The panel is ordered Start → Destination → Profile → Compare → example,
+    // so the example is no longer the first meaningful stop; the controls a
+    // person came to use are. What still has to hold is that everything is
+    // reachable by Tab alone, in that order, without hunting.
     await page.goto('/');
     await waitForMapReady(page);
 
-    // Skip link, then whatever the header exposes, then the example. Count the
-    // stops rather than assert an exact path so a harmless header change does
-    // not break this; the point is that the offer is reached quickly.
     const stops: string[] = [];
-    for (let i = 0; i < 8; i += 1) {
+    for (let i = 0; i < 24; i += 1) {
       await page.keyboard.press('Tab');
       const id = await page.evaluate(
         () => document.activeElement?.getAttribute('data-testid') ?? '',
@@ -288,8 +293,20 @@ test.describe('layout', () => {
       stops.push(id);
       if (id === 'run-verified-example') break;
     }
+
     expect(stops).toContain('run-verified-example');
-    expect(stops.indexOf('run-verified-example')).toBeLessThanOrEqual(6);
+    // The order the panel reads in is the order the keyboard walks it.
+    const at = (id: string) => stops.indexOf(id);
+    expect(at('pick-origin')).toBeGreaterThanOrEqual(0);
+    expect(at('pick-origin')).toBeLessThan(at('pick-destination'));
+    expect(at('pick-destination')).toBeLessThan(at('run-verified-example'));
+
+    // Compare is deliberately absent from that walk: with no journey drafted
+    // it is disabled, and a disabled control is not a tab stop. It joins the
+    // order as soon as there is something to compare.
+    await expect(page.getByTestId('compare-routes')).toBeDisabled();
+    await runExample(page);
+    await expect(page.getByTestId('compare-routes')).toBeEnabled();
   });
 });
 
@@ -391,14 +408,18 @@ test.describe('reflow', () => {
 
     // Well clear of the collapsed bar along the bottom.
     await page.mouse.click(map.x + map.width * 0.3, map.y + map.height * 0.25);
-    await expect(page.getByTestId('point-start')).not.toContainText(/click the map to set/i);
+    await expect(page.getByTestId('endpoint-origin-value')).not.toContainText(/not set/i);
     // Setting only the start leaves it shut: somebody who pulled the sheet
     // down to see more map is still placing points on it.
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
     await page.mouse.click(map.x + map.width * 0.7, map.y + map.height * 0.35);
 
+    // Completing the pair reopens it, because Compare lives inside the sheet:
+    // a shut sheet would leave somebody with a finished journey and no way to
+    // submit it.
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await page.getByTestId('compare-routes').click();
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
     await expect(page.getByTestId('difference-accessible')).toBeVisible();
   });
@@ -445,8 +466,8 @@ test.describe('reflow', () => {
       () => document.documentElement.scrollHeight > document.documentElement.clientHeight,
     );
     expect(scrollable).toBe(true);
-    await page.getByRole('radio', { name: /Reduced mobility/ }).scrollIntoViewIfNeeded();
-    await expect(page.getByRole('radio', { name: /Reduced mobility/ })).toBeVisible();
+    await page.getByTestId('run-verified-example').scrollIntoViewIfNeeded();
+    await expect(page.getByTestId('run-verified-example')).toBeVisible();
   });
 
   test('landscape phone keeps the map and reaches the planner by scrolling', async ({ page }) => {

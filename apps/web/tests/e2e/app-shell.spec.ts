@@ -126,12 +126,17 @@ test.describe('application shell', () => {
     expect(container.width).toBeGreaterThanOrEqual(frame.width - 4);
   });
 
-  test('offers the mobility profiles as a labelled radio group', async ({ page }) => {
+  test('offers every mobility profile from one labelled control', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByRole('radiogroup', { name: /mobility profile/i })).toBeVisible();
-    await expect(page.getByRole('radio')).toHaveCount(5);
-    await expect(page.getByRole('radio', { name: /Wheelchair/ })).toBeChecked();
+    // One labelled control rather than five chips: as chips this wrapped to
+    // five rows in the panel and pushed Compare off the first screen. Every
+    // profile is still offered, and a native select's keyboard and
+    // screen-reader behaviour is the platform's own.
+    const profile = page.getByLabel(/how do you travel/i);
+    await expect(profile).toBeVisible();
+    await expect(profile.locator('option')).toHaveCount(5);
+    await expect(profile).toHaveValue('wheelchair');
   });
 
   test('explains how to start before any point is chosen', async ({ page }) => {
@@ -139,7 +144,7 @@ test.describe('application shell', () => {
 
     const status = page.getByTestId('route-status');
     await expect(status).toHaveAttribute('data-route-state', 'idle');
-    await expect(status).toContainText(/click the map to set a start and an end/i);
+    await expect(status).toContainText(/name both ends to begin/i);
   });
 
   test('gives keyboard focus a visible indicator', async ({ page }) => {
