@@ -436,6 +436,117 @@ five rows, which is exactly what pushed Compare and the example off the first
 screen at 1000 × 700. The native `select` is 44 px and its keyboard and
 screen-reader behaviour is the platform's rather than an imitation.
 
+### Measured, at this revision
+
+Captured by
+[`tests/screenshots/ux-02b-states.spec.ts`](../../apps/web/tests/screenshots/ux-02b-states.spec.ts),
+which stubs nothing, against the **production web image** built from this
+branch and running in the isolated envelope stack — web `3001`, API `8001`,
+database `5434`, dataset `pathable-envelope-db-data` at `0005_kerb_tiers`,
+155,714 nodes and 180,554 segments. Browser: Playwright Chromium with
+SwiftShader, device pixel ratio 1, root font size 16 px.
+
+These viewports are stand-ins, as they were for PA-UX-02A: the founder's own
+browser was not available, and a screenshot records neither a window size nor a
+zoom level. They are ordinary laptop windows and a common phone.
+
+The raw run is
+[`screenshots/ux-02b/observations.json`](screenshots/ux-02b/observations.json);
+the images are beside it, including the recorded-stairs overlay at each size.
+
+| Viewport   | Map area   | Planner            | Whole answer in viewport | Horizontal overflow | Console errors |
+| ---------- | ---------- | ------------------ | ------------------------ | ------------------- | -------------- |
+| 1000 × 700 | 1000 × 652 | 320 × 628, at left | yes                      | none                | none           |
+| 1366 × 768 | 1366 × 720 | 369 × 696, at left | yes                      | none                | none           |
+| 390 × 844  | 390 × 796  | 366 × 557, a sheet | yes                      | none                | none           |
+
+"Whole answer" is both route figures, the extra-distance line, the uncertainty
+line and the map key, each entirely inside the viewport, with nothing opened and
+nothing scrolled.
+
+**The initial state**, measured separately in the same browser, because the
+card asks for the planning controls rather than the answer to be reachable
+without scrolling the panel:
+
+| Viewport   | Start | Destination | Selected profile | Compare | Example |
+| ---------- | ----- | ----------- | ---------------- | ------- | ------- |
+| 1000 × 700 | yes   | yes         | yes              | yes     | yes     |
+| 1366 × 768 | yes   | yes         | yes              | yes     | yes     |
+| 390 × 844  | yes   | yes         | yes              | yes     | below   |
+
+On the phone the example sits one short scroll below Compare, which is what the
+card asks for: the primary planning controls are in the sheet, and the profile
+is not hidden beneath the example's provenance copy. At 320 px the layout falls
+back to document flow and scrolls, which is appropriate there.
+
+### The answers behind those captures
+
+All from the live engine. The example is still one press.
+
+- shortest route **287.4 m**, **4 recorded stairways** — 16 recorded steps
+  across two of them, and two with no recorded step count at all
+- wheelchair route **354.1 m**, **0 recorded stairways**, detour **+66.7 m**
+  (23%)
+- switching to crutches or cane, for the same journey: **327 m**, **+40 m**
+  (14%) — a different real answer, not a different rendering of the same one
+
+The recording
+[`media/pathable-ux02b-interaction.webm`](media/pathable-ux02b-interaction.webm)
+(4.0 MB, 1000 × 700, no audio, from the same image and the same dataset) runs
+the whole path: the example, the recorded-stairs overlay, a profile change
+answered live, then claiming the Start field for the next map click — which
+resolves to `Selected map point 43.47249, -80.54333`, because the product does
+not invent a name for a click — and Compare committing the edited journey as
+**Selected map point to Student Life Centre**, 424 m. Nothing in it is stubbed,
+scripted or re-timed.
+
+### Verified, at this revision
+
+On this laptop, at this branch's head, observed rather than inferred.
+
+| Gate                                                    | Result                                                                               |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Prettier, ESLint, `tsc --noEmit`                        | clean                                                                                |
+| Frontend unit (Vitest, coverage)                        | 296 passed, 18 files; statements 91.3%, branches 83.5% (floor 80%)                   |
+| Stubbed browser suite (desktop + Pixel 7, axe included) | 112 passed, 0 failed, 0 skipped                                                      |
+| Full-stack against the envelope stack, real Waterloo    | 16 passed, 0 skipped                                                                 |
+| Contract drift                                          | generated contracts match the backend schemas — no API change was needed             |
+| Production web image                                    | rebuilt from this branch; every capture and the recording above came from that image |
+| CI on this head                                         | recorded in the pull request, not inferred here                                      |
+
+**Place search could not be verified live.** The envelope API answers
+`{"provider":"disabled","enabled":false}` for `/api/v1/geocode/search`, which is
+the designed default — `GEOCODING_PROVIDER` is unset in
+`infra/production-smoke/compose.yaml`. Enabling a provider is a founder
+decision that ADR 0005 leaves open, and this card does not authorise one, so
+the two search fields are exercised against stubbed provider responses in the
+browser suite and degrade honestly here: "Place search is not enabled on this
+deployment. Click the map to choose points." That message stays distinct from
+"nothing matched", because the two lead a person to do different things.
+
+Three things checked by looking rather than by a machine:
+
+- **A stale test server invalidated two rounds of results.** Playwright's
+  `reuseExistingServer` kept a build alive on port 3100 across runs, so
+  assertions were being made against old code — the old copy came back in the
+  failure output, which is what gave it away. Everything reported above is from
+  a run started after deleting `.next` and killing that server.
+- Screenshot captures or a Docker build running alongside the browser suite
+  produce timeouts that read as product defects. One such run took 8.7 h of
+  wall-clock and another failed 8 unrelated unit tests; both were discarded
+  rather than diagnosed.
+- The basemap still needs several seconds after `fitBounds` before a capture
+  means anything, for the reason recorded under PA-UX-02A.
+
+Automated axe passing is a floor, not a claim of accessibility compliance, and
+nobody who uses a mobility aid has reviewed this interface.
+
+### Still outstanding
+
+One final visual review of the finished candidate. The founder approved the
+interaction direction, not the finish; technical completion does not
+self-award the rest.
+
 ## States
 
 Initial · selecting (start set, end awaited: the row is outlined and the status

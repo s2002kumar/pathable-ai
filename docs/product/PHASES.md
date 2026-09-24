@@ -221,11 +221,15 @@ build.
 **Blocker.** One final visual review of the finished PA-UX-02B candidate.
 Technical completion does not self-award it.
 
-**Next executable action.** Finish PA-UX-02B: the colour system and
-cartography, named endpoint controls with explicit map targets, an explicit
-Compare, the recorded-stairs evidence overlay, the remaining states across
-devices, then browser review and verification. On visual acceptance, merge
-through the normal workflow and carry PA-UX-02C.
+**Not verified here.** Live place-name search. The envelope API answers
+`{"provider":"disabled","enabled":false}` by design — `GEOCODING_PROVIDER` is
+unset — and choosing a provider is a founder decision ADR 0005 leaves open.
+The search fields are covered by stubbed provider responses and degrade
+honestly in the preview.
+
+**Next executable action.** Return the candidate for the final visual review.
+On acceptance, merge through the normal workflow, observe the resulting main
+checks, then carry PA-UX-02C.
 
 ---
 

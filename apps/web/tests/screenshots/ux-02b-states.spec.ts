@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 /**
- * The two states PA-UX-02A exists to prove, at the three viewports it was
+ * The states this interface has to be judged on, at the three viewports it is
  * reviewed at, over the real Waterloo network.
  *
  * NO ROUTE HANDLERS, like its sibling `real-waterloo.spec.ts`. Nothing here may
@@ -31,7 +31,7 @@ import path from 'node:path';
  */
 function outputDir(testInfo: { config: { rootDir: string } }): string {
   // <repo>/apps/web/tests/screenshots -> <repo>
-  return path.resolve(testInfo.config.rootDir, '../../../..', 'docs/evidence/screenshots/ux-02a');
+  return path.resolve(testInfo.config.rootDir, '../../../..', 'docs/evidence/screenshots/ux-02b');
 }
 
 /**
@@ -51,7 +51,7 @@ type Observation = Record<string, unknown>;
 
 const observations: Observation[] = [];
 
-test.describe('PA-UX-02A candidate', () => {
+test.describe('PA-UX-02B candidate', () => {
   test.slow();
 
   for (const viewport of VIEWPORTS) {
@@ -121,6 +121,18 @@ test.describe('PA-UX-02A candidate', () => {
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(8_000);
       await page.screenshot({ path: `${OUT}/${viewport.name}-result.png` });
+
+      // And the evidence overlay: the recorded stairways drawn on the route
+      // that carries them. Captured because the claim it makes — "four
+      // stairways, sixteen recorded steps, two of them uncounted" — is a
+      // statement about the data that somebody should be able to check.
+      const stairs = page.getByTestId('show-recorded-stairs');
+      if ((await stairs.count()) > 0) {
+        await stairs.click();
+        await page.waitForTimeout(2_500);
+        await page.screenshot({ path: `${OUT}/${viewport.name}-stairs.png` });
+        await stairs.click();
+      }
 
       const layout = await page.evaluate(() => {
         const rect = (selector: string) => {

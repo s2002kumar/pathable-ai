@@ -95,7 +95,9 @@ test.describe('full stack', () => {
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'ready');
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
     await expect(page.getByLabel(/how do you travel/i)).toBeVisible();
-    await expect(page.getByTestId('map-legend')).toBeVisible();
+    // The map key arrives with the routes it explains, so before a comparison
+    // there is nothing for it to say.
+    await expect(page.getByTestId('map-legend')).toHaveCount(0);
   });
 
   test('the page stays usable when the backend becomes unavailable', async ({ page }) => {

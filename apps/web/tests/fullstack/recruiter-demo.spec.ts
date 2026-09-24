@@ -202,14 +202,14 @@ test.describe('the recruiter demo', () => {
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
     await runExample(page);
 
-    await page.getByRole('button', { name: 'Clear' }).click();
-    await expect(page.getByTestId('point-start')).toContainText(/click the map to set/i);
+    await page.getByTestId('clear-journey').click();
+    await expect(page.getByTestId('endpoint-origin-value')).toContainText(/not set/i);
 
     const map = page.getByTestId('map-frame');
     const box = await map.boundingBox();
     if (box === null) throw new Error('the map has no box to click');
-    await map.click({ position: { x: box.width * 0.4, y: box.height * 0.5 } });
-    await expect(page.getByTestId('point-start')).not.toContainText(/click the map to set/i);
+    await map.click({ position: { x: box.width * 0.6, y: box.height * 0.4 } });
+    await expect(page.getByTestId('endpoint-origin-value')).not.toContainText(/not set/i);
   });
 
   test('the example is reachable and operable from the keyboard', async ({ page }) => {
