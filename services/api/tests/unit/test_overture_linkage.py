@@ -17,14 +17,17 @@ from pathable_api.geo.overture.extract import EXTRACT_MANIFEST, SEGMENT_FILE
 from pathable_api.geo.overture.linkage import (
     ExtractMismatchError,
     OvertureSide,
+    SegmentFeature,
     Snapshots,
+    SourceRow,
     VersionStatus,
     build_report,
     load_overture_side,
+    source_independence,
     version_status,
 )
 from pathable_api.geo.overture.osm_versions import ElementState
-from tests.overture_fixture import build_release, evidence, extract, identities
+from tests.overture_fixture import INSIDE, build_release, evidence, extract, identities
 
 
 @pytest.fixture(scope="module")
@@ -305,3 +308,69 @@ def test_two_overture_versions_of_one_element_are_ambiguous_whatever_the_evidenc
     assert version_status([1, 2], {None}, evidence(), state, OVERTURE_LATER) is (
         VersionStatus.AMBIGUOUS
     )
+
+
+class TestSourceIndependence:
+    """An attribute on an OSM-only segment is OSM's evidence and must never count twice."""
+
+    @staticmethod
+    def _segment(gers_id: str, *examined: str) -> SegmentFeature:
+        return SegmentFeature(gers_id, "road", "footway", None, INSIDE, frozenset(examined))
+
+    @staticmethod
+    def _row(gers_id: str, dataset: str, prop: str = "") -> SourceRow:
+        record = "w1@1" if dataset == "OpenStreetMap" else None
+        return SourceRow(gers_id, dataset, record, prop, None, None, None)
+
+    def test_osm_attributes_relabelled_by_overture_add_nothing_independent(self) -> None:
+        segments = {
+            "a": self._segment("a", "surface", "width"),
+            "t": self._segment("t"),  # TomTom geometry with no examined attribute
+        }
+        rows = [self._row("a", "OpenStreetMap"), self._row("t", "TomTom")]
+
+        result = source_independence(segments, rows, ["id", "road_surface"])
+
+        assert result["segments_by_feature_source"] == {"non_osm_only": 1, "osm_only": 1}
+        assert result["examined_attributes"]["surface"]["by_feature_source"]["osm_only"] == 1
+        assert result["segments_without_osm_source_carrying_examined_attributes"] == 0
+        assert "adds no evidence independent of OSM" in result["conclusion"]
+        assert "kerb" in result["pathable_attributes_with_no_overture_column"]
+
+    def test_non_osm_evidence_is_counted_and_mixed_segments_are_not_attributed(self) -> None:
+        segments = {
+            "a": self._segment("a", "surface"),
+            "t": self._segment("t", "width"),  # a TomTom segment that does carry width
+            "m": self._segment("m", "surface"),  # OSM + TomTom: cannot say whose surface
+        }
+        rows = [
+            self._row("a", "OpenStreetMap"),
+            self._row("a", "TomTom", prop="/road_surface"),
+            self._row("t", "TomTom"),
+            self._row("m", "OpenStreetMap"),
+            self._row("m", "TomTom"),
+        ]
+
+        result = source_independence(segments, rows, ["id"])
+
+        assert result["segments_without_osm_source_carrying_examined_attributes"] == 1
+        assert result["segments_without_osm_source_carrying_examined_attributes_by_dataset"] == {
+            "TomTom": 1
+        }
+        assert result["mixed_source_segments_carrying_examined_attributes"] == 1
+        assert result["non_osm_property_level_contributions"] == 1
+        assert "adds no evidence" not in result["conclusion"]
+
+    def test_the_fixture_extract_adds_nothing_independent(
+        self, without_evidence: dict[str, Any]
+    ) -> None:
+        independence = without_evidence["source_independence"]
+
+        assert independence["segments_by_feature_source"] == {"osm_only": 13, "non_osm_only": 1}
+        assert independence["segments_by_non_osm_dataset"] == {"TomTom": 1}
+        assert independence["property_level_sources"] == {"OpenStreetMap:/routes": 1}
+        assert {
+            name: attribute["segments"]
+            for name, attribute in independence["examined_attributes"].items()
+        } == {"surface": 1, "width": 1, "access": 0, "sidewalk_or_crosswalk": 1, "stairs": 0}
+        assert independence["segments_without_osm_source_carrying_examined_attributes"] == 0

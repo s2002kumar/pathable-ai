@@ -37,6 +37,7 @@ from typing import Any
 
 import duckdb
 
+from pathable_api.geo.overture.contract import check_schema, observe
 from pathable_api.geo.overture.evidence import content_sha256, file_sha256
 from pathable_api.geo.overture.extract import (
     BRIDGE_SAMPLE_FILE,
@@ -105,6 +106,8 @@ class SegmentFeature:
     feature_class: str | None
     subclass: str | None
     bbox: tuple[float, float, float, float]
+    #: Which of :data:`EXAMINED_ATTRIBUTES` this segment carries.
+    examined: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,6 +127,8 @@ class OvertureSide:
     connector_sources: list[SourceRow]
     bridge_sample: list[SourceRow] | None = None
     changelog: list[ChangeRow] | None = None
+    #: Top-level columns of the extracted segment file, as read.
+    segment_columns: tuple[str, ...] = ()
 
     @property
     def release(self) -> str:
@@ -161,6 +166,14 @@ def load_overture_side(extract_dir: Path) -> OvertureSide:
         connection.execute("SET autoinstall_known_extensions = false")
         connection.execute("SET autoload_known_extensions = false")
         segment_path = (extract_dir / SEGMENT_FILE).as_posix()
+        # The extract was checked at extraction time, perhaps by an older contract;
+        # check again before reading attributes the current code depends on.
+        relation = connection.sql(_SCHEMA_QUERY, params=[segment_path])
+        check = check_schema("segment", relation.columns, [observe(t) for t in relation.types])
+        if not check.compatible:
+            problems = "; ".join([*check.missing, *check.mismatched])
+            msg = f"{segment_path} does not satisfy the segment contract: {problems}"
+            raise ExtractMismatchError(msg)
         segments = {
             row[0]: SegmentFeature(
                 gers_id=row[0],
@@ -168,6 +181,7 @@ def load_overture_side(extract_dir: Path) -> OvertureSide:
                 feature_class=row[2],
                 subclass=row[3],
                 bbox=(float(row[4]), float(row[5]), float(row[6]), float(row[7])),
+                examined=_examined_attributes(row[2], row[3], row[8], row[9], row[10]),
             )
             for row in connection.execute(_SEGMENTS_QUERY, [segment_path]).fetchall()
         }
@@ -180,6 +194,7 @@ def load_overture_side(extract_dir: Path) -> OvertureSide:
                 str(row[0]) for row in connection.execute(_IDS_QUERY, [connector_path]).fetchall()
             },
             connector_sources=_source_rows(connection, connector_path),
+            segment_columns=tuple(relation.columns),
         )
         if "bridge_sample" in manifest["artifacts"]:
             side.bridge_sample = _bridge_rows(
@@ -197,8 +212,11 @@ def load_overture_side(extract_dir: Path) -> OvertureSide:
     return side
 
 
+_SCHEMA_QUERY = "SELECT * FROM read_parquet(?) LIMIT 0"
 _SEGMENTS_QUERY = (
-    "SELECT id, subtype, class, subclass, bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax "
+    "SELECT id, subtype, class, subclass, bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax, "
+    "coalesce(len(road_surface), 0) > 0, coalesce(len(width_rules), 0) > 0, "
+    "coalesce(len(access_restrictions), 0) > 0 "
     "FROM read_parquet(?)"
 )
 _IDS_QUERY = "SELECT id FROM read_parquet(?)"
@@ -249,6 +267,160 @@ def _bridge_rows(connection: duckdb.DuckDBPyConnection, parquet: str) -> list[So
         )
         for row in rows
     ]
+
+
+# ---------------------------------------------------------------------------
+# Source independence
+# ---------------------------------------------------------------------------
+
+#: Overture segment attributes that correspond to evidence PathAble's cost model
+#: uses, with the exact test applied to each segment.
+EXAMINED_ATTRIBUTES: dict[str, str] = {
+    "surface": "road_surface has at least one entry",
+    "width": "width_rules has at least one entry",
+    "access": "access_restrictions has at least one entry",
+    "sidewalk_or_crosswalk": "subclass is sidewalk or crosswalk",
+    "stairs": "class is steps",
+}
+
+#: Attributes PathAble routes on that Overture could only supply if its segment
+#: schema had a column for them.
+PATHABLE_ONLY_ATTRIBUTES: tuple[str, ...] = (
+    "kerb",
+    "tactile_paving",
+    "incline",
+    "smoothness",
+    "lit",
+    "step_count",
+)
+
+
+class FeatureSource(StrEnum):
+    """Which datasets contributed a segment's feature-level (not property-level) sources."""
+
+    OSM_ONLY = "osm_only"
+    NON_OSM_ONLY = "non_osm_only"
+    MIXED = "mixed"
+    NONE = "no_feature_level_source"
+
+
+def _examined_attributes(
+    feature_class: str | None,
+    subclass: str | None,
+    has_surface: bool,
+    has_width: bool,
+    has_access: bool,
+) -> frozenset[str]:
+    carried = {
+        "surface": has_surface,
+        "width": has_width,
+        "access": has_access,
+        "sidewalk_or_crosswalk": subclass in {"sidewalk", "crosswalk"},
+        "stairs": feature_class == "steps",
+    }
+    return frozenset(name for name, present in carried.items() if present)
+
+
+def _feature_source(datasets: Collection[str]) -> FeatureSource:
+    if not datasets:
+        return FeatureSource.NONE
+    if datasets == {OSM_DATASET}:
+        return FeatureSource.OSM_ONLY
+    if OSM_DATASET in datasets:
+        return FeatureSource.MIXED
+    return FeatureSource.NON_OSM_ONLY
+
+
+def source_independence(
+    segments: dict[str, SegmentFeature],
+    sources: Iterable[SourceRow],
+    segment_columns: Collection[str],
+) -> dict[str, Any]:
+    """Does this extract carry accessibility evidence that did not come from OSM?
+
+    An attribute on a segment built only from OSM is OSM's own evidence, relabelled:
+    counting it as enrichment would double-count. Only a segment with a non-OSM
+    feature source, or a non-OSM property-level source, could add anything
+    independent — and a mixed segment's attributes cannot be attributed to either.
+    """
+    datasets: dict[str, set[str]] = defaultdict(set)
+    property_level = Counter[str]()
+    for row in sources:
+        if row.property:
+            property_level[f"{row.dataset or 'null'}:{row.property}"] += 1
+        else:
+            datasets[row.gers_id].add(row.dataset or "null")
+    feature_source = {gers: _feature_source(datasets.get(gers, set())) for gers in segments}
+
+    attributes: dict[str, Any] = {}
+    for name, definition in EXAMINED_ATTRIBUTES.items():
+        carriers = Counter(
+            feature_source[gers].value for gers, seg in segments.items() if name in seg.examined
+        )
+        attributes[name] = {
+            "definition": definition,
+            "segments": sum(carriers.values()),
+            "by_feature_source": {
+                kind.value: carriers.get(kind.value, 0) for kind in FeatureSource
+            },
+        }
+
+    independent = [
+        gers
+        for gers, seg in segments.items()
+        if seg.examined and feature_source[gers] in {FeatureSource.NON_OSM_ONLY, FeatureSource.NONE}
+    ]
+    unattributable = [
+        gers
+        for gers, seg in segments.items()
+        if seg.examined and feature_source[gers] is FeatureSource.MIXED
+    ]
+    non_osm_properties = sum(
+        count for key, count in property_level.items() if not key.startswith(f"{OSM_DATASET}:")
+    )
+    non_osm_datasets = Counter(
+        dataset
+        for gers in segments
+        for dataset in datasets.get(gers, set())
+        if dataset != OSM_DATASET
+    )
+    non_osm_carrying = Counter(
+        dataset
+        for gers in independent
+        for dataset in datasets.get(gers, set())
+        if dataset != OSM_DATASET
+    )
+    adds_nothing = not independent and not unattributable and not non_osm_properties
+    return {
+        "scope": (
+            "This extract only: one Overture release, one region, the attributes listed. "
+            "Not a statement about Overture elsewhere."
+        ),
+        "segments_by_feature_source": _sorted_counts(
+            Counter(kind.value for kind in feature_source.values())
+        ),
+        "segments_by_non_osm_dataset": _sorted_counts(non_osm_datasets),
+        "property_level_sources": _sorted_counts(property_level),
+        "examined_attributes": attributes,
+        "segments_without_osm_source_carrying_examined_attributes": len(independent),
+        "segments_without_osm_source_carrying_examined_attributes_by_dataset": _sorted_counts(
+            non_osm_carrying
+        ),
+        "mixed_source_segments_carrying_examined_attributes": len(unattributable),
+        "non_osm_property_level_contributions": non_osm_properties,
+        "pathable_attributes_with_no_overture_column": [
+            name for name in PATHABLE_ONLY_ATTRIBUTES if name not in segment_columns
+        ],
+        "conclusion": (
+            "No examined accessibility attribute appears on a segment with any feature-level "
+            "source other than OpenStreetMap, and no non-OSM source contributes a property. "
+            "For these attributes, this extract adds no evidence independent of OSM."
+            if adds_nothing
+            else f"{len(independent)} segment(s) without an OSM source and {len(unattributable)} "
+            f"mixed-source segment(s) carry examined attributes, and {non_osm_properties} "
+            "property-level contribution(s) come from non-OSM sources."
+        ),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -593,6 +765,9 @@ def build_report(
             else {"method": "none — PathAble stores no OSM versions"}
         ),
         "source_rows": _source_row_summary(parsed, overture),
+        "source_independence": source_independence(
+            overture.segments, overture.segment_sources, overture.segment_columns
+        ),
         "ways": _way_summary(ways, identities, evidence, parsed),
         "edges": _edge_summary(ways, identities),
         "segments": _segment_summary(overture, parsed, pathable_way_ids),

@@ -41,6 +41,9 @@ SEGMENT_DDL = """
         resource VARCHAR, "version" VARCHAR)[],
     geometry GEOMETRY, version INTEGER,
     bbox STRUCT(xmin DOUBLE, xmax DOUBLE, ymin DOUBLE, ymax DOUBLE),
+    road_surface STRUCT("value" VARCHAR, "between" DOUBLE[])[],
+    width_rules STRUCT("value" DOUBLE, "between" DOUBLE[])[],
+    access_restrictions STRUCT(access_type VARCHAR, "between" DOUBLE[])[],
     theme VARCHAR, type VARCHAR
 """
 
@@ -95,16 +98,19 @@ class Seg:
     bbox: tuple[float, float, float, float] = INSIDE
     feature_class: str = "footway"
     subclass: str | None = None
+    surface: str | None = None
+    width: float | None = None
 
 
 #: One case per category. Expected way-level outcome after the arrow.
 SEGMENTS: tuple[Seg, ...] = (
-    Seg("seg-one", [src("w100@3")]),  # w100 one_to_one
-    Seg("seg-split-a", [src("w200@1")]),  # w200 one_to_many (split across two)
+    Seg("seg-one", [src("w100@3")], surface="paved"),  # w100 one_to_one
+    Seg("seg-split-a", [src("w200@1")], subclass="sidewalk"),  # w200 one_to_many (split)
     Seg("seg-split-b", [src("w200@1")]),
     Seg(  # w300, w301 many_to_one, with the segment ranges preserved
         "seg-merge",
         [src("w300@2", between=[0.0, 0.5]), src("w301@1", between=[0.5, 1.0])],
+        width=1.8,
     ),
     Seg(  # w400 many_to_many; w401 many_to_one
         "seg-mm-a",
@@ -343,6 +349,9 @@ def _write_segments(connection: duckdb.DuckDBPyConnection, path: Path, ddl: str)
             "geometry": _line(seg.bbox),
             "version": 1,
             "bbox": _bbox(seg.bbox),
+            "road_surface": [{"value": seg.surface, "between": None}] if seg.surface else [],
+            "width_rules": [{"value": seg.width, "between": None}] if seg.width else [],
+            "access_restrictions": [],
             "theme": "transportation",
             "type": "segment",
         }

@@ -7,9 +7,11 @@ type, and a file that fails is refused with the failures named. Columns the
 contract does not mention are allowed and recorded — Overture adds properties
 between releases, and an addition is not a reason to stop.
 
-The contract is deliberately narrow: identity, provenance, topology, extent and
-geometry. Attributes such as ``road_surface`` are carried through into the
-regional extract untouched but are not relied on, so they are not listed.
+The contract is deliberately narrow: identity, provenance, topology, extent,
+geometry, and the three attribute lists the source-independence measurement
+inspects (``road_surface``, ``width_rules``, ``access_restrictions``). Everything
+else is carried into the regional extract untouched but not relied on, so it is
+not listed.
 """
 
 from __future__ import annotations
@@ -75,6 +77,9 @@ SEGMENT_CONTRACT: dict[str, TypeSpec] = {
     "geometry": GEOMETRY,
     "version": INTEGER,
     "bbox": _BBOX,
+    "road_surface": ListOf(StructOf({"value": VARCHAR, "between": ListOf(DOUBLE)})),
+    "width_rules": ListOf(StructOf({"value": DOUBLE, "between": ListOf(DOUBLE)})),
+    "access_restrictions": ListOf(StructOf({"access_type": VARCHAR, "between": ListOf(DOUBLE)})),
 }
 
 CONNECTOR_CONTRACT: dict[str, TypeSpec] = {
