@@ -174,22 +174,26 @@ relation between identities, with its ranges kept, never a GERS column on an edg
 
 Not in the Waterloo extracts measured. The linkage report's `source_independence`
 section classifies every segment by the datasets behind its feature-level
-sources, then counts where five examined attributes appear:
+sources — OSM only, known non-OSM datasets only, mixed, or unknown — then counts
+where five examined attributes appear. Only the second class can be evidence
+from a source other than OSM; a mixed segment cannot be attributed to one
+source, and unknown provenance is unresolved, never independent.
 
-| 2026-09-23.0, Waterloo                             | Segments | On OSM-only segments | On segments with no OSM source |
-| -------------------------------------------------- | -------: | -------------------: | -----------------------------: |
-| Feature source: OpenStreetMap only                 |   29,009 |                    — |                              — |
-| Feature source: TomTom only                        |      325 |                    — |                              — |
-| Feature source: mixed                              |        0 |                    — |                              — |
-| `road_surface` present                             |   16,006 |               16,006 |                              0 |
-| `width_rules` present                              |      513 |                  513 |                              0 |
-| `access_restrictions` present                      |    5,858 |                5,858 |                              0 |
-| `subclass` sidewalk or crosswalk                   |    2,575 |                2,575 |                              0 |
-| `class` steps                                      |      374 |                  374 |                              0 |
-| Property-level contributions from non-OSM datasets |        0 |                    — |                              — |
+| 2026-09-23.0, Waterloo                             | Segments | On OSM-only segments | On non-OSM-only segments |
+| -------------------------------------------------- | -------: | -------------------: | -----------------------: |
+| Feature source: OpenStreetMap only                 |   29,009 |                    — |                        — |
+| Feature source: TomTom only                        |      325 |                    — |                        — |
+| Feature source: mixed or unknown                   |        0 |                    — |                        — |
+| `road_surface` present                             |   16,006 |               16,006 |                        0 |
+| `width_rules` present                              |      513 |                  513 |                        0 |
+| `access_restrictions` present                      |    5,858 |                5,858 |                        0 |
+| `subclass` sidewalk or crosswalk                   |    2,575 |                2,575 |                        0 |
+| `class` steps                                      |      374 |                  374 |                        0 |
+| Property-level contributions from non-OSM datasets |        0 |                    — |                        — |
 
-`2026-08-19.0` gives the same answer: 28,971 OSM-only and 295 TomTom-only
-segments, and no examined attribute on any of the TomTom ones. The only
+No source row in either release names no dataset. `2026-08-19.0` gives the
+same answer: 28,971 OSM-only and 295 TomTom-only segments, none mixed or of
+unknown provenance, and no examined attribute on any of the TomTom ones. The only
 property-level sources in either release are OSM route relations (`/routes`).
 PathAble's own kerb, tactile-paving, incline, smoothness, lighting and
 step-count attributes have no column in the observed segment schema at all.

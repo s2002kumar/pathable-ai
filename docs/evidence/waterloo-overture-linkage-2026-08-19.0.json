@@ -139,9 +139,11 @@
     "segments_by_non_osm_dataset": {
       "TomTom": 295
     },
+    "feature_level_rows_with_unknown_dataset": 0,
     "property_level_sources": {
       "OpenStreetMap:/routes": 1210
     },
+    "property_level_contributions_with_unknown_dataset": 0,
     "examined_attributes": {
       "surface": {
         "definition": "road_surface has at least one entry",
@@ -150,7 +152,7 @@
           "osm_only": 15747,
           "non_osm_only": 0,
           "mixed": 0,
-          "no_feature_level_source": 0
+          "unknown_feature_source": 0
         }
       },
       "width": {
@@ -160,7 +162,7 @@
           "osm_only": 511,
           "non_osm_only": 0,
           "mixed": 0,
-          "no_feature_level_source": 0
+          "unknown_feature_source": 0
         }
       },
       "access": {
@@ -170,7 +172,7 @@
           "osm_only": 5847,
           "non_osm_only": 0,
           "mixed": 0,
-          "no_feature_level_source": 0
+          "unknown_feature_source": 0
         }
       },
       "sidewalk_or_crosswalk": {
@@ -180,7 +182,7 @@
           "osm_only": 2574,
           "non_osm_only": 0,
           "mixed": 0,
-          "no_feature_level_source": 0
+          "unknown_feature_source": 0
         }
       },
       "stairs": {
@@ -190,13 +192,14 @@
           "osm_only": 372,
           "non_osm_only": 0,
           "mixed": 0,
-          "no_feature_level_source": 0
+          "unknown_feature_source": 0
         }
       }
     },
-    "segments_without_osm_source_carrying_examined_attributes": 0,
-    "segments_without_osm_source_carrying_examined_attributes_by_dataset": {},
+    "non_osm_only_segments_carrying_examined_attributes": 0,
+    "non_osm_only_segments_carrying_examined_attributes_by_dataset": {},
     "mixed_source_segments_carrying_examined_attributes": 0,
+    "segments_with_unknown_feature_source_carrying_examined_attributes": 0,
     "non_osm_property_level_contributions": 0,
     "pathable_attributes_with_no_overture_column": [
       "kerb",
@@ -1194,19 +1197,19 @@
       "added": 183
     }
   },
-  "content_sha256": "a3722e32a7249dc9d1cc8118aa1fba2275509308d992b0000d6dbfe00721990e",
+  "content_sha256": "2e43cf8ac6219088713ed5be2908f575ccce0060ee2c24a0df80fb7028def614",
   "run": {
-    "generated_at": "2026-09-25T14:53:46+00:00",
-    "seconds": 35.1,
-    "version_evidence_seconds": 30.63,
+    "generated_at": "2026-09-25T15:40:05+00:00",
+    "seconds": 32.53,
+    "version_evidence_seconds": 29.03,
     "environment": {
       "python": "3.13.2",
       "platform": "Windows-11-10.0.26200-SP0",
       "machine": "AMD64",
-      "git_commit": "8554b48121fd45bff8053a3dbbdceec098ef2426"
+      "git_commit": "77dc2dcfcf597c22489f8699f3f677be3f7b8aec-dirty"
     },
     "machine_memory_mb": 16498.0,
-    "peak_process_memory_mb": 2005.0,
+    "peak_process_memory_mb": 2092.7,
     "process_memory_method": "windows:GetProcessMemoryInfo working set"
   }
 }
