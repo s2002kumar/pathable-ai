@@ -64,7 +64,10 @@ class HardLimits:
     #: "I cannot use stairs" is a genuine physical fact for a wheelchair user and
     #: the UI states it plainly.
     exclude_steps: bool = False
-    #: Recorded gradients above this are excluded. Unrecorded gradient never is.
+    #: Uphill gradients above this are excluded, in the direction of travel. It
+    #: applies to the gradient routing uses — recorded in OpenStreetMap where one
+    #: is, otherwise estimated from the elevation model. A segment with no
+    #: gradient at all is never excluded, and neither is a descent.
     max_incline_percent: float | None = None
     #: Recorded widths below this are excluded. Unrecorded width never is.
     min_width_m: float | None = None
@@ -81,20 +84,37 @@ class HardLimits:
         )
 
     def describe(self) -> tuple[str, ...]:
-        """Plain statements of what this traveller cannot use."""
+        """Plain statements of what this traveller cannot use.
+
+        Limits are repeated exactly as they were declared. Rounding them for
+        display told somebody who set 4.5% that they had set 4%.
+        """
         stated: list[str] = []
         if self.exclude_steps:
             stated.append("cannot use steps")
         if self.max_incline_percent is not None:
-            stated.append(f"cannot manage gradients above {self.max_incline_percent:.0f}%")
+            stated.append(
+                f"cannot manage uphill gradients above {plain_number(self.max_incline_percent)}%"
+            )
         if self.min_width_m is not None:
-            stated.append(f"needs at least {self.min_width_m:.2f} m of width")
+            stated.append(f"needs at least {plain_number(self.min_width_m)} m of width")
         if self.exclude_rough_surface:
             stated.append("cannot use unpaved surfaces")
         return tuple(stated)
 
 
 NO_HARD_LIMITS = HardLimits()
+
+
+def plain_number(value: float) -> str:
+    """A quantity written as it was declared: trailing zeros dropped, nothing rounded.
+
+    ``5.0`` reads ``5`` and ``4.5`` stays ``4.5``. Used wherever a limit is
+    repeated back to the person who set it. The short form is used only when it
+    reads back as exactly the same number; otherwise the full value is written.
+    """
+    text = format(value, "g")
+    return text if float(text) == value else repr(value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -146,10 +166,24 @@ class MobilityProfile:
     #: answerable by measurement rather than by argument.
     ignore_unknown_attributes: tuple[str, ...] = ()
 
+    # --- Time estimates: never part of route selection --------------------
+    #: Assumed average pace, in metres per second, for duration estimates. A
+    #: rough planning figure, not a measurement of anybody — and carried on the
+    #: profile so a custom profile keeps its preset's pace instead of falling
+    #: back to a default that belongs to a different traveller.
+    walking_speed_mps: float = 1.0
+    #: The preset a custom profile was derived from; None for a preset itself.
+    base_profile_key: str | None = None
+
     @property
     def is_standard(self) -> bool:
         """True for the plain shortest-path baseline."""
         return self.key == STANDARD_PROFILE_KEY
+
+    @property
+    def pace_profile_key(self) -> str:
+        """Whose assumed pace a duration estimate for this profile uses."""
+        return self.base_profile_key or self.key
 
     @property
     def excludes_anything(self) -> bool:
@@ -164,6 +198,7 @@ STANDARD = MobilityProfile(
     key=STANDARD_PROFILE_KEY,
     display_name="Standard walking",
     description="Shortest walking route, ignoring accessibility characteristics.",
+    walking_speed_mps=1.35,
 )
 
 WHEELCHAIR = MobilityProfile(
@@ -202,6 +237,7 @@ WHEELCHAIR = MobilityProfile(
         KerbType.UNKNOWN: 90.0,
     },
     crossing_penalty_m=25.0,
+    walking_speed_mps=0.95,
 )
 
 WALKER = MobilityProfile(
@@ -234,6 +270,7 @@ WALKER = MobilityProfile(
         KerbType.UNKNOWN: 60.0,
     },
     crossing_penalty_m=20.0,
+    walking_speed_mps=0.65,
 )
 
 CRUTCHES = MobilityProfile(
@@ -267,6 +304,7 @@ CRUTCHES = MobilityProfile(
         KerbType.UNKNOWN: 20.0,
     },
     crossing_penalty_m=15.0,
+    walking_speed_mps=0.75,
 )
 
 STROLLER = MobilityProfile(
@@ -296,6 +334,7 @@ STROLLER = MobilityProfile(
         KerbType.UNKNOWN: 40.0,
     },
     crossing_penalty_m=15.0,
+    walking_speed_mps=1.15,
 )
 
 REDUCED_MOBILITY = MobilityProfile(
@@ -320,6 +359,7 @@ REDUCED_MOBILITY = MobilityProfile(
         KerbType.UNKNOWN: 12.0,
     },
     crossing_penalty_m=10.0,
+    walking_speed_mps=0.90,
 )
 
 PROFILES: Final[Mapping[str, MobilityProfile]] = {
@@ -383,10 +423,14 @@ def build_custom_profile(
     )
 
     stated = ", ".join(limits.describe()) or "no hard requirements"
+    # Everything not overridden is the preset's, pace included: a walker-based
+    # profile estimates time at a walker's pace, not at whichever pace the key
+    # "custom" once happened to map to.
     return replace(
         template,
         key="custom",
         display_name="Custom",
         description=f"Based on {template.display_name.lower()}; {stated}.",
         hard_limits=limits,
+        base_profile_key=template.key,
     )

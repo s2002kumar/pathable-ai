@@ -7,13 +7,17 @@ actual behaviour rather than on a mock's.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from itertools import pairwise
 
 import pytest
-from shapely.geometry import Point
+from shapely.geometry import LineString, Point
 
+from pathable_api.geo.enums import TriState
+from pathable_api.geo.features import normalise_edge
 from pathable_api.geo.fixtures import NODES, build_synthetic_network
 from pathable_api.geo.geometry import geodesic_distance_m
+from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload
 from pathable_api.routing.comparison import compare_routes
 from pathable_api.routing.engine import (
     MAX_REQUEST_SPAN_M,
@@ -25,7 +29,12 @@ from pathable_api.routing.engine import (
     compute_route,
 )
 from pathable_api.routing.graph import RoutableGraph, graph_from_payload
-from pathable_api.routing.profiles import STANDARD, MobilityProfile, get_profile
+from pathable_api.routing.profiles import (
+    STANDARD,
+    MobilityProfile,
+    build_custom_profile,
+    get_profile,
+)
 from pathable_api.routing.search import Algorithm
 
 A = NODES["A"]
@@ -418,6 +427,114 @@ class TestDurationEstimate:
 
         assert implied < route.effective_distance_m * 10
 
+    def test_a_custom_profile_keeps_its_base_profiles_pace(self, graph: RoutableGraph) -> None:
+        # Regression (D3): the pace was looked up by key, and "custom" mapped to
+        # the wheelchair pace whatever the custom profile was built on — so a
+        # walker-based profile was timed as if it moved half again as fast.
+        walker = compute_route(graph, origin=A, destination=D, profile=get_profile("walker"))
+        custom = compute_route(
+            graph,
+            origin=A,
+            destination=D,
+            profile=build_custom_profile(base="walker", max_incline_percent=20.0),
+        )
+
+        assert custom.distance_m == pytest.approx(walker.distance_m)
+        assert custom.estimated_duration_seconds == pytest.approx(walker.estimated_duration_seconds)
+        assert custom.pace_profile_key == "walker"
+
+    def test_the_route_says_whose_pace_it_was_timed_at(self, graph: RoutableGraph) -> None:
+        route = compute_route(graph, origin=A, destination=D, profile=get_profile("stroller"))
+
+        assert route.pace_profile_key == "stroller"
+
+
+class TestGradientSummary:
+    """Recorded and estimated gradients, kept apart, with direction of travel."""
+
+    def test_it_reports_the_steepest_climb_and_descent_with_their_source(
+        self, graph: RoutableGraph
+    ) -> None:
+        # The step-free bypass climbs 4% (B->F) and descends 4% (F->C), both
+        # recorded by a mapper.
+        route = compute_route(graph, origin=A, destination=D, profile=get_profile("wheelchair"))
+        summary = route.gradient
+
+        assert summary.steepest_uphill is not None
+        assert summary.steepest_uphill.percent == pytest.approx(4.0)
+        assert summary.steepest_uphill.direction == "uphill"
+        assert summary.steepest_uphill.source == "osm_incline"
+        assert summary.steepest_downhill is not None
+        assert summary.steepest_downhill.percent == pytest.approx(4.0)
+        assert route.segments[summary.steepest_uphill.segment_index].features.incline_percent == (
+            pytest.approx(4.0)
+        )
+
+    def test_a_climb_one_way_is_a_descent_the_other(self, graph: RoutableGraph) -> None:
+        there = compute_route(graph, origin=A, destination=D, profile=get_profile("wheelchair"))
+        back = compute_route(graph, origin=D, destination=A, profile=get_profile("wheelchair"))
+
+        up = there.gradient.steepest_uphill
+        down = back.gradient.steepest_downhill
+        assert up is not None
+        assert down is not None
+        assert there.segments[up.segment_index].edge_identity == (
+            back.segments[down.segment_index].edge_identity
+        )
+
+    def test_a_recorded_incline_takes_precedence_over_the_estimate(self) -> None:
+        # Both exist on one segment; routing uses the mapper's, so the summary
+        # must report the mapper's — and say so.
+        graph = _two_node_graph({"highway": "footway", "incline": "3%"}, derived=9.0)
+        route = compute_route(graph, origin=_WEST, destination=_EAST, profile=STANDARD)
+
+        uphill = route.gradient.steepest_uphill
+        assert uphill is not None
+        assert uphill.percent == pytest.approx(3.0)
+        assert uphill.source == "osm_incline"
+        assert route.gradient.recorded_length_m == pytest.approx(route.distance_m)
+
+    def test_an_estimate_is_reported_as_an_estimate(self) -> None:
+        graph = _two_node_graph({"highway": "footway"}, derived=6.5)
+        route = compute_route(graph, origin=_WEST, destination=_EAST, profile=STANDARD)
+
+        uphill = route.gradient.steepest_uphill
+        assert uphill is not None
+        assert uphill.source == "derived_elevation"
+        assert route.gradient.estimated_length_m == pytest.approx(route.distance_m)
+        # The OSM-only figure stays what it always was: nothing recorded.
+        assert route.steepest_incline_percent is None
+
+    def test_no_gradient_is_unknown_not_flat(self) -> None:
+        graph = _two_node_graph({"highway": "footway"}, derived=None)
+        route = compute_route(graph, origin=_WEST, destination=_EAST, profile=STANDARD)
+
+        assert route.gradient.steepest_uphill is None
+        assert route.gradient.steepest_downhill is None
+        assert route.gradient.unknown_length_m == pytest.approx(route.distance_m)
+        assert route.gradient.share(route.gradient.unknown_length_m) == pytest.approx(1.0)
+
+
+_WEST = (-80.5400, 43.4700)
+_EAST = (-80.5380, 43.4700)
+
+
+def _two_node_graph(tags: dict[str, object], *, derived: float | None) -> RoutableGraph:
+    """One segment, west to east, with a derived grade stored beside its tags."""
+    edge = NetworkEdge(
+        source_u="W",
+        source_v="E",
+        edge_key=0,
+        geometry=LineString([_WEST, _EAST]),
+        features=replace(normalise_edge(tags), derived_grade_percent=derived),
+        source_way_id="WE",
+    )
+    nodes = [
+        NetworkNode(source_node_id="W", geometry=Point(*_WEST)),
+        NetworkNode(source_node_id="E", geometry=Point(*_EAST)),
+    ]
+    return graph_from_payload(NetworkPayload(nodes=nodes, edges=[edge]))
+
 
 class TestUnknownDataReporting:
     def test_a_route_reports_how_much_of_it_is_unsurveyed(self, graph: RoutableGraph) -> None:
@@ -450,6 +567,57 @@ class TestComparison:
             graph, origin=A, destination=D, profile=get_profile("wheelchair")
         )
         assert comparison.ml_predictions_used is False
+
+    def test_both_routes_are_timed_at_the_same_pace(self, graph: RoutableGraph) -> None:
+        # Regression (D5): the shortest route was timed at a standard walking
+        # pace and the accessible route at the traveller's, and the two times
+        # were shown side by side — so part of the gap was a difference in
+        # assumed pace, not in route.
+        profile = get_profile("wheelchair")
+        comparison = compare_routes(graph, origin=A, destination=D, profile=profile)
+        standard = comparison.standard_route
+        accessible = comparison.accessible_route
+        assert standard is not None
+        assert accessible is not None
+
+        assert standard.pace_profile_key == accessible.pace_profile_key == "wheelchair"
+        own_pace = compute_route(graph, origin=A, destination=D, profile=STANDARD)
+        assert standard.estimated_duration_seconds == pytest.approx(
+            own_pace.with_pace_of(profile).estimated_duration_seconds
+        )
+        assert standard.estimated_duration_seconds > own_pace.estimated_duration_seconds
+        # Only the estimate changed: the route itself is the shortest route.
+        assert standard.distance_m == pytest.approx(own_pace.distance_m)
+
+    def test_a_custom_comparison_is_timed_at_its_base_pace(self, graph: RoutableGraph) -> None:
+        comparison = compare_routes(
+            graph,
+            origin=A,
+            destination=D,
+            profile=build_custom_profile(base="stroller", max_incline_percent=10.0),
+        )
+
+        assert comparison.standard_route is not None
+        assert comparison.standard_route.pace_profile_key == "stroller"
+
+    def test_it_marks_what_the_profile_excludes_on_the_shortest_route(
+        self, graph: RoutableGraph
+    ) -> None:
+        comparison = compare_routes(
+            graph, origin=A, destination=D, profile=get_profile("wheelchair")
+        )
+        standard = comparison.standard_route
+        assert standard is not None
+
+        excluded = [
+            segment.steps
+            for segment, reason in zip(
+                standard.segments, comparison.standard_exclusions, strict=True
+            )
+            if reason is not None
+        ]
+        assert [reason.value for reason in comparison.standard_exclusions if reason] == ["steps"]
+        assert excluded == [TriState.YES]
 
     def test_the_stairs_explanation_cites_the_real_step_count(self, graph: RoutableGraph) -> None:
         comparison = compare_routes(
