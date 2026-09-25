@@ -7,6 +7,7 @@ malformed data counted rather than dropped, and nothing matched by geometry.
 
 from __future__ import annotations
 
+import datetime as dt
 from pathlib import Path
 from typing import Any
 
@@ -16,9 +17,13 @@ from pathable_api.geo.overture.extract import EXTRACT_MANIFEST, SEGMENT_FILE
 from pathable_api.geo.overture.linkage import (
     ExtractMismatchError,
     OvertureSide,
+    Snapshots,
+    VersionStatus,
     build_report,
     load_overture_side,
+    version_status,
 )
+from pathable_api.geo.overture.osm_versions import ElementState
 from tests.overture_fixture import build_release, evidence, extract, identities
 
 
@@ -105,7 +110,7 @@ class TestVersions:
             "version_match_time_unverified": 1,  # w401
             "version_mismatch_pathable_newer": 1,  # w500
             "version_mismatch_pathable_older": 1,  # w300
-            "way_version_match_nodes_edited_later": 1,  # w700
+            "way_version_match_nodes_edited_after_pathable_snapshot": 1,  # w700
         }
         # The stored identities alone still establish no version at all.
         assert with_evidence["ways"]["by_version_status_from_stored_identities_only"] == {
@@ -121,7 +126,7 @@ class TestVersions:
         assert semantics["by_relation"] == {
             "equals_way_edit_time": 3,
             "equals_latest_node_edit_time": 1,
-            "later_than_every_edit_in_pathable_snapshot": 1,
+            "later_explained_by_edits_after_pathable_snapshot": 1,
             "unverifiable": 1,
         }
 
@@ -247,3 +252,49 @@ class TestReproducibility:
 
         with pytest.raises(ExtractMismatchError, match="edited"):
             load_overture_side(folder)
+
+
+#: PathAble read the map on 2026-08-16; Overture's snapshot is either side of it.
+PATHABLE_READ = "2026-08-16T23:08:23Z"
+OVERTURE_LATER = Snapshots(pathable=PATHABLE_READ, overture=dt.date(2026, 9, 9))
+OVERTURE_EARLIER = Snapshots(pathable=PATHABLE_READ, overture=dt.date(2026, 8, 5))
+
+
+@pytest.mark.parametrize(
+    ("overture_version", "overture_time", "state", "snapshots", "expected"),
+    [
+        # Same version, same latest edit.
+        (3, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_LATER, VersionStatus.EXACT),
+        # Overture saw a node move made after PathAble read the map.
+        (3, "2026-08-20T11:49:48Z", ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_LATER, VersionStatus.NODES_EDITED_AFTER_PATHABLE_SNAPSHOT),
+        # ...but a later edit that predates PathAble's read is not explained by anything.
+        (3, "2026-07-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_LATER, VersionStatus.TIME_INCONSISTENT),
+        # PathAble's newer extract has a node move made after Overture's planet date.
+        (3, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2026-08-10T00:00:00Z"), OVERTURE_EARLIER, VersionStatus.NODES_EDITED_AFTER_OVERTURE_SNAPSHOT),
+        # On Overture's snapshot day itself the order cannot be decided.
+        (3, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2026-08-05T09:00:00Z"), OVERTURE_EARLIER, VersionStatus.TIME_UNVERIFIED),
+        # PathAble holds an edit from before Overture's date that Overture did not see.
+        (3, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2026-07-01T00:00:00Z"), OVERTURE_EARLIER, VersionStatus.TIME_INCONSISTENT),
+        (3, None, ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_LATER, VersionStatus.TIME_UNVERIFIED),
+        (4, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_LATER, VersionStatus.PATHABLE_OLDER),
+        (2, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_EARLIER, VersionStatus.PATHABLE_NEWER),
+    ],
+)  # fmt: skip
+def test_a_version_match_is_exact_only_when_the_edit_times_agree(
+    overture_version: int,
+    overture_time: str | None,
+    state: ElementState,
+    snapshots: Snapshots,
+    expected: VersionStatus,
+) -> None:
+    status = version_status([overture_version], {overture_time}, evidence(), state, snapshots)
+
+    assert status is expected
+
+
+def test_two_overture_versions_of_one_element_are_ambiguous_whatever_the_evidence() -> None:
+    state = ElementState(1, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z")
+
+    assert version_status([1, 2], {None}, evidence(), state, OVERTURE_LATER) is (
+        VersionStatus.AMBIGUOUS
+    )

@@ -30,6 +30,8 @@ OLDER_RELEASE = "2026-08-19.0"
 REGION = (10.0, 10.0, 11.0, 11.0)
 INSIDE = (10.2, 10.2, 10.3, 10.3)
 OSM_SNAPSHOT = "2026-09-09"
+#: After the fixture dataset's source timestamp (2026-08-16T23:08:23Z), before OSM_SNAPSHOT.
+AFTER = "2026-08-20T11:49:48Z"
 
 SEGMENT_DDL = """
     id VARCHAR, subtype VARCHAR, class VARCHAR, subclass VARCHAR,
@@ -122,7 +124,10 @@ SEGMENTS: tuple[Seg, ...] = (
         "seg-malformed",
         [src("w600"), src("w601@1", between=[0.7, 0.2])],
     ),
-    Seg("seg-dup", [src("w700@1"), src("w700@1")]),  # duplicate row; w700 one_to_one
+    Seg(  # duplicate row; w700 one_to_one. A node moved after PathAble's snapshot.
+        "seg-dup",
+        [src("w700@1", update_time=AFTER), src("w700@1", update_time=AFTER)],
+    ),
     Seg("seg-conflict-a", [src("w800@1")]),  # w800 cited at two versions
     Seg("seg-conflict-b", [src("w800@2")]),
     Seg(  # not in PathAble, crosses the region boundary
@@ -310,7 +315,7 @@ def evidence() -> VersionEvidence:
             400: ElementState(1, stamp, stamp),  # exact
             401: ElementState(1, stamp, None),  # a member node was unreadable
             500: ElementState(5, stamp, stamp),  # Overture has v4: PathAble newer
-            700: ElementState(1, earlier, earlier),  # same version; nodes moved later
+            700: ElementState(1, earlier, earlier),  # same version; a node moved after
             800: ElementState(1, stamp, stamp),  # Overture cites v1 and v2: ambiguous
         },
         nodes={10: ElementState(1, stamp, stamp)},

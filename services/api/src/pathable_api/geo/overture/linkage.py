@@ -288,13 +288,17 @@ class VersionStatus(StrEnum):
     #: Same version, and Overture's ``update_time`` equals the latest edit PathAble's
     #: snapshot holds for the element (and, for a way, all its nodes).
     EXACT = "exact_version_match"
-    #: Same way version, but Overture saw a node edit PathAble's snapshot predates:
-    #: the shape may differ even though the way's version does not.
-    NODES_EDITED_LATER = "way_version_match_nodes_edited_later"
-    #: Same version, but there is no edit time on one side to confirm it.
+    #: Same way version, but a node moved after PathAble read the map and Overture
+    #: saw it: the shape may differ even though the way's version does not.
+    NODES_EDITED_AFTER_PATHABLE_SNAPSHOT = "way_version_match_nodes_edited_after_pathable_snapshot"
+    #: The mirror case: a node moved after Overture's planet snapshot, and
+    #: PathAble's newer extract has it.
+    NODES_EDITED_AFTER_OVERTURE_SNAPSHOT = "way_version_match_nodes_edited_after_overture_snapshot"
+    #: Same version, but the edit times cannot settle it: one is missing, or the
+    #: difference falls on Overture's snapshot day, whose time of day is unknown.
     TIME_UNVERIFIED = "version_match_time_unverified"
-    #: Same version, but Overture's edit time is earlier than PathAble's — which the
-    #: observed semantics say cannot happen. Kept visible rather than absorbed.
+    #: Same version, and the edit times differ in a way neither snapshot's date
+    #: explains. Kept visible rather than absorbed.
     TIME_INCONSISTENT = "version_match_time_inconsistent"
     UNKNOWN = "id_match_version_unknown"
     PATHABLE_OLDER = "version_mismatch_pathable_older"
@@ -407,10 +411,29 @@ class WayResult:
     partial_ranges: int = 0
 
 
+@dataclass(frozen=True, slots=True)
+class Snapshots:
+    """When each side read OpenStreetMap — what makes a difference in edit times explainable."""
+
+    #: PathAble's extract time, in OSM's edit-time form.
+    pathable: str | None
+    #: The planet date Overture read. Day resolution only.
+    overture: dt.date | None
+
+    @classmethod
+    def of(cls, identities: PathAbleIdentities, overture: OvertureSide) -> Snapshots:
+        dates = _overture_osm_snapshots(overture)
+        return cls(
+            pathable=_osm_time(identities.facts.source_timestamp),
+            overture=_date(dates[0]) if len(dates) == 1 else None,
+        )
+
+
 def classify_ways(
     identities: PathAbleIdentities,
     parsed: ParsedSources,
     evidence: VersionEvidence | None,
+    snapshots: Snapshots | None = None,
 ) -> list[WayResult]:
     by_way: dict[int, list[WayLink]] = defaultdict(list)
     ways_in_segment: dict[str, set[int]] = defaultdict(set)
@@ -445,8 +468,12 @@ def classify_ways(
                 raw_id=raw_id,
                 match=WayMatch.LINKED,
                 cardinality=cardinality,
-                version=_version_status(
-                    overture_versions, overture_times, evidence, pathable_state
+                version=version_status(
+                    overture_versions,
+                    overture_times,
+                    evidence,
+                    pathable_state,
+                    snapshots or Snapshots(None, None),
                 ),
                 segments=segments,
                 overture_versions=overture_versions,
@@ -457,12 +484,20 @@ def classify_ways(
     return results
 
 
-def _version_status(
+def version_status(
     overture_versions: Sequence[int],
     overture_times: Collection[str | None],
     evidence: VersionEvidence | None,
     state: ElementState | None,
+    snapshots: Snapshots,
 ) -> VersionStatus:
+    """Compare one element's version and edit time across the two snapshots.
+
+    Overture's ``update_time`` on an OSM way is the latest edit across the way
+    and its nodes. When the versions agree but those times do not, the gap is
+    only explained if the newer side's extra edit falls after the older side
+    read the map; otherwise it is reported as inconsistent, not forgiven.
+    """
     if len(overture_versions) > 1:
         return VersionStatus.AMBIGUOUS
     if evidence is None:
@@ -487,7 +522,19 @@ def _version_status(
     if overture_time == latest:
         return VersionStatus.EXACT
     if overture_time > latest:
-        return VersionStatus.NODES_EDITED_LATER
+        # Overture saw an edit PathAble's snapshot lacks: fine only if it came later.
+        if snapshots.pathable is not None and overture_time > snapshots.pathable:
+            return VersionStatus.NODES_EDITED_AFTER_PATHABLE_SNAPSHOT
+        return VersionStatus.TIME_INCONSISTENT
+    # PathAble holds an edit Overture did not see: fine only if it came after
+    # Overture's planet date. On that date itself it cannot be decided.
+    if snapshots.overture is None:
+        return VersionStatus.TIME_UNVERIFIED
+    edited = dt.date.fromisoformat(latest[:10])
+    if edited > snapshots.overture:
+        return VersionStatus.NODES_EDITED_AFTER_OVERTURE_SNAPSHOT
+    if edited == snapshots.overture:
+        return VersionStatus.TIME_UNVERIFIED
     return VersionStatus.TIME_INCONSISTENT
 
 
@@ -499,7 +546,8 @@ def build_report(
     run: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     parsed = parse_segment_sources(overture.segment_sources)
-    ways = classify_ways(identities, parsed, evidence)
+    snapshots = Snapshots.of(identities, overture)
+    ways = classify_ways(identities, parsed, evidence, snapshots)
     pathable_way_ids = {
         way_id
         for way_id in (parse_pathable_osm_id(raw) for raw in identities.way_edges)
@@ -543,7 +591,7 @@ def build_report(
         "ways": _way_summary(ways, identities, evidence, parsed),
         "edges": _edge_summary(ways, identities),
         "segments": _segment_summary(overture, parsed, pathable_way_ids),
-        "connectors": _connector_summary(overture, identities, evidence),
+        "connectors": _connector_summary(overture, identities, evidence, snapshots),
         "bridge_verification": _bridge_summary(overture),
         "changelog": _changelog_summary(overture, parsed, pathable_way_ids),
     }
@@ -553,14 +601,18 @@ def build_report(
     return report
 
 
-def _snapshots(identities: PathAbleIdentities, overture: OvertureSide) -> dict[str, Any]:
-    osm_versions = sorted(
+def _overture_osm_snapshots(overture: OvertureSide) -> list[str]:
+    return sorted(
         {
             row.resource_version
             for row in overture.segment_sources
             if row.dataset == OSM_DATASET and row.resource_version is not None
         }
     )
+
+
+def _snapshots(identities: PathAbleIdentities, overture: OvertureSide) -> dict[str, Any]:
+    osm_versions = _overture_osm_snapshots(overture)
     pathable_date = _date(identities.facts.source_timestamp)
     overture_date = _date(osm_versions[0]) if len(osm_versions) == 1 else None
     return {
@@ -640,7 +692,7 @@ def _way_summary(
         summary["by_version_status_from_stored_identities_only"] = _sorted_counts(
             Counter(str(way.version) for way in stored_only if way.match is WayMatch.LINKED)
         )
-        summary["update_time_semantics"] = _update_time_semantics(linked, parsed, evidence)
+        summary["update_time_semantics"] = _update_time_semantics(linked, evidence)
         summary["version_gap_when_pathable_older"] = _sorted_counts(
             Counter(
                 str(way.overture_versions[0] - way.pathable_version)
@@ -653,48 +705,43 @@ def _way_summary(
 
 
 def _update_time_semantics(
-    linked: Sequence[WayResult], parsed: ParsedSources, evidence: VersionEvidence
+    linked: Sequence[WayResult], evidence: VersionEvidence
 ) -> dict[str, Any]:
     """What Overture's ``update_time`` on an OSM way actually is, tested on same-version ways.
 
     If it were the way's own edit time, same (id, version) would always mean the
     same time. It is not: it matches the latest edit across the way and its
-    nodes. Measured here rather than assumed, because the version-status
-    categories above depend on it.
+    nodes, and where it does not, the snapshot dates explain the difference.
+    Measured here rather than assumed, because the version categories depend on it.
     """
-    overture_time: dict[int, set[str | None]] = defaultdict(set)
-    for link in parsed.links:
-        overture_time[link.way.element_id].add(link.update_time)
     counts = Counter[str]()
     for way in linked:
         way_id = parse_pathable_osm_id(way.raw_id)
         state = evidence.ways.get(way_id) if way_id is not None else None
         # Only an unambiguous same-version pair can test the semantics.
-        if way_id is None or state is None or way.overture_versions != (state.version,):
+        if state is None or way.overture_versions != (state.version,):
             continue
-        times = overture_time[way_id]
-        latest = state.latest_member_timestamp
-        overture = next(iter(times)) if len(times) == 1 else None
-        if overture is None or latest is None or state.timestamp is None:
-            counts["unverifiable"] += 1
-            continue
-        if overture == state.timestamp == latest:
-            counts["equals_way_edit_time"] += 1
-        elif overture == latest:
-            counts["equals_latest_node_edit_time"] += 1
-        elif overture == state.timestamp:
-            counts["equals_way_edit_time_despite_later_node_edit"] += 1
-        elif overture > latest:
-            counts["later_than_every_edit_in_pathable_snapshot"] += 1
-        else:
-            counts["earlier_than_pathable_snapshot_edits"] += 1
+        match way.version:
+            case VersionStatus.EXACT if state.timestamp == state.latest_member_timestamp:
+                counts["equals_way_edit_time"] += 1
+            case VersionStatus.EXACT:
+                counts["equals_latest_node_edit_time"] += 1
+            case VersionStatus.NODES_EDITED_AFTER_PATHABLE_SNAPSHOT:
+                counts["later_explained_by_edits_after_pathable_snapshot"] += 1
+            case VersionStatus.NODES_EDITED_AFTER_OVERTURE_SNAPSHOT:
+                counts["earlier_explained_by_edits_after_overture_snapshot"] += 1
+            case VersionStatus.TIME_INCONSISTENT:
+                counts["unexplained"] += 1
+            case _:
+                counts["unverifiable"] += 1
     return {
         "same_version_ways": sum(counts.values()),
         "by_relation": _sorted_counts(counts),
         "meaning": (
             "Overture's update_time on an OSM way equals the latest edit across the way and "
             "its nodes. A node edit moves a way without changing the way's version, so a "
-            "same-version match is only 'exact' when these times agree."
+            "same-version match is only 'exact' when these times agree; a difference is "
+            "'explained' only when the extra edit falls after the other side's snapshot."
         ),
     }
 
@@ -769,7 +816,10 @@ def _segment_summary(
 
 
 def _connector_summary(
-    overture: OvertureSide, identities: PathAbleIdentities, evidence: VersionEvidence | None
+    overture: OvertureSide,
+    identities: PathAbleIdentities,
+    evidence: VersionEvidence | None,
+    snapshots: Snapshots,
 ) -> dict[str, Any]:
     pathable_nodes = {
         node_id
@@ -804,7 +854,7 @@ def _connector_summary(
     for node_id in matched:
         overture_versions = sorted(node_refs[node_id])
         state = evidence.nodes.get(node_id) if evidence is not None else None
-        status = _version_status(overture_versions, node_times[node_id], evidence, state)
+        status = version_status(overture_versions, node_times[node_id], evidence, state, snapshots)
         versions[status.value] += 1
     connectors_with_sources = {row.gers_id for row in overture.connector_sources}
     return {
@@ -988,6 +1038,19 @@ def _sorted_counts(counter: Counter[Any], *, numeric: bool = False) -> dict[str,
     if numeric:
         return dict(sorted(items, key=lambda item: int(item[0])))
     return dict(sorted(items, key=lambda item: (-item[1], item[0])))
+
+
+def _osm_time(value: str | None) -> str | None:
+    """An ISO timestamp in OSM's ``YYYY-MM-DDTHH:MM:SSZ`` form, to order against edit times."""
+    if value is None:
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _date(value: str | None) -> dt.date | None:
