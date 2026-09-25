@@ -233,6 +233,46 @@ checks, then carry PA-UX-02C.
 
 ---
 
+## Stitch Route Planner integration (PA-UX-03)
+
+The founder approved a Stitch design — the Route Planner screen of Stitch
+project `17093004989141973251` — as the visual and product target, after a
+capability audit of every feature it shows. It is its own card rather than more
+of PA-UX-02, because making it truthful needs backend fixes and additions to the
+API contract, and PA-UX-02 builds no routing capability.
+
+| Card      | Deliverable                                                                                       | Status                      |
+| --------- | ------------------------------------------------------------------------------------------------- | --------------------------- |
+| PA-UX-03A | Correctness and API foundation: defects D1–D8, gradient summary, evidence basis, comparable times | **Built** — awaiting review |
+| PA-UX-03B | The Stitch frontend, on that foundation                                                           | Not started; waits for 03A  |
+
+**Founder decisions (2026-09-24).** The product is named PathAble — not
+WayPoint, not "PathAble AI", and never "AI-powered". Only the five real
+profiles; the design's "Standard" and "Gentle" do not ship. The custom
+maximum-slope control defaults to Off. No aggregate "% verified" or "% known"
+figure — per-category recorded and estimated coverage only. PathAble is a route
+planner, not turn-by-turn navigation. Unlike time estimates are never presented
+as comparable. A detour's explanation names every constraint responsible, not
+stairs alone. The uncommitted pan-pad work on `feat/premium-map-experience` was
+discarded; a clean Fit/Recenter Route action belongs to 03B.
+
+**PA-UX-03A.** No route moved: `routing_policy_version` stays 2, and the twenty
+corpus journeys return identical routes, distances and nodes expanded before and
+after (dataset `51e75f78`, 2026-09-25). What changed is what the API says about
+a route — see the changelog — and the four places the existing interface
+misstated it (D1, D5, D6, D7). The Stitch interface itself is not started.
+
+**Branch / worktree.** `feat/stitch-route-planner` in
+`../pathable-ai-wt/stitch-route-planner`, branched from `feat/premium-map-experience`
+at `01e26da`, so its draft PR is stacked on PR #64.
+
+**Still open before 03B.** A production geocoder and a production tile provider
+(ADR 0005) — the dark Stitch basemap is a second style for that decision. The
+product name still reads "PathAble AI" in the interface and these documents;
+renaming it belongs with the 03B interface work.
+
+---
+
 ## Standing rules
 
 1. **Never claim a capability before the phase that builds it.**
