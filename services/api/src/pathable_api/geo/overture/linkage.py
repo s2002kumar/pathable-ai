@@ -296,12 +296,19 @@ PATHABLE_ONLY_ATTRIBUTES: tuple[str, ...] = (
 
 
 class FeatureSource(StrEnum):
-    """Which datasets contributed a segment's feature-level (not property-level) sources."""
+    """Which datasets contributed a segment's feature-level (not property-level) sources.
+
+    Four different provenance facts, never merged: attributable to OSM, attributable
+    to a known non-OSM dataset, ambiguous between sources, and unknown. Unknown is
+    not independent.
+    """
 
     OSM_ONLY = "osm_only"
     NON_OSM_ONLY = "non_osm_only"
+    #: More than one source, or a known source alongside a row with no dataset.
     MIXED = "mixed"
-    NONE = "no_feature_level_source"
+    #: No feature-level source row, or only rows that name no dataset.
+    UNKNOWN = "unknown_feature_source"
 
 
 def _examined_attributes(
@@ -321,13 +328,14 @@ def _examined_attributes(
     return frozenset(name for name, present in carried.items() if present)
 
 
-def _feature_source(datasets: Collection[str]) -> FeatureSource:
-    if not datasets:
-        return FeatureSource.NONE
-    if datasets == {OSM_DATASET}:
-        return FeatureSource.OSM_ONLY
-    if OSM_DATASET in datasets:
+def _feature_source(known: Collection[str], unknown_rows: int) -> FeatureSource:
+    """Classify from the datasets named, and the rows that named none."""
+    if not known:
+        return FeatureSource.UNKNOWN
+    if unknown_rows or (OSM_DATASET in known and len(known) > 1):
         return FeatureSource.MIXED
+    if OSM_DATASET in known:
+        return FeatureSource.OSM_ONLY
     return FeatureSource.NON_OSM_ONLY
 
 
@@ -339,18 +347,29 @@ def source_independence(
     """Does this extract carry accessibility evidence that did not come from OSM?
 
     An attribute on a segment built only from OSM is OSM's own evidence, relabelled:
-    counting it as enrichment would double-count. Only a segment with a non-OSM
-    feature source, or a non-OSM property-level source, could add anything
-    independent — and a mixed segment's attributes cannot be attributed to either.
+    counting it as enrichment would double-count. Only a segment built only from
+    known non-OSM datasets, or a property contributed by one, is attributable to a
+    source other than OSM. A mixed segment's attributes cannot be attributed to
+    one source, and an attribute whose source is unknown is unresolved — it is
+    neither independent evidence nor shown to be OSM's.
     """
-    datasets: dict[str, set[str]] = defaultdict(set)
+    known: dict[str, set[str]] = defaultdict(set)
+    unknown_rows = Counter[str]()
     property_level = Counter[str]()
+    unknown_properties = 0
     for row in sources:
         if row.property:
-            property_level[f"{row.dataset or 'null'}:{row.property}"] += 1
+            if row.dataset:
+                property_level[f"{row.dataset}:{row.property}"] += 1
+            else:
+                unknown_properties += 1
+        elif row.dataset:
+            known[row.gers_id].add(row.dataset)
         else:
-            datasets[row.gers_id].add(row.dataset or "null")
-    feature_source = {gers: _feature_source(datasets.get(gers, set())) for gers in segments}
+            unknown_rows[row.gers_id] += 1
+    feature_source = {
+        gers: _feature_source(known.get(gers, set()), unknown_rows[gers]) for gers in segments
+    }
 
     attributes: dict[str, Any] = {}
     for name, definition in EXAMINED_ATTRIBUTES.items():
@@ -365,32 +384,23 @@ def source_independence(
             },
         }
 
-    independent = [
-        gers
-        for gers, seg in segments.items()
-        if seg.examined and feature_source[gers] in {FeatureSource.NON_OSM_ONLY, FeatureSource.NONE}
-    ]
-    unattributable = [
-        gers
-        for gers, seg in segments.items()
-        if seg.examined and feature_source[gers] is FeatureSource.MIXED
-    ]
+    def carrying(kind: FeatureSource) -> list[str]:
+        return [
+            gers for gers, seg in segments.items() if seg.examined and feature_source[gers] is kind
+        ]
+
+    non_osm_carriers = carrying(FeatureSource.NON_OSM_ONLY)
+    mixed_carriers = carrying(FeatureSource.MIXED)
+    unknown_carriers = carrying(FeatureSource.UNKNOWN)
     non_osm_properties = sum(
         count for key, count in property_level.items() if not key.startswith(f"{OSM_DATASET}:")
     )
     non_osm_datasets = Counter(
-        dataset
-        for gers in segments
-        for dataset in datasets.get(gers, set())
-        if dataset != OSM_DATASET
+        dataset for gers in segments for dataset in known.get(gers, set()) if dataset != OSM_DATASET
     )
     non_osm_carrying = Counter(
-        dataset
-        for gers in independent
-        for dataset in datasets.get(gers, set())
-        if dataset != OSM_DATASET
+        dataset for gers in non_osm_carriers for dataset in known[gers] if dataset != OSM_DATASET
     )
-    adds_nothing = not independent and not unattributable and not non_osm_properties
     return {
         "scope": (
             "This extract only: one Overture release, one region, the attributes listed. "
@@ -400,27 +410,58 @@ def source_independence(
             Counter(kind.value for kind in feature_source.values())
         ),
         "segments_by_non_osm_dataset": _sorted_counts(non_osm_datasets),
+        "feature_level_rows_with_unknown_dataset": sum(unknown_rows.values()),
         "property_level_sources": _sorted_counts(property_level),
+        "property_level_contributions_with_unknown_dataset": unknown_properties,
         "examined_attributes": attributes,
-        "segments_without_osm_source_carrying_examined_attributes": len(independent),
-        "segments_without_osm_source_carrying_examined_attributes_by_dataset": _sorted_counts(
+        "non_osm_only_segments_carrying_examined_attributes": len(non_osm_carriers),
+        "non_osm_only_segments_carrying_examined_attributes_by_dataset": _sorted_counts(
             non_osm_carrying
         ),
-        "mixed_source_segments_carrying_examined_attributes": len(unattributable),
+        "mixed_source_segments_carrying_examined_attributes": len(mixed_carriers),
+        "segments_with_unknown_feature_source_carrying_examined_attributes": len(unknown_carriers),
         "non_osm_property_level_contributions": non_osm_properties,
         "pathable_attributes_with_no_overture_column": [
             name for name in PATHABLE_ONLY_ATTRIBUTES if name not in segment_columns
         ],
-        "conclusion": (
+        "conclusion": _independence_conclusion(
+            non_osm=len(non_osm_carriers),
+            non_osm_properties=non_osm_properties,
+            mixed=len(mixed_carriers),
+            unknown=len(unknown_carriers),
+            unknown_properties=unknown_properties,
+        ),
+    }
+
+
+def _independence_conclusion(
+    *, non_osm: int, non_osm_properties: int, mixed: int, unknown: int, unknown_properties: int
+) -> str:
+    if not (non_osm or non_osm_properties or mixed or unknown or unknown_properties):
+        return (
             "No examined accessibility attribute appears on a segment with any feature-level "
             "source other than OpenStreetMap, and no non-OSM source contributes a property. "
             "For these attributes, this extract adds no evidence independent of OSM."
-            if adds_nothing
-            else f"{len(independent)} segment(s) without an OSM source and {len(unattributable)} "
-            f"mixed-source segment(s) carry examined attributes, and {non_osm_properties} "
-            "property-level contribution(s) come from non-OSM sources."
-        ),
-    }
+        )
+    sentences = [
+        f"{non_osm} segment(s) built only from known non-OSM datasets carry examined "
+        f"attributes, and {non_osm_properties} property-level contribution(s) come from known "
+        "non-OSM datasets: that evidence is attributable to a source other than OSM."
+        if non_osm or non_osm_properties
+        else "No examined evidence is attributable to a known non-OSM source."
+    ]
+    if mixed:
+        sentences.append(
+            f"{mixed} mixed-source segment(s) carry examined attributes that cannot be "
+            "attributed to a single source."
+        )
+    if unknown or unknown_properties:
+        sentences.append(
+            f"{unknown} segment(s) with an unknown feature source carry examined attributes, "
+            f"and {unknown_properties} property-level contribution(s) name no dataset: that "
+            "provenance is unresolved — neither independent nor shown to be OSM's."
+        )
+    return " ".join(sentences)
 
 
 # ---------------------------------------------------------------------------

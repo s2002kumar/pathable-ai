@@ -333,7 +333,7 @@ class TestSourceIndependence:
 
         assert result["segments_by_feature_source"] == {"non_osm_only": 1, "osm_only": 1}
         assert result["examined_attributes"]["surface"]["by_feature_source"]["osm_only"] == 1
-        assert result["segments_without_osm_source_carrying_examined_attributes"] == 0
+        assert result["non_osm_only_segments_carrying_examined_attributes"] == 0
         assert "adds no evidence independent of OSM" in result["conclusion"]
         assert "kerb" in result["pathable_attributes_with_no_overture_column"]
 
@@ -353,13 +353,41 @@ class TestSourceIndependence:
 
         result = source_independence(segments, rows, ["id"])
 
-        assert result["segments_without_osm_source_carrying_examined_attributes"] == 1
-        assert result["segments_without_osm_source_carrying_examined_attributes_by_dataset"] == {
+        assert result["non_osm_only_segments_carrying_examined_attributes"] == 1
+        assert result["non_osm_only_segments_carrying_examined_attributes_by_dataset"] == {
             "TomTom": 1
         }
         assert result["mixed_source_segments_carrying_examined_attributes"] == 1
         assert result["non_osm_property_level_contributions"] == 1
         assert "adds no evidence" not in result["conclusion"]
+
+    def test_unknown_provenance_is_unresolved_never_independent(self) -> None:
+        # Regression: a segment with no feature-level source was once counted
+        # alongside known non-OSM sources as independent evidence.
+        segments = {
+            "a": self._segment("a", "surface"),
+            "u": self._segment("u", "width"),  # no feature-level source row at all
+            "n": self._segment("n", "surface"),  # a feature-level row naming no dataset
+        }
+        rows = [
+            self._row("a", "OpenStreetMap"),
+            SourceRow("n", None, None, "", None, None, None),
+        ]
+
+        result = source_independence(segments, rows, ["id"])
+
+        assert result["segments_by_feature_source"] == {
+            "unknown_feature_source": 2,
+            "osm_only": 1,
+        }
+        assert result["segments_with_unknown_feature_source_carrying_examined_attributes"] == 2
+        assert result["non_osm_only_segments_carrying_examined_attributes"] == 0
+        assert result["segments_by_non_osm_dataset"] == {}
+        assert result["conclusion"].startswith(
+            "No examined evidence is attributable to a known non-OSM source."
+        )
+        assert "unresolved" in result["conclusion"]
+        assert "adds no evidence independent of OSM" not in result["conclusion"]
 
     def test_the_fixture_extract_adds_nothing_independent(
         self, without_evidence: dict[str, Any]
@@ -373,4 +401,7 @@ class TestSourceIndependence:
             name: attribute["segments"]
             for name, attribute in independence["examined_attributes"].items()
         } == {"surface": 1, "width": 1, "access": 0, "sidewalk_or_crosswalk": 1, "stairs": 0}
-        assert independence["segments_without_osm_source_carrying_examined_attributes"] == 0
+        assert independence["non_osm_only_segments_carrying_examined_attributes"] == 0
+        assert (
+            independence["segments_with_unknown_feature_source_carrying_examined_attributes"] == 0
+        )
