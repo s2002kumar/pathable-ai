@@ -243,7 +243,10 @@
   }
 
   .panelInner {
-    padding-top: var(--space-2);
+    /* 12 px at the sides rather than 16: on a 390 px phone the answer column
+       was 308 px wide, narrow enough that the detour line and the uncertainty
+       note each wrapped once more than they needed to. */
+    padding: var(--space-2) var(--space-3) var(--space-4);
   }
 
   .workspace {

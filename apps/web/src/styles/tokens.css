@@ -92,10 +92,12 @@
 
   /* --- Layout ------------------------------------------------------------ */
   --header-height: 3rem;
-  /* The floating planning surface: between 320 and 384 px, following the viewport
-     in between so an ordinary 1000 px laptop window still keeps two thirds of its
-     width as live map. */
-  --panel-width: clamp(20rem, 27vw, 24rem);
+  /* The floating planning surface: between 336 and 400 px, following the viewport
+     in between. An ordinary 1000 px laptop window keeps 64% of its width as live
+     map; 320 px was a few percent more map, but it wrapped the comparison onto so
+     many lines under a wider system font (DejaVu Sans on Linux) that the answer
+     no longer fitted a 700 px-tall screen. */
+  --panel-width: clamp(21rem, 28vw, 25rem);
   /* Room between the floating surfaces and the edges of the viewport. */
   --panel-gap: var(--space-3);
   /* How far the panel reaches into the map from the edge it is anchored to.
