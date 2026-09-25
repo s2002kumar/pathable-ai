@@ -58,7 +58,9 @@
    secondary action it is: the figures are the point, this is the exit. */
 .editButton {
   align-self: flex-start;
-  min-height: 2.5rem;
+  /* 36 px: comfortably above the 24 px target minimum, and a line shorter
+     than it was, which is what a phone's first screen was short of. */
+  min-height: 2.25rem;
   padding: var(--space-1) var(--space-3);
   font: inherit;
   font-size: var(--text-sm);
@@ -684,7 +686,6 @@
   flex-direction: column;
   gap: var(--space-1);
   align-items: stretch;
-  margin-top: var(--space-1);
 }
 
 .figureValue {

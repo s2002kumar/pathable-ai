@@ -544,6 +544,18 @@ whether the answer fits; it asserts at least 24 px of room beneath it, so a
 near-miss fails loudly instead of passing silently on one renderer and failing
 on another.
 
+**And the gate did its job on the next push.** Those slack figures were measured
+on Windows. On the Linux runner the same build (`01e26da`) left 18 px on the
+phone and 14 px at 1000 × 700, and CI failed. The runner renders `system-ui` in
+DejaVu Sans; the official Playwright image does not ship it and falls back to a
+CJK face, so a plain container run passed. With `fonts-dejavu-core` installed
+the container reproduced CI's 14 px and 18 px exactly, which made it a local
+stand-in for the runner. The fix widens the side panel to 21 rem (336 px) at
+1000 px — the map keeps 64% of the width — and trims the sheet's side padding to
+12 px, since at 308 px the answer column wrapped lines it did not need to. Under
+Linux metrics that measured 54 px at 1000 × 700 and 51 px on the phone, with the
+24 px gate unchanged.
+
 Three things checked by looking rather than by a machine:
 
 - **A stale test server invalidated two rounds of results.** Playwright's
