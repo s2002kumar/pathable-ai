@@ -107,6 +107,11 @@ class TestVersions:
             "version_mismatch_pathable_older": 1,  # w300
             "way_version_match_nodes_edited_later": 1,  # w700
         }
+        # The stored identities alone still establish no version at all.
+        assert with_evidence["ways"]["by_version_status_from_stored_identities_only"] == {
+            "id_match_version_unknown": 8,
+            "ambiguous_conflicting_overture_versions": 1,
+        }
 
     def test_update_time_is_tested_against_the_latest_member_edit(
         self, with_evidence: dict[str, Any]

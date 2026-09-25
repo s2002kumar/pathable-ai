@@ -634,6 +634,12 @@ def _way_summary(
         "examples": _way_examples(ways, parsed),
     }
     if evidence is not None:
+        # What PathAble could say from its own tables alone, next to what the
+        # source extract establishes — so neither is mistaken for the other.
+        stored_only = classify_ways(identities, parsed, None)
+        summary["by_version_status_from_stored_identities_only"] = _sorted_counts(
+            Counter(str(way.version) for way in stored_only if way.match is WayMatch.LINKED)
+        )
         summary["update_time_semantics"] = _update_time_semantics(linked, parsed, evidence)
         summary["version_gap_when_pathable_older"] = _sorted_counts(
             Counter(
