@@ -1,0 +1,1097 @@
+{
+  "overture_linkage_version": 1,
+  "what_this_shows": "How PathAble's stored OSM identities appear in Overture's own provenance (segment and connector `sources`), for one pinned release and one region. Matching is by identifier only; no geometry matching was attempted.",
+  "what_this_does_not_show": [
+    "That PathAble is synchronized with Overture, or that incremental updates are correct.",
+    "That an id match is the same OSM revision, unless version_evidence says so.",
+    "That Overture is more or less accurate or complete than OpenStreetMap.",
+    "Anything about routing: no dataset was written, activated or re-routed."
+  ],
+  "pathable": {
+    "dataset_id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+    "region": "waterloo",
+    "status": "active",
+    "checksum": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906",
+    "source_type": "osm",
+    "source_name": "openstreetmap-pbf:waterloo",
+    "source_timestamp": "2026-08-16T23:08:23+00:00",
+    "acquired_at": "2026-08-17T23:52:02+00:00",
+    "node_count": 155714,
+    "edge_count": 180554,
+    "source_file_name": "ontario-latest.osm.pbf",
+    "source_file_sha256": "cee90e3725139c41ef939f726730b4dfb6fd45e624d2797dac4be38a69145ef3",
+    "source_provider": "geofabrik",
+    "distinct_source_way_ids": 37976,
+    "segments_without_source_way_id": 0,
+    "distinct_source_node_ids": 155714,
+    "stores_osm_versions": false
+  },
+  "overture": {
+    "release": {
+      "requested": "2026-09-23.0",
+      "observed": "2026-09-23.0",
+      "schema_version": "2.0.0",
+      "schema_tag": "https://github.com/OvertureMaps/schema/releases/tag/v2.0.0",
+      "catalog_url": "https://stac.overturemaps.org/2026-09-23.0/catalog.json",
+      "latest_at_resolution": "2026-09-23.0",
+      "available_releases": [
+        "2026-08-19.0",
+        "2026-09-23.0"
+      ],
+      "warnings": []
+    },
+    "extract_manifest_sha256": "17e066fdc22d88b1b70d19ba0705f934f44f5793696ee35d4a33c1238d89c7d1",
+    "region_bounds": [
+      -80.59,
+      43.42,
+      -80.46,
+      43.52
+    ],
+    "segments": 29334,
+    "connectors": 54353
+  },
+  "snapshots": {
+    "pathable_source_timestamp": "2026-08-16T23:08:23+00:00",
+    "overture_osm_resource_versions": [
+      "2026-09-09"
+    ],
+    "overture_osm_resource_version_meaning": "Overture's `version` field on OSM sources: the planet snapshot it read, not an element version",
+    "overture_latest_osm_edit_in_extract": "2026-09-05T15:19:51Z",
+    "overture_cutoff_note": "The latest OSM edit time Overture carries is a lower bound on its real cutoff; the planet date is an upper bound. Edits between the two are undecidable.",
+    "days_between_snapshots": 24
+  },
+  "version_evidence": {
+    "method": "OSM element versions read from the dataset's own source extract, after its SHA-256 matched the value recorded at ingestion",
+    "file_name": "ontario-latest.osm.pbf",
+    "file_sha256": "cee90e3725139c41ef939f726730b4dfb6fd45e624d2797dac4be38a69145ef3",
+    "ways_requested": 37976,
+    "ways_found": 37976,
+    "nodes_requested": 155714,
+    "nodes_found": 155714,
+    "member_nodes_read_for_way_edit_times": 158803
+  },
+  "source_rows": {
+    "segment_source_rows": 43106,
+    "by_kind": {
+      "osm_way_geometry": 41569,
+      "osm_property_only": 1212,
+      "non_osm_dataset": 325
+    },
+    "by_dataset_and_kind": {
+      "OpenStreetMap/osm_property_only": 1212,
+      "OpenStreetMap/osm_way_geometry": 41569,
+      "TomTom/non_osm_dataset": 325
+    },
+    "property_only_paths": {
+      "/routes": 1212
+    },
+    "rows_with_null_confidence": 43106,
+    "rows_with_null_update_time_by_kind": {
+      "osm_property_only": 1212,
+      "non_osm_dataset": 325
+    },
+    "malformed_examples": [],
+    "unknowns_policy": "Null confidence, update_time and between are reported as null. A null `between` is Overture's convention for 'the whole feature' and is kept distinct from [0, 1]."
+  },
+  "source_independence": {
+    "scope": "This extract only: one Overture release, one region, the attributes listed. Not a statement about Overture elsewhere.",
+    "segments_by_feature_source": {
+      "osm_only": 29009,
+      "non_osm_only": 325
+    },
+    "segments_by_non_osm_dataset": {
+      "TomTom": 325
+    },
+    "property_level_sources": {
+      "OpenStreetMap:/routes": 1212
+    },
+    "examined_attributes": {
+      "surface": {
+        "definition": "road_surface has at least one entry",
+        "segments": 16006,
+        "by_feature_source": {
+          "osm_only": 16006,
+          "non_osm_only": 0,
+          "mixed": 0,
+          "no_feature_level_source": 0
+        }
+      },
+      "width": {
+        "definition": "width_rules has at least one entry",
+        "segments": 513,
+        "by_feature_source": {
+          "osm_only": 513,
+          "non_osm_only": 0,
+          "mixed": 0,
+          "no_feature_level_source": 0
+        }
+      },
+      "access": {
+        "definition": "access_restrictions has at least one entry",
+        "segments": 5858,
+        "by_feature_source": {
+          "osm_only": 5858,
+          "non_osm_only": 0,
+          "mixed": 0,
+          "no_feature_level_source": 0
+        }
+      },
+      "sidewalk_or_crosswalk": {
+        "definition": "subclass is sidewalk or crosswalk",
+        "segments": 2575,
+        "by_feature_source": {
+          "osm_only": 2575,
+          "non_osm_only": 0,
+          "mixed": 0,
+          "no_feature_level_source": 0
+        }
+      },
+      "stairs": {
+        "definition": "class is steps",
+        "segments": 374,
+        "by_feature_source": {
+          "osm_only": 374,
+          "non_osm_only": 0,
+          "mixed": 0,
+          "no_feature_level_source": 0
+        }
+      }
+    },
+    "segments_without_osm_source_carrying_examined_attributes": 0,
+    "segments_without_osm_source_carrying_examined_attributes_by_dataset": {},
+    "mixed_source_segments_carrying_examined_attributes": 0,
+    "non_osm_property_level_contributions": 0,
+    "pathable_attributes_with_no_overture_column": [
+      "kerb",
+      "tactile_paving",
+      "incline",
+      "smoothness",
+      "lit",
+      "step_count"
+    ],
+    "conclusion": "No examined accessibility attribute appears on a segment with any feature-level source other than OpenStreetMap, and no non-OSM source contributes a property. For these attributes, this extract adds no evidence independent of OSM."
+  },
+  "ways": {
+    "pathable_ways": 37976,
+    "by_match": {
+      "linked": 37604,
+      "not_in_overture_sources": 372
+    },
+    "id_level_matches": 37604,
+    "by_cardinality": {
+      "one_to_one": 19449,
+      "many_to_one": 16266,
+      "one_to_many": 1553,
+      "many_to_many": 336
+    },
+    "by_version_status": {
+      "exact_version_match": 37372,
+      "version_mismatch_pathable_older": 206,
+      "way_version_match_nodes_edited_after_pathable_snapshot": 26
+    },
+    "by_cardinality_and_version_status": {
+      "one_to_one/exact_version_match": 19348,
+      "many_to_one/exact_version_match": 16157,
+      "one_to_many/exact_version_match": 1537,
+      "many_to_many/exact_version_match": 330,
+      "one_to_one/version_mismatch_pathable_older": 94,
+      "many_to_one/version_mismatch_pathable_older": 91,
+      "many_to_one/way_version_match_nodes_edited_after_pathable_snapshot": 18,
+      "one_to_many/version_mismatch_pathable_older": 16,
+      "one_to_one/way_version_match_nodes_edited_after_pathable_snapshot": 7,
+      "many_to_many/version_mismatch_pathable_older": 5,
+      "many_to_many/way_version_match_nodes_edited_after_pathable_snapshot": 1
+    },
+    "ways_with_partial_segment_ranges": 16602,
+    "segments_per_linked_way": {
+      "1": 35715,
+      "2": 1342,
+      "3": 283,
+      "4": 125,
+      "5": 52,
+      "6": 34,
+      "7": 16,
+      "8": 17,
+      "9": 5,
+      "10": 5,
+      "11": 3,
+      "12": 1,
+      "13": 1,
+      "14": 2,
+      "16": 2,
+      "19": 1
+    },
+    "osm_ways_per_linked_segment": {
+      "1": 24276,
+      "2": 2108,
+      "3": 1217,
+      "4": 362,
+      "5": 448,
+      "6": 109,
+      "7": 159,
+      "8": 60,
+      "9": 70,
+      "10": 32,
+      "11": 32,
+      "12": 27,
+      "13": 24,
+      "14": 15,
+      "15": 15,
+      "16": 13,
+      "17": 11,
+      "18": 2,
+      "19": 5,
+      "20": 3,
+      "21": 6,
+      "22": 2,
+      "24": 2,
+      "25": 2,
+      "26": 1,
+      "27": 1,
+      "28": 2,
+      "29": 1,
+      "30": 1,
+      "31": 1,
+      "32": 1,
+      "33": 1
+    },
+    "unmatched_by_pathable_highway": {
+      "corridor": 207,
+      "platform": 165
+    },
+    "linked_by_pathable_highway": {
+      "footway": 18165,
+      "service": 10495,
+      "residential": 2502,
+      "path": 2049,
+      "secondary": 1634,
+      "cycleway": 1132,
+      "tertiary": 713,
+      "unclassified": 420,
+      "steps": 374,
+      "track": 45,
+      "secondary_link": 42,
+      "primary": 16,
+      "tertiary_link": 7,
+      "living_street": 5,
+      "pedestrian": 5
+    },
+    "examples": {
+      "linked/many_to_many/exact_version_match": [
+        {
+          "pathable_source_way_id": "588185160",
+          "pathable_version": 2,
+          "segments": [
+            {
+              "gers_id": "116ad2a9-0422-4f2e-ba86-85f78b1c1ee1",
+              "record_id": "w588185160@2",
+              "segment_range": [
+                0.0,
+                0.130012003
+              ]
+            },
+            {
+              "gers_id": "5023ab41-e05c-4dce-8847-4a029e47862d",
+              "record_id": "w588185160@2",
+              "segment_range": null
+            },
+            {
+              "gers_id": "ebe01447-8cb5-4747-a56e-33d3f3d4ea04",
+              "record_id": "w588185160@2",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "467711265",
+          "pathable_version": 8,
+          "segments": [
+            {
+              "gers_id": "9b2c6511-82a7-45c3-ab37-32645bbfb224",
+              "record_id": "w467711265@8",
+              "segment_range": [
+                0.480627103,
+                1.0
+              ]
+            },
+            {
+              "gers_id": "eaacbd14-b515-46c1-8f43-d0596af69e40",
+              "record_id": "w467711265@8",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "1040978947",
+          "pathable_version": 8,
+          "segments": [
+            {
+              "gers_id": "46bcfff6-f9b9-42f0-bf6d-355f16b12f58",
+              "record_id": "w1040978947@8",
+              "segment_range": null
+            },
+            {
+              "gers_id": "cba21040-7872-4632-a187-b341b05b7a12",
+              "record_id": "w1040978947@8",
+              "segment_range": [
+                0.331182914,
+                1.0
+              ]
+            }
+          ]
+        }
+      ],
+      "linked/many_to_many/version_mismatch_pathable_older": [
+        {
+          "pathable_source_way_id": "187679408",
+          "pathable_version": 18,
+          "segments": [
+            {
+              "gers_id": "12424fdd-5853-4780-9297-b3e9a7c01b29",
+              "record_id": "w187679408@19",
+              "segment_range": null
+            },
+            {
+              "gers_id": "403f23bb-f744-4bfd-ac70-f1b735116144",
+              "record_id": "w187679408@19",
+              "segment_range": [
+                0.0,
+                0.521746864
+              ]
+            },
+            {
+              "gers_id": "b8cb737c-74b6-4350-aee8-e9c936a78eb6",
+              "record_id": "w187679408@19",
+              "segment_range": [
+                0.30566679,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "26935128",
+          "pathable_version": 18,
+          "segments": [
+            {
+              "gers_id": "15a7780c-5335-480e-b137-635963d7e79a",
+              "record_id": "w26935128@19",
+              "segment_range": null
+            },
+            {
+              "gers_id": "4eb3f899-f415-4321-9b4a-6c864dcc8af1",
+              "record_id": "w26935128@19",
+              "segment_range": null
+            },
+            {
+              "gers_id": "543e966d-283b-4a1d-b63b-7cd10e6bacb3",
+              "record_id": "w26935128@19",
+              "segment_range": null
+            },
+            {
+              "gers_id": "800efa69-d6b8-4018-b33a-e6af70784b60",
+              "record_id": "w26935128@19",
+              "segment_range": [
+                0.0,
+                0.409591552
+              ]
+            },
+            {
+              "gers_id": "ac6a5513-55cd-4e50-b757-f85de8962802",
+              "record_id": "w26935128@19",
+              "segment_range": null
+            },
+            {
+              "gers_id": "c1e9a1f9-adfe-4e9e-896a-566e1ec68bd4",
+              "record_id": "w26935128@19",
+              "segment_range": null
+            },
+            {
+              "gers_id": "d5fd588e-3b46-4aed-bc27-5280079121af",
+              "record_id": "w26935128@19",
+              "segment_range": null
+            },
+            {
+              "gers_id": "ff9df5e6-ba75-4f2b-bd98-ab46545224de",
+              "record_id": "w26935128@19",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "265303867",
+          "pathable_version": 6,
+          "segments": [
+            {
+              "gers_id": "30aed20e-bc93-4509-89c4-d5ae7378c1a3",
+              "record_id": "w265303867@7",
+              "segment_range": null
+            },
+            {
+              "gers_id": "6f83e4e9-afc8-40d8-8642-de80633e1324",
+              "record_id": "w265303867@7",
+              "segment_range": null
+            },
+            {
+              "gers_id": "8b0b364c-b7ac-440f-9443-47a0469647b6",
+              "record_id": "w265303867@7",
+              "segment_range": [
+                0.0,
+                0.881728732
+              ]
+            },
+            {
+              "gers_id": "d456890f-d3d0-487a-86c8-5192199e66ab",
+              "record_id": "w265303867@7",
+              "segment_range": null
+            }
+          ]
+        }
+      ],
+      "linked/many_to_many/way_version_match_nodes_edited_after_pathable_snapshot": [
+        {
+          "pathable_source_way_id": "36018410",
+          "pathable_version": 13,
+          "segments": [
+            {
+              "gers_id": "28c1f180-2f56-4a4a-a1f6-69f6867ff35e",
+              "record_id": "w36018410@13",
+              "segment_range": null
+            },
+            {
+              "gers_id": "76d4372b-851c-4cb1-b5fc-e104305f03b7",
+              "record_id": "w36018410@13",
+              "segment_range": [
+                0.539739935,
+                1.0
+              ]
+            },
+            {
+              "gers_id": "7a96ddfa-e79b-4916-b35b-9c8236d6abac",
+              "record_id": "w36018410@13",
+              "segment_range": null
+            },
+            {
+              "gers_id": "b214c7f9-751d-442e-94a0-5be4d85a6720",
+              "record_id": "w36018410@13",
+              "segment_range": null
+            },
+            {
+              "gers_id": "b76f1365-98e0-4744-87b0-9bc17a21f637",
+              "record_id": "w36018410@13",
+              "segment_range": null
+            },
+            {
+              "gers_id": "bc83dd76-129c-4cf5-9fcd-b3bd758ffa5f",
+              "record_id": "w36018410@13",
+              "segment_range": null
+            }
+          ]
+        }
+      ],
+      "linked/many_to_one/exact_version_match": [
+        {
+          "pathable_source_way_id": "959971897",
+          "pathable_version": 3,
+          "segments": [
+            {
+              "gers_id": "a1c91442-5ced-4dfe-b8b9-b46e9d88e8d4",
+              "record_id": "w959971897@3",
+              "segment_range": [
+                0.32403982,
+                0.378140801
+              ]
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "886408032",
+          "pathable_version": 4,
+          "segments": [
+            {
+              "gers_id": "17cc2a8c-b67d-4ecd-802b-ad32270bd5e4",
+              "record_id": "w886408032@4",
+              "segment_range": [
+                0.136888924,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "1025420447",
+          "pathable_version": 3,
+          "segments": [
+            {
+              "gers_id": "22104ab7-1015-4661-8816-6e25eb56f658",
+              "record_id": "w1025420447@3",
+              "segment_range": [
+                0.372684392,
+                0.555340361
+              ]
+            }
+          ]
+        }
+      ],
+      "linked/many_to_one/version_mismatch_pathable_older": [
+        {
+          "pathable_source_way_id": "1070830228",
+          "pathable_version": 1,
+          "segments": [
+            {
+              "gers_id": "ef11fb83-4a7a-4b22-a200-aa5af426fcd7",
+              "record_id": "w1070830228@2",
+              "segment_range": [
+                0.127737821,
+                0.147588159
+              ]
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "700199809",
+          "pathable_version": 4,
+          "segments": [
+            {
+              "gers_id": "5a4aa220-2ac4-4159-a1e1-ea3c5fc9259b",
+              "record_id": "w700199809@5",
+              "segment_range": [
+                0.15772402,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "1070830241",
+          "pathable_version": 1,
+          "segments": [
+            {
+              "gers_id": "e3b3c1bb-8d9b-4cc7-bb62-1b90fc2ccdb5",
+              "record_id": "w1070830241@3",
+              "segment_range": [
+                0.0,
+                0.58909751
+              ]
+            }
+          ]
+        }
+      ],
+      "linked/many_to_one/way_version_match_nodes_edited_after_pathable_snapshot": [
+        {
+          "pathable_source_way_id": "41169447",
+          "pathable_version": 31,
+          "segments": [
+            {
+              "gers_id": "a28cd674-e72a-408d-8d98-aa541a7515a5",
+              "record_id": "w41169447@31",
+              "segment_range": [
+                0.0,
+                0.806836752
+              ]
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "1027542392",
+          "pathable_version": 2,
+          "segments": [
+            {
+              "gers_id": "28e5e836-edfe-4e2b-b0c1-f370ecabc2b0",
+              "record_id": "w1027542392@2",
+              "segment_range": [
+                0.538228701,
+                0.54507018
+              ]
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "1544714011",
+          "pathable_version": 1,
+          "segments": [
+            {
+              "gers_id": "527eaf92-7d39-4386-b9a2-10c88057d677",
+              "record_id": "w1544714011@1",
+              "segment_range": [
+                0.581631272,
+                0.713446106
+              ]
+            }
+          ]
+        }
+      ],
+      "linked/one_to_many/exact_version_match": [
+        {
+          "pathable_source_way_id": "468456483",
+          "pathable_version": 4,
+          "segments": [
+            {
+              "gers_id": "0b07aeec-9022-4364-9ecb-ca122d08177b",
+              "record_id": "w468456483@4",
+              "segment_range": null
+            },
+            {
+              "gers_id": "11c6dbd4-7b9e-48a6-b907-29fec4425101",
+              "record_id": "w468456483@4",
+              "segment_range": null
+            },
+            {
+              "gers_id": "17d223b2-1444-4a58-a67c-a36474c26811",
+              "record_id": "w468456483@4",
+              "segment_range": null
+            },
+            {
+              "gers_id": "75026b05-3d7a-4712-9cae-cf9ef33d8b48",
+              "record_id": "w468456483@4",
+              "segment_range": null
+            },
+            {
+              "gers_id": "9c17bf7c-c129-4644-8e73-33f0761b120f",
+              "record_id": "w468456483@4",
+              "segment_range": null
+            },
+            {
+              "gers_id": "b9ed7546-2094-4f5a-9c83-b8f995d8fe76",
+              "record_id": "w468456483@4",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "1300153984",
+          "pathable_version": 1,
+          "segments": [
+            {
+              "gers_id": "01f8a15d-4c7e-44a8-95d3-63258972417e",
+              "record_id": "w1300153984@1",
+              "segment_range": null
+            },
+            {
+              "gers_id": "f4aa54a7-30a5-4b77-ad42-34f010cecff3",
+              "record_id": "w1300153984@1",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "27250845",
+          "pathable_version": 3,
+          "segments": [
+            {
+              "gers_id": "8e291852-d8c4-4401-ae82-7a79c20f6232",
+              "record_id": "w27250845@3",
+              "segment_range": null
+            },
+            {
+              "gers_id": "95f3c60f-be16-4429-b4c4-62cad9281e02",
+              "record_id": "w27250845@3",
+              "segment_range": null
+            }
+          ]
+        }
+      ],
+      "linked/one_to_many/version_mismatch_pathable_older": [
+        {
+          "pathable_source_way_id": "26958226",
+          "pathable_version": 19,
+          "segments": [
+            {
+              "gers_id": "5c7a407f-168f-44f2-9e0b-c96f4009e310",
+              "record_id": "w26958226@20",
+              "segment_range": null
+            },
+            {
+              "gers_id": "c5cc18b8-f198-4e25-a1ae-a97572779125",
+              "record_id": "w26958226@20",
+              "segment_range": null
+            },
+            {
+              "gers_id": "d71d9fac-0073-457b-b591-87a57fcbaee6",
+              "record_id": "w26958226@20",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "196451567",
+          "pathable_version": 14,
+          "segments": [
+            {
+              "gers_id": "8e5353e0-14e1-4329-b1b4-e1bd12a672e5",
+              "record_id": "w196451567@15",
+              "segment_range": null
+            },
+            {
+              "gers_id": "9514e6a6-b430-4821-9e6a-c872f8b881a4",
+              "record_id": "w196451567@15",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "26826205",
+          "pathable_version": 13,
+          "segments": [
+            {
+              "gers_id": "0a90d663-0865-4bb2-bbbb-79ae7bb5e2dc",
+              "record_id": "w26826205@15",
+              "segment_range": null
+            },
+            {
+              "gers_id": "491e53dc-8e37-4e2c-b48d-e022db133796",
+              "record_id": "w26826205@15",
+              "segment_range": null
+            },
+            {
+              "gers_id": "9d910232-d780-4ea3-91e3-53b2c37ea762",
+              "record_id": "w26826205@15",
+              "segment_range": null
+            },
+            {
+              "gers_id": "ae158f01-b031-4ac2-a7ae-1069944ff97c",
+              "record_id": "w26826205@15",
+              "segment_range": null
+            },
+            {
+              "gers_id": "c78c9518-3f5b-4b6b-92de-7ff5b4b81dc6",
+              "record_id": "w26826205@15",
+              "segment_range": null
+            },
+            {
+              "gers_id": "e31797b3-be66-4354-be15-df58e51022f2",
+              "record_id": "w26826205@15",
+              "segment_range": null
+            },
+            {
+              "gers_id": "e3ef38a5-6580-4e4f-b23f-b0e31bfad03a",
+              "record_id": "w26826205@15",
+              "segment_range": null
+            }
+          ]
+        }
+      ],
+      "linked/one_to_one/exact_version_match": [
+        {
+          "pathable_source_way_id": "204010425",
+          "pathable_version": 2,
+          "segments": [
+            {
+              "gers_id": "2f4b6fbd-4653-4624-9892-4f066f159293",
+              "record_id": "w204010425@2",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "25634561",
+          "pathable_version": 4,
+          "segments": [
+            {
+              "gers_id": "c05b5aad-4f27-4d34-b38c-1513c3f7275c",
+              "record_id": "w25634561@4",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "173706446",
+          "pathable_version": 7,
+          "segments": [
+            {
+              "gers_id": "46427e79-86d4-47a3-9021-0f145a34806d",
+              "record_id": "w173706446@7",
+              "segment_range": null
+            }
+          ]
+        }
+      ],
+      "linked/one_to_one/version_mismatch_pathable_older": [
+        {
+          "pathable_source_way_id": "1089962502",
+          "pathable_version": 1,
+          "segments": [
+            {
+              "gers_id": "a597951e-2297-492c-862e-8c19039baf1d",
+              "record_id": "w1089962502@2",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "880816980",
+          "pathable_version": 6,
+          "segments": [
+            {
+              "gers_id": "4fafece0-272f-4fe5-820e-7fd72ad25378",
+              "record_id": "w880816980@7",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "38742661",
+          "pathable_version": 3,
+          "segments": [
+            {
+              "gers_id": "8c502a72-74fa-47e6-bbe4-4019d4795d6d",
+              "record_id": "w38742661@4",
+              "segment_range": null
+            }
+          ]
+        }
+      ],
+      "linked/one_to_one/way_version_match_nodes_edited_after_pathable_snapshot": [
+        {
+          "pathable_source_way_id": "187977745",
+          "pathable_version": 20,
+          "segments": [
+            {
+              "gers_id": "6e13d2af-9432-489f-aef5-9d75fc0d37f5",
+              "record_id": "w187977745@20",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "799495379",
+          "pathable_version": 1,
+          "segments": [
+            {
+              "gers_id": "0ed1f0cd-0340-4799-b204-1d11ad535966",
+              "record_id": "w799495379@1",
+              "segment_range": null
+            }
+          ]
+        },
+        {
+          "pathable_source_way_id": "516859499",
+          "pathable_version": 8,
+          "segments": [
+            {
+              "gers_id": "7c4f7b3e-85a6-47ec-9afd-1a9098f294ed",
+              "record_id": "w516859499@8",
+              "segment_range": null
+            }
+          ]
+        }
+      ],
+      "not_in_overture_sources": [
+        {
+          "pathable_source_way_id": "1284205395",
+          "pathable_version": null,
+          "segments": []
+        },
+        {
+          "pathable_source_way_id": "190310451",
+          "pathable_version": null,
+          "segments": []
+        },
+        {
+          "pathable_source_way_id": "383913815",
+          "pathable_version": null,
+          "segments": []
+        }
+      ]
+    },
+    "by_version_status_from_stored_identities_only": {
+      "id_match_version_unknown": 37604
+    },
+    "update_time_semantics": {
+      "same_version_ways": 37398,
+      "by_relation": {
+        "equals_way_edit_time": 25387,
+        "equals_latest_node_edit_time": 11985,
+        "later_explained_by_edits_after_pathable_snapshot": 26
+      },
+      "meaning": "Overture's update_time on an OSM way equals the latest edit across the way and its nodes. A node edit moves a way without changing the way's version, so a same-version match is only 'exact' when these times agree; a difference is 'explained' only when the extra edit falls after the other side's snapshot."
+    },
+    "version_gap_when_pathable_older": {
+      "1": 184,
+      "2": 19,
+      "3": 2,
+      "4": 1
+    }
+  },
+  "edges": {
+    "pathable_segments": 180554,
+    "by_outcome": {
+      "way_in_single_segment": 151521,
+      "ambiguous_way_split_across_segments": 28162,
+      "way_not_in_overture_sources": 871
+    },
+    "meaning": "'way_in_single_segment' means the edge's OSM way id appears in exactly one GERS segment — at identifier level, and at Overture's version of the way. 'ambiguous_way_split_across_segments' needs the edge's position along the way to pick a segment, which PathAble does not store."
+  },
+  "segments": {
+    "segments": 29334,
+    "by_outcome": {
+      "all_osm_ways_in_pathable": 28556,
+      "osm_ways_not_in_pathable": 345,
+      "unresolved_no_osm_way_source": 325,
+      "some_osm_ways_in_pathable": 108
+    },
+    "not_in_pathable_by_overture_class": {
+      "road/motorway/link": 81,
+      "road/motorway": 58,
+      "rail/standard_gauge": 51,
+      "road/service": 32,
+      "rail/light_rail": 31,
+      "road/unknown": 22,
+      "road/footway": 21,
+      "road/path": 9,
+      "road/service/parking_aisle": 8,
+      "road/footway/sidewalk": 7,
+      "rail/unknown": 6,
+      "road/residential": 6,
+      "road/secondary": 5,
+      "road/steps": 3,
+      "road/service/driveway": 2,
+      "road/footway/crosswalk": 1,
+      "road/tertiary": 1,
+      "road/unclassified": 1
+    },
+    "not_in_pathable_by_extent": {
+      "inside_region_bounds": 266,
+      "crosses_region_boundary": 79
+    },
+    "unresolved_by_source_datasets": {
+      "TomTom": 325
+    },
+    "examples": {
+      "all_osm_ways_in_pathable": [
+        "08217ca1-ae6d-4e62-b6b5-170c629c1c75",
+        "45f782f9-3cdc-40a7-a60d-64b35e392b30",
+        "f0316ac3-354a-40de-a61e-1e5d5621d647"
+      ],
+      "some_osm_ways_in_pathable": [
+        "262280ec-2c15-47b0-9ec0-1a05364c9124",
+        "a3106743-0765-4fb1-bc4a-d1073a1928bc",
+        "e3f9ba0a-655b-4f19-919e-5662258cad99"
+      ],
+      "osm_ways_not_in_pathable": [
+        "57f6e0f5-ada1-4093-a67f-a2bac19ee012",
+        "90a4b0a1-9f2a-4b3c-9b75-57a69dee30a7",
+        "ba3b5f74-2948-434a-a967-da335c796a63"
+      ],
+      "unresolved_no_osm_way_source": [
+        "766b2cc7-33d0-4e66-bd1c-522dc96705e0",
+        "afedeb27-ec50-4270-abec-341a61a7d086",
+        "bbc623d8-7af8-4f83-8904-c4dda103c34b"
+      ]
+    }
+  },
+  "connectors": {
+    "connectors": 54353,
+    "connectors_without_sources": 0,
+    "source_rows_by_kind": {
+      "osm_node": 53787,
+      "malformed_record_id:missing": 494,
+      "malformed_record_id:version_zero": 72
+    },
+    "distinct_osm_nodes_cited": 53787,
+    "osm_nodes_in_pathable": 53518,
+    "osm_nodes_not_in_pathable": 269,
+    "version_zero_nodes_in_pathable": 72,
+    "pathable_nodes_that_are_connectors": 53518,
+    "pathable_nodes_not_connectors": 102196,
+    "by_version_status": {
+      "exact_version_match": 53482,
+      "version_mismatch_pathable_older": 36
+    },
+    "malformed_examples": [
+      {
+        "gers_id": "ea7a3213-d9fd-4370-9932-9c738cbf0469",
+        "dataset": "OpenStreetMap",
+        "record_id": null,
+        "property": "",
+        "between": null,
+        "update_time": null,
+        "version": "2026-09-09"
+      },
+      {
+        "gers_id": "e37e775a-3855-46ce-9f69-f0a2008891f5",
+        "dataset": "OpenStreetMap",
+        "record_id": "n7920716901@0",
+        "property": "",
+        "between": null,
+        "update_time": null,
+        "version": "2026-09-09"
+      },
+      {
+        "gers_id": "c7775bc3-9b58-4832-bb0c-2775ebd3e04d",
+        "dataset": "OpenStreetMap",
+        "record_id": null,
+        "property": "",
+        "between": null,
+        "update_time": null,
+        "version": "2026-09-09"
+      }
+    ],
+    "meaning": "Overture creates connectors only where segments meet or end; PathAble keeps every OSM node. A PathAble node that is not a connector is a shape point in Overture, not a missing match."
+  },
+  "bridge_verification": {
+    "performed": true,
+    "bridge_files_read": 2,
+    "bridge_files_available": 96,
+    "rows_for_extracted_segments": 922,
+    "rows_matching_a_segment_source": 922,
+    "rows_matching_only_a_property_source": 38,
+    "rows_without_a_matching_segment_source": 0,
+    "rows_with_dataset_between": 0,
+    "record_types": {
+      "w": 884,
+      "r": 38
+    },
+    "unmatched_examples": [],
+    "meaning": "A sample, not a census: bridge files are not spatially ordered, so a regional read of every file is a full scan. The bridge has no `property` column, so a relation that only contributed route names is indistinguishable there from a geometry source."
+  },
+  "changelog": {
+    "performed": true,
+    "by_type_and_change": {
+      "connector/unchanged": 54159,
+      "segment/unchanged": 28827,
+      "segment/data_changed": 418,
+      "connector/added": 172,
+      "segment/added": 89,
+      "connector/removed": 24,
+      "connector/data_changed": 22,
+      "segment/removed": 21
+    },
+    "segment_columns_changed": {
+      "road_surface": 287,
+      "geometry": 113,
+      "connectors": 107,
+      "subclass_rules": 20,
+      "names": 14,
+      "access_restrictions": 13,
+      "speed_limits": 9,
+      "level_rules": 8,
+      "road_flags": 6,
+      "width_rules": 4,
+      "routes": 3,
+      "subclass": 2,
+      "class": 1,
+      "prohibited_transitions": 1
+    },
+    "segments_linked_to_pathable_by_change": {
+      "unchanged": 28226,
+      "data_changed": 414,
+      "added": 24
+    }
+  },
+  "content_sha256": "670209effb62639d253741dc6c51da05d2cd8e1bad9fc25a0c94cb1987ac1f1c",
+  "run": {
+    "generated_at": "2026-09-25T14:51:13+00:00",
+    "seconds": 33.95,
+    "version_evidence_seconds": 28.95,
+    "environment": {
+      "python": "3.13.2",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "git_commit": "8554b48121fd45bff8053a3dbbdceec098ef2426"
+    },
+    "machine_memory_mb": 16498.0,
+    "peak_process_memory_mb": 2065.8,
+    "process_memory_method": "windows:GetProcessMemoryInfo working set"
+  }
+}
