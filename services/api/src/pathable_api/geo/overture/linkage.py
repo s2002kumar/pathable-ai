@@ -294,8 +294,9 @@ class VersionStatus(StrEnum):
     #: The mirror case: a node moved after Overture's planet snapshot, and
     #: PathAble's newer extract has it.
     NODES_EDITED_AFTER_OVERTURE_SNAPSHOT = "way_version_match_nodes_edited_after_overture_snapshot"
-    #: Same version, but the edit times cannot settle it: one is missing, or the
-    #: difference falls on Overture's snapshot day, whose time of day is unknown.
+    #: Same version, but the edit times cannot settle it: one is missing, or
+    #: PathAble's extra edit falls between the latest edit Overture shows and
+    #: Overture's planet date — Overture's real cutoff lies somewhere in there.
     TIME_UNVERIFIED = "version_match_time_unverified"
     #: Same version, and the edit times differ in a way neither snapshot's date
     #: explains. Kept visible rather than absorbed.
@@ -417,8 +418,13 @@ class Snapshots:
 
     #: PathAble's extract time, in OSM's edit-time form.
     pathable: str | None
-    #: The planet date Overture read. Day resolution only.
+    #: The planet date Overture labels its OSM sources with. A label, not the
+    #: cutoff: in both releases measured, the latest edit Overture carried was
+    #: three to four days older than it.
     overture: dt.date | None
+    #: The latest OSM edit time Overture's own sources carry in the extract — a
+    #: lower bound on its real cutoff, since it demonstrably saw that edit.
+    overture_latest_seen: str | None = None
 
     @classmethod
     def of(cls, identities: PathAbleIdentities, overture: OvertureSide) -> Snapshots:
@@ -426,6 +432,7 @@ class Snapshots:
         return cls(
             pathable=_osm_time(identities.facts.source_timestamp),
             overture=_date(dates[0]) if len(dates) == 1 else None,
+            overture_latest_seen=_latest_osm_edit(overture),
         )
 
 
@@ -526,16 +533,14 @@ def version_status(
         if snapshots.pathable is not None and overture_time > snapshots.pathable:
             return VersionStatus.NODES_EDITED_AFTER_PATHABLE_SNAPSHOT
         return VersionStatus.TIME_INCONSISTENT
-    # PathAble holds an edit Overture did not see: fine only if it came after
-    # Overture's planet date. On that date itself it cannot be decided.
-    if snapshots.overture is None:
-        return VersionStatus.TIME_UNVERIFIED
-    edited = dt.date.fromisoformat(latest[:10])
-    if edited > snapshots.overture:
+    # PathAble holds an edit Overture did not show. After Overture's planet date it
+    # is explained; at or before an edit Overture demonstrably saw, it is not;
+    # in between, Overture's real cutoff is unknown and so is the answer.
+    if snapshots.overture is not None and latest[:10] > snapshots.overture.isoformat():
         return VersionStatus.NODES_EDITED_AFTER_OVERTURE_SNAPSHOT
-    if edited == snapshots.overture:
-        return VersionStatus.TIME_UNVERIFIED
-    return VersionStatus.TIME_INCONSISTENT
+    if snapshots.overture_latest_seen is not None and latest <= snapshots.overture_latest_seen:
+        return VersionStatus.TIME_INCONSISTENT
+    return VersionStatus.TIME_UNVERIFIED
 
 
 def build_report(
@@ -611,6 +616,17 @@ def _overture_osm_snapshots(overture: OvertureSide) -> list[str]:
     )
 
 
+def _latest_osm_edit(overture: OvertureSide) -> str | None:
+    times = [
+        row.update_time
+        for row in (*overture.segment_sources, *overture.connector_sources)
+        if row.dataset == OSM_DATASET
+        and row.update_time is not None
+        and _OSM_TIME.fullmatch(row.update_time) is not None
+    ]
+    return max(times) if times else None
+
+
 def _snapshots(identities: PathAbleIdentities, overture: OvertureSide) -> dict[str, Any]:
     osm_versions = _overture_osm_snapshots(overture)
     pathable_date = _date(identities.facts.source_timestamp)
@@ -621,6 +637,11 @@ def _snapshots(identities: PathAbleIdentities, overture: OvertureSide) -> dict[s
         "overture_osm_resource_version_meaning": (
             "Overture's `version` field on OSM sources: the planet snapshot it read, "
             "not an element version"
+        ),
+        "overture_latest_osm_edit_in_extract": _latest_osm_edit(overture),
+        "overture_cutoff_note": (
+            "The latest OSM edit time Overture carries is a lower bound on its real cutoff; "
+            "the planet date is an upper bound. Edits between the two are undecidable."
         ),
         "days_between_snapshots": (
             (overture_date - pathable_date).days

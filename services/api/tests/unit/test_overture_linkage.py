@@ -257,7 +257,12 @@ class TestReproducibility:
 #: PathAble read the map on 2026-08-16; Overture's snapshot is either side of it.
 PATHABLE_READ = "2026-08-16T23:08:23Z"
 OVERTURE_LATER = Snapshots(pathable=PATHABLE_READ, overture=dt.date(2026, 9, 9))
-OVERTURE_EARLIER = Snapshots(pathable=PATHABLE_READ, overture=dt.date(2026, 8, 5))
+#: As measured for 2026-08-19.0: labelled 2026-08-05, latest edit carried 2026-08-01.
+OVERTURE_EARLIER = Snapshots(
+    pathable=PATHABLE_READ,
+    overture=dt.date(2026, 8, 5),
+    overture_latest_seen="2026-08-01T22:45:54Z",
+)
 
 
 @pytest.mark.parametrize(
@@ -271,9 +276,11 @@ OVERTURE_EARLIER = Snapshots(pathable=PATHABLE_READ, overture=dt.date(2026, 8, 5
         (3, "2026-07-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_LATER, VersionStatus.TIME_INCONSISTENT),
         # PathAble's newer extract has a node move made after Overture's planet date.
         (3, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2026-08-10T00:00:00Z"), OVERTURE_EARLIER, VersionStatus.NODES_EDITED_AFTER_OVERTURE_SNAPSHOT),
-        # On Overture's snapshot day itself the order cannot be decided.
+        # Between the latest edit Overture carries and its planet date, Overture's
+        # real cutoff is unknown — the regression found on 2026-08-19.0.
+        (3, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2026-08-02T17:50:49Z"), OVERTURE_EARLIER, VersionStatus.TIME_UNVERIFIED),
         (3, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2026-08-05T09:00:00Z"), OVERTURE_EARLIER, VersionStatus.TIME_UNVERIFIED),
-        # PathAble holds an edit from before Overture's date that Overture did not see.
+        # PathAble holds an edit older than one Overture demonstrably saw, yet it is missing.
         (3, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2026-07-01T00:00:00Z"), OVERTURE_EARLIER, VersionStatus.TIME_INCONSISTENT),
         (3, None, ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_LATER, VersionStatus.TIME_UNVERIFIED),
         (4, "2024-01-01T00:00:00Z", ElementState(3, "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"), OVERTURE_LATER, VersionStatus.PATHABLE_OLDER),
