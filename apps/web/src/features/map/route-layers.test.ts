@@ -28,6 +28,7 @@ function route(coordinates: Array<[number, number]>): Route {
     distance_m: 500,
     effective_distance_m: 720,
     estimated_duration_seconds: 600,
+    pace_profile: 'wheelchair',
     coordinates,
     segments: [],
     origin: {
@@ -45,6 +46,13 @@ function route(coordinates: Array<[number, number]>): Route {
     crossing_count: 1,
     unknown_kerb_crossing_count: 0,
     steepest_incline_percent: null,
+    gradient: {
+      steepest_uphill: null,
+      steepest_downhill: null,
+      recorded_fraction: 0,
+      estimated_fraction: 0,
+      unknown_fraction: 1,
+    },
     unknown_data_fraction: 0.2,
     computation_ms: 12,
   };

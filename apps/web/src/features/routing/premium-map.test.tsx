@@ -49,6 +49,19 @@ function buildRoute(overrides: Record<string, unknown> = {}) {
     distance_m: 354.1,
     effective_distance_m: 601,
     estimated_duration_seconds: 373,
+    pace_profile: 'wheelchair',
+    gradient: {
+      steepest_uphill: {
+        percent: 2.1,
+        direction: 'uphill',
+        source: 'derived_elevation',
+        segment_index: 0,
+      },
+      steepest_downhill: null,
+      recorded_fraction: 0,
+      estimated_fraction: 0.6,
+      unknown_fraction: 0.4,
+    },
     coordinates: [
       [-80.5424, 43.4728],
       [-80.5449, 43.4715],
@@ -97,9 +110,15 @@ const CAMPUS_COMPARISON = {
     {
       code: 'avoids_stairs',
       summary: 'Avoids 4 stairways (16 steps in total, plus 2 with no recorded step count).',
+      basis: 'recorded',
       evidence: {},
     },
-    { code: 'distance_difference', summary: 'The wheelchair route is 67 m longer.', evidence: {} },
+    {
+      code: 'distance_difference',
+      summary: 'The wheelchair route is 67 m longer.',
+      basis: 'profile_rule',
+      evidence: {},
+    },
   ],
   cautions: [],
   dataset: {
@@ -287,8 +306,13 @@ describe('the answer as one block', () => {
     const difference = screen.getByTestId('route-difference');
     expect(within(difference).getByTestId('difference-accessible')).toHaveTextContent('354 m');
     expect(within(difference).getByTestId('difference-shortest')).toHaveTextContent('4 stairways');
-    expect(within(difference).getByTestId('difference-extra')).toHaveTextContent(
-      /\+67 m.*to avoid 4 stairways/,
+    // The figure, and not a single cause beside it (D7): the stairs are one
+    // of the reasons listed in the same block.
+    const extra = within(difference).getByTestId('difference-extra');
+    expect(extra).toHaveTextContent('+67 m');
+    expect(extra).not.toHaveTextContent(/to avoid/);
+    expect(within(difference).getByTestId('difference-reasons')).toHaveTextContent(
+      'Avoids 4 stairways',
     );
     expect(within(difference).getByTestId('uncertainty-summary')).toBeInTheDocument();
   });

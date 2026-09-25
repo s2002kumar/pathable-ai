@@ -119,6 +119,8 @@ const COMPARISON = {
     distance_m: 483,
     effective_distance_m: 483,
     estimated_duration_seconds: 380,
+    // Both routes are timed at the traveller's pace, so the times compare.
+    pace_profile: 'wheelchair',
     coordinates: [
       [-80.54, 43.47],
       [-80.538, 43.47],
@@ -133,6 +135,13 @@ const COMPARISON = {
     crossing_count: 1,
     unknown_kerb_crossing_count: 1,
     steepest_incline_percent: null,
+    gradient: {
+      steepest_uphill: null,
+      steepest_downhill: null,
+      recorded_fraction: 0.33,
+      estimated_fraction: 0,
+      unknown_fraction: 0.67,
+    },
     unknown_data_fraction: 0.22,
     computation_ms: 4,
   },
@@ -142,6 +151,7 @@ const COMPARISON = {
     distance_m: 709,
     effective_distance_m: 980,
     estimated_duration_seconds: 746,
+    pace_profile: 'wheelchair',
     coordinates: [
       [-80.54, 43.47],
       [-80.538, 43.47],
@@ -158,6 +168,18 @@ const COMPARISON = {
     crossing_count: 1,
     unknown_kerb_crossing_count: 0,
     steepest_incline_percent: 4,
+    gradient: {
+      steepest_uphill: { percent: 4, direction: 'uphill', source: 'osm_incline', segment_index: 2 },
+      steepest_downhill: {
+        percent: 4,
+        direction: 'downhill',
+        source: 'osm_incline',
+        segment_index: 3,
+      },
+      recorded_fraction: 0.81,
+      estimated_fraction: 0,
+      unknown_fraction: 0.19,
+    },
     unknown_data_fraction: 0.31,
     computation_ms: 6,
   },
@@ -169,12 +191,14 @@ const COMPARISON = {
     {
       code: 'avoids_stairs',
       summary: 'Avoids 1 stairway (14 steps in total).',
+      basis: 'recorded',
       evidence: { stairway_count: 1, step_count: 14 },
     },
     {
       code: 'avoids_unrecorded_kerbs',
       summary:
         'Avoids 1 crossing where no kerb has been recorded, so nobody has confirmed it is dropped.',
+      basis: 'not_recorded',
       evidence: { crossing_count: 1 },
     },
   ],

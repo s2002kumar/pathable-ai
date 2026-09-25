@@ -39,6 +39,15 @@ const DESTINATION = {
   source: 'search' as const,
 };
 
+/** A route with no gradient on record anywhere: unknown, not flat. */
+const NO_GRADIENT = {
+  steepest_uphill: null,
+  steepest_downhill: null,
+  recorded_fraction: 0,
+  estimated_fraction: 0,
+  unknown_fraction: 1,
+};
+
 function buildRoute(overrides: Record<string, unknown> = {}) {
   return {
     profile: 'wheelchair',
@@ -46,6 +55,20 @@ function buildRoute(overrides: Record<string, unknown> = {}) {
     distance_m: 709,
     effective_distance_m: 980,
     estimated_duration_seconds: 746,
+    // Both routes of a comparison are timed at the traveller's pace.
+    pace_profile: 'wheelchair',
+    gradient: {
+      steepest_uphill: {
+        percent: 4,
+        direction: 'uphill',
+        source: 'derived_elevation',
+        segment_index: 0,
+      },
+      steepest_downhill: null,
+      recorded_fraction: 0,
+      estimated_fraction: 0.99,
+      unknown_fraction: 0.01,
+    },
     coordinates: [
       [-80.54, 43.47],
       [-80.534, 43.47],
@@ -115,10 +138,16 @@ const COMPARISON = {
   extra_distance_m: 226,
   extra_distance_fraction: 0.468,
   explanations: [
-    { code: 'avoids_stairs', summary: 'Avoids 1 stairway (14 steps in total).', evidence: {} },
+    {
+      code: 'avoids_stairs',
+      summary: 'Avoids 1 stairway (14 steps in total).',
+      basis: 'recorded',
+      evidence: {},
+    },
     {
       code: 'avoids_unrecorded_kerbs',
       summary: 'Avoids 1 crossing where no kerb has been recorded.',
+      basis: 'not_recorded',
       evidence: {},
     },
   ],
@@ -305,15 +334,17 @@ describe('RoutePlanner', () => {
         status: 'success',
         comparison: {
           ...COMPARISON,
-          accessible_route: buildRoute({ steepest_incline_percent: null }),
+          accessible_route: buildRoute({ steepest_incline_percent: null, gradient: NO_GRADIENT }),
         } as unknown as RouteCompareResponse,
       },
     });
 
-    // Scoped to the breakdown: "Not recorded" is also the name of an evidence
-    // class in the difference block, and the assertion is about the gradient.
+    // Scoped to the breakdown: the difference block states gradients too, and
+    // the assertion is about the route's own figures.
     const breakdown = screen.getByRole('region', { name: /what is on this route/i });
-    expect(within(breakdown).getByText('Not recorded')).toBeInTheDocument();
+    expect(within(breakdown).getByTestId('steepest-climb')).toHaveTextContent('None on record');
+    expect(within(breakdown).getByTestId('steepest-descent')).toHaveTextContent('None on record');
+    expect(within(breakdown).queryByText(/0\.0%/)).not.toBeInTheDocument();
   });
 
   it('explains a profile with no possible route instead of failing silently', () => {
@@ -636,8 +667,10 @@ describe('evidence gaps', () => {
   it('says a gradient was inferred from terrain rather than recorded on the path', () => {
     render(<RouteComparisonView comparison={COMPARISON} />);
 
-    expect(screen.getByText(/estimated from an elevation model/)).toBeInTheDocument();
-    expect(screen.getByText(/cannot see a ramp or a step/)).toBeInTheDocument();
+    const provenance = screen.getByTestId('gradient-provenance');
+    expect(provenance).toHaveTextContent(/estimated from an elevation model/);
+    expect(provenance).toHaveTextContent(/cannot see a ramp or a step/);
+    expect(screen.getByTestId('steepest-climb')).toHaveTextContent('4.0% (estimated)');
   });
 
   it('does not let a missing record read as evidence the path is clear', () => {

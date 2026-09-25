@@ -64,6 +64,7 @@ function route(overrides: Record<string, unknown> = {}): Route {
     distance_m: 300,
     effective_distance_m: 300,
     estimated_duration_seconds: 250,
+    pace_profile: 'wheelchair',
     coordinates: DIRECT,
     segments: [],
     origin: { ...ORIGIN, distance_m: 2 },
@@ -73,6 +74,13 @@ function route(overrides: Record<string, unknown> = {}): Route {
     crossing_count: 0,
     unknown_kerb_crossing_count: 0,
     steepest_incline_percent: null,
+    gradient: {
+      steepest_uphill: null,
+      steepest_downhill: null,
+      recorded_fraction: 0,
+      estimated_fraction: 0,
+      unknown_fraction: 1,
+    },
     unknown_data_fraction: 0.2,
     evidence_coverage: { surface: 0.2, smoothness: 0.2, gradient: 0, width: 0.2, kerb: 0 },
     gradient_source: null,
@@ -285,7 +293,18 @@ describe('what the uncertainty line may claim', () => {
       unknown_data_fraction: 0,
       evidence_coverage: { surface: 0, smoothness: 0, gradient: 0, width: 0, kerb: 0 },
       gradient_source: 'derived_elevation',
-      steepest_incline_percent: 3,
+      gradient: {
+        steepest_uphill: {
+          percent: 3,
+          direction: 'uphill',
+          source: 'derived_elevation',
+          segment_index: 0,
+        },
+        steepest_downhill: null,
+        recorded_fraction: 0,
+        estimated_fraction: 1,
+        unknown_fraction: 0,
+      },
     });
     render(<RouteDifference comparison={comparison(route(), complete, 5)} />);
 
@@ -295,8 +314,10 @@ describe('what the uncertainty line may claim', () => {
     expect(summary).not.toHaveTextContent(/every accessibility category/i);
     expect(summary).not.toHaveTextContent(/recorded in OpenStreetMap/i);
     expect(summary).toHaveTextContent(/not a certification/i);
-    // Provenance stays distinct: the derived-gradient line is still there.
-    expect(screen.getByText(/terrain model of the ground/i)).toBeInTheDocument();
+    // Provenance stays distinct: the gradient line says it is an estimate.
+    const gradient = screen.getByTestId('difference-gradient');
+    expect(gradient).toHaveAttribute('data-basis', 'estimated');
+    expect(gradient).toHaveTextContent(/estimated from an elevation model of the ground/i);
   });
 
   it('keeps the gaps unknown when the response carries no coverage at all', () => {

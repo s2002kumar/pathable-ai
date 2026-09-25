@@ -43,6 +43,19 @@ const CAMPUS_RESPONSE = {
   standard_route: {
     distance_m: 287.4,
     estimated_duration_seconds: 302.9,
+    pace_profile: 'wheelchair',
+    gradient: {
+      steepest_uphill: {
+        percent: 3.4,
+        direction: 'uphill',
+        source: 'derived_elevation',
+        segment_index: 2,
+      },
+      steepest_downhill: null,
+      recorded_fraction: 0,
+      estimated_fraction: 0.57,
+      unknown_fraction: 0.43,
+    },
     stairway_count: 4,
     step_count: 16,
     crossing_count: 0,
@@ -57,6 +70,19 @@ const CAMPUS_RESPONSE = {
   accessible_route: {
     distance_m: 354.1,
     estimated_duration_seconds: 372.7,
+    pace_profile: 'wheelchair',
+    gradient: {
+      steepest_uphill: {
+        percent: 2.1,
+        direction: 'uphill',
+        source: 'derived_elevation',
+        segment_index: 1,
+      },
+      steepest_downhill: null,
+      recorded_fraction: 0,
+      estimated_fraction: 0.61,
+      unknown_fraction: 0.39,
+    },
     stairway_count: 0,
     step_count: 0,
     crossing_count: 0,
@@ -74,11 +100,13 @@ const CAMPUS_RESPONSE = {
     {
       code: 'avoids_stairs',
       summary: 'Avoids 4 stairways (16 steps in total).',
+      basis: 'recorded',
       evidence: { stairway_count: 4, step_count: 16 },
     },
     {
       code: 'distance_difference',
       summary: '67 m longer than the shortest route (354 m instead of 287 m, 23% longer).',
+      basis: 'profile_rule',
       evidence: { extra_distance_m: 67 },
     },
   ],
@@ -249,7 +277,9 @@ describe('why the routes differ', () => {
 
     const extra = screen.getByTestId('difference-extra');
     expect(within(extra).getByText('+67 m')).toBeInTheDocument();
-    expect(within(extra).getByText(/to avoid 4 stairways/)).toBeInTheDocument();
+    // The figure alone: why it is longer is the list of reasons below, not a
+    // single cause named beside the number (D7).
+    expect(extra).not.toHaveTextContent(/to avoid|because|stairway/i);
   });
 
   it('labels each statement with the kind of claim it is', () => {
@@ -259,7 +289,7 @@ describe('why the routes differ', () => {
     // absence are four different things, and the UI says which is which.
     expect(screen.getByText('Recorded in OpenStreetMap')).toBeInTheDocument();
     expect(screen.getByText(/Avoids 4 stairways/)).toBeInTheDocument();
-    expect(screen.getByText('Your profile’s rules')).toBeInTheDocument();
+    expect(screen.getAllByText('Your profile’s rules').length).toBeGreaterThan(0);
     expect(screen.getByText('Derived from an elevation model')).toBeInTheDocument();
     expect(screen.getByText('Not recorded')).toBeInTheDocument();
   });
