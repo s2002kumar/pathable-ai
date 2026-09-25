@@ -123,6 +123,41 @@ class TestDocumentContents:
         # Typed as a constant false, so a client cannot compile against a true.
         assert response["properties"]["ml_predictions_used"]["const"] is False
 
+    def test_gradient_reaches_clients_recorded_and_estimated_apart(
+        self, document: dict[str, object]
+    ) -> None:
+        # Regression (D2): the elevation-derived grade shaped route cost but had
+        # no field in the contract, so no client could ever show it.
+        components = document["components"]
+        assert isinstance(components, dict)
+        schemas = components["schemas"]
+
+        segment = schemas["RouteSegmentModel"]["properties"]
+        assert "incline_percent" in segment
+        assert "derived_grade_percent" in segment
+        assert "excluded_by_profile" in segment
+
+        route = schemas["RouteModel"]
+        assert {"gradient", "pace_profile"} <= set(route["required"])
+
+        extreme = schemas["GradeExtremeModel"]["properties"]
+        assert extreme["source"]["enum"] == ["osm_incline", "derived_elevation"]
+        assert extreme["direction"]["enum"] == ["uphill", "downhill"]
+
+    def test_every_explanation_states_what_it_rests_on(self, document: dict[str, object]) -> None:
+        components = document["components"]
+        assert isinstance(components, dict)
+
+        explanation = components["schemas"]["ExplanationModel"]
+        assert "basis" in explanation["required"]
+        assert set(explanation["properties"]["basis"]["enum"]) == {
+            "recorded",
+            "estimated",
+            "mixed",
+            "not_recorded",
+            "profile_rule",
+        }
+
     def test_contract_version_matches_the_package(self, document: dict[str, object]) -> None:
         info = document["info"]
         assert isinstance(info, dict)

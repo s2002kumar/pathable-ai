@@ -202,7 +202,7 @@
                 "type": "null"
               }
             ],
-            "description": "Steepest recorded gradient to allow. Unrecorded gradients are never excluded.",
+            "description": "Steepest uphill gradient to allow, in the direction of travel. It applies to the gradient routing uses: recorded in OpenStreetMap where one is, otherwise estimated from the elevation model. A segment with no gradient at all is never excluded, and neither is a descent. Repeated back exactly as sent.",
             "title": "Max Incline Percent"
           },
           "min_width_m": {
@@ -387,8 +387,20 @@
         "type": "object"
       },
       "ExplanationModel": {
-        "description": "An evidence-backed statement about why the accessible route differs.",
+        "description": "An evidence-backed statement about why the accessible route differs.\n\nOne is produced for every constraint of the chosen profile on which the two\nroutes differ: each hard limit the shortest route breaks, and each penalty\nthe accessible route incurs less of. No single one is the reason for a\ndetour unless it is the only one listed.",
         "properties": {
+          "basis": {
+            "description": "What the statement rests on: 'recorded' in OpenStreetMap; 'estimated' from the elevation model; 'mixed' — recorded and estimated gradients together; 'not_recorded' — the statement is about data nobody has recorded; 'profile_rule' — a consequence of the profile's rules rather than an observation.",
+            "enum": [
+              "recorded",
+              "estimated",
+              "mixed",
+              "not_recorded",
+              "profile_rule"
+            ],
+            "title": "Basis",
+            "type": "string"
+          },
           "code": {
             "title": "Code",
             "type": "string"
@@ -406,7 +418,8 @@
         },
         "required": [
           "code",
-          "summary"
+          "summary",
+          "basis"
         ],
         "title": "ExplanationModel",
         "type": "object"
@@ -526,6 +539,106 @@
         "title": "GeocodeResponse",
         "type": "object"
       },
+      "GradeExtremeModel": {
+        "description": "The steepest gradient on a route in one direction.",
+        "properties": {
+          "direction": {
+            "description": "In the direction of travel.",
+            "enum": [
+              "uphill",
+              "downhill"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "percent": {
+            "description": "Size of the gradient in percent, without sign.",
+            "minimum": 0.0,
+            "title": "Percent",
+            "type": "number"
+          },
+          "segment_index": {
+            "description": "Position in this route's `segments`.",
+            "minimum": 0.0,
+            "title": "Segment Index",
+            "type": "integer"
+          },
+          "source": {
+            "description": "'osm_incline' — recorded by a mapper in OpenStreetMap; 'derived_elevation' — estimated from the elevation model.",
+            "enum": [
+              "osm_incline",
+              "derived_elevation"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "percent",
+          "direction",
+          "source",
+          "segment_index"
+        ],
+        "title": "GradeExtremeModel",
+        "type": "object"
+      },
+      "GradientSummaryModel": {
+        "description": "The gradients a route was costed on, recorded and estimated kept apart.",
+        "properties": {
+          "estimated_fraction": {
+            "description": "Share whose gradient is estimated from the elevation model because OSM records none.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Estimated Fraction",
+            "type": "number"
+          },
+          "recorded_fraction": {
+            "description": "Share of the route's length with a gradient recorded in OSM.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Recorded Fraction",
+            "type": "number"
+          },
+          "steepest_downhill": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradeExtremeModel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Steepest descent along travel, or null when no known gradient descends."
+          },
+          "steepest_uphill": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradeExtremeModel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Steepest climb along travel, or null when no known gradient climbs."
+          },
+          "unknown_fraction": {
+            "description": "Share with no gradient at all. Unknown, not flat.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Unknown Fraction",
+            "type": "number"
+          }
+        },
+        "required": [
+          "steepest_uphill",
+          "steepest_downhill",
+          "recorded_fraction",
+          "estimated_fraction",
+          "unknown_fraction"
+        ],
+        "title": "GradientSummaryModel",
+        "type": "object"
+      },
       "KerbType": {
         "description": "Kerb (curb) treatment where a path meets a road.\n\nOrdered best to worst for a wheeled user: ``NONE`` (the mapper states there\nis no kerb at all) is the best case, then ``FLUSH``, then ``LOWERED``.\n\n``ROLLED`` is its own tier rather than a kind of lowered kerb. The OSM wiki\nis explicit that a rolled kerb is \"traversable by large wheeled vehicles,\nsuch as cars and bicycles, but not wheelchairs\" — folding it into ``LOWERED``\npriced a wheelchair barrier at zero.\n\n``PRESENT_UNKNOWN`` is \"a kerb is definitely here, nobody recorded its\nheight\" — a `barrier=kerb` node or `kerb=yes`. That is strictly stronger\nevidence than ``UNKNOWN``, which means nothing was mapped at all, and the two\nshould not cost the same.",
         "enum": [
@@ -634,7 +747,7 @@
                 "type": "null"
               }
             ],
-            "description": "A hard limit: recorded gradients above this are excluded. Null for every preset — a preset expresses gradient as preference, not impossibility.",
+            "description": "A hard limit: uphill gradients above this, recorded or estimated, are excluded. Null for every preset — a preset expresses gradient as preference, not impossibility.",
             "title": "Max Incline Percent"
           },
           "min_width_m": {
@@ -1010,7 +1123,7 @@
             "type": "number"
           },
           "estimated_duration_seconds": {
-            "description": "Rough planning estimate from distance and obstacle counts. Not measured, and not specific to any individual.",
+            "description": "Rough planning estimate from distance and obstacle counts, at the assumed pace of `pace_profile`. Not measured, and not specific to any individual.",
             "title": "Estimated Duration Seconds",
             "type": "number"
           },
@@ -1021,6 +1134,10 @@
             "description": "Share of this route with no record, per category (surface, smoothness, gradient, width, kerb). Kerb is measured over crossings only, since it is a fact about crossings. Reported per category because one combined figure cannot be acted on.",
             "title": "Evidence Coverage",
             "type": "object"
+          },
+          "gradient": {
+            "$ref": "#/components/schemas/GradientSummaryModel",
+            "description": "Every gradient this route was costed on — recorded where OSM has one, estimated from the elevation model otherwise — with its source and direction."
           },
           "gradient_source": {
             "anyOf": [
@@ -1036,6 +1153,11 @@
           },
           "origin": {
             "$ref": "#/components/schemas/SnappedPointModel"
+          },
+          "pace_profile": {
+            "description": "Profile whose assumed walking pace produced `estimated_duration_seconds`. In a comparison both routes use the chosen profile's pace — its base preset's, for a custom profile — so the two estimates can be compared directly.",
+            "title": "Pace Profile",
+            "type": "string"
           },
           "profile": {
             "description": "Profile key this route was computed for.",
@@ -1066,6 +1188,7 @@
                 "type": "null"
               }
             ],
+            "description": "Steepest gradient recorded in OpenStreetMap, either direction, as a magnitude. Recorded values only — estimates are in `gradient`, which is what to display.",
             "title": "Steepest Incline Percent"
           },
           "step_count": {
@@ -1091,6 +1214,7 @@
           "distance_m",
           "effective_distance_m",
           "estimated_duration_seconds",
+          "pace_profile",
           "coordinates",
           "segments",
           "origin",
@@ -1100,6 +1224,7 @@
           "crossing_count",
           "unknown_kerb_crossing_count",
           "steepest_incline_percent",
+          "gradient",
           "unknown_data_fraction",
           "computation_ms"
         ],
@@ -1134,6 +1259,18 @@
             "title": "Cost Components",
             "type": "array"
           },
+          "derived_grade_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Gradient estimated from the elevation model, signed along travel: positive climbs. It describes the ground, not the path, so it cannot see a ramp or a step. Null when the model gives none — no coverage, a segment too short for it to resolve, or an implausible value. Routing uses `incline_percent` where present and this otherwise.",
+            "title": "Derived Grade Percent"
+          },
           "edge_identity": {
             "description": "Stable identity of this segment within the dataset.",
             "title": "Edge Identity",
@@ -1143,6 +1280,26 @@
             "description": "What this segment cost the chosen profile, in effective metres.",
             "title": "Effective Metres",
             "type": "number"
+          },
+          "excluded_by_profile": {
+            "anyOf": [
+              {
+                "enum": [
+                  "foot_prohibited",
+                  "steps",
+                  "too_steep",
+                  "too_narrow",
+                  "surface_excluded",
+                  "smoothness_excluded"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set on the shortest route only: the chosen profile's hard limit that rules this segment out. Null where the profile can use it, and always null on the route computed for the profile.",
+            "title": "Excluded By Profile"
           },
           "highway": {
             "anyOf": [
@@ -1164,7 +1321,7 @@
                 "type": "null"
               }
             ],
-            "description": "Recorded gradient. Null means unrecorded, not flat.",
+            "description": "Gradient recorded in OpenStreetMap, signed along travel: positive climbs. Null means unrecorded, not flat.",
             "title": "Incline Percent"
           },
           "is_crossing": {
