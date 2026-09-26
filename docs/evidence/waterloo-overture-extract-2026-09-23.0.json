@@ -1,0 +1,267 @@
+{
+  "overture_extract_version": 1,
+  "region": {
+    "slug": "waterloo",
+    "bounds": [
+      -80.59,
+      43.42,
+      -80.46,
+      43.52
+    ],
+    "bounds_source": "pathable_api.geo.regions: waterloo",
+    "selection_rule": "feature bbox intersects region bounds (a box test, not a clip)"
+  },
+  "release": {
+    "requested": "2026-09-23.0",
+    "observed": "2026-09-23.0",
+    "schema_version": "2.0.0",
+    "schema_tag": "https://github.com/OvertureMaps/schema/releases/tag/v2.0.0",
+    "catalog_url": "https://stac.overturemaps.org/2026-09-23.0/catalog.json",
+    "latest_at_resolution": "2026-09-23.0",
+    "available_releases": [
+      "2026-08-19.0",
+      "2026-09-23.0"
+    ],
+    "warnings": []
+  },
+  "configuration": {
+    "stac_root": "https://stac.overturemaps.org/catalog.json",
+    "bucket": "s3://overturemaps-us-west-2",
+    "bridge_sample_files": 2,
+    "include_changelog": true
+  },
+  "tools": {
+    "duckdb": "1.5.5",
+    "httpfs": "827222f"
+  },
+  "artifacts": {
+    "bridge_sample": {
+      "kind": "bridge_sample",
+      "selection": "first 2 of 96 files by name; rows for extracted segments",
+      "files_available": 96,
+      "files_opened": 2,
+      "sources": [
+        {
+          "location": "s3://overturemaps-us-west-2/bridgefiles/2026-09-23.0/provider=osm/theme=transportation/type=segment/part-00000-4ec82b80-0e0d-4dc9-99b3-88a60daa31d4.c000.snappy.parquet",
+          "catalog_item": null,
+          "catalog_size_bytes": null,
+          "size_bytes": 243860223,
+          "etag": "\"5f7fac8fd5025082aa6b59ff5a9c0c4b-4\"",
+          "last_modified": "Wed, 23 Sep 2026 17:42:21 GMT",
+          "expiration": null
+        },
+        {
+          "location": "s3://overturemaps-us-west-2/bridgefiles/2026-09-23.0/provider=osm/theme=transportation/type=segment/part-00001-4ec82b80-0e0d-4dc9-99b3-88a60daa31d4.c000.snappy.parquet",
+          "catalog_item": null,
+          "catalog_size_bytes": null,
+          "size_bytes": 243981535,
+          "etag": "\"092a60a392dee3eaccde1a1a8dae7765-4\"",
+          "last_modified": "Wed, 23 Sep 2026 17:42:31 GMT",
+          "expiration": null
+        }
+      ],
+      "schema": {
+        "artifact": "bridge",
+        "compatible": true,
+        "missing": [],
+        "mismatched": [],
+        "additional_columns": []
+      },
+      "query": "SELECT id, dataset, record_id, update_time, resource, version, between, dataset_between FROM read_parquet(?, hive_partitioning = false) WHERE id IN (SELECT id FROM read_parquet(?)) ORDER BY id, record_id",
+      "parameters": [
+        [
+          "s3://overturemaps-us-west-2/bridgefiles/2026-09-23.0/provider=osm/theme=transportation/type=segment/part-00000-4ec82b80-0e0d-4dc9-99b3-88a60daa31d4.c000.snappy.parquet",
+          "s3://overturemaps-us-west-2/bridgefiles/2026-09-23.0/provider=osm/theme=transportation/type=segment/part-00001-4ec82b80-0e0d-4dc9-99b3-88a60daa31d4.c000.snappy.parquet"
+        ],
+        "<extract>/segment.parquet"
+      ],
+      "output": {
+        "file": "bridge-sample.parquet",
+        "bytes": 35595,
+        "sha256": "8caf78dd5c2b1f904a159bb72c5b7870bb2b106417c558de140aa8647b062047",
+        "rows": 922
+      },
+      "rows_in_candidate_row_groups": null,
+      "measurement": {
+        "seconds": 60.73,
+        "http": {
+          "get_requests": 9,
+          "head_requests": 2,
+          "bytes_received": 487579606
+        }
+      }
+    },
+    "changelog": {
+      "kind": "changelog",
+      "selection": "every file's footer read; row groups pruned by bbox statistics",
+      "files_available": 640,
+      "files_opened": 640,
+      "sources": [
+        {
+          "location": "s3://overturemaps-us-west-2/changelog/2026-09-23.0/theme=transportation/type=*/change_type=*/*.parquet",
+          "catalog_item": null,
+          "catalog_size_bytes": null,
+          "size_bytes": null,
+          "etag": null,
+          "last_modified": null,
+          "expiration": null
+        }
+      ],
+      "schema": {
+        "artifact": "changelog",
+        "compatible": true,
+        "missing": [],
+        "mismatched": [],
+        "additional_columns": [
+          "theme"
+        ]
+      },
+      "query": "SELECT id, type, change_type, columns_changed, bbox FROM read_parquet(?, hive_partitioning = true) WHERE bbox.xmin <= ? AND bbox.xmax >= ? AND bbox.ymin <= ? AND bbox.ymax >= ? ORDER BY type, change_type, id",
+      "parameters": [
+        "s3://overturemaps-us-west-2/changelog/2026-09-23.0/theme=transportation/type=*/change_type=*/*.parquet",
+        -80.46,
+        -80.59,
+        43.52,
+        43.42
+      ],
+      "output": {
+        "file": "changelog.parquet",
+        "bytes": 2583940,
+        "sha256": "c3d2cfdad92f5d8a82e3a6fc7a782bc00c40d5ceaf85934049ee8d078c7fe95f",
+        "rows": 83732
+      },
+      "rows_in_candidate_row_groups": 616816,
+      "measurement": {
+        "seconds": 17.36,
+        "http": {
+          "get_requests": 684,
+          "head_requests": 0,
+          "bytes_received": 54600575
+        }
+      }
+    },
+    "connector": {
+      "kind": "connector",
+      "selection": "catalog item bbox intersects region",
+      "files_available": 32,
+      "files_opened": 1,
+      "sources": [
+        {
+          "location": "https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/release/2026-09-23.0/theme=transportation/type=connector/part-00007-83484c64-3d4a-550f-8e2e-cebfc58834cc-c000.zstd.parquet",
+          "catalog_item": "00007",
+          "catalog_size_bytes": 744153450,
+          "size_bytes": 744153450,
+          "etag": "\"fb0ee5ed24e365e601b551cc9ad9f745-12\"",
+          "last_modified": "Wed, 23 Sep 2026 17:52:55 GMT",
+          "expiration": "expiry-date=\"Mon, 23 Nov 2026 00:00:00 GMT\", rule-id=\"release data 60 day retention\""
+        }
+      ],
+      "schema": {
+        "artifact": "connector",
+        "compatible": true,
+        "missing": [],
+        "mismatched": [],
+        "additional_columns": []
+      },
+      "query": "SELECT * FROM read_parquet(?, hive_partitioning = false) WHERE bbox.xmin <= ? AND bbox.xmax >= ? AND bbox.ymin <= ? AND bbox.ymax >= ? ORDER BY id",
+      "parameters": [
+        [
+          "https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/release/2026-09-23.0/theme=transportation/type=connector/part-00007-83484c64-3d4a-550f-8e2e-cebfc58834cc-c000.zstd.parquet"
+        ],
+        -80.46,
+        -80.59,
+        43.52,
+        43.42
+      ],
+      "output": {
+        "file": "connector.parquet",
+        "bytes": 2855064,
+        "sha256": "e31e2cd20ff6c7bbeeee1495658b97d47cdbfba343ebf5e07393c381aa3d2cc0",
+        "rows": 54353
+      },
+      "rows_in_candidate_row_groups": 179442,
+      "measurement": {
+        "seconds": 3.06,
+        "http": {
+          "get_requests": 15,
+          "head_requests": 1,
+          "bytes_received": 9668505
+        }
+      }
+    },
+    "segment": {
+      "kind": "segment",
+      "selection": "catalog item bbox intersects region",
+      "files_available": 128,
+      "files_opened": 1,
+      "sources": [
+        {
+          "location": "https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/release/2026-09-23.0/theme=transportation/type=segment/part-00030-7454eea2-46dc-509a-927c-d44bc3e53a28-c000.zstd.parquet",
+          "catalog_item": "00030",
+          "catalog_size_bytes": 582720655,
+          "size_bytes": 582720655,
+          "etag": "\"87ced372707370665556f4fdaf1d0260-9\"",
+          "last_modified": "Wed, 23 Sep 2026 17:48:51 GMT",
+          "expiration": "expiry-date=\"Mon, 23 Nov 2026 00:00:00 GMT\", rule-id=\"release data 60 day retention\""
+        }
+      ],
+      "schema": {
+        "artifact": "segment",
+        "compatible": true,
+        "missing": [],
+        "mismatched": [],
+        "additional_columns": [
+          "destinations",
+          "level_rules",
+          "names",
+          "prohibited_transitions",
+          "rail_flags",
+          "road_flags",
+          "routes",
+          "speed_limits",
+          "subclass_rules"
+        ]
+      },
+      "query": "SELECT * FROM read_parquet(?, hive_partitioning = false) WHERE bbox.xmin <= ? AND bbox.xmax >= ? AND bbox.ymin <= ? AND bbox.ymax >= ? ORDER BY id",
+      "parameters": [
+        [
+          "https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/release/2026-09-23.0/theme=transportation/type=segment/part-00030-7454eea2-46dc-509a-927c-d44bc3e53a28-c000.zstd.parquet"
+        ],
+        -80.46,
+        -80.59,
+        43.52,
+        43.42
+      ],
+      "output": {
+        "file": "segment.parquet",
+        "bytes": 7377678,
+        "sha256": "4124a1bba5b8f8741d09e4505c0a507675bae7a11b324b66cf75980ca415d4c3",
+        "rows": 29334
+      },
+      "rows_in_candidate_row_groups": 91163,
+      "measurement": {
+        "seconds": 6.39,
+        "http": {
+          "get_requests": 20,
+          "head_requests": 1,
+          "bytes_received": 18930259
+        }
+      }
+    }
+  },
+  "warnings": [],
+  "acquired_at": "2026-09-25T14:48:41+00:00",
+  "run": {
+    "seconds": 108.72,
+    "environment": {
+      "python": "3.13.2",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "git_commit": "8554b48121fd45bff8053a3dbbdceec098ef2426"
+    },
+    "machine_memory_mb": 16498.0,
+    "peak_process_memory_mb": 808.5,
+    "process_memory_method": "windows:GetProcessMemoryInfo working set"
+  },
+  "content_sha256": "17e066fdc22d88b1b70d19ba0705f934f44f5793696ee35d4a33c1238d89c7d1"
+}

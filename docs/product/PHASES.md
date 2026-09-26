@@ -47,17 +47,17 @@ routed over. Delivered together with Phase 1 rather than as a separate release.
 
 **Delivered**
 
-| Area       | What exists                                                                       |
-| ---------- | --------------------------------------------------------------------------------- |
-| Schema     | Pilot regions, dataset versions, ingestion runs, graph nodes and edges            |
-| Versioning | A dataset is immutable once activated; ingestion writes a new version and swaps   |
-| Ingestion  | `pathable ingest osm` (Overpass) and `pathable ingest pbf` (local extract)        |
-| Real data  | 155,714 nodes · 180,554 segments · 3,363.7 km, live since 2026-08-17              |
-| Elevation  | NRCan HRDEM 1 m LiDAR, sampled per node with full provenance                      |
-| Normalise  | OSM tags → deterministic attributes, with `unknown` as the default everywhere     |
-| Validation | Structured findings; errors block activation, warnings do not                     |
-| Checksums  | Deterministic over network content, so "has this actually changed?" is answerable |
-| Fixture    | A deterministic synthetic network in its own region, for tests and development    |
+| Area       | What exists                                                                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema     | Pilot regions, dataset versions, ingestion runs, graph nodes and edges                                                                    |
+| Versioning | Ingestion writes a new version and swaps activation atomically; enrichment is not yet immutable ([KI-10](../development/KNOWN_ISSUES.md)) |
+| Ingestion  | `pathable ingest osm` (Overpass) and `pathable ingest pbf` (local extract)                                                                |
+| Real data  | 155,714 nodes · 180,554 segments · 3,363.7 km, live since 2026-08-17                                                                      |
+| Elevation  | NRCan HRDEM 1 m LiDAR, sampled per node with full provenance                                                                              |
+| Normalise  | OSM tags → deterministic attributes, with `unknown` as the default everywhere                                                             |
+| Validation | Structured findings; errors block activation, warnings do not                                                                             |
+| Checksums  | Deterministic over network content, so "has this actually changed?" is answerable                                                         |
+| Fixture    | A deterministic synthetic network in its own region, for tests and development                                                            |
 
 **Still does not exist.**
 
@@ -192,17 +192,17 @@ another roadmap.
 | Card      | Deliverable                                                      | Status                                                                            |
 | --------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | PA-UX-02A | Map-led initial and comparison states, proven in the running app | **Done** — interaction direction approved 2026-09-23; the finish was not approved |
-| PA-UX-02B | The accepted interface finished and merged                       | **In progress**                                                                   |
-| PA-UX-02C | Static showcase, refreshed demo, interview handoff               | Blocked on B                                                                      |
+| PA-UX-02B | The accepted interface finished and merged                       | **Done** — approved and merged through PR #64                                     |
+| PA-UX-02C | Static showcase, refreshed demo, interview handoff               | Not started                                                                       |
 
 **What was approved, exactly.** The founder approved the interaction direction
 — Start → Destination → Travel profile → Compare → Explore why, with stronger
 colour and a more refined map — and authorised building the complete
 candidate. In their own words that "is not a claim that the finished visual
-result has already been accepted": PA-UX-02B returns for one further visual
-review before it merges.
+result has already been accepted": PA-UX-02B returned for one further visual
+review, and the founder approved it for merging on 2026-09-26.
 
-**Branch / worktree.** `feat/premium-map-experience`, PR #64 (draft), in
+**Branch / worktree.** `feat/premium-map-experience`, PR #64, in
 `../pathable-ai-wt/premium-map-experience`. Baseline for this sprint: `f099aaf`
 (the PA-UX-01/01F candidate). Base `main` at `29a7749`.
 
@@ -218,18 +218,51 @@ migration `0005_kerb_tiers`, 155,714 nodes and 180,554 segments. See
 records what changed, at which viewports it was checked, and against which
 build.
 
-**Blocker.** One final visual review of the finished PA-UX-02B candidate.
-Technical completion does not self-award it.
-
 **Not verified here.** Live place-name search. The envelope API answers
 `{"provider":"disabled","enabled":false}` by design — `GEOCODING_PROVIDER` is
 unset — and choosing a provider is a founder decision ADR 0005 leaves open.
 The search fields are covered by stubbed provider responses and degrade
 honestly in the preview.
 
-**Next executable action.** Return the candidate for the final visual review.
-On acceptance, merge through the normal workflow, observe the resulting main
-checks, then carry PA-UX-02C.
+**Next executable action.** PA-UX-02C, when it is scheduled.
+
+---
+
+## Geospatial data lane (PA-GEO)
+
+A research lane: can PathAble combine pedestrian datasets from more than one
+source, keep provenance and uncertainty, and show with numbers whether the result
+carries better accessibility information than OpenStreetMap alone? It moves no
+phase gate and changes no route until a card says otherwise.
+
+### PA-GEO-01 — Overture release intake and OSM/GERS identity evidence _(merged, PR #66)_
+
+**Delivered**
+
+| Area            | What exists                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| Release intake  | `pathable overture extract`: release and schema from Overture's STAC catalog, column contract, bounded reads |
+| Reproducibility | A manifest per run: files, ETags, S3 expiry, query and parameters, bytes received, output SHA-256            |
+| Linkage         | `pathable overture link`: identity, cardinality with linear ranges, version and edit-time status             |
+| Independence    | Which accessibility attributes, if any, Overture carries from a source other than OSM                        |
+| Safety          | Reads PathAble in a `READ ONLY` transaction; writes nothing, activates nothing                               |
+
+**What it measured** — see [`OVERTURE_GERS.md`](../architecture/OVERTURE_GERS.md)
+and the `waterloo-overture-*` files in [`docs/evidence/`](../evidence/README.md):
+Overture cites 37,604 of PathAble's 37,976 Waterloo ways; the relationship is
+many-to-many; version status needs evidence PathAble does not store; and in
+Waterloo, Overture adds **no** accessibility evidence independent of OSM for the
+attributes examined.
+
+**Still does not exist.**
+
+- Any synchronization with Overture, or any Overture data in the routing graph.
+- OSM element versions or edit times in PathAble's own tables (KI-7).
+- A lifecycle that keeps enrichment out of an active dataset, covers derived
+  evidence in its checksum, or can reactivate a retired dataset (KI-10). That is
+  PA-GEO-02, the next card.
+- A second, independent pedestrian source, a source-independent evidence model,
+  conflation, or any coverage improvement.
 
 ---
 

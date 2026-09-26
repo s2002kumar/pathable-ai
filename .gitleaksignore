@@ -1,0 +1,10 @@
+# Verified false positives, one fingerprint each; nothing broader is allowed here.
+#
+# In 22c3aa6 each route-regression corpus was labelled through a dataclass
+# field called "key", and the generic-api-key rule read the label strings as
+# credentials. They are corpus names, stored in route_regression_runs.corpus_key.
+# The field was renamed to "name" in the next commit, so the rule cannot match
+# the current code; these two lines cover only the history, which the scan reads
+# in full.
+22c3aa6a1991568a00a98939dd4b1e5e3218127f:services/api/src/pathable_api/routing/activation.py:generic-api-key:141
+22c3aa6a1991568a00a98939dd4b1e5e3218127f:services/api/src/pathable_api/routing/activation.py:generic-api-key:142

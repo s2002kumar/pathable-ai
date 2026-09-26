@@ -73,12 +73,14 @@ elevation was a gate requirement rather than an enhancement.
 
 ## 4. Dataset versioning and activation
 
-A dataset version is immutable once activated. Ingestion writes a **new** version, validates it, and swaps
+Ingestion never edits an activated dataset version. It writes a **new** version, validates it, and swaps
 activation inside one transaction; a failed import cannot degrade the live network, and a database constraint —
 not application discipline — enforces that only one dataset per region is active.
 
-This is what makes the in-memory cache safe. The graph is keyed by dataset version id, so a cached graph can never
-go stale: a new dataset is a new key. It also makes "what answered this request?" answerable — every route
+This is what makes the in-memory cache safe — with one exception still open: elevation sampling writes into an
+existing dataset, the live one by default, so a running API keeps its pre-elevation graph until it restarts
+([KI-10](development/KNOWN_ISSUES.md)). The graph is keyed by dataset version id, so a new dataset is a new key
+and, apart from that exception, a cached graph cannot go stale. It also makes "what answered this request?" answerable — every route
 response carries the dataset id, its checksum, and the upstream publication timestamp.
 
 **Checksums are over content**, computed deterministically from the network payload, so "has this actually
