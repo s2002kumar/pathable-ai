@@ -1,0 +1,5413 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "purpose": "PA-GEO-04 manual geometry and OSM-lineage inspection sample",
+    "snapshot_id": "513094727cc139dd29980e2c281570f9d5183c1d0ca8171754ece0cbd7281b38",
+    "seed": "pathable-pa-geo-04-sample-v1",
+    "method": "Records intersecting the study area, one stratum each by first matching rule; at least 3 per non-empty stratum, the rest of 80 by largest remainder in proportion to stratum size; within a stratum, ascending sha256(seed:snapshot_id:ACTIVETRANSPORTID).",
+    "strata": {
+      "virtual_link": {
+        "rule": "City's virtual street crossings",
+        "population": 2019,
+        "sampled": 6
+      },
+      "unofficial_connection": {
+        "rule": "City's unofficial driveway and on-road connections",
+        "population": 116,
+        "sampled": 3
+      },
+      "unresolved_semantics": {
+        "rule": "records whose physical or virtual nature the source leaves ambiguous",
+        "population": 10,
+        "sampled": 3
+      },
+      "stairs": {
+        "rule": "FEATURE_TYPE STAIRS",
+        "population": 40,
+        "sampled": 3
+      },
+      "other_structure": {
+        "rule": "bridges, overpasses, underpasses, boardwalks",
+        "population": 116,
+        "sampled": 3
+      },
+      "curb_cut_coded": {
+        "rule": "CURBCUT = Y (a curbcut down to street level)",
+        "population": 3294,
+        "sampled": 9
+      },
+      "not_along_osm_pedestrian_way": {
+        "rule": "pedestrian record with a point 20 m or more from any OSM footway, path, pedestrian way or steps",
+        "population": 341,
+        "sampled": 3
+      },
+      "offset_from_osm_pedestrian_way": {
+        "rule": "pedestrian record whose worst point is 3-20 m from OSM pedestrian ways",
+        "population": 514,
+        "sampled": 3
+      },
+      "crossing": {
+        "rule": "crosswalks, trail crossings and crossrides",
+        "population": 2172,
+        "sampled": 7
+      },
+      "trail": {
+        "rule": "multi-use, boulevard and natural trails",
+        "population": 809,
+        "sampled": 4
+      },
+      "walkway": {
+        "rule": "walkways between neighbourhoods",
+        "population": 185,
+        "sampled": 3
+      },
+      "merged_looking": {
+        "rule": "multi-part or at least 400 m long",
+        "population": 59,
+        "sampled": 3
+      },
+      "split_looking": {
+        "rule": "shorter than 5 m without a curb-cut code",
+        "population": 209,
+        "sampled": 3
+      },
+      "dense_core_sidewalk": {
+        "rule": "sidewalk in the densest tenth of the inventory in the study area",
+        "population": 370,
+        "sampled": 3
+      },
+      "parallel_sidewalk_pair": {
+        "rule": "sidewalk whose road segment has sidewalks on both sides",
+        "population": 3752,
+        "sampled": 14
+      },
+      "residential_sidewalk": {
+        "rule": "sidewalk whose nearest OSM road is residential",
+        "population": 168,
+        "sampled": 3
+      },
+      "ordinary_sidewalk": {
+        "rule": "any other active sidewalk",
+        "population": 82,
+        "sampled": 3
+      },
+      "other_physical": {
+        "rule": "cycling, maintenance and remaining physical records",
+        "population": 786,
+        "sampled": 4
+      }
+    },
+    "coordinates": "OGC:CRS84, rounded to 7 decimal places (about 1 cm) for inspection",
+    "attribution": "Contains information licensed under the Open Government Licence - The Corporation of the City of Kitchener. Proximity figures also use PathAble's graph: © OpenStreetMap contributors, ODbL 1.0."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": 337366,
+      "properties": {
+        "activetransportid": 337366,
+        "stratum": "virtual_link",
+        "rank_in_stratum": 1,
+        "physical_class": "virtual_link",
+        "network_role": "virtual_link",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "LINK (PEDESTRIAN)",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 0.0,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2014,
+        "roadsegmentid": 20797,
+        "roadsegment_side": null,
+        "length_m": 17.79,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 8.821,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5357521,
+            43.4348881
+          ],
+          [
+            -80.5358462,
+            43.4350329
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 307871,
+      "properties": {
+        "activetransportid": 307871,
+        "stratum": "virtual_link",
+        "rank_in_stratum": 2,
+        "physical_class": "virtual_link",
+        "network_role": "virtual_link",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "LINK (PEDESTRIAN)",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 0.0,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 11695,
+        "roadsegment_side": null,
+        "length_m": 19.56,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 8.384,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4719179,
+            43.4434023
+          ],
+          [
+            -80.4716788,
+            43.4433767
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 305259,
+      "properties": {
+        "activetransportid": 305259,
+        "stratum": "virtual_link",
+        "rank_in_stratum": 3,
+        "physical_class": "virtual_link",
+        "network_role": "virtual_link",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "LINK (PEDESTRIAN)",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 0.0,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 8813,
+        "roadsegment_side": null,
+        "length_m": 18.76,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "residential",
+        "nearest_osm_footway_or_path_m": 0.14,
+        "max_offset_to_osm_pedestrian_way_m": 7.792,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5048568,
+            43.4603433
+          ],
+          [
+            -80.5046268,
+            43.4603649
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 310638,
+      "properties": {
+        "activetransportid": 310638,
+        "stratum": "virtual_link",
+        "rank_in_stratum": 4,
+        "physical_class": "virtual_link",
+        "network_role": "virtual_link",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "LINK (PEDESTRIAN)",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 0.0,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 8822,
+        "roadsegment_side": null,
+        "length_m": 8.68,
+        "nearest_pathable_edge_m": 0.635,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.635,
+        "max_offset_to_osm_pedestrian_way_m": 0.649,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4972636,
+            43.4588147
+          ],
+          [
+            -80.4973607,
+            43.4587814
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 308464,
+      "properties": {
+        "activetransportid": 308464,
+        "stratum": "virtual_link",
+        "rank_in_stratum": 5,
+        "physical_class": "virtual_link",
+        "network_role": "virtual_link",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "LINK (PEDESTRIAN)",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 0.0,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 4842,
+        "roadsegment_side": null,
+        "length_m": 12.87,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "residential",
+        "nearest_osm_footway_or_path_m": 0.416,
+        "max_offset_to_osm_pedestrian_way_m": 2.02,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5379584,
+            43.4358727
+          ],
+          [
+            -80.5379969,
+            43.4357602
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 391249,
+      "properties": {
+        "activetransportid": 391249,
+        "stratum": "virtual_link",
+        "rank_in_stratum": 6,
+        "physical_class": "virtual_link",
+        "network_role": "virtual_link",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "LINK (PEDESTRIAN)",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 1.5,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2018,
+        "roadsegmentid": 11457,
+        "roadsegment_side": null,
+        "length_m": 3.08,
+        "nearest_pathable_edge_m": 0.748,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.748,
+        "max_offset_to_osm_pedestrian_way_m": 1.009,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4788208,
+            43.4342386
+          ],
+          [
+            -80.4788538,
+            43.4342249
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 415387,
+      "properties": {
+        "activetransportid": 415387,
+        "stratum": "unofficial_connection",
+        "rank_in_stratum": 1,
+        "physical_class": "unofficial_connection",
+        "network_role": "unofficial_connection",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "ON-ROAD CONNECTION",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 1.5,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "null",
+        "source_year": null,
+        "roadsegmentid": 11453,
+        "roadsegment_side": null,
+        "length_m": 10.94,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.973,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4741723,
+            43.4340684
+          ],
+          [
+            -80.4743033,
+            43.4340443
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 50569,
+      "properties": {
+        "activetransportid": 50569,
+        "stratum": "unofficial_connection",
+        "rank_in_stratum": 2,
+        "physical_class": "unofficial_connection",
+        "network_role": "unofficial_connection",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "ON-ROAD CONNECTION",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 1.5,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2019,
+        "roadsegmentid": 601812,
+        "roadsegment_side": null,
+        "length_m": 153.2,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 6.772,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4810024,
+            43.4934152
+          ],
+          [
+            -80.4809348,
+            43.4934198
+          ],
+          [
+            -80.4808712,
+            43.493428
+          ],
+          [
+            -80.4791491,
+            43.4937003
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 388381,
+      "properties": {
+        "activetransportid": 388381,
+        "stratum": "unofficial_connection",
+        "rank_in_stratum": 3,
+        "physical_class": "unofficial_connection",
+        "network_role": "unofficial_connection",
+        "lifecycle": "not_published",
+        "category": "NETWORK LINKS",
+        "subcategory": "ON-ROAD CONNECTION",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 1.5,
+        "curbcut": null,
+        "railing": null,
+        "surface_condition": null,
+        "source_class": "null",
+        "source_year": null,
+        "roadsegmentid": 10750,
+        "roadsegment_side": null,
+        "length_m": 61.86,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "tertiary",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 10.516,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4650258,
+            43.4208128
+          ],
+          [
+            -80.4643584,
+            43.4205415
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 304564,
+      "properties": {
+        "activetransportid": 304564,
+        "stratum": "unresolved_semantics",
+        "rank_in_stratum": 1,
+        "physical_class": "unresolved",
+        "network_role": "unresolved",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "CROSSWALK",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 0.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2022,
+        "roadsegmentid": 8736,
+        "roadsegment_side": "LEFT",
+        "length_m": 10.12,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "unclassified",
+        "nearest_osm_footway_or_path_m": 0.976,
+        "max_offset_to_osm_pedestrian_way_m": 1.382,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5094775,
+            43.4480165
+          ],
+          [
+            -80.5095722,
+            43.4479569
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 393902,
+      "properties": {
+        "activetransportid": 393902,
+        "stratum": "unresolved_semantics",
+        "rank_in_stratum": 2,
+        "physical_class": "unresolved",
+        "network_role": "unresolved",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 0.0,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 5727,
+        "roadsegment_side": "LEFT",
+        "length_m": 1.49,
+        "nearest_pathable_edge_m": 0.769,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.769,
+        "max_offset_to_osm_pedestrian_way_m": 2.13,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4976508,
+            43.438954
+          ],
+          [
+            -80.4976486,
+            43.4389407
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 337163,
+      "properties": {
+        "activetransportid": 337163,
+        "stratum": "unresolved_semantics",
+        "rank_in_stratum": 3,
+        "physical_class": "unresolved",
+        "network_role": "unresolved",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "RAISED TRAIL CROSSING",
+        "feature_type": "NA (VIRTUAL LINK)",
+        "surface_material": "NA (VIRTUAL LINK)",
+        "width_m": 0.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2020,
+        "roadsegmentid": 1698,
+        "roadsegment_side": "LEFT",
+        "length_m": 6.21,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "residential",
+        "nearest_osm_footway_or_path_m": 3.95,
+        "max_offset_to_osm_pedestrian_way_m": 7.496,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5059679,
+            43.4418081
+          ],
+          [
+            -80.5059109,
+            43.4418455
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 400043,
+      "properties": {
+        "activetransportid": 400043,
+        "stratum": "stairs",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "WALKWAY",
+        "feature_type": "STAIRS",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "null",
+        "source_year": null,
+        "roadsegmentid": 5733,
+        "roadsegment_side": "RIGHT",
+        "length_m": 4.04,
+        "nearest_pathable_edge_m": 0.387,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.387,
+        "max_offset_to_osm_pedestrian_way_m": 0.565,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4965611,
+            43.4419136
+          ],
+          [
+            -80.4965818,
+            43.4418806
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 418763,
+      "properties": {
+        "activetransportid": 418763,
+        "stratum": "stairs",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "WALKWAY",
+        "feature_type": "STAIRS",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "Y",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 1997,
+        "roadsegmentid": 5522,
+        "roadsegment_side": "LEFT",
+        "length_m": 10.67,
+        "nearest_pathable_edge_m": 0.975,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.975,
+        "max_offset_to_osm_pedestrian_way_m": 1.029,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.538746,
+            43.4308434
+          ],
+          [
+            -80.5386565,
+            43.4309139
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 403230,
+      "properties": {
+        "activetransportid": 403230,
+        "stratum": "stairs",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "WALKWAY",
+        "feature_type": "STAIRS",
+        "surface_material": "UNKNOWN",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "orthoimagery",
+        "source_year": 2025,
+        "roadsegmentid": 6583,
+        "roadsegment_side": "LEFT",
+        "length_m": 26.98,
+        "nearest_pathable_edge_m": 0.05,
+        "nearest_pathable_edge_highway": "cycleway",
+        "nearest_osm_footway_or_path_m": 0.615,
+        "max_offset_to_osm_pedestrian_way_m": 1.316,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4919544,
+            43.4266354
+          ],
+          [
+            -80.4918338,
+            43.4266597
+          ],
+          [
+            -80.4916373,
+            43.4267097
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 392049,
+      "properties": {
+        "activetransportid": 392049,
+        "stratum": "other_structure",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "OVERPASS",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 103019,
+        "roadsegment_side": "RIGHT",
+        "length_m": 134.33,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.146,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4638019,
+            43.4209036
+          ],
+          [
+            -80.4633458,
+            43.4213133
+          ],
+          [
+            -80.4627278,
+            43.4218252
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 7863,
+      "properties": {
+        "activetransportid": 7863,
+        "stratum": "other_structure",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "MUT",
+        "feature_type": "BRIDGE",
+        "surface_material": "WOOD",
+        "width_m": 3.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "trail_inventory_2015",
+        "source_year": null,
+        "roadsegmentid": 5873,
+        "roadsegment_side": "LEFT",
+        "length_m": 29.56,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.259,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4971279,
+            43.4469627
+          ],
+          [
+            -80.497185,
+            43.4472256
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 6363,
+      "properties": {
+        "activetransportid": 6363,
+        "stratum": "other_structure",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "MUT",
+        "feature_type": "BRIDGE",
+        "surface_material": "WOOD",
+        "width_m": 3.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "FAIR",
+        "source_class": "trail_inventory_2015",
+        "source_year": null,
+        "roadsegmentid": 5876,
+        "roadsegment_side": "LEFT",
+        "length_m": 20.09,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.371,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4996385,
+            43.4463866
+          ],
+          [
+            -80.499755,
+            43.4465464
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 104799,
+      "properties": {
+        "activetransportid": 104799,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "BMUT",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 3.0,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "orthoimagery",
+        "source_year": 2018,
+        "roadsegmentid": 10839,
+        "roadsegment_side": "LEFT",
+        "length_m": 11.1,
+        "nearest_pathable_edge_m": 0.996,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.996,
+        "max_offset_to_osm_pedestrian_way_m": 1.619,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4831978,
+            43.4256531
+          ],
+          [
+            -80.4832395,
+            43.4256659
+          ],
+          [
+            -80.4832591,
+            43.4256751
+          ],
+          [
+            -80.4832762,
+            43.4256875
+          ],
+          [
+            -80.4833021,
+            43.4257138
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 388243,
+      "properties": {
+        "activetransportid": 388243,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "orthoimagery",
+        "source_year": 2016,
+        "roadsegmentid": 1282,
+        "roadsegment_side": "LEFT",
+        "length_m": 1.1,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.884,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5284505,
+            43.4477905
+          ],
+          [
+            -80.5284636,
+            43.4477934
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 335487,
+      "properties": {
+        "activetransportid": 335487,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 6752,
+        "roadsegment_side": "RIGHT",
+        "length_m": 0.98,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.719,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4819589,
+            43.45342
+          ],
+          [
+            -80.4819533,
+            43.4534277
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 321409,
+      "properties": {
+        "activetransportid": 321409,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 4,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 10663,
+        "roadsegment_side": "RIGHT",
+        "length_m": 1.08,
+        "nearest_pathable_edge_m": 0.215,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.215,
+        "max_offset_to_osm_pedestrian_way_m": 0.658,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5163957,
+            43.4568019
+          ],
+          [
+            -80.5164085,
+            43.4567991
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 335421,
+      "properties": {
+        "activetransportid": 335421,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 5,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2017,
+        "roadsegmentid": 5901,
+        "roadsegment_side": "RIGHT",
+        "length_m": 1.11,
+        "nearest_pathable_edge_m": 0.25,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.25,
+        "max_offset_to_osm_pedestrian_way_m": 0.256,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.496558,
+            43.4524211
+          ],
+          [
+            -80.4965524,
+            43.4524303
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 403539,
+      "properties": {
+        "activetransportid": 403539,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 6,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 10177,
+        "roadsegment_side": "LEFT",
+        "length_m": 3.34,
+        "nearest_pathable_edge_m": 0.234,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.234,
+        "max_offset_to_osm_pedestrian_way_m": 0.964,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4714988,
+            43.4456816
+          ],
+          [
+            -80.4715374,
+            43.4456921
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 413633,
+      "properties": {
+        "activetransportid": 413633,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 7,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 40136,
+        "roadsegment_side": "RIGHT",
+        "length_m": 2.05,
+        "nearest_pathable_edge_m": 1.27,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 1.27,
+        "max_offset_to_osm_pedestrian_way_m": 1.399,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4917118,
+            43.4388881
+          ],
+          [
+            -80.4916865,
+            43.4388883
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 337378,
+      "properties": {
+        "activetransportid": 337378,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 8,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2014,
+        "roadsegmentid": 20717,
+        "roadsegment_side": "LEFT",
+        "length_m": 1.83,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.429,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5161569,
+            43.4350508
+          ],
+          [
+            -80.5161499,
+            43.4350665
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 307104,
+      "properties": {
+        "activetransportid": 307104,
+        "stratum": "curb_cut_coded",
+        "rank_in_stratum": 9,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "WALKWAY",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "Y",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2009,
+        "roadsegmentid": 20420,
+        "roadsegment_side": "RIGHT",
+        "length_m": 2.91,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.229,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5516547,
+            43.4377478
+          ],
+          [
+            -80.551629,
+            43.4377294
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 397142,
+      "properties": {
+        "activetransportid": 397142,
+        "stratum": "not_along_osm_pedestrian_way",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "BMUT",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 3.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "orthoimagery",
+        "source_year": 2021,
+        "roadsegmentid": 9919,
+        "roadsegment_side": "LEFT",
+        "length_m": 332.4,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 0.238,
+        "max_offset_to_osm_pedestrian_way_m": 158.746,
+        "nearest_osm_road_highway": "primary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4621917,
+            43.465047
+          ],
+          [
+            -80.4583848,
+            43.4661737
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 6009,
+      "properties": {
+        "activetransportid": 6009,
+        "stratum": "not_along_osm_pedestrian_way",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "MUT",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 3.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "FAIR",
+        "source_class": "orthoimagery",
+        "source_year": 2020,
+        "roadsegmentid": 11328,
+        "roadsegment_side": "RIGHT",
+        "length_m": 384.41,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "cycleway",
+        "nearest_osm_footway_or_path_m": 0.078,
+        "max_offset_to_osm_pedestrian_way_m": 75.1,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4872867,
+            43.44105
+          ],
+          [
+            -80.4872988,
+            43.4410489
+          ],
+          [
+            -80.48731,
+            43.4410463
+          ],
+          [
+            -80.4873208,
+            43.4410421
+          ],
+          [
+            -80.4873323,
+            43.4410371
+          ],
+          [
+            -80.4873483,
+            43.4410329
+          ],
+          [
+            -80.4873657,
+            43.4410296
+          ],
+          [
+            -80.4873952,
+            43.4410248
+          ],
+          [
+            -80.4876431,
+            43.4409966
+          ],
+          [
+            -80.4877888,
+            43.4409812
+          ],
+          [
+            -80.4878845,
+            43.4409721
+          ],
+          [
+            -80.4879801,
+            43.4409617
+          ],
+          [
+            -80.4881086,
+            43.440951
+          ],
+          [
+            -80.4882068,
+            43.4409431
+          ],
+          [
+            -80.4882746,
+            43.4409388
+          ],
+          [
+            -80.48835,
+            43.440935
+          ],
+          [
+            -80.4884318,
+            43.4409319
+          ],
+          [
+            -80.4885216,
+            43.4409308
+          ],
+          [
+            -80.4886013,
+            43.4409299
+          ],
+          [
+            -80.4887088,
+            43.4409305
+          ],
+          [
+            -80.4888019,
+            43.4409327
+          ],
+          [
+            -80.4888771,
+            43.4409366
+          ],
+          [
+            -80.4890319,
+            43.4409444
+          ],
+          [
+            -80.4891467,
+            43.4409521
+          ],
+          [
+            -80.4892672,
+            43.4409622
+          ],
+          [
+            -80.4893803,
+            43.4409749
+          ],
+          [
+            -80.4894766,
+            43.4409884
+          ],
+          [
+            -80.4895644,
+            43.4410022
+          ],
+          [
+            -80.4896407,
+            43.4410157
+          ],
+          [
+            -80.4897149,
+            43.4410324
+          ],
+          [
+            -80.489835,
+            43.441064
+          ],
+          [
+            -80.4900583,
+            43.4411229
+          ],
+          [
+            -80.4902536,
+            43.4411753
+          ],
+          [
+            -80.4903804,
+            43.441209
+          ],
+          [
+            -80.4906899,
+            43.4412982
+          ],
+          [
+            -80.490875,
+            43.4413532
+          ],
+          [
+            -80.4910723,
+            43.441416
+          ],
+          [
+            -80.4912174,
+            43.4414649
+          ],
+          [
+            -80.4914268,
+            43.4415364
+          ],
+          [
+            -80.4916758,
+            43.4416236
+          ],
+          [
+            -80.4917765,
+            43.4416541
+          ],
+          [
+            -80.4918026,
+            43.4416656
+          ],
+          [
+            -80.4918274,
+            43.4416797
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 16079,
+      "properties": {
+        "activetransportid": 16079,
+        "stratum": "not_along_osm_pedestrian_way",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2006,
+        "roadsegmentid": 21034,
+        "roadsegment_side": "RIGHT",
+        "length_m": 106.72,
+        "nearest_pathable_edge_m": 0.564,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 0.792,
+        "max_offset_to_osm_pedestrian_way_m": 79.357,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5479135,
+            43.4201939
+          ],
+          [
+            -80.5479684,
+            43.4201504
+          ],
+          [
+            -80.5480179,
+            43.4201037
+          ],
+          [
+            -80.5480617,
+            43.420054
+          ],
+          [
+            -80.5480996,
+            43.4200018
+          ],
+          [
+            -80.5481312,
+            43.4199474
+          ],
+          [
+            -80.5481647,
+            43.419855
+          ],
+          [
+            -80.5481875,
+            43.4197609
+          ],
+          [
+            -80.5481994,
+            43.4196657
+          ],
+          [
+            -80.5482002,
+            43.4195701
+          ],
+          [
+            -80.5481912,
+            43.4195105
+          ],
+          [
+            -80.5481751,
+            43.4194516
+          ],
+          [
+            -80.548152,
+            43.4193941
+          ],
+          [
+            -80.548122,
+            43.4193382
+          ],
+          [
+            -80.5480956,
+            43.4192994
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 19413,
+      "properties": {
+        "activetransportid": 19413,
+        "stratum": "offset_from_osm_pedestrian_way",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2025,
+        "roadsegmentid": 1719,
+        "roadsegment_side": "RIGHT",
+        "length_m": 82.4,
+        "nearest_pathable_edge_m": 0.732,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.732,
+        "max_offset_to_osm_pedestrian_way_m": 11.856,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5145718,
+            43.4422535
+          ],
+          [
+            -80.5145864,
+            43.4422589
+          ],
+          [
+            -80.5146015,
+            43.4422685
+          ],
+          [
+            -80.5152056,
+            43.4428161
+          ],
+          [
+            -80.5152083,
+            43.4428202
+          ],
+          [
+            -80.5152091,
+            43.4428243
+          ],
+          [
+            -80.5152084,
+            43.4428285
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 307894,
+      "properties": {
+        "activetransportid": 307894,
+        "stratum": "offset_from_osm_pedestrian_way",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_crossing",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "CROSSWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT (PAINTED)",
+        "width_m": 0.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 6859,
+        "roadsegment_side": "LEFT",
+        "length_m": 23.92,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "secondary",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 3.316,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.478742,
+            43.4481199
+          ],
+          [
+            -80.4789911,
+            43.4480038
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 88229,
+      "properties": {
+        "activetransportid": 88229,
+        "stratum": "offset_from_osm_pedestrian_way",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "MUT",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 3.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "trail_inventory_2015",
+        "source_year": null,
+        "roadsegmentid": 6597,
+        "roadsegment_side": "LEFT",
+        "length_m": 226.67,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 7.189,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4995508,
+            43.4311597
+          ],
+          [
+            -80.4994585,
+            43.431091
+          ],
+          [
+            -80.4994149,
+            43.4310637
+          ],
+          [
+            -80.4993682,
+            43.4310422
+          ],
+          [
+            -80.499318,
+            43.4310227
+          ],
+          [
+            -80.4992105,
+            43.4309947
+          ],
+          [
+            -80.4991552,
+            43.4309848
+          ],
+          [
+            -80.4991095,
+            43.4309791
+          ],
+          [
+            -80.499056,
+            43.4309783
+          ],
+          [
+            -80.4990073,
+            43.4309848
+          ],
+          [
+            -80.4989734,
+            43.4309934
+          ],
+          [
+            -80.4989378,
+            43.431005
+          ],
+          [
+            -80.4989068,
+            43.4310189
+          ],
+          [
+            -80.4988873,
+            43.4310352
+          ],
+          [
+            -80.4988736,
+            43.431056
+          ],
+          [
+            -80.4988534,
+            43.4311034
+          ],
+          [
+            -80.4988356,
+            43.4311276
+          ],
+          [
+            -80.4988183,
+            43.4311401
+          ],
+          [
+            -80.4987957,
+            43.4311509
+          ],
+          [
+            -80.4987732,
+            43.4311561
+          ],
+          [
+            -80.49875,
+            43.4311552
+          ],
+          [
+            -80.4987237,
+            43.431151
+          ],
+          [
+            -80.4986388,
+            43.431118
+          ],
+          [
+            -80.4982699,
+            43.4309621
+          ],
+          [
+            -80.4981398,
+            43.4309108
+          ],
+          [
+            -80.4980003,
+            43.43086
+          ],
+          [
+            -80.4978906,
+            43.4308248
+          ],
+          [
+            -80.497765,
+            43.4307925
+          ],
+          [
+            -80.4976136,
+            43.4307637
+          ],
+          [
+            -80.4975259,
+            43.4307533
+          ],
+          [
+            -80.4974255,
+            43.4307481
+          ],
+          [
+            -80.4972854,
+            43.4307366
+          ],
+          [
+            -80.4972625,
+            43.4307325
+          ],
+          [
+            -80.4972149,
+            43.4307207
+          ],
+          [
+            -80.4971697,
+            43.4307046
+          ],
+          [
+            -80.4971345,
+            43.4306884
+          ],
+          [
+            -80.4971034,
+            43.4306671
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 402036,
+      "properties": {
+        "activetransportid": 402036,
+        "stratum": "crossing",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_crossing",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "CROSSWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT (PAINTED)",
+        "width_m": 0.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 1307,
+        "roadsegment_side": "LEFT",
+        "length_m": 9.29,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "secondary",
+        "nearest_osm_footway_or_path_m": 0.799,
+        "max_offset_to_osm_pedestrian_way_m": 0.863,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5228886,
+            43.4448767
+          ],
+          [
+            -80.5227746,
+            43.4448862
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 306773,
+      "properties": {
+        "activetransportid": 306773,
+        "stratum": "crossing",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_crossing",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "CROSSWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT (PAINTED)",
+        "width_m": 0.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 6214,
+        "roadsegment_side": "RIGHT",
+        "length_m": 16.57,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.839,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5147849,
+            43.4301811
+          ],
+          [
+            -80.5146287,
+            43.4300847
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 396211,
+      "properties": {
+        "activetransportid": 396211,
+        "stratum": "crossing",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "cycling_or_shared_crossing",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "COMBINED CROSSRIDE",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT (PAINTED)",
+        "width_m": 5.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2023,
+        "roadsegmentid": 6782,
+        "roadsegment_side": "LEFT",
+        "length_m": 4.7,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "residential",
+        "nearest_osm_footway_or_path_m": 1.061,
+        "max_offset_to_osm_pedestrian_way_m": 4.362,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4881436,
+            43.455583
+          ],
+          [
+            -80.4880935,
+            43.4555615
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 301514,
+      "properties": {
+        "activetransportid": 301514,
+        "stratum": "crossing",
+        "rank_in_stratum": 4,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_crossing",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "CROSSWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 0.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 21097,
+        "roadsegment_side": "LEFT",
+        "length_m": 14.52,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "residential",
+        "nearest_osm_footway_or_path_m": 0.421,
+        "max_offset_to_osm_pedestrian_way_m": 2.541,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5399191,
+            43.4229943
+          ],
+          [
+            -80.5397461,
+            43.4230288
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 311117,
+      "properties": {
+        "activetransportid": 311117,
+        "stratum": "crossing",
+        "rank_in_stratum": 5,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_crossing",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "CROSSWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "orthoimagery",
+        "source_year": 2023,
+        "roadsegmentid": 5601,
+        "roadsegment_side": "LEFT",
+        "length_m": 20.71,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "secondary",
+        "nearest_osm_footway_or_path_m": 0.364,
+        "max_offset_to_osm_pedestrian_way_m": 0.656,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5245741,
+            43.4304438
+          ],
+          [
+            -80.5248064,
+            43.4303656
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 307585,
+      "properties": {
+        "activetransportid": 307585,
+        "stratum": "crossing",
+        "rank_in_stratum": 6,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_crossing",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "CROSSWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT (PAINTED)",
+        "width_m": 0.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 11488,
+        "roadsegment_side": "RIGHT",
+        "length_m": 13.42,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "residential",
+        "nearest_osm_footway_or_path_m": 0.243,
+        "max_offset_to_osm_pedestrian_way_m": 0.503,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4709049,
+            43.4499963
+          ],
+          [
+            -80.4708347,
+            43.4498868
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 307529,
+      "properties": {
+        "activetransportid": 307529,
+        "stratum": "crossing",
+        "rank_in_stratum": 7,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_crossing",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "CROSSWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 0.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 6825,
+        "roadsegment_side": "RIGHT",
+        "length_m": 11.59,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.472,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4775687,
+            43.4516703
+          ],
+          [
+            -80.4776244,
+            43.4517664
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 59794,
+      "properties": {
+        "activetransportid": 59794,
+        "stratum": "trail",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "MUT",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 3.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "orthoimagery",
+        "source_year": 2016,
+        "roadsegmentid": 600836,
+        "roadsegment_side": "LEFT",
+        "length_m": 103.95,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.218,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5540292,
+            43.4324563
+          ],
+          [
+            -80.5540816,
+            43.4324774
+          ],
+          [
+            -80.5541453,
+            43.4324933
+          ],
+          [
+            -80.5542319,
+            43.4325152
+          ],
+          [
+            -80.5543342,
+            43.4325342
+          ],
+          [
+            -80.5544567,
+            43.432545
+          ],
+          [
+            -80.5545744,
+            43.4325462
+          ],
+          [
+            -80.5546784,
+            43.4325344
+          ],
+          [
+            -80.5548193,
+            43.4325178
+          ],
+          [
+            -80.5548689,
+            43.4325102
+          ],
+          [
+            -80.5549165,
+            43.4324982
+          ],
+          [
+            -80.5549446,
+            43.4324865
+          ],
+          [
+            -80.5549584,
+            43.4324785
+          ],
+          [
+            -80.5549721,
+            43.4324705
+          ],
+          [
+            -80.5549914,
+            43.4324527
+          ],
+          [
+            -80.5550013,
+            43.4324371
+          ],
+          [
+            -80.5550054,
+            43.4324213
+          ],
+          [
+            -80.5550069,
+            43.4324056
+          ],
+          [
+            -80.5550031,
+            43.432392
+          ],
+          [
+            -80.5549905,
+            43.4323684
+          ],
+          [
+            -80.5549634,
+            43.4323318
+          ],
+          [
+            -80.5549126,
+            43.432275
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 47012,
+      "properties": {
+        "activetransportid": 47012,
+        "stratum": "trail",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "BMUT",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 3.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2026,
+        "roadsegmentid": 6389,
+        "roadsegment_side": "RIGHT",
+        "length_m": 105.64,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 0.039,
+        "max_offset_to_osm_pedestrian_way_m": 2.182,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5024373,
+            43.4204431
+          ],
+          [
+            -80.5025681,
+            43.4203968
+          ],
+          [
+            -80.5026741,
+            43.4203631
+          ],
+          [
+            -80.5027889,
+            43.4203311
+          ],
+          [
+            -80.5029057,
+            43.4203032
+          ],
+          [
+            -80.5030459,
+            43.4202756
+          ],
+          [
+            -80.5036824,
+            43.4201697
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 88440,
+      "properties": {
+        "activetransportid": 88440,
+        "stratum": "trail",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "MUT",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 3.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2019,
+        "roadsegmentid": 10899,
+        "roadsegment_side": "LEFT",
+        "length_m": 155.46,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.348,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4799842,
+            43.4354967
+          ],
+          [
+            -80.4795548,
+            43.4350761
+          ],
+          [
+            -80.4794664,
+            43.4349988
+          ],
+          [
+            -80.4787692,
+            43.4344283
+          ],
+          [
+            -80.4787563,
+            43.4344225
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 45654,
+      "properties": {
+        "activetransportid": 45654,
+        "stratum": "trail",
+        "rank_in_stratum": 4,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "PATHWAYS",
+        "subcategory": "MAJOR TRAIL",
+        "feature_type": "SURFACE",
+        "surface_material": "STONEDUST",
+        "width_m": 3.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "FAIR",
+        "source_class": "trail_inventory_2015",
+        "source_year": null,
+        "roadsegmentid": 10593,
+        "roadsegment_side": "LEFT",
+        "length_m": 10.35,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.763,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4975012,
+            43.4694151
+          ],
+          [
+            -80.4973928,
+            43.4694647
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 16892,
+      "properties": {
+        "activetransportid": 16892,
+        "stratum": "walkway",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "WALKWAY",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 2.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2017,
+        "roadsegmentid": 11340,
+        "roadsegment_side": "RIGHT",
+        "length_m": 38.3,
+        "nearest_pathable_edge_m": 0.098,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.098,
+        "max_offset_to_osm_pedestrian_way_m": 1.56,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4903027,
+            43.4348255
+          ],
+          [
+            -80.4906844,
+            43.4346849
+          ],
+          [
+            -80.4907235,
+            43.434668
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 17843,
+      "properties": {
+        "activetransportid": 17843,
+        "stratum": "walkway",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "WALKWAY",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2014,
+        "roadsegmentid": 20431,
+        "roadsegment_side": "LEFT",
+        "length_m": 60.07,
+        "nearest_pathable_edge_m": 0.239,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.239,
+        "max_offset_to_osm_pedestrian_way_m": 0.622,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5515389,
+            43.4355622
+          ],
+          [
+            -80.5515398,
+            43.4355927
+          ],
+          [
+            -80.5516282,
+            43.436099
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 403885,
+      "properties": {
+        "activetransportid": 403885,
+        "stratum": "walkway",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "WALKWAY",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 1997,
+        "roadsegmentid": 11370,
+        "roadsegment_side": "LEFT",
+        "length_m": 21.32,
+        "nearest_pathable_edge_m": 0.777,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.777,
+        "max_offset_to_osm_pedestrian_way_m": 0.87,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4838323,
+            43.444698
+          ],
+          [
+            -80.483632,
+            43.4445734
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 419454,
+      "properties": {
+        "activetransportid": 419454,
+        "stratum": "merged_looking",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "cycling_facility",
+        "lifecycle": "ACTIVE",
+        "category": "CYCLING",
+        "subcategory": "SINGLE TRACK",
+        "feature_type": "SURFACE",
+        "surface_material": "NATURAL",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "orthoimagery",
+        "source_year": 2025,
+        "roadsegmentid": 5565,
+        "roadsegment_side": "RIGHT",
+        "length_m": 491.08,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "path",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 14.008,
+        "nearest_osm_road_highway": null,
+        "published_in": [
+          "active_transportation"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.570542,
+            43.4304249
+          ],
+          [
+            -80.5705526,
+            43.4304439
+          ],
+          [
+            -80.5705577,
+            43.4304672
+          ],
+          [
+            -80.5705351,
+            43.4304901
+          ],
+          [
+            -80.5705215,
+            43.4305141
+          ],
+          [
+            -80.5705061,
+            43.4305373
+          ],
+          [
+            -80.5704767,
+            43.4305675
+          ],
+          [
+            -80.570471,
+            43.4305706
+          ],
+          [
+            -80.5704417,
+            43.430583
+          ],
+          [
+            -80.5703388,
+            43.4305993
+          ],
+          [
+            -80.5702334,
+            43.4306255
+          ],
+          [
+            -80.5701842,
+            43.4306542
+          ],
+          [
+            -80.5701723,
+            43.4306848
+          ],
+          [
+            -80.5701558,
+            43.4307162
+          ],
+          [
+            -80.5701206,
+            43.4307458
+          ],
+          [
+            -80.5700513,
+            43.430794
+          ],
+          [
+            -80.5700384,
+            43.4308174
+          ],
+          [
+            -80.5700121,
+            43.4308548
+          ],
+          [
+            -80.5699761,
+            43.4308737
+          ],
+          [
+            -80.5699373,
+            43.4308774
+          ],
+          [
+            -80.5699096,
+            43.4308767
+          ],
+          [
+            -80.5698708,
+            43.4308874
+          ],
+          [
+            -80.5698096,
+            43.4308883
+          ],
+          [
+            -80.5697687,
+            43.4308637
+          ],
+          [
+            -80.5697539,
+            43.4308359
+          ],
+          [
+            -80.5697369,
+            43.4308238
+          ],
+          [
+            -80.5696988,
+            43.4308204
+          ],
+          [
+            -80.5696637,
+            43.4308328
+          ],
+          [
+            -80.5696546,
+            43.4308518
+          ],
+          [
+            -80.5696306,
+            43.4308664
+          ],
+          [
+            -80.5695813,
+            43.4308733
+          ],
+          [
+            -80.5695521,
+            43.430889
+          ],
+          [
+            -80.5695369,
+            43.4309166
+          ],
+          [
+            -80.5695173,
+            43.4309449
+          ],
+          [
+            -80.5694857,
+            43.4309812
+          ],
+          [
+            -80.5694467,
+            43.4310071
+          ],
+          [
+            -80.5693793,
+            43.431039
+          ],
+          [
+            -80.5693627,
+            43.4310683
+          ],
+          [
+            -80.569364,
+            43.431102
+          ],
+          [
+            -80.5693809,
+            43.4311276
+          ],
+          [
+            -80.569377,
+            43.4311532
+          ],
+          [
+            -80.569365,
+            43.4311668
+          ],
+          [
+            -80.5693433,
+            43.4311792
+          ],
+          [
+            -80.5693036,
+            43.4311856
+          ],
+          [
+            -80.5692693,
+            43.4311822
+          ],
+          [
+            -80.5692059,
+            43.4311424
+          ],
+          [
+            -80.5691955,
+            43.4311239
+          ],
+          [
+            -80.5691961,
+            43.4310998
+          ],
+          [
+            -80.5691781,
+            43.4310872
+          ],
+          [
+            -80.5691298,
+            43.4310898
+          ],
+          [
+            -80.5691125,
+            43.4311061
+          ],
+          [
+            -80.5691028,
+            43.431127
+          ],
+          [
+            -80.5689675,
+            43.43177
+          ],
+          [
+            -80.5690347,
+            43.4318114
+          ],
+          [
+            -80.5690848,
+            43.431773
+          ],
+          [
+            -80.5690988,
+            43.4317505
+          ],
+          [
+            -80.5691338,
+            43.4317314
+          ],
+          [
+            -80.5691612,
+            43.4317183
+          ],
+          [
+            -80.5691952,
+            43.431708
+          ],
+          [
+            -80.5692338,
+            43.4317082
+          ],
+          [
+            -80.5693133,
+            43.4315054
+          ],
+          [
+            -80.5694225,
+            43.4314808
+          ],
+          [
+            -80.5694467,
+            43.4314282
+          ],
+          [
+            -80.5694381,
+            43.4313748
+          ],
+          [
+            -80.5694026,
+            43.4313333
+          ],
+          [
+            -80.5693828,
+            43.431287
+          ],
+          [
+            -80.569395,
+            43.4312506
+          ],
+          [
+            -80.56946,
+            43.4312378
+          ],
+          [
+            -80.5695915,
+            43.4311883
+          ],
+          [
+            -80.5697259,
+            43.4311446
+          ],
+          [
+            -80.5698191,
+            43.4311211
+          ],
+          [
+            -80.56987,
+            43.4311061
+          ],
+          [
+            -80.5699164,
+            43.4310867
+          ],
+          [
+            -80.5699531,
+            43.4310575
+          ],
+          [
+            -80.5699788,
+            43.4310217
+          ],
+          [
+            -80.5699977,
+            43.4309815
+          ],
+          [
+            -80.570021,
+            43.4309593
+          ],
+          [
+            -80.57006,
+            43.4309371
+          ],
+          [
+            -80.57013,
+            43.4308912
+          ],
+          [
+            -80.5701642,
+            43.4308488
+          ],
+          [
+            -80.5701912,
+            43.4308251
+          ],
+          [
+            -80.5702345,
+            43.4308015
+          ],
+          [
+            -80.5702605,
+            43.4307858
+          ],
+          [
+            -80.5702738,
+            43.4307669
+          ],
+          [
+            -80.5702767,
+            43.4307428
+          ],
+          [
+            -80.5702803,
+            43.4307145
+          ],
+          [
+            -80.5702948,
+            43.4306934
+          ],
+          [
+            -80.5703077,
+            43.4306852
+          ],
+          [
+            -80.570502,
+            43.4305939
+          ],
+          [
+            -80.570589,
+            43.4305404
+          ],
+          [
+            -80.5706821,
+            43.4304602
+          ],
+          [
+            -80.5707066,
+            43.4304176
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 17399,
+      "properties": {
+        "activetransportid": 17399,
+        "stratum": "merged_looking",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2000,
+        "roadsegmentid": 6224,
+        "roadsegment_side": "RIGHT",
+        "length_m": 715.52,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.441,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5155495,
+            43.427274
+          ],
+          [
+            -80.5155603,
+            43.4272373
+          ],
+          [
+            -80.5155666,
+            43.4271999
+          ],
+          [
+            -80.5155682,
+            43.4271624
+          ],
+          [
+            -80.5155651,
+            43.4271248
+          ],
+          [
+            -80.5155574,
+            43.4270877
+          ],
+          [
+            -80.515545,
+            43.4270511
+          ],
+          [
+            -80.5155282,
+            43.4270156
+          ],
+          [
+            -80.515507,
+            43.4269813
+          ],
+          [
+            -80.5154816,
+            43.4269486
+          ],
+          [
+            -80.5154523,
+            43.4269177
+          ],
+          [
+            -80.5150081,
+            43.426547
+          ],
+          [
+            -80.5142501,
+            43.425922
+          ],
+          [
+            -80.5141471,
+            43.4258409
+          ],
+          [
+            -80.5140356,
+            43.4257659
+          ],
+          [
+            -80.5139165,
+            43.4256975
+          ],
+          [
+            -80.5138149,
+            43.4256499
+          ],
+          [
+            -80.5136781,
+            43.4255965
+          ],
+          [
+            -80.5133103,
+            43.4254734
+          ],
+          [
+            -80.513294,
+            43.425469
+          ],
+          [
+            -80.5132771,
+            43.4254656
+          ],
+          [
+            -80.51326,
+            43.4254633
+          ],
+          [
+            -80.5132426,
+            43.4254621
+          ],
+          [
+            -80.5132252,
+            43.425462
+          ],
+          [
+            -80.5132078,
+            43.4254629
+          ],
+          [
+            -80.5131905,
+            43.4254649
+          ],
+          [
+            -80.5131736,
+            43.425468
+          ],
+          [
+            -80.5131571,
+            43.4254721
+          ],
+          [
+            -80.5131411,
+            43.4254772
+          ],
+          [
+            -80.5131258,
+            43.4254833
+          ],
+          [
+            -80.5131113,
+            43.4254904
+          ],
+          [
+            -80.5130976,
+            43.4254983
+          ],
+          [
+            -80.5130849,
+            43.425507
+          ],
+          [
+            -80.5130733,
+            43.4255165
+          ],
+          [
+            -80.5130628,
+            43.4255267
+          ],
+          [
+            -80.5124114,
+            43.4262886
+          ],
+          [
+            -80.5120768,
+            43.4266846
+          ],
+          [
+            -80.5119586,
+            43.4268151
+          ],
+          [
+            -80.5118279,
+            43.4269391
+          ],
+          [
+            -80.5116855,
+            43.427056
+          ],
+          [
+            -80.5115169,
+            43.4271755
+          ],
+          [
+            -80.5113365,
+            43.4272855
+          ],
+          [
+            -80.5111454,
+            43.4273853
+          ],
+          [
+            -80.5101451,
+            43.4278842
+          ],
+          [
+            -80.5099364,
+            43.4279777
+          ],
+          [
+            -80.5095802,
+            43.4281305
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 14920,
+      "properties": {
+        "activetransportid": 14920,
+        "stratum": "merged_looking",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 10130,
+        "roadsegment_side": "LEFT",
+        "length_m": 430.23,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.439,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4650569,
+            43.4436102
+          ],
+          [
+            -80.4650346,
+            43.4436162
+          ],
+          [
+            -80.4642944,
+            43.4440293
+          ],
+          [
+            -80.4640294,
+            43.4441581
+          ],
+          [
+            -80.4637397,
+            43.444284
+          ],
+          [
+            -80.4625522,
+            43.4448192
+          ],
+          [
+            -80.4605852,
+            43.4456994
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 321269,
+      "properties": {
+        "activetransportid": 321269,
+        "stratum": "split_looking",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2026,
+        "roadsegmentid": 9861,
+        "roadsegment_side": "LEFT",
+        "length_m": 1.16,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.369,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4682535,
+            43.4599474
+          ],
+          [
+            -80.46824,
+            43.459944
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 373137,
+      "properties": {
+        "activetransportid": 373137,
+        "stratum": "split_looking",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2016,
+        "roadsegmentid": 11179,
+        "roadsegment_side": "RIGHT",
+        "length_m": 4.13,
+        "nearest_pathable_edge_m": 0.35,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.35,
+        "max_offset_to_osm_pedestrian_way_m": 1.008,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4994861,
+            43.4612658
+          ],
+          [
+            -80.4994881,
+            43.4612702
+          ],
+          [
+            -80.4994893,
+            43.4612748
+          ],
+          [
+            -80.4994898,
+            43.4612794
+          ],
+          [
+            -80.4994897,
+            43.4612841
+          ],
+          [
+            -80.4994888,
+            43.4612887
+          ],
+          [
+            -80.4994872,
+            43.4612932
+          ],
+          [
+            -80.499485,
+            43.4612976
+          ],
+          [
+            -80.4994821,
+            43.4613017
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 384751,
+      "properties": {
+        "activetransportid": 384751,
+        "stratum": "split_looking",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2017,
+        "roadsegmentid": 6655,
+        "roadsegment_side": "RIGHT",
+        "length_m": 3.23,
+        "nearest_pathable_edge_m": 0.688,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.688,
+        "max_offset_to_osm_pedestrian_way_m": 1.322,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4895993,
+            43.4512664
+          ],
+          [
+            -80.4895883,
+            43.4512698
+          ],
+          [
+            -80.4895773,
+            43.4512715
+          ],
+          [
+            -80.4895606,
+            43.4512713
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 428209,
+      "properties": {
+        "activetransportid": 428209,
+        "stratum": "dense_core_sidewalk",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2026,
+        "roadsegmentid": 20958,
+        "roadsegment_side": "RIGHT",
+        "length_m": 10.19,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.366,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.506736,
+            43.4389445
+          ],
+          [
+            -80.5067867,
+            43.4389929
+          ],
+          [
+            -80.5067931,
+            43.4390076
+          ],
+          [
+            -80.5067922,
+            43.439023
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 13408,
+      "properties": {
+        "activetransportid": 13408,
+        "stratum": "dense_core_sidewalk",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2017,
+        "roadsegmentid": 8931,
+        "roadsegment_side": "RIGHT",
+        "length_m": 38.86,
+        "nearest_pathable_edge_m": 0.214,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.214,
+        "max_offset_to_osm_pedestrian_way_m": 0.436,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4969759,
+            43.4514589
+          ],
+          [
+            -80.4967926,
+            43.4517823
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 15565,
+      "properties": {
+        "activetransportid": 15565,
+        "stratum": "dense_core_sidewalk",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 11693,
+        "roadsegment_side": "RIGHT",
+        "length_m": 69.24,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 0.086,
+        "max_offset_to_osm_pedestrian_way_m": 1.048,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4739123,
+            43.4428041
+          ],
+          [
+            -80.4743331,
+            43.4422926
+          ],
+          [
+            -80.4743451,
+            43.4422822
+          ],
+          [
+            -80.4743608,
+            43.4422749
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 388284,
+      "properties": {
+        "activetransportid": 388284,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "BRICK",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 1306,
+        "roadsegment_side": "RIGHT",
+        "length_m": 74.63,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.024,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5185182,
+            43.451441
+          ],
+          [
+            -80.5189212,
+            43.4520455
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 16039,
+      "properties": {
+        "activetransportid": 16039,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2000,
+        "roadsegmentid": 21056,
+        "roadsegment_side": "RIGHT",
+        "length_m": 239.79,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.965,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5476061,
+            43.4234689
+          ],
+          [
+            -80.5468282,
+            43.4236647
+          ],
+          [
+            -80.5468019,
+            43.4236676
+          ],
+          [
+            -80.5467753,
+            43.4236659
+          ],
+          [
+            -80.5467501,
+            43.4236596
+          ],
+          [
+            -80.5467277,
+            43.423649
+          ],
+          [
+            -80.5467114,
+            43.4236368
+          ],
+          [
+            -80.5466989,
+            43.4236223
+          ],
+          [
+            -80.5459921,
+            43.4225455
+          ],
+          [
+            -80.5459514,
+            43.4224969
+          ],
+          [
+            -80.5459038,
+            43.4224518
+          ],
+          [
+            -80.545767,
+            43.4223538
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 13517,
+      "properties": {
+        "activetransportid": 13517,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 8775,
+        "roadsegment_side": "RIGHT",
+        "length_m": 185.65,
+        "nearest_pathable_edge_m": 0.069,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.069,
+        "max_offset_to_osm_pedestrian_way_m": 1.11,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5062937,
+            43.4484809
+          ],
+          [
+            -80.5061006,
+            43.4486564
+          ],
+          [
+            -80.5054628,
+            43.4492383
+          ],
+          [
+            -80.504875,
+            43.4497756
+          ],
+          [
+            -80.5048657,
+            43.449789
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 13995,
+      "properties": {
+        "activetransportid": 13995,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 4,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 1283,
+        "roadsegment_side": "LEFT",
+        "length_m": 138.06,
+        "nearest_pathable_edge_m": 0.096,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.096,
+        "max_offset_to_osm_pedestrian_way_m": 0.951,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5269806,
+            43.4512984
+          ],
+          [
+            -80.5285121,
+            43.4507503
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 12286,
+      "properties": {
+        "activetransportid": 12286,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 5,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2006,
+        "roadsegmentid": 6488,
+        "roadsegment_side": "RIGHT",
+        "length_m": 54.5,
+        "nearest_pathable_edge_m": 0.646,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.646,
+        "max_offset_to_osm_pedestrian_way_m": 0.656,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4906032,
+            43.4551682
+          ],
+          [
+            -80.490023,
+            43.4549189
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 17467,
+      "properties": {
+        "activetransportid": 17467,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 6,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2000,
+        "roadsegmentid": 6216,
+        "roadsegment_side": "RIGHT",
+        "length_m": 75.12,
+        "nearest_pathable_edge_m": 0.011,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.011,
+        "max_offset_to_osm_pedestrian_way_m": 0.777,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.511739,
+            43.4298962
+          ],
+          [
+            -80.5121352,
+            43.4292845
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 17347,
+      "properties": {
+        "activetransportid": 17347,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 7,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2000,
+        "roadsegmentid": 5605,
+        "roadsegment_side": "RIGHT",
+        "length_m": 222.06,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.695,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5224501,
+            43.4234695
+          ],
+          [
+            -80.5224587,
+            43.4234709
+          ],
+          [
+            -80.5225371,
+            43.4234823
+          ],
+          [
+            -80.5226144,
+            43.4234878
+          ],
+          [
+            -80.5226967,
+            43.4234853
+          ],
+          [
+            -80.5227782,
+            43.423477
+          ],
+          [
+            -80.5228206,
+            43.4234724
+          ],
+          [
+            -80.5228634,
+            43.4234703
+          ],
+          [
+            -80.5229062,
+            43.4234706
+          ],
+          [
+            -80.5229489,
+            43.4234735
+          ],
+          [
+            -80.523003,
+            43.423478
+          ],
+          [
+            -80.5230564,
+            43.4234861
+          ],
+          [
+            -80.5231086,
+            43.4234975
+          ],
+          [
+            -80.5231593,
+            43.4235123
+          ],
+          [
+            -80.5232079,
+            43.4235303
+          ],
+          [
+            -80.5232541,
+            43.4235513
+          ],
+          [
+            -80.5232977,
+            43.4235753
+          ],
+          [
+            -80.5233381,
+            43.4236019
+          ],
+          [
+            -80.5233752,
+            43.4236311
+          ],
+          [
+            -80.5239574,
+            43.4241595
+          ],
+          [
+            -80.5244781,
+            43.4246214
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 12112,
+      "properties": {
+        "activetransportid": 12112,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 8,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 1741,
+        "roadsegment_side": "LEFT",
+        "length_m": 225.79,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.025,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5018522,
+            43.4557904
+          ],
+          [
+            -80.5018564,
+            43.4557842
+          ],
+          [
+            -80.5018638,
+            43.4557798
+          ],
+          [
+            -80.5026673,
+            43.4555167
+          ],
+          [
+            -80.5043871,
+            43.4549443
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 17528,
+      "properties": {
+        "activetransportid": 17528,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 9,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2000,
+        "roadsegmentid": 6372,
+        "roadsegment_side": "LEFT",
+        "length_m": 91.69,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.049,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4938577,
+            43.4243034
+          ],
+          [
+            -80.4938397,
+            43.4243131
+          ],
+          [
+            -80.493823,
+            43.424324
+          ],
+          [
+            -80.4938077,
+            43.424336
+          ],
+          [
+            -80.4937938,
+            43.4243488
+          ],
+          [
+            -80.4937816,
+            43.4243626
+          ],
+          [
+            -80.4937711,
+            43.424377
+          ],
+          [
+            -80.4937623,
+            43.4243921
+          ],
+          [
+            -80.4937555,
+            43.4244076
+          ],
+          [
+            -80.4937533,
+            43.4244229
+          ],
+          [
+            -80.4937525,
+            43.4244452
+          ],
+          [
+            -80.4937539,
+            43.4244738
+          ],
+          [
+            -80.4937611,
+            43.4245035
+          ],
+          [
+            -80.4937679,
+            43.4245191
+          ],
+          [
+            -80.4937767,
+            43.4245353
+          ],
+          [
+            -80.4937898,
+            43.42455
+          ],
+          [
+            -80.493825,
+            43.4245826
+          ],
+          [
+            -80.4938566,
+            43.4246012
+          ],
+          [
+            -80.4939062,
+            43.4246207
+          ],
+          [
+            -80.4939501,
+            43.4246294
+          ],
+          [
+            -80.4939956,
+            43.4246323
+          ],
+          [
+            -80.4940246,
+            43.4246425
+          ],
+          [
+            -80.4940389,
+            43.4246464
+          ],
+          [
+            -80.4940584,
+            43.4246608
+          ],
+          [
+            -80.4940678,
+            43.4246751
+          ],
+          [
+            -80.4940767,
+            43.4246867
+          ],
+          [
+            -80.4942486,
+            43.424942
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 14357,
+      "properties": {
+        "activetransportid": 14357,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 10,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.75,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2024,
+        "roadsegmentid": 11377,
+        "roadsegment_side": "RIGHT",
+        "length_m": 30.42,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.724,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4842312,
+            43.4491994
+          ],
+          [
+            -80.4845474,
+            43.4493477
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 396104,
+      "properties": {
+        "activetransportid": 396104,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 11,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 9383,
+        "roadsegment_side": "LEFT",
+        "length_m": 77.25,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 0.664,
+        "max_offset_to_osm_pedestrian_way_m": 0.864,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4656678,
+            43.4395931
+          ],
+          [
+            -80.4658703,
+            43.4396764
+          ],
+          [
+            -80.466503,
+            43.4399298
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 12225,
+      "properties": {
+        "activetransportid": 12225,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 12,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 2.0,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 1997,
+        "roadsegmentid": 11106,
+        "roadsegment_side": "LEFT",
+        "length_m": 168.83,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.426,
+        "nearest_osm_road_highway": "unclassified",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4985529,
+            43.4547534
+          ],
+          [
+            -80.4985358,
+            43.4547527
+          ],
+          [
+            -80.4985126,
+            43.4547536
+          ],
+          [
+            -80.4967305,
+            43.4553479
+          ],
+          [
+            -80.4967168,
+            43.4553544
+          ],
+          [
+            -80.4966887,
+            43.4553683
+          ],
+          [
+            -80.4966664,
+            43.455389
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 16341,
+      "properties": {
+        "activetransportid": 16341,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 13,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2006,
+        "roadsegmentid": 20988,
+        "roadsegment_side": "RIGHT",
+        "length_m": 140.63,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 0.223,
+        "max_offset_to_osm_pedestrian_way_m": 0.961,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5087876,
+            43.4390901
+          ],
+          [
+            -80.5095141,
+            43.438672
+          ],
+          [
+            -80.5097766,
+            43.4385284
+          ],
+          [
+            -80.5101334,
+            43.4383316
+          ],
+          [
+            -80.5101433,
+            43.4383275
+          ],
+          [
+            -80.5101549,
+            43.4383239
+          ],
+          [
+            -80.5101669,
+            43.4383218
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 299388,
+      "properties": {
+        "activetransportid": 299388,
+        "stratum": "parallel_sidewalk_pair",
+        "rank_in_stratum": 14,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2012,
+        "roadsegmentid": 600877,
+        "roadsegment_side": "RIGHT",
+        "length_m": 123.2,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.571,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5561893,
+            43.4351697
+          ],
+          [
+            -80.5562909,
+            43.4346557
+          ],
+          [
+            -80.5562932,
+            43.4346322
+          ],
+          [
+            -80.5562929,
+            43.4346087
+          ],
+          [
+            -80.55629,
+            43.4345852
+          ],
+          [
+            -80.5562845,
+            43.434562
+          ],
+          [
+            -80.5562748,
+            43.4345405
+          ],
+          [
+            -80.5562624,
+            43.4345197
+          ],
+          [
+            -80.5562475,
+            43.4344998
+          ],
+          [
+            -80.5562301,
+            43.4344811
+          ],
+          [
+            -80.5558806,
+            43.434166
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 406491,
+      "properties": {
+        "activetransportid": 406491,
+        "stratum": "residential_sidewalk",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2014,
+        "roadsegmentid": 27335,
+        "roadsegment_side": "LEFT",
+        "length_m": 7.78,
+        "nearest_pathable_edge_m": 0.869,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.869,
+        "max_offset_to_osm_pedestrian_way_m": 1.296,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4837637,
+            43.4863316
+          ],
+          [
+            -80.4837703,
+            43.4863341
+          ],
+          [
+            -80.4837776,
+            43.486336
+          ],
+          [
+            -80.483785,
+            43.4863372
+          ],
+          [
+            -80.4837927,
+            43.4863376
+          ],
+          [
+            -80.4837983,
+            43.4863374
+          ],
+          [
+            -80.4838579,
+            43.4863319
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 24574,
+      "properties": {
+        "activetransportid": 24574,
+        "stratum": "residential_sidewalk",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2014,
+        "roadsegmentid": 10121,
+        "roadsegment_side": "LEFT",
+        "length_m": 38.58,
+        "nearest_pathable_edge_m": 0.476,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.476,
+        "max_offset_to_osm_pedestrian_way_m": 0.965,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4654099,
+            43.4503426
+          ],
+          [
+            -80.4649702,
+            43.4504769
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 13991,
+      "properties": {
+        "activetransportid": 13991,
+        "stratum": "residential_sidewalk",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 8860,
+        "roadsegment_side": "LEFT",
+        "length_m": 76.84,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 1.182,
+        "nearest_osm_road_highway": "residential",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5282492,
+            43.4500822
+          ],
+          [
+            -80.5283042,
+            43.4500647
+          ],
+          [
+            -80.5283589,
+            43.4500468
+          ],
+          [
+            -80.5284134,
+            43.4500285
+          ],
+          [
+            -80.5284676,
+            43.4500097
+          ],
+          [
+            -80.5285215,
+            43.4499905
+          ],
+          [
+            -80.5285751,
+            43.4499709
+          ],
+          [
+            -80.5286284,
+            43.4499509
+          ],
+          [
+            -80.5286815,
+            43.4499305
+          ],
+          [
+            -80.5287342,
+            43.4499096
+          ],
+          [
+            -80.5287866,
+            43.4498884
+          ],
+          [
+            -80.5288387,
+            43.4498667
+          ],
+          [
+            -80.5288905,
+            43.4498446
+          ],
+          [
+            -80.5289419,
+            43.4498221
+          ],
+          [
+            -80.528993,
+            43.4497992
+          ],
+          [
+            -80.5290856,
+            43.4497562
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 15685,
+      "properties": {
+        "activetransportid": 15685,
+        "stratum": "ordinary_sidewalk",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 9180,
+        "roadsegment_side": "LEFT",
+        "length_m": 58.7,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.0,
+        "max_offset_to_osm_pedestrian_way_m": 0.858,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4915831,
+            43.445514
+          ],
+          [
+            -80.4916009,
+            43.4455127
+          ],
+          [
+            -80.4916072,
+            43.4455126
+          ],
+          [
+            -80.4916135,
+            43.4455129
+          ],
+          [
+            -80.4916198,
+            43.4455136
+          ],
+          [
+            -80.491626,
+            43.4455146
+          ],
+          [
+            -80.491632,
+            43.4455161
+          ],
+          [
+            -80.4916378,
+            43.4455178
+          ],
+          [
+            -80.4916435,
+            43.44552
+          ],
+          [
+            -80.4916488,
+            43.4455225
+          ],
+          [
+            -80.4921679,
+            43.4458157
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 10441,
+      "properties": {
+        "activetransportid": 10441,
+        "stratum": "ordinary_sidewalk",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2003,
+        "roadsegmentid": 13089,
+        "roadsegment_side": "LEFT",
+        "length_m": 138.82,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 0.136,
+        "max_offset_to_osm_pedestrian_way_m": 0.435,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4845474,
+            43.4789859
+          ],
+          [
+            -80.4845398,
+            43.4777359
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 301013,
+      "properties": {
+        "activetransportid": 301013,
+        "stratum": "ordinary_sidewalk",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "pedestrian_way",
+        "lifecycle": "ACTIVE",
+        "category": "SIDEWALKS AND WALKWAYS",
+        "subcategory": "SIDEWALK",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2000,
+        "roadsegmentid": 10944,
+        "roadsegment_side": "RIGHT",
+        "length_m": 9.99,
+        "nearest_pathable_edge_m": 0.427,
+        "nearest_pathable_edge_highway": "footway",
+        "nearest_osm_footway_or_path_m": 0.427,
+        "max_offset_to_osm_pedestrian_way_m": 0.797,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation",
+          "walkability"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4759142,
+            43.4234679
+          ],
+          [
+            -80.4759899,
+            43.4235389
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 411348,
+      "properties": {
+        "activetransportid": 411348,
+        "stratum": "other_physical",
+        "rank_in_stratum": 1,
+        "physical_class": "physical_active",
+        "network_role": "cycling_facility",
+        "lifecycle": "ACTIVE",
+        "category": "CYCLING",
+        "subcategory": "CYCLE TRACK",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "staff_assertion",
+        "source_year": null,
+        "roadsegmentid": 5601,
+        "roadsegment_side": "LEFT",
+        "length_m": 19.7,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "cycleway",
+        "nearest_osm_footway_or_path_m": 0.558,
+        "max_offset_to_osm_pedestrian_way_m": 20.235,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.525124,
+            43.431476
+          ],
+          [
+            -80.525229,
+            43.431636
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 388300,
+      "properties": {
+        "activetransportid": 388300,
+        "stratum": "other_physical",
+        "rank_in_stratum": 2,
+        "physical_class": "physical_active",
+        "network_role": "cycling_facility",
+        "lifecycle": "ACTIVE",
+        "category": "CYCLING",
+        "subcategory": "BICYCLE LANE",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "UNKNOWN",
+        "source_class": "orthoimagery",
+        "source_year": 2017,
+        "roadsegmentid": 1271,
+        "roadsegment_side": "LEFT",
+        "length_m": 38.82,
+        "nearest_pathable_edge_m": 1.873,
+        "nearest_pathable_edge_highway": "tertiary",
+        "nearest_osm_footway_or_path_m": 2.761,
+        "max_offset_to_osm_pedestrian_way_m": 13.707,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5177487,
+            43.4529954
+          ],
+          [
+            -80.5175399,
+            43.4526807
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 388260,
+      "properties": {
+        "activetransportid": 388260,
+        "stratum": "other_physical",
+        "rank_in_stratum": 3,
+        "physical_class": "physical_active",
+        "network_role": "cycling_facility",
+        "lifecycle": "ACTIVE",
+        "category": "CYCLING",
+        "subcategory": "BICYCLE LANE (SEPARATED)",
+        "feature_type": "SURFACE",
+        "surface_material": "ASPHALT",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": "GOOD",
+        "source_class": "orthoimagery",
+        "source_year": 2017,
+        "roadsegmentid": 6091,
+        "roadsegment_side": "LEFT",
+        "length_m": 44.91,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 2.425,
+        "max_offset_to_osm_pedestrian_way_m": 2.516,
+        "nearest_osm_road_highway": "tertiary",
+        "published_in": [
+          "active_transportation"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.5373082,
+            43.4447403
+          ],
+          [
+            -80.5368074,
+            43.4449146
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 412442,
+      "properties": {
+        "activetransportid": 412442,
+        "stratum": "other_physical",
+        "rank_in_stratum": 4,
+        "physical_class": "physical_active",
+        "network_role": "cycling_facility",
+        "lifecycle": "ACTIVE",
+        "category": "CYCLING",
+        "subcategory": "BICYCLE LANE (SEPARATED)",
+        "feature_type": "SURFACE",
+        "surface_material": "CONCRETE",
+        "width_m": 1.5,
+        "curbcut": "N",
+        "railing": "N",
+        "surface_condition": null,
+        "source_class": "orthoimagery",
+        "source_year": 2023,
+        "roadsegmentid": 11696,
+        "roadsegment_side": "RIGHT",
+        "length_m": 140.19,
+        "nearest_pathable_edge_m": 0.0,
+        "nearest_pathable_edge_highway": "service",
+        "nearest_osm_footway_or_path_m": 1.158,
+        "max_offset_to_osm_pedestrian_way_m": 1.178,
+        "nearest_osm_road_highway": "secondary",
+        "published_in": [
+          "active_transportation"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -80.4704099,
+            43.4425089
+          ],
+          [
+            -80.4689664,
+            43.4432068
+          ]
+        ]
+      }
+    }
+  ]
+}

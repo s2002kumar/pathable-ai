@@ -24,5 +24,7 @@ apps/web/public/maplibre/
 
 # Measurement output, written by `pathable coverage`, `pathable evaluate` and the
 # geometry inspection. Reformatting it would put a diff in every regeneration
-# and the numbers are the point, not the layout.
+# and the numbers are the point, not the layout. The Kitchener lineage sample is
+# the same kind of output, written by `pathable kitchener audit`.
 docs/evidence/*.json
+docs/evidence/*.geojson

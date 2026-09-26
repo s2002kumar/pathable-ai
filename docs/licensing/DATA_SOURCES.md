@@ -3,8 +3,9 @@
 Status: Gate A+B. The application now ingests **OpenStreetMap data** (from a
 published extract) and **NRCan HRDEM elevation**, and serves map tiles from a
 public style. Since PA-GEO-01 it also **reads Overture Maps transportation data**
-for identity linkage only — see §10. Imagery and user-contributed reports remain
-unstarted and gated.
+for identity linkage only — see §10 — and since PA-GEO-03 it **freezes and audits
+the City of Kitchener's Active Transportation inventory**, without routing on it —
+see §11. Imagery and user-contributed reports remain unstarted and gated.
 
 > This document records engineering understanding of the licences involved. It is
 > **not legal advice**. Before any public deployment, and before any imagery is
@@ -442,3 +443,27 @@ routed on it.
 TomTom (`provider=tomtom`, `resource=orbis`), each labelled `ODbL-1.0`. They carry
 no OSM identity and are reported as unresolved; if Overture data is ever routed
 on, the TomTom credit above becomes a user-visible obligation too.
+
+---
+
+## 11. City of Kitchener Active Transportation — frozen and audited, not routed on
+
+**Status:** read-only, since PA-GEO-03 (2026-09-26). One snapshot of the City's
+two hosted publications of `GIS_DATA.ACTIVE_TRANSPORTATION` —
+`Active_Transportation` (item `9fcaa379…`) and `Walkability` (item `64710818…`) —
+is frozen, normalized and profiled. Nothing from it enters the pedestrian graph,
+the cost model or any explanation. Findings and the field-by-field decision:
+[`KITCHENER_ACTIVE_TRANSPORT.md`](../architecture/KITCHENER_ACTIVE_TRANSPORT.md).
+
+| Checklist item                 | Finding                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Licence                        | **Open Government Licence – The Corporation of the City of Kitchener, version 1.0**, served with the data as the portal item's `licenseInfo` (SHA-256 `5343e584…`) and published at <https://www.kitchener.ca/council-and-city-administration/data-and-maps/open-data-licence/>. The URL inside the item's own licence text returns 404; the page above states version 1.0. Checked 2026-09-26.                              |
+| Terms relied on                | Worldwide, royalty-free, perpetual, non-exclusive, **including commercial use**; free to copy, modify, publish, translate, adapt and distribute; **no credit required**, with an optional credit line; **personal information is outside the licence**. `pathable kitchener snapshot` checks these sentences on every run, and normalization refuses a snapshot whose licence no longer contains them.                       |
+| ODbL compatibility             | As read here, the terms impose no share-alike and no restriction that would stop the data being combined with ODbL data. The OSM community records explicit permission from the City to use its data in OSM (wiki _Waterloo region/Kitchener authorization_, revision 2726386, 2024-07-03); a 2025-06 post on the OSM community forum says the licence itself had not yet been approved by the OSMF Licensing Working Group. |
+| Attribution                    | Not required; PathAble credits voluntarily with the City's line — _Contains information licensed under the Open Government Licence – The Corporation of the City of Kitchener_ — inside the profile and sample files and in the [evidence index](../evidence/README.md), which covers all four Kitchener files.                                                                                                              |
+| Redistribution and share-alike | The raw snapshot and the normalized GeoParquet stay out of git (`.kitchener-data/` is ignored). The committed evidence holds counts, distributions, the City's own schema and 80 sampled records with their geometry.                                                                                                                                                                                                        |
+| Personal data                  | `CREATE_BY` and `UPDATE_BY` hold staff user names, and the City documents that `SOURCE` may name a staff member. The user names never leave the raw snapshot. `SOURCE` values are published only for vocabulary classes that cannot name a person, so 20 personal observations and one unclassified value are counted, not shown.                                                                                            |
+| Volume and frequency           | Anonymous requests to the City's public ArcGIS Online services: 80 requests and 70,137,658 bytes per snapshot, measured. No volume terms were found.                                                                                                                                                                                                                                                                         |
+| Independence                   | Not established. The City permits its data in OSM, and in the pilot 87.7% of Kitchener pedestrian records run within 2 m of an OSM pedestrian way along their whole length. Agreement with OSM is never counted as independent confirmation.                                                                                                                                                                                 |
+| Lineage flag                   | Three records name Google Street View as their source. Before any value from them is used, that lineage needs the same scrutiny as §6's imagery.                                                                                                                                                                                                                                                                             |
+| Founder approval               | Not required for a read-only audit: no cost, no credentials, no licence ambiguity. Would be needed before Kitchener data is routed on or served publicly.                                                                                                                                                                                                                                                                    |

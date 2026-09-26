@@ -1,0 +1,3919 @@
+{
+  "kitchener_profile_version": 1,
+  "attribution": "Contains information licensed under the Open Government Licence - The Corporation of the City of Kitchener. Proximity figures also use PathAble's graph: © OpenStreetMap contributors, ODbL 1.0.",
+  "what_this_shows": "What the City of Kitchener's published Active Transportation inventory contains, measured on one frozen snapshot: population, defaults, provenance, physical versus virtual records, and where it overlaps PathAble's Waterloo pilot.",
+  "what_this_does_not_show": [
+    "That any Kitchener record describes the same thing as any OSM way or PathAble edge; proximity is descriptive and nothing is matched.",
+    "That any attribute is true on the ground; nothing has been field-checked.",
+    "That Kitchener evidence is independent of OpenStreetMap; the City permits its data in OSM and lineage has not been studied.",
+    "Any effect on routing; no Kitchener field is used by PathAble."
+  ],
+  "snapshot": {
+    "snapshot_id": "513094727cc139dd29980e2c281570f9d5183c1d0ca8171754ece0cbd7281b38",
+    "retrieved_at": "2026-09-26T12:55:26+00:00",
+    "publisher": "The Corporation of the City of Kitchener",
+    "publications": {
+      "active_transportation": {
+        "role": "every published attribute; ACTIVE records only; no NETWORK LINKS category",
+        "item_id": "9fcaa379310643d1a72094972ee55833",
+        "item_title": "Active_Transportation",
+        "item_owner": "KitchenerGIS",
+        "item_modified": "2026-09-25T08:07:45.000Z",
+        "layer_url": "https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Active_Transportation/FeatureServer/0",
+        "layer_name": "Active Transportation",
+        "spatial_reference": {
+          "wkid": 26917,
+          "latestWkid": 26917
+        },
+        "edit_info": {
+          "lastEditDate": "2026-09-23T08:16:45.878Z",
+          "dataLastEditDate": "2026-09-23T08:16:45.878Z",
+          "schemaLastEditDate": "2026-09-23T08:16:45.878Z"
+        },
+        "fields_published": 63,
+        "contract": {
+          "compatible": true,
+          "missing": [],
+          "mismatched": [],
+          "additional_fields": [
+            "CREATE_BY",
+            "CW_WORK_AREA",
+            "FACILITY_TYPE",
+            "MAINTAINED_BY",
+            "OWNERSHIP",
+            "PARCELID",
+            "PATHWAYS_MAINTENANCE",
+            "PATHWAYS_MAINT_AREA",
+            "PLOW_DESC_NUM",
+            "PLOW_OFF_ROAD",
+            "PN_MAP_CLASS",
+            "PN_OFFICIAL_PLAN_MAP",
+            "PN_PROJECT_NO",
+            "PN_REGION_CATEGORY",
+            "ROUTE_CITYWIDE",
+            "ROUTE_NAME_1",
+            "ROUTE_NAME_2",
+            "ROUTE_NAME_PROPOSED",
+            "SOC_AAA",
+            "SOC_SUP",
+            "SW_PRIORITY",
+            "SW_WEIGHT_CLASS",
+            "TRAIL_MASTER_PLAN_CLASS",
+            "UPGRADE_YEAR",
+            "WARD",
+            "WAYFINDING",
+            "WINTER_MAINTAINED_BY",
+            "WINTER_MAINTENANCE"
+          ]
+        },
+        "features": 28750,
+        "features_sha256": "4137e7740abf9e586fc9dd985eb04c5c8b479934150c9d8e36f6114c72d68dac",
+        "municipal_content_sha256": "042cf16ec4aed4946249aa546c9ba33e57b4ffcde003736fd9dc79d06af0fd38",
+        "requests": 29
+      },
+      "walkability": {
+        "role": "pedestrian network including NETWORK LINKS; 12 fields; no STATUS",
+        "item_id": "64710818a7e044f4aad99b5d6dff4a3f",
+        "item_title": "Walkability",
+        "item_owner": "KitchenerGIS",
+        "item_modified": "2026-09-25T07:44:54.000Z",
+        "layer_url": "https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Walkability/FeatureServer/0",
+        "layer_name": "Walkability",
+        "spatial_reference": {
+          "wkid": 26917,
+          "latestWkid": 26917
+        },
+        "edit_info": {
+          "lastEditDate": "2026-09-25T07:44:44.505Z",
+          "dataLastEditDate": "2026-09-25T07:44:44.505Z",
+          "schemaLastEditDate": "2026-09-25T07:44:44.505Z"
+        },
+        "fields_published": 12,
+        "contract": {
+          "compatible": true,
+          "missing": [],
+          "mismatched": [],
+          "additional_fields": []
+        },
+        "features": 31801,
+        "features_sha256": "a05926a2959a9fc4ceb7ccf74761a9fc8ca0a8c0ca783d976dc8fbb80ec846cc",
+        "municipal_content_sha256": "223affd82a7352375032ac57ce089c348a8f44dd91af9b36b4d4969f5acbf77a",
+        "requests": 32
+      }
+    },
+    "licence": {
+      "name": "Open Government Licence - The Corporation of the City of Kitchener",
+      "version": "1.0",
+      "matches_recorded_terms": true,
+      "terms": {
+        "commercial_use": "permitted",
+        "copy_modify_adapt_distribute": "permitted",
+        "attribution": "optional",
+        "attribution_text": "the credit to use when crediting voluntarily",
+        "personal_information_excluded": "personal information is outside the licence",
+        "version": "1.0"
+      },
+      "licence_info_sha256": "5343e584bfa45f3e22aaf877d36a54be635b523a467ca3d278450321b6b2dec5"
+    },
+    "documents": [
+      {
+        "key": "metadata_active_transportation",
+        "url": "https://app2.kitchener.ca/appdocs/GISImages/GIS_Web_External/GIS_Metadata_Open_Data/IndividualReports/Active_Transportation.pdf",
+        "http_status": 200,
+        "sha256": "4570b1686fd12437d1f4ff90e33393e9d0f27fb9bf648e7fd5ba967a78b39caf",
+        "last_modified": "Wed, 27 May 2026 20:55:07 GMT"
+      },
+      {
+        "key": "metadata_walkability",
+        "url": "https://app2.kitchener.ca/appdocs/GISImages/GIS_Web_External/GIS_Metadata_Open_Data/IndividualReports/Walkability.pdf",
+        "http_status": 200,
+        "sha256": "9f0814156515555c386bd3a296ad719ce52d89a57e6810f618321f121208fa8c",
+        "last_modified": "Wed, 27 May 2026 20:54:15 GMT"
+      },
+      {
+        "key": "licence_page",
+        "url": "https://www.kitchener.ca/council-and-city-administration/data-and-maps/open-data-licence/",
+        "http_status": 200,
+        "sha256": "4a347b14a75b2eef8f16b51864ae30c1f4e3568c513d489c102aec1c2a53de9f",
+        "last_modified": null
+      },
+      {
+        "key": "osm_kitchener_authorization_revision",
+        "url": "https://wiki.openstreetmap.org/w/api.php?action=query&prop=revisions&rvprop=ids%7Ctimestamp&format=json&titles=Waterloo_region/Kitchener_authorization",
+        "http_status": 200,
+        "sha256": "e23b276065a432c30bbb1a0914f3d4acb896990d9cbeb0e6f1d87a6f55b9c652",
+        "last_modified": null,
+        "revision": {
+          "revid": 2726386,
+          "timestamp": "2024-07-03T04:39:36Z"
+        }
+      },
+      {
+        "key": "osm_kitchener_authorization",
+        "url": "https://wiki.openstreetmap.org/w/index.php?title=Waterloo_region/Kitchener_authorization&action=raw",
+        "http_status": 200,
+        "sha256": "ef2f44c7db173d20b7eaff55193c8d09e4d2afe8eb315bb79c6d48440d6dd777",
+        "last_modified": "Wed, 03 Jul 2024 04:39:36 GMT"
+      }
+    ]
+  },
+  "normalized": {
+    "file_sha256": "ffe042be875e10029911d1a4a973f57063519521e4520a73c37ce02b16c8f4e7",
+    "bytes": 6799591,
+    "rows": 34052,
+    "geoparquet_version": "1.1.0",
+    "crs": {
+      "native": "EPSG:26917",
+      "primary": "OGC:CRS84",
+      "transformation": "Inverse of UTM zone 17N + NAD83 to WGS 84 (1) + axis order change (2D)",
+      "transformation_accuracy_m": 4.0,
+      "proj_pipeline": "proj=pipeline step inv proj=utm zone=17 ellps=GRS80 step proj=unitconvert xy_in=rad xy_out=deg"
+    },
+    "joins": {
+      "rows": 34052,
+      "identity_states": {
+        "unique": 34052
+      },
+      "publications_per_identity": {
+        "active_transportation": 2251,
+        "active_transportation+walkability": 26499,
+        "walkability": 5302
+      },
+      "fields_differing_between_publications": {}
+    },
+    "content_sha256": "9512a85c8f1a31d2316191b81877c4a9181332384edf367a6007cea1519a991c"
+  },
+  "overall": {
+    "records": 34052,
+    "publications": {
+      "both": 26499,
+      "walkability_only": 5302,
+      "active_transportation_only": 2251
+    },
+    "identity": {
+      "states": {
+        "unique": 34052
+      },
+      "null_identity": 0,
+      "duplicate_identity_records": 0,
+      "objectid_differs_between_publications": 0
+    },
+    "geometry": {
+      "issues": {
+        "valid": 34052
+      },
+      "parts": {
+        "1": 34052
+      },
+      "vertices": {
+        "min": 2,
+        "median": 2,
+        "max": 273,
+        "two_vertex_lines": 21696
+      },
+      "length_m": {
+        "total_km": 1948.115,
+        "min": 0.509,
+        "median": 18.46,
+        "max": 2460.368
+      },
+      "max_difference_from_service_length_m": 0.05
+    },
+    "lifecycle": {
+      "ACTIVE": 28750,
+      "not_published": 5302
+    },
+    "category": {
+      "SIDEWALKS AND WALKWAYS": 21488,
+      "PATHWAYS": 5393,
+      "NETWORK LINKS": 5302,
+      "CYCLING": 1643,
+      "MAINTENANCE ACCESS": 226
+    },
+    "subcategory": {
+      "SIDEWALK": 16126,
+      "CROSSWALK": 4453,
+      "LINK (PEDESTRIAN)": 4411,
+      "MUT": 2254,
+      "BMUT": 1576,
+      "MAJOR TRAIL": 1055,
+      "BICYCLE LANE": 894,
+      "WALKWAY": 860,
+      "LINK (MUT)": 619,
+      "SANITARY AND STORMWATER UTILITIES": 226,
+      "DRIVEWAY CONNECTION": 172,
+      "MINOR TRAIL": 171,
+      "PAVED SHOULDER": 147,
+      "BICYCLE LANE (SEPARATED)": 135,
+      "MIXED CROSSRIDE": 122,
+      "TRANSITION TO BMUT": 108,
+      "CYCLE TRACK": 105,
+      "ON-ROAD CONNECTION": 104,
+      "CROSSBIKE": 95,
+      "SEPARATE CROSSRIDE": 89,
+      "MARKED SHARED-USE": 70,
+      "NEIGHBOURHOOD BIKEWAY": 57,
+      "COMBINED CROSSRIDE": 56,
+      "TRAIL CROSSING": 44,
+      "CONTINUOUS SIDEWALK": 41,
+      "RAISED TRAIL CROSSING": 31,
+      "SINGLE TRACK": 14,
+      "BICYCLE LANE (CONTRAFLOW)": 9,
+      "SIGNED ROUTE": 8
+    },
+    "category_subcategory": {
+      "SIDEWALKS AND WALKWAYS / SIDEWALK": 16126,
+      "SIDEWALKS AND WALKWAYS / CROSSWALK": 4452,
+      "NETWORK LINKS / LINK (PEDESTRIAN)": 4406,
+      "PATHWAYS / MUT": 2254,
+      "PATHWAYS / BMUT": 1576,
+      "PATHWAYS / MAJOR TRAIL": 1055,
+      "CYCLING / BICYCLE LANE": 893,
+      "SIDEWALKS AND WALKWAYS / WALKWAY": 860,
+      "NETWORK LINKS / LINK (MUT)": 619,
+      "MAINTENANCE ACCESS / SANITARY AND STORMWATER UTILITIES": 226,
+      "NETWORK LINKS / DRIVEWAY CONNECTION": 172,
+      "PATHWAYS / MINOR TRAIL": 167,
+      "CYCLING / PAVED SHOULDER": 147,
+      "CYCLING / BICYCLE LANE (SEPARATED)": 135,
+      "PATHWAYS / MIXED CROSSRIDE": 122,
+      "CYCLING / TRANSITION TO BMUT": 108,
+      "CYCLING / CYCLE TRACK": 105,
+      "NETWORK LINKS / ON-ROAD CONNECTION": 104,
+      "CYCLING / CROSSBIKE": 95,
+      "PATHWAYS / SEPARATE CROSSRIDE": 88,
+      "CYCLING / MARKED SHARED-USE": 70,
+      "CYCLING / NEIGHBOURHOOD BIKEWAY": 57,
+      "PATHWAYS / COMBINED CROSSRIDE": 56,
+      "PATHWAYS / TRAIL CROSSING": 44,
+      "SIDEWALKS AND WALKWAYS / CONTINUOUS SIDEWALK": 41,
+      "PATHWAYS / RAISED TRAIL CROSSING": 31,
+      "CYCLING / SINGLE TRACK": 14,
+      "CYCLING / BICYCLE LANE (CONTRAFLOW)": 9,
+      "CYCLING / SIGNED ROUTE": 8,
+      "SIDEWALKS AND WALKWAYS / LINK (PEDESTRIAN)": 4,
+      "SIDEWALKS AND WALKWAYS / MINOR TRAIL": 4,
+      "CYCLING / LINK (PEDESTRIAN)": 1,
+      "CYCLING / SEPARATE CROSSRIDE": 1,
+      "NETWORK LINKS / CROSSWALK": 1,
+      "SIDEWALKS AND WALKWAYS / BICYCLE LANE": 1
+    },
+    "feature_type": {
+      "SURFACE": 28473,
+      "NA (VIRTUAL LINK)": 5266,
+      "BRIDGE": 94,
+      "STAIRS": 77,
+      "UNDERPASS": 74,
+      "OVERPASS": 49,
+      "BOARDWALK": 17,
+      "null": 2
+    },
+    "network_role": {
+      "pedestrian_way": 22081,
+      "virtual_link": 5030,
+      "pedestrian_crossing": 4513,
+      "cycling_facility": 1547,
+      "cycling_or_shared_crossing": 360,
+      "unofficial_connection": 276,
+      "maintenance_access": 226,
+      "unresolved": 19
+    },
+    "physical_class": {
+      "physical_active": 28727,
+      "virtual_link": 5030,
+      "unofficial_connection": 276,
+      "unresolved": 19
+    },
+    "structure": {
+      "BRIDGE": 94,
+      "STAIRS": 77,
+      "UNDERPASS": 74,
+      "OVERPASS": 49,
+      "BOARDWALK": 17
+    }
+  },
+  "fields": {
+    "STATUS": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 0,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 28750,
+        "non_default": 0,
+        "out_of_domain": 0
+      },
+      "schema_default": "ACTIVE",
+      "domain_size": 5,
+      "values": {
+        "ACTIVE": 28750
+      },
+      "unlisted_records": 0,
+      "distinct_values": 1,
+      "coverage_when_populated": {
+        "records": 28750,
+        "with_source": 27593,
+        "with_source_date": 27357,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 0,
+        "with_source": 0,
+        "with_source_date": 0,
+        "with_update_date": 0,
+        "with_update_date_off_the_bulk_update_day": 0,
+        "with_last_inspection_year": 0
+      }
+    },
+    "STATUS_DATE": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 561,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 28189,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "years": {
+        "1998": 2,
+        "2000": 6059,
+        "2004": 5,
+        "2006": 42,
+        "2007": 11,
+        "2008": 94,
+        "2009": 6,
+        "2010": 18,
+        "2011": 83,
+        "2012": 2498,
+        "2013": 2303,
+        "2014": 3675,
+        "2015": 741,
+        "2016": 933,
+        "2017": 1540,
+        "2018": 1531,
+        "2019": 1497,
+        "2020": 1168,
+        "2021": 565,
+        "2022": 1429,
+        "2023": 800,
+        "2024": 949,
+        "2025": 1189,
+        "2026": 1051
+      },
+      "coverage_when_populated": {
+        "records": 28189,
+        "with_source": 27188,
+        "with_source_date": 26988,
+        "with_update_date": 28189,
+        "with_update_date_off_the_bulk_update_day": 538,
+        "with_last_inspection_year": 25350
+      },
+      "coverage_when_non_default": {
+        "records": 28189,
+        "with_source": 27188,
+        "with_source_date": 26988,
+        "with_update_date": 28189,
+        "with_update_date_off_the_bulk_update_day": 538,
+        "with_last_inspection_year": 25350
+      }
+    },
+    "CATEGORY": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 0,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 21488,
+        "non_default": 12564,
+        "out_of_domain": 0
+      },
+      "schema_default": "SIDEWALKS AND WALKWAYS",
+      "domain_size": 6,
+      "values": {
+        "SIDEWALKS AND WALKWAYS": 21488,
+        "PATHWAYS": 5393,
+        "NETWORK LINKS": 5302,
+        "CYCLING": 1643,
+        "MAINTENANCE ACCESS": 226
+      },
+      "unlisted_records": 0,
+      "distinct_values": 5,
+      "coverage_when_populated": {
+        "records": 34052,
+        "with_source": 32259,
+        "with_source_date": 31993,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 12564,
+        "with_source": 11884,
+        "with_source_date": 11827,
+        "with_update_date": 7262,
+        "with_update_date_off_the_bulk_update_day": 180,
+        "with_last_inspection_year": 5424
+      }
+    },
+    "SUBCATEGORY": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 0,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 16126,
+        "non_default": 17926,
+        "out_of_domain": 0
+      },
+      "schema_default": "SIDEWALK",
+      "domain_size": 32,
+      "values": {
+        "SIDEWALK": 16126,
+        "CROSSWALK": 4453,
+        "LINK (PEDESTRIAN)": 4411,
+        "MUT": 2254,
+        "BMUT": 1576,
+        "MAJOR TRAIL": 1055,
+        "BICYCLE LANE": 894,
+        "WALKWAY": 860,
+        "LINK (MUT)": 619,
+        "SANITARY AND STORMWATER UTILITIES": 226,
+        "DRIVEWAY CONNECTION": 172,
+        "MINOR TRAIL": 171,
+        "PAVED SHOULDER": 147,
+        "BICYCLE LANE (SEPARATED)": 135,
+        "MIXED CROSSRIDE": 122,
+        "TRANSITION TO BMUT": 108,
+        "CYCLE TRACK": 105,
+        "ON-ROAD CONNECTION": 104,
+        "CROSSBIKE": 95,
+        "SEPARATE CROSSRIDE": 89,
+        "MARKED SHARED-USE": 70,
+        "NEIGHBOURHOOD BIKEWAY": 57,
+        "COMBINED CROSSRIDE": 56,
+        "TRAIL CROSSING": 44,
+        "CONTINUOUS SIDEWALK": 41,
+        "RAISED TRAIL CROSSING": 31,
+        "SINGLE TRACK": 14,
+        "BICYCLE LANE (CONTRAFLOW)": 9,
+        "SIGNED ROUTE": 8
+      },
+      "unlisted_records": 0,
+      "distinct_values": 29,
+      "coverage_when_populated": {
+        "records": 34052,
+        "with_source": 32259,
+        "with_source_date": 31993,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 17926,
+        "with_source": 17026,
+        "with_source_date": 16942,
+        "with_update_date": 12624,
+        "with_update_date_off_the_bulk_update_day": 237,
+        "with_last_inspection_year": 10353
+      }
+    },
+    "FEATURE_TYPE": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 2,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 5266,
+        "template_default": 28473,
+        "non_default": 311,
+        "out_of_domain": 0
+      },
+      "schema_default": "SURFACE",
+      "domain_size": 8,
+      "values": {
+        "SURFACE": 28473,
+        "NA (VIRTUAL LINK)": 5266,
+        "BRIDGE": 94,
+        "STAIRS": 77,
+        "UNDERPASS": 74,
+        "OVERPASS": 49,
+        "BOARDWALK": 17,
+        "null": 2
+      },
+      "unlisted_records": 0,
+      "distinct_values": 8,
+      "coverage_when_populated": {
+        "records": 34050,
+        "with_source": 32259,
+        "with_source_date": 31993,
+        "with_update_date": 28748,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 311,
+        "with_source": 307,
+        "with_source_date": 307,
+        "with_update_date": 311,
+        "with_update_date_off_the_bulk_update_day": 11,
+        "with_last_inspection_year": 275
+      }
+    },
+    "SURFACE_MATERIAL": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 0,
+        "blank": 0,
+        "unknown": 18,
+        "not_applicable": 5269,
+        "template_default": 18317,
+        "non_default": 10448,
+        "out_of_domain": 0
+      },
+      "schema_default": "CONCRETE",
+      "domain_size": 14,
+      "values": {
+        "CONCRETE": 18317,
+        "ASPHALT": 6988,
+        "NA (VIRTUAL LINK)": 5269,
+        "ASPHALT (PAINTED)": 2049,
+        "STONEDUST": 918,
+        "NATURAL": 178,
+        "GRAVEL": 113,
+        "BRICK": 112,
+        "WOOD": 50,
+        "UNKNOWN": 18,
+        "TAR AND CHIP": 12,
+        "STEEL": 10,
+        "COBBLESTONE": 9,
+        "STONE": 9
+      },
+      "unlisted_records": 0,
+      "distinct_values": 14,
+      "coverage_when_populated": {
+        "records": 34052,
+        "with_source": 32259,
+        "with_source_date": 31993,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 10448,
+        "with_source": 10269,
+        "with_source_date": 10221,
+        "with_update_date": 10398,
+        "with_update_date_off_the_bulk_update_day": 203,
+        "with_last_inspection_year": 8557
+      }
+    },
+    "WIDTH_M": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 74,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 18543,
+        "non_default": 15435,
+        "out_of_domain": 0
+      },
+      "schema_default": 1.5,
+      "domain_size": 27,
+      "values": {
+        "1.5": 18543,
+        "0.0": 8751,
+        "3.0": 3063,
+        "3.5": 2176,
+        "2.0": 525,
+        "5.0": 185,
+        "1.0": 162,
+        "1.75": 162,
+        "4.0": 148,
+        "null": 74,
+        "2.5": 70,
+        "5.5": 43,
+        "6.0": 32,
+        "4.5": 28,
+        "0.5": 24,
+        "6.5": 19,
+        "2.75": 16,
+        "1.25": 14,
+        "2.25": 11,
+        "7.0": 5,
+        "8.5": 1
+      },
+      "unlisted_records": 0,
+      "distinct_values": 21,
+      "coverage_when_populated": {
+        "records": 33978,
+        "with_source": 32225,
+        "with_source_date": 31958,
+        "with_update_date": 28740,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25909
+      },
+      "coverage_when_non_default": {
+        "records": 15435,
+        "with_source": 15132,
+        "with_source_date": 15110,
+        "with_update_date": 10724,
+        "with_update_date_off_the_bulk_update_day": 195,
+        "with_last_inspection_year": 9239
+      }
+    },
+    "GRADE": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 654,
+        "blank": 0,
+        "unknown": 33284,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 114,
+        "out_of_domain": 0
+      },
+      "schema_default": "UNKNOWN",
+      "domain_size": 6,
+      "values": {
+        "UNKNOWN": 33284,
+        "null": 654,
+        "NONE": 106,
+        "FLAT": 8
+      },
+      "unlisted_records": 0,
+      "distinct_values": 4,
+      "coverage_when_populated": {
+        "records": 33398,
+        "with_source": 31672,
+        "with_source_date": 31409,
+        "with_update_date": 28187,
+        "with_update_date_off_the_bulk_update_day": 525,
+        "with_last_inspection_year": 25696
+      },
+      "coverage_when_non_default": {
+        "records": 114,
+        "with_source": 111,
+        "with_source_date": 113,
+        "with_update_date": 100,
+        "with_update_date_off_the_bulk_update_day": 0,
+        "with_last_inspection_year": 95
+      }
+    },
+    "RAILING": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 0,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 28617,
+        "non_default": 133,
+        "out_of_domain": 0
+      },
+      "schema_default": "N",
+      "domain_size": 2,
+      "values": {
+        "N": 28617,
+        "Y": 133
+      },
+      "unlisted_records": 0,
+      "distinct_values": 2,
+      "coverage_when_populated": {
+        "records": 28750,
+        "with_source": 27593,
+        "with_source_date": 27357,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 133,
+        "with_source": 132,
+        "with_source_date": 132,
+        "with_update_date": 133,
+        "with_update_date_off_the_bulk_update_day": 4,
+        "with_last_inspection_year": 127
+      }
+    },
+    "CURBCUT": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 76,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 21786,
+        "non_default": 6888,
+        "out_of_domain": 0
+      },
+      "schema_default": "N",
+      "domain_size": 3,
+      "values": {
+        "N": 21786,
+        "Y": 6888,
+        "null": 76
+      },
+      "unlisted_records": 0,
+      "distinct_values": 3,
+      "coverage_when_populated": {
+        "records": 28674,
+        "with_source": 27529,
+        "with_source_date": 27292,
+        "with_update_date": 28674,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25884
+      },
+      "coverage_when_non_default": {
+        "records": 6888,
+        "with_source": 6649,
+        "with_source_date": 6563,
+        "with_update_date": 6888,
+        "with_update_date_off_the_bulk_update_day": 101,
+        "with_last_inspection_year": 6272
+      }
+    },
+    "SURFACE_CONDITION": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 232,
+        "blank": 0,
+        "unknown": 21776,
+        "not_applicable": 0,
+        "template_default": 5518,
+        "non_default": 1224,
+        "out_of_domain": 0
+      },
+      "schema_default": "GOOD",
+      "domain_size": 5,
+      "values": {
+        "UNKNOWN": 21776,
+        "GOOD": 5518,
+        "FAIR": 927,
+        "POOR": 288,
+        "null": 232,
+        "UNUSABLE": 9
+      },
+      "unlisted_records": 0,
+      "distinct_values": 6,
+      "coverage_when_populated": {
+        "records": 28518,
+        "with_source": 27410,
+        "with_source_date": 27195,
+        "with_update_date": 28518,
+        "with_update_date_off_the_bulk_update_day": 540,
+        "with_last_inspection_year": 25836
+      },
+      "coverage_when_non_default": {
+        "records": 1224,
+        "with_source": 1218,
+        "with_source_date": 1218,
+        "with_update_date": 1224,
+        "with_update_date_off_the_bulk_update_day": 5,
+        "with_last_inspection_year": 1156
+      }
+    },
+    "LAST_INSPECTION_YEAR": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 2839,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 25911,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": {
+        "2026": 17071,
+        "2021": 4082,
+        "null": 2839,
+        "2019": 2015,
+        "2023": 1521,
+        "2025": 415,
+        "2024": 287,
+        "2018": 265,
+        "2017": 80,
+        "2020": 70,
+        "2022": 57,
+        "2016": 11,
+        "2013": 8,
+        "2011": 7,
+        "2014": 6,
+        "2010": 5,
+        "2015": 5,
+        "2012": 4,
+        "0": 2
+      },
+      "unlisted_records": 0,
+      "distinct_values": 19,
+      "coverage_when_populated": {
+        "records": 25911,
+        "with_source": 24962,
+        "with_source_date": 24758,
+        "with_update_date": 25911,
+        "with_update_date_off_the_bulk_update_day": 499,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 25911,
+        "with_source": 24962,
+        "with_source_date": 24758,
+        "with_update_date": 25911,
+        "with_update_date_off_the_bulk_update_day": 499,
+        "with_last_inspection_year": 25911
+      }
+    },
+    "CONDITION_SCORE": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 27758,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 992,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": {
+        "null": 27758,
+        "1": 988,
+        "0": 4
+      },
+      "unlisted_records": 0,
+      "distinct_values": 3,
+      "coverage_when_populated": {
+        "records": 992,
+        "with_source": 984,
+        "with_source_date": 984,
+        "with_update_date": 992,
+        "with_update_date_off_the_bulk_update_day": 1,
+        "with_last_inspection_year": 965
+      },
+      "coverage_when_non_default": {
+        "records": 992,
+        "with_source": 984,
+        "with_source_date": 984,
+        "with_update_date": 992,
+        "with_update_date_off_the_bulk_update_day": 1,
+        "with_last_inspection_year": 965
+      }
+    },
+    "CONDITION_DATE": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 28357,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 393,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "years": {
+        "2016": 135,
+        "2017": 220,
+        "2018": 1,
+        "2019": 9,
+        "2020": 28
+      },
+      "coverage_when_populated": {
+        "records": 393,
+        "with_source": 393,
+        "with_source_date": 383,
+        "with_update_date": 393,
+        "with_update_date_off_the_bulk_update_day": 1,
+        "with_last_inspection_year": 357
+      },
+      "coverage_when_non_default": {
+        "records": 393,
+        "with_source": 393,
+        "with_source_date": 383,
+        "with_update_date": 393,
+        "with_update_date_off_the_bulk_update_day": 1,
+        "with_last_inspection_year": 357
+      }
+    },
+    "INSTALLATION_YEAR": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 5724,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 23026,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": {
+        "1997": 9514,
+        "null": 5724,
+        "2016": 1105,
+        "2006": 865,
+        "2015": 823,
+        "2005": 742,
+        "2019": 673,
+        "2017": 635,
+        "2021": 630,
+        "2024": 558,
+        "2020": 528,
+        "2023": 523,
+        "2007": 514,
+        "2018": 503,
+        "2025": 503,
+        "2004": 492,
+        "2013": 468,
+        "2012": 455,
+        "2022": 424,
+        "2002": 410,
+        "1999": 397,
+        "2010": 369,
+        "2008": 331,
+        "2011": 328,
+        "2001": 309,
+        "2014": 289,
+        "2003": 181,
+        "2009": 176,
+        "1998": 142,
+        "2000": 137,
+        "0": 1,
+        "19997": 1
+      },
+      "unlisted_records": 0,
+      "distinct_values": 32,
+      "coverage_when_populated": {
+        "records": 23026,
+        "with_source": 22253,
+        "with_source_date": 22088,
+        "with_update_date": 23026,
+        "with_update_date_off_the_bulk_update_day": 533,
+        "with_last_inspection_year": 20612
+      },
+      "coverage_when_non_default": {
+        "records": 23026,
+        "with_source": 22253,
+        "with_source_date": 22088,
+        "with_update_date": 23026,
+        "with_update_date_off_the_bulk_update_day": 533,
+        "with_last_inspection_year": 20612
+      }
+    },
+    "SIDEWALKER_PROGRAM": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 15,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 11768,
+        "non_default": 16967,
+        "out_of_domain": 0
+      },
+      "schema_default": "N",
+      "domain_size": 2,
+      "values": {
+        "Y": 16967,
+        "N": 11768,
+        "null": 15
+      },
+      "unlisted_records": 0,
+      "distinct_values": 3,
+      "coverage_when_populated": {
+        "records": 28735,
+        "with_source": 27578,
+        "with_source_date": 27342,
+        "with_update_date": 28735,
+        "with_update_date_off_the_bulk_update_day": 540,
+        "with_last_inspection_year": 25910
+      },
+      "coverage_when_non_default": {
+        "records": 16967,
+        "with_source": 16202,
+        "with_source_date": 16038,
+        "with_update_date": 16967,
+        "with_update_date_off_the_bulk_update_day": 310,
+        "with_last_inspection_year": 16947
+      }
+    },
+    "SLOPE_GRADIENT_PERCENT": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 770,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 27980,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": {
+        "1": 10259,
+        "0": 4881,
+        "2": 4479,
+        "3": 2510,
+        "4": 1733,
+        "5": 1321,
+        "6": 1044,
+        "null": 770,
+        "7": 681,
+        "8": 400,
+        "9": 237,
+        "10": 113,
+        "11": 72,
+        "12": 54,
+        "13": 33,
+        "15": 15,
+        "14": 14,
+        "19": 13,
+        "16": 12,
+        "17": 10,
+        "22": 10,
+        "34": 9,
+        "18": 7,
+        "23": 6,
+        "24": 6,
+        "32": 6,
+        "27": 5,
+        "29": 5,
+        "20": 4,
+        "21": 4,
+        "25": 4,
+        "35": 4,
+        "28": 3,
+        "31": 3,
+        "36": 3,
+        "42": 3,
+        "26": 2,
+        "30": 2,
+        "33": 2,
+        "38": 2
+      },
+      "unlisted_records": 9,
+      "distinct_values": 48,
+      "coverage_when_populated": {
+        "records": 27980,
+        "with_source": 26892,
+        "with_source_date": 26661,
+        "with_update_date": 27980,
+        "with_update_date_off_the_bulk_update_day": 519,
+        "with_last_inspection_year": 25904
+      },
+      "coverage_when_non_default": {
+        "records": 27980,
+        "with_source": 26892,
+        "with_source_date": 26661,
+        "with_update_date": 27980,
+        "with_update_date_off_the_bulk_update_day": 519,
+        "with_last_inspection_year": 25904
+      }
+    },
+    "SLOPE_GRADIENT_CLASS": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 770,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 27980,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": {
+        "Level (0 - 1.5%)": 15440,
+        "Little slope (>1.5 - 3%)": 5717,
+        "Gentle slope (>3 - 6%)": 4642,
+        "Steep slope (>6 - 12%)": 1965,
+        "null": 770,
+        "Very steep slope (>12 %)": 216
+      },
+      "unlisted_records": 0,
+      "distinct_values": 6,
+      "coverage_when_populated": {
+        "records": 27980,
+        "with_source": 26892,
+        "with_source_date": 26661,
+        "with_update_date": 27980,
+        "with_update_date_off_the_bulk_update_day": 519,
+        "with_last_inspection_year": 25904
+      },
+      "coverage_when_non_default": {
+        "records": 27980,
+        "with_source": 26892,
+        "with_source_date": 26661,
+        "with_update_date": 27980,
+        "with_update_date_off_the_bulk_update_day": 519,
+        "with_last_inspection_year": 25904
+      }
+    },
+    "SLOPE_GRADIENT_MAX": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 770,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 27980,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": {
+        "0": 4033,
+        "1": 3864,
+        "2": 3210,
+        "3": 2796,
+        "4": 2327,
+        "5": 1987,
+        "6": 1638,
+        "7": 1149,
+        "8": 869,
+        "null": 770,
+        "9": 647,
+        "10": 587,
+        "11": 488,
+        "12": 413,
+        "13": 358,
+        "14": 325,
+        "15": 296,
+        "16": 258,
+        "17": 241,
+        "18": 225,
+        "19": 176,
+        "20": 147,
+        "21": 146,
+        "24": 141,
+        "23": 133,
+        "25": 127,
+        "22": 119,
+        "28": 98,
+        "26": 81,
+        "27": 81,
+        "31": 78,
+        "30": 63,
+        "29": 62,
+        "34": 60,
+        "33": 58,
+        "40": 48,
+        "32": 47,
+        "36": 39,
+        "37": 37,
+        "39": 36
+      },
+      "unlisted_records": 492,
+      "distinct_values": 101,
+      "coverage_when_populated": {
+        "records": 27980,
+        "with_source": 26892,
+        "with_source_date": 26661,
+        "with_update_date": 27980,
+        "with_update_date_off_the_bulk_update_day": 519,
+        "with_last_inspection_year": 25904
+      },
+      "coverage_when_non_default": {
+        "records": 27980,
+        "with_source": 26892,
+        "with_source_date": 26661,
+        "with_update_date": 27980,
+        "with_update_date_off_the_bulk_update_day": 519,
+        "with_last_inspection_year": 25904
+      }
+    },
+    "GRADE_CATEGORY_MAX": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 509,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 28241,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": {
+        ">2 to <5% Moderate": 12154,
+        ">5 to <10% Steep": 6213,
+        "<2% Flat": 5163,
+        "None": 3484,
+        ">=10% Extreme": 1227,
+        "null": 509
+      },
+      "unlisted_records": 0,
+      "distinct_values": 6,
+      "coverage_when_populated": {
+        "records": 28241,
+        "with_source": 27153,
+        "with_source_date": 26920,
+        "with_update_date": 28241,
+        "with_update_date_off_the_bulk_update_day": 525,
+        "with_last_inspection_year": 25910
+      },
+      "coverage_when_non_default": {
+        "records": 28241,
+        "with_source": 27153,
+        "with_source_date": 26920,
+        "with_update_date": 28241,
+        "with_update_date_off_the_bulk_update_day": 525,
+        "with_last_inspection_year": 25910
+      }
+    },
+    "SOURCE": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 1793,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 32259,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": "see provenance.source_values (published by vocabulary class)",
+      "coverage_when_populated": {
+        "records": 32259,
+        "with_source": 32259,
+        "with_source_date": 31981,
+        "with_update_date": 27593,
+        "with_update_date_off_the_bulk_update_day": 537,
+        "with_last_inspection_year": 24962
+      },
+      "coverage_when_non_default": {
+        "records": 32259,
+        "with_source": 32259,
+        "with_source_date": 31981,
+        "with_update_date": 27593,
+        "with_update_date_off_the_bulk_update_day": 537,
+        "with_last_inspection_year": 24962
+      }
+    },
+    "SOURCE_DATE": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 2059,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 31993,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "years": {
+        "1997": 1364,
+        "1999": 6,
+        "2000": 2653,
+        "2003": 4291,
+        "2004": 6,
+        "2005": 57,
+        "2006": 1255,
+        "2007": 286,
+        "2008": 8,
+        "2009": 277,
+        "2011": 15,
+        "2012": 7788,
+        "2014": 1827,
+        "2015": 1694,
+        "2016": 1192,
+        "2017": 1836,
+        "2018": 1250,
+        "2019": 849,
+        "2020": 614,
+        "2021": 565,
+        "2022": 712,
+        "2023": 987,
+        "2024": 693,
+        "2025": 1206,
+        "2026": 562
+      },
+      "coverage_when_populated": {
+        "records": 31993,
+        "with_source": 31981,
+        "with_source_date": 31993,
+        "with_update_date": 27357,
+        "with_update_date_off_the_bulk_update_day": 535,
+        "with_last_inspection_year": 24758
+      },
+      "coverage_when_non_default": {
+        "records": 31993,
+        "with_source": 31981,
+        "with_source_date": 31993,
+        "with_update_date": 27357,
+        "with_update_date_off_the_bulk_update_day": 535,
+        "with_last_inspection_year": 24758
+      }
+    },
+    "CREATE_DATE": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 2,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 28748,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "years": {
+        "2004": 6098,
+        "2005": 370,
+        "2006": 121,
+        "2007": 800,
+        "2008": 46,
+        "2009": 57,
+        "2010": 116,
+        "2011": 21,
+        "2012": 2589,
+        "2013": 2642,
+        "2014": 4057,
+        "2015": 627,
+        "2016": 696,
+        "2017": 1558,
+        "2018": 1405,
+        "2019": 1287,
+        "2020": 1164,
+        "2021": 520,
+        "2022": 1260,
+        "2023": 625,
+        "2024": 770,
+        "2025": 1057,
+        "2026": 862
+      },
+      "coverage_when_populated": {
+        "records": 28748,
+        "with_source": 27591,
+        "with_source_date": 27355,
+        "with_update_date": 28748,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25909
+      },
+      "coverage_when_non_default": {
+        "records": 28748,
+        "with_source": 27591,
+        "with_source_date": 27355,
+        "with_update_date": 28748,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25909
+      }
+    },
+    "UPDATE_DATE": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 0,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 28750,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "years": {
+        "2026": 28750
+      },
+      "coverage_when_populated": {
+        "records": 28750,
+        "with_source": 27593,
+        "with_source_date": 27357,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 28750,
+        "with_source": 27593,
+        "with_source_date": 27357,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      }
+    },
+    "ROADSEGMENTID": {
+      "records_where_published": 34052,
+      "states": {
+        "not_published": 0,
+        "null": 0,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 34052,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "distinct_values": 4989,
+      "coverage_when_populated": {
+        "records": 34052,
+        "with_source": 32259,
+        "with_source_date": 31993,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 34052,
+        "with_source": 32259,
+        "with_source_date": 31993,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      }
+    },
+    "ROADSEGMENT_SIDE": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 0,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 28697,
+        "out_of_domain": 53
+      },
+      "schema_default": "NA",
+      "domain_size": 4,
+      "values": {
+        "RIGHT": 14415,
+        "LEFT": 14282,
+        "UNDEFINED": 53
+      },
+      "unlisted_records": 0,
+      "distinct_values": 3,
+      "coverage_when_populated": {
+        "records": 28750,
+        "with_source": 27593,
+        "with_source_date": 27357,
+        "with_update_date": 28750,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25911
+      },
+      "coverage_when_non_default": {
+        "records": 28697,
+        "with_source": 27540,
+        "with_source_date": 27304,
+        "with_update_date": 28697,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25875
+      }
+    },
+    "STREET": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 62,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 28688,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "distinct_values": 1670,
+      "coverage_when_populated": {
+        "records": 28688,
+        "with_source": 27532,
+        "with_source_date": 27296,
+        "with_update_date": 28688,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25862
+      },
+      "coverage_when_non_default": {
+        "records": 28688,
+        "with_source": 27532,
+        "with_source_date": 27296,
+        "with_update_date": 28688,
+        "with_update_date_off_the_bulk_update_day": 541,
+        "with_last_inspection_year": 25862
+      }
+    },
+    "NOTES": {
+      "records_where_published": 28750,
+      "states": {
+        "not_published": 5302,
+        "null": 16,
+        "blank": 0,
+        "unknown": 0,
+        "not_applicable": 0,
+        "template_default": 0,
+        "non_default": 28734,
+        "out_of_domain": 0
+      },
+      "schema_default": null,
+      "domain_size": null,
+      "values": {
+        "CHECK": 18258,
+        "DONE": 10476
+      },
+      "unlisted_free_text_records": 0,
+      "coverage_when_populated": {
+        "records": 28734,
+        "with_source": 27587,
+        "with_source_date": 27352,
+        "with_update_date": 28734,
+        "with_update_date_off_the_bulk_update_day": 540,
+        "with_last_inspection_year": 25910
+      },
+      "coverage_when_non_default": {
+        "records": 28734,
+        "with_source": 27587,
+        "with_source_date": 27352,
+        "with_update_date": 28734,
+        "with_update_date_off_the_bulk_update_day": 540,
+        "with_last_inspection_year": 25910
+      }
+    }
+  },
+  "defaults": {
+    "width_m": {
+      "records_where_published": 34052,
+      "equal_to_template_default_1_5": 18543,
+      "equal_to_documented_default_1_8": 0,
+      "zero": 8751,
+      "null": 74,
+      "distribution": {
+        "1.5": 18543,
+        "0.0": 8751,
+        "3.0": 3063,
+        "3.5": 2176,
+        "2.0": 525,
+        "5.0": 185,
+        "1.0": 162,
+        "1.75": 162,
+        "4.0": 148,
+        "null": 74,
+        "2.5": 70,
+        "5.5": 43,
+        "6.0": 32,
+        "4.5": 28,
+        "0.5": 24,
+        "6.5": 19,
+        "2.75": 16,
+        "1.25": 14,
+        "2.25": 11,
+        "7.0": 5,
+        "8.5": 1
+      },
+      "by_subcategory_at_1_5": {
+        "SIDEWALK": {
+          "matching": 15489,
+          "records": 16126,
+          "share": 0.9605
+        },
+        "CROSSWALK": {
+          "matching": 277,
+          "records": 4447,
+          "share": 0.0623
+        },
+        "LINK (PEDESTRIAN)": {
+          "matching": 474,
+          "records": 4365,
+          "share": 0.1086
+        },
+        "MUT": {
+          "matching": 5,
+          "records": 2253,
+          "share": 0.0022
+        },
+        "BMUT": {
+          "matching": 68,
+          "records": 1576,
+          "share": 0.0431
+        },
+        "MAJOR TRAIL": {
+          "matching": 0,
+          "records": 1055,
+          "share": 0.0
+        },
+        "BICYCLE LANE": {
+          "matching": 885,
+          "records": 894,
+          "share": 0.9899
+        },
+        "WALKWAY": {
+          "matching": 810,
+          "records": 860,
+          "share": 0.9419
+        },
+        "LINK (MUT)": {
+          "matching": 0,
+          "records": 619,
+          "share": 0.0
+        },
+        "SANITARY AND STORMWATER UTILITIES": {
+          "matching": 29,
+          "records": 226,
+          "share": 0.1283
+        },
+        "MINOR TRAIL": {
+          "matching": 5,
+          "records": 171,
+          "share": 0.0292
+        },
+        "DRIVEWAY CONNECTION": {
+          "matching": 11,
+          "records": 169,
+          "share": 0.0651
+        },
+        "PAVED SHOULDER": {
+          "matching": 68,
+          "records": 144,
+          "share": 0.4722
+        },
+        "BICYCLE LANE (SEPARATED)": {
+          "matching": 100,
+          "records": 135,
+          "share": 0.7407
+        },
+        "MIXED CROSSRIDE": {
+          "matching": 6,
+          "records": 122,
+          "share": 0.0492
+        },
+        "TRANSITION TO BMUT": {
+          "matching": 77,
+          "records": 108,
+          "share": 0.713
+        },
+        "CYCLE TRACK": {
+          "matching": 67,
+          "records": 105,
+          "share": 0.6381
+        },
+        "CROSSBIKE": {
+          "matching": 55,
+          "records": 95,
+          "share": 0.5789
+        },
+        "ON-ROAD CONNECTION": {
+          "matching": 46,
+          "records": 89,
+          "share": 0.5169
+        },
+        "SEPARATE CROSSRIDE": {
+          "matching": 4,
+          "records": 89,
+          "share": 0.0449
+        },
+        "MARKED SHARED-USE": {
+          "matching": 9,
+          "records": 70,
+          "share": 0.1286
+        },
+        "NEIGHBOURHOOD BIKEWAY": {
+          "matching": 0,
+          "records": 57,
+          "share": 0.0
+        },
+        "COMBINED CROSSRIDE": {
+          "matching": 1,
+          "records": 56,
+          "share": 0.0179
+        },
+        "TRAIL CROSSING": {
+          "matching": 2,
+          "records": 44,
+          "share": 0.0455
+        },
+        "CONTINUOUS SIDEWALK": {
+          "matching": 34,
+          "records": 41,
+          "share": 0.8293
+        },
+        "RAISED TRAIL CROSSING": {
+          "matching": 0,
+          "records": 31,
+          "share": 0.0
+        },
+        "SINGLE TRACK": {
+          "matching": 14,
+          "records": 14,
+          "share": 1.0
+        },
+        "BICYCLE LANE (CONTRAFLOW)": {
+          "matching": 7,
+          "records": 9,
+          "share": 0.7778
+        },
+        "SIGNED ROUTE": {
+          "matching": 0,
+          "records": 8,
+          "share": 0.0
+        }
+      },
+      "non_default_non_zero": 6684,
+      "non_default_non_zero_on_pedestrian_ways_and_crossings": 5975,
+      "zero_by_subcategory": {
+        "LINK (PEDESTRIAN)": 3887,
+        "CROSSWALK": 3880,
+        "LINK (MUT)": 619,
+        "DRIVEWAY CONNECTION": 108,
+        "MARKED SHARED-USE": 60,
+        "NEIGHBOURHOOD BIKEWAY": 57,
+        "ON-ROAD CONNECTION": 43,
+        "SIDEWALK": 39,
+        "COMBINED CROSSRIDE": 18,
+        "TRAIL CROSSING": 11,
+        "SIGNED ROUTE": 8,
+        "RAISED TRAIL CROSSING": 7,
+        "MIXED CROSSRIDE": 6,
+        "SEPARATE CROSSRIDE": 5,
+        "BICYCLE LANE (CONTRAFLOW)": 1,
+        "BMUT": 1,
+        "CROSSBIKE": 1
+      },
+      "evidence_for_1_5": {
+        "records": 18543,
+        "with_source_date": 16848,
+        "with_orthoimagery_source": 16726,
+        "with_document_survey_or_staff_source": 366,
+        "with_last_inspection_year": 16670,
+        "with_condition_date": 120
+      },
+      "evidence_for_non_default_non_zero": {
+        "records": 6684,
+        "with_source_date": 6618,
+        "with_orthoimagery_source": 4858,
+        "with_document_survey_or_staff_source": 1780,
+        "with_last_inspection_year": 5359,
+        "with_condition_date": 273
+      }
+    },
+    "surface_material": {
+      "records_where_published": 34052,
+      "concrete": 18317,
+      "non_concrete_distribution": {
+        "ASPHALT": 6988,
+        "NA (VIRTUAL LINK)": 5269,
+        "ASPHALT (PAINTED)": 2049,
+        "STONEDUST": 918,
+        "NATURAL": 178,
+        "GRAVEL": 113,
+        "BRICK": 112,
+        "WOOD": 50,
+        "UNKNOWN": 18,
+        "TAR AND CHIP": 12,
+        "STEEL": 10,
+        "COBBLESTONE": 9,
+        "STONE": 9
+      },
+      "by_subcategory_concrete": {
+        "SIDEWALK": {
+          "matching": 15888,
+          "records": 16126,
+          "share": 0.9852
+        },
+        "CROSSWALK": {
+          "matching": 40,
+          "records": 4453,
+          "share": 0.009
+        },
+        "LINK (PEDESTRIAN)": {
+          "matching": 3,
+          "records": 4411,
+          "share": 0.0007
+        },
+        "MUT": {
+          "matching": 464,
+          "records": 2254,
+          "share": 0.2059
+        },
+        "BMUT": {
+          "matching": 898,
+          "records": 1576,
+          "share": 0.5698
+        },
+        "MAJOR TRAIL": {
+          "matching": 13,
+          "records": 1055,
+          "share": 0.0123
+        },
+        "BICYCLE LANE": {
+          "matching": 1,
+          "records": 894,
+          "share": 0.0011
+        },
+        "WALKWAY": {
+          "matching": 832,
+          "records": 860,
+          "share": 0.9674
+        },
+        "LINK (MUT)": {
+          "matching": 0,
+          "records": 619,
+          "share": 0.0
+        },
+        "SANITARY AND STORMWATER UTILITIES": {
+          "matching": 29,
+          "records": 226,
+          "share": 0.1283
+        },
+        "DRIVEWAY CONNECTION": {
+          "matching": 1,
+          "records": 172,
+          "share": 0.0058
+        },
+        "MINOR TRAIL": {
+          "matching": 9,
+          "records": 171,
+          "share": 0.0526
+        },
+        "PAVED SHOULDER": {
+          "matching": 2,
+          "records": 147,
+          "share": 0.0136
+        },
+        "BICYCLE LANE (SEPARATED)": {
+          "matching": 20,
+          "records": 135,
+          "share": 0.1481
+        },
+        "MIXED CROSSRIDE": {
+          "matching": 0,
+          "records": 122,
+          "share": 0.0
+        },
+        "TRANSITION TO BMUT": {
+          "matching": 68,
+          "records": 108,
+          "share": 0.6296
+        },
+        "CYCLE TRACK": {
+          "matching": 8,
+          "records": 105,
+          "share": 0.0762
+        },
+        "ON-ROAD CONNECTION": {
+          "matching": 0,
+          "records": 104,
+          "share": 0.0
+        },
+        "CROSSBIKE": {
+          "matching": 0,
+          "records": 95,
+          "share": 0.0
+        },
+        "SEPARATE CROSSRIDE": {
+          "matching": 0,
+          "records": 89,
+          "share": 0.0
+        },
+        "MARKED SHARED-USE": {
+          "matching": 0,
+          "records": 70,
+          "share": 0.0
+        },
+        "NEIGHBOURHOOD BIKEWAY": {
+          "matching": 0,
+          "records": 57,
+          "share": 0.0
+        },
+        "COMBINED CROSSRIDE": {
+          "matching": 0,
+          "records": 56,
+          "share": 0.0
+        },
+        "TRAIL CROSSING": {
+          "matching": 0,
+          "records": 44,
+          "share": 0.0
+        },
+        "CONTINUOUS SIDEWALK": {
+          "matching": 41,
+          "records": 41,
+          "share": 1.0
+        },
+        "RAISED TRAIL CROSSING": {
+          "matching": 0,
+          "records": 31,
+          "share": 0.0
+        },
+        "SINGLE TRACK": {
+          "matching": 0,
+          "records": 14,
+          "share": 0.0
+        },
+        "BICYCLE LANE (CONTRAFLOW)": {
+          "matching": 0,
+          "records": 9,
+          "share": 0.0
+        },
+        "SIGNED ROUTE": {
+          "matching": 0,
+          "records": 8,
+          "share": 0.0
+        }
+      },
+      "evidence_for_concrete": {
+        "records": 18317,
+        "with_source_date": 17155,
+        "with_orthoimagery_source": 16915,
+        "with_document_survey_or_staff_source": 426,
+        "with_last_inspection_year": 17347,
+        "with_condition_date": 109
+      },
+      "evidence_for_non_default": {
+        "records": 10448,
+        "with_source_date": 10221,
+        "with_orthoimagery_source": 8539,
+        "with_document_survey_or_staff_source": 1727,
+        "with_last_inspection_year": 8557,
+        "with_condition_date": 284
+      }
+    },
+    "surface_condition": {
+      "records_where_published": 28750,
+      "distribution": {
+        "UNKNOWN": 21776,
+        "GOOD": 5518,
+        "FAIR": 927,
+        "POOR": 288,
+        "null": 232,
+        "UNUSABLE": 9
+      },
+      "by_category": {
+        "SIDEWALKS AND WALKWAYS / UNKNOWN": 19794,
+        "PATHWAYS / GOOD": 3000,
+        "SIDEWALKS AND WALKWAYS / GOOD": 1563,
+        "PATHWAYS / UNKNOWN": 1282,
+        "PATHWAYS / FAIR": 831,
+        "CYCLING / GOOD": 804,
+        "CYCLING / UNKNOWN": 647,
+        "PATHWAYS / POOR": 235,
+        "MAINTENANCE ACCESS / GOOD": 151,
+        "SIDEWALKS AND WALKWAYS / null": 116,
+        "CYCLING / null": 79,
+        "CYCLING / FAIR": 78,
+        "MAINTENANCE ACCESS / UNKNOWN": 53,
+        "PATHWAYS / null": 37,
+        "CYCLING / POOR": 35,
+        "MAINTENANCE ACCESS / POOR": 13,
+        "SIDEWALKS AND WALKWAYS / FAIR": 10,
+        "MAINTENANCE ACCESS / FAIR": 8,
+        "PATHWAYS / UNUSABLE": 8,
+        "SIDEWALKS AND WALKWAYS / POOR": 5,
+        "MAINTENANCE ACCESS / UNUSABLE": 1
+      },
+      "good": {
+        "records": 5518,
+        "with_last_inspection_year": 3756,
+        "with_condition_date": 329,
+        "with_condition_score": 534,
+        "with_source_date": 5193,
+        "source_is_2015_trail_inventory": 871
+      },
+      "fair_poor_unusable": {
+        "records": 1224,
+        "with_last_inspection_year": 1156,
+        "with_condition_date": 61,
+        "with_condition_score": 396,
+        "with_source_date": 1218,
+        "source_is_2015_trail_inventory": 727
+      }
+    },
+    "curbcut": {
+      "distribution": {
+        "N": 21786,
+        "Y": 6888,
+        "null": 76
+      },
+      "by_subcategory": {
+        "SIDEWALK / N": 10803,
+        "SIDEWALK / Y": 5322,
+        "CROSSWALK / N": 4421,
+        "MUT / N": 1778,
+        "MAJOR TRAIL / N": 1030,
+        "BICYCLE LANE / N": 894,
+        "BMUT / N": 835,
+        "BMUT / Y": 737,
+        "WALKWAY / N": 683,
+        "MUT / Y": 465,
+        "SANITARY AND STORMWATER UTILITIES / N": 186,
+        "WALKWAY / Y": 177,
+        "MINOR TRAIL / N": 166,
+        "PAVED SHOULDER / N": 147,
+        "BICYCLE LANE (SEPARATED) / N": 135,
+        "MIXED CROSSRIDE / N": 115,
+        "TRANSITION TO BMUT / Y": 102,
+        "CROSSBIKE / N": 95,
+        "SEPARATE CROSSRIDE / N": 89,
+        "CYCLE TRACK / N": 74,
+        "MARKED SHARED-USE / N": 70,
+        "NEIGHBOURHOOD BIKEWAY / N": 57,
+        "COMBINED CROSSRIDE / N": 50,
+        "TRAIL CROSSING / N": 44,
+        "CONTINUOUS SIDEWALK / N": 41,
+        "CYCLE TRACK / Y": 31,
+        "RAISED TRAIL CROSSING / N": 31,
+        "SANITARY AND STORMWATER UTILITIES / Y": 30,
+        "CROSSWALK / null": 28,
+        "SINGLE TRACK / N": 14,
+        "MAJOR TRAIL / null": 13,
+        "MAJOR TRAIL / Y": 12,
+        "MUT / null": 11,
+        "SANITARY AND STORMWATER UTILITIES / null": 10,
+        "BICYCLE LANE (CONTRAFLOW) / N": 9,
+        "SIGNED ROUTE / N": 8,
+        "COMBINED CROSSRIDE / Y": 6,
+        "MIXED CROSSRIDE / null": 6,
+        "TRANSITION TO BMUT / N": 6,
+        "LINK (PEDESTRIAN) / N": 5,
+        "BMUT / null": 4,
+        "CROSSWALK / Y": 3,
+        "MINOR TRAIL / null": 3,
+        "MINOR TRAIL / Y": 2,
+        "MIXED CROSSRIDE / Y": 1,
+        "SIDEWALK / null": 1
+      },
+      "by_feature_type": {
+        "SURFACE / N": 21457,
+        "SURFACE / Y": 6886,
+        "BRIDGE / N": 92,
+        "STAIRS / N": 77,
+        "SURFACE / null": 75,
+        "UNDERPASS / N": 74,
+        "OVERPASS / N": 49,
+        "NA (VIRTUAL LINK) / N": 18,
+        "BOARDWALK / N": 17,
+        "null / N": 2,
+        "BRIDGE / Y": 1,
+        "BRIDGE / null": 1,
+        "NA (VIRTUAL LINK) / Y": 1
+      },
+      "segment_length_m": {
+        "Y": {
+          "records": 6888,
+          "p10": 1.04,
+          "median": 2.22,
+          "p90": 4.79
+        },
+        "N": {
+          "records": 21786,
+          "p10": 9.44,
+          "median": 58.63,
+          "p90": 199.01
+        }
+      },
+      "evidence_for_y": {
+        "records": 6888,
+        "with_source_date": 6563,
+        "with_orthoimagery_source": 6430,
+        "with_document_survey_or_staff_source": 218,
+        "with_last_inspection_year": 6272,
+        "with_condition_date": 77
+      }
+    },
+    "railing": {
+      "distribution": {
+        "N": 28617,
+        "Y": 133
+      },
+      "y_by_feature_type": {
+        "STAIRS": 57,
+        "SURFACE": 50,
+        "BRIDGE": 16,
+        "OVERPASS": 5,
+        "UNDERPASS": 3,
+        "BOARDWALK": 2
+      },
+      "stairs": {
+        "Y": 57,
+        "N": 20
+      }
+    },
+    "template_signature": {
+      "fields": [
+        "FEATURE_TYPE",
+        "SURFACE_MATERIAL",
+        "WIDTH_M",
+        "RAILING",
+        "CURBCUT",
+        "SURFACE_CONDITION"
+      ],
+      "records_by_fields_at_default": {
+        "5": 12016,
+        "4": 8990,
+        "3": 6936,
+        "6": 553,
+        "2": 249,
+        "1": 6
+      },
+      "all_at_default_by_subcategory": {
+        "SIDEWALK": 456,
+        "WALKWAY": 42,
+        "CROSSWALK": 32,
+        "BMUT": 5,
+        "CONTINUOUS SIDEWALK": 4,
+        "MINOR TRAIL": 4,
+        "SANITARY AND STORMWATER UTILITIES": 3,
+        "LINK (PEDESTRIAN)": 2,
+        "PAVED SHOULDER": 2,
+        "BICYCLE LANE": 1,
+        "BICYCLE LANE (SEPARATED)": 1,
+        "MUT": 1
+      }
+    }
+  },
+  "provenance": {
+    "source_classes": {
+      "orthoimagery": 30061,
+      "null": 1793,
+      "trail_inventory_2015": 1674,
+      "engineering_plan": 254,
+      "project_or_programme": 129,
+      "staff_assertion": 115,
+      "personal_observation": 20,
+      "street_level_imagery": 3,
+      "placeholder": 2,
+      "other": 1
+    },
+    "source_values": {
+      "engineering_plan": {
+        "PLAN AND PROFILE": 132,
+        "PLAN": 59,
+        "SP19038CES": 13,
+        "PAVEMENT MARKING PLAN": 12,
+        "PAVEMENT PARKING PLAN": 8,
+        "REF PLAN": 7,
+        "PLAN AND PROFILE 441384-441388": 6,
+        "PLAN AND PROFILE 417686": 3,
+        "PLAN AND PROFILE 441578": 3,
+        "REG PLAN 768": 2,
+        "RMW AS BUILT": 2,
+        "ROAD CONSTRUCTION PLAN": 2,
+        "Centerville Chicopee Site Improvement Plan": 1,
+        "PLAN AND PROFILE 412100": 1,
+        "PLAN?": 1,
+        "SITE PLAN": 1,
+        "SP14097GCD": 1
+      },
+      "orthoimagery": {
+        "ORTHO 2012": 7769,
+        "ORTHO 2003": 4291,
+        "ORTHO 2000": 2658,
+        "ORTHO 2014": 1822,
+        "ORTHO 2017": 1775,
+        "ORTHO 2018": 1414,
+        "ORTHO 1997": 1376,
+        "ORTHO 2016": 1194,
+        "ORTHO 2006": 1182,
+        "ORTHO 2019": 744,
+        "ORTHO 2025 FALL": 720,
+        "ORTHO 2022": 706,
+        "ORTHO 2020": 637,
+        "ORTHO 2023 FALL": 622,
+        "ORTHO 2021": 568,
+        "ORTHO 2025 SPRING": 474,
+        "ORTHO 2026 SPRING": 471,
+        "ORTHO 2024 FALL": 371,
+        "ORTHO 2023 SPRING": 351,
+        "ORTHO 2009": 325,
+        "ORTHO 2024 SPRING": 315,
+        "ORTHO 2007": 260,
+        "ORTHO 1999": 6,
+        "ORTHO 2026 FALL": 6,
+        "SPRING 2023 ORTHO": 4
+      },
+      "placeholder": {
+        "TO INPUT": 2
+      },
+      "project_or_programme": {
+        "PILOT PROJECT 2019": 64,
+        "SIDEWALK PRIORITY PROJECT": 48,
+        "SIDEWALK GRADING": 7,
+        "CTMP 2020": 5,
+        "RMW ATMP": 4,
+        "VISION ZERO 2025 IMPROVEMENTS": 1
+      },
+      "staff_assertion": {
+        "ENGINEERING STAFF - TO BE VERIFIED": 43,
+        "TP STAFF": 41,
+        "TP / ENG STAFF": 19,
+        "GDA STAFF": 6,
+        "GDA STAFF - TO BE VERIFIED": 6
+      },
+      "street_level_imagery": {
+        "GOOGLE STREETVIEW": 3
+      },
+      "trail_inventory_2015": {
+        "2015 TRAIL INVENTORY PROJECT": 1674
+      }
+    },
+    "source_values_withheld": {
+      "personal_observation": 20,
+      "other": 1
+    },
+    "orthoimagery_years": {
+      "2012": 7769,
+      "2003": 4291,
+      "2000": 2658,
+      "2014": 1822,
+      "2017": 1775,
+      "2018": 1414,
+      "1997": 1376,
+      "2016": 1194,
+      "2025": 1194,
+      "2006": 1182,
+      "2023": 977,
+      "2019": 744,
+      "2022": 706,
+      "2024": 686,
+      "2020": 637,
+      "2021": 568,
+      "2026": 477,
+      "2009": 325,
+      "2007": 260,
+      "1999": 6
+    },
+    "orthoimagery_year_vs_source_date": {
+      "same_year": 29641,
+      "no_source_date": 237,
+      "different_year": 183
+    },
+    "update_date": {
+      "records_with_update_date": 28750,
+      "bulk_update_day": "2026-08-24",
+      "records_on_bulk_update_day": 28209,
+      "share_on_bulk_update_day": 0.9812,
+      "accounts_on_bulk_update_day": {
+        "GIS_DATA": 28073,
+        "named_account": 136
+      },
+      "update_accounts": {
+        "GIS_DATA": 28149,
+        "named_account": 495,
+        "AGOL_USER": 106
+      }
+    },
+    "last_inspection_year": {
+      "2026": 17071,
+      "2021": 4082,
+      "null": 2839,
+      "2019": 2015,
+      "2023": 1521,
+      "2025": 415,
+      "2024": 287,
+      "2018": 265,
+      "2017": 80,
+      "2020": 70,
+      "2022": 57,
+      "2016": 11,
+      "2013": 8,
+      "2011": 7,
+      "2014": 6,
+      "2010": 5,
+      "2015": 5,
+      "2012": 4,
+      "0": 2
+    },
+    "sidewalker_program_by_last_inspection_year": {
+      "Y / 2026": 16658,
+      "N / 2021": 4082,
+      "N / null": 2805,
+      "N / 2019": 2010,
+      "N / 2023": 1517,
+      "N / 2026": 413,
+      "N / 2024": 274,
+      "Y / 2025": 266,
+      "N / 2018": 265,
+      "N / 2025": 149,
+      "N / 2017": 80,
+      "N / 2020": 68,
+      "N / 2022": 57,
+      "Y / null": 20,
+      "null / null": 14,
+      "Y / 2024": 13,
+      "N / 2016": 11,
+      "N / 2013": 8,
+      "N / 2011": 7,
+      "N / 2014": 6,
+      "N / 2010": 5,
+      "N / 2015": 5,
+      "Y / 2019": 5,
+      "N / 2012": 4,
+      "Y / 2023": 3,
+      "N / 0": 2,
+      "Y / 2020": 2,
+      "null / 2023": 1
+    },
+    "installation_year_modal": {
+      "value": 1997,
+      "records": 9514,
+      "share_of_populated": 0.4132
+    }
+  },
+  "evidence_origin": {
+    "STATUS": {
+      "documented_origin": "administrative_assertion",
+      "basis": "Lifecycle set by the City; new sidewalks enter as pending and become Active when houses are built (metadata: Maintenance).",
+      "records_by_origin": {
+        "template_default": 28750,
+        "unknown": 5302
+      }
+    },
+    "FEATURE_TYPE": {
+      "documented_origin": "administrative_assertion",
+      "basis": "Locations of bridges and other non-standard asset types; default SURFACE.",
+      "records_by_origin": {
+        "template_default": 28473,
+        "unknown": 5268,
+        "administrative_assertion": 311
+      }
+    },
+    "SURFACE_MATERIAL": {
+      "documented_origin": "administrative_assertion",
+      "basis": "Type of surface material of the asset; default CONCRETE.",
+      "records_by_origin": {
+        "template_default": 18317,
+        "administrative_assertion": 10448,
+        "unknown": 5287
+      }
+    },
+    "WIDTH_M": {
+      "documented_origin": "administrative_assertion",
+      "basis": "Width of facility in metres from a coded list; documented 'default width 1.8m', schema default 1.5.",
+      "records_by_origin": {
+        "template_default": 18543,
+        "administrative_assertion": 15435,
+        "unknown": 74
+      }
+    },
+    "GRADE": {
+      "documented_origin": "derived",
+      "basis": "Maximum slope along the facility 'as calculated through a script'.",
+      "records_by_origin": {
+        "unknown": 33938,
+        "derived": 114
+      }
+    },
+    "RAILING": {
+      "documented_origin": "administrative_assertion",
+      "basis": "Presence of railing along the segment; default N.",
+      "records_by_origin": {
+        "template_default": 28617,
+        "unknown": 5302,
+        "administrative_assertion": 133
+      }
+    },
+    "CURBCUT": {
+      "documented_origin": "administrative_assertion",
+      "basis": "Whether the facility is a curbcut down to street level; default N, U is unknown.",
+      "records_by_origin": {
+        "template_default": 21786,
+        "administrative_assertion": 6888,
+        "unknown": 5378
+      }
+    },
+    "SURFACE_CONDITION": {
+      "documented_origin": "observed_survey",
+      "basis": "Surface condition 'as found in the 2015 Trail inventory project'; default GOOD. Dated by the documentation, not per record.",
+      "records_by_origin": {
+        "unknown": 27310,
+        "template_default": 5518,
+        "observed_survey": 1224
+      }
+    },
+    "LAST_INSPECTION_YEAR": {
+      "documented_origin": "observed_event",
+      "basis": "'Last year feature was inspected through the sidewalker inspection program in Engineering or Operations trail inspections'. Records that an inspection happened, not what it found.",
+      "records_by_origin": {
+        "observed_event": 25911,
+        "unknown": 8141
+      }
+    },
+    "CONDITION_SCORE": {
+      "documented_origin": "derived",
+      "basis": "'Calculated condition score from Cityworks'.",
+      "records_by_origin": {
+        "unknown": 33060,
+        "derived": 992
+      }
+    },
+    "SLOPE_GRADIENT_PERCENT": {
+      "documented_origin": "derived",
+      "basis": "SLOPE_GRADIENT_SOURCE names an FME workspace (CalculateTrailGradient).",
+      "records_by_origin": {
+        "derived": 27980,
+        "unknown": 6072
+      }
+    },
+    "SLOPE_GRADIENT_CLASS": {
+      "documented_origin": "derived",
+      "basis": "SLOPE_GRADIENT_SOURCE names an FME workspace (CalculateTrailGradient).",
+      "records_by_origin": {
+        "derived": 27980,
+        "unknown": 6072
+      }
+    },
+    "GRADE_CATEGORY_MAX": {
+      "documented_origin": "unresolved",
+      "basis": "Undocumented. Not attributed to any process by the City.",
+      "records_by_origin": {
+        "unresolved": 28241,
+        "unknown": 5811
+      }
+    },
+    "INSTALLATION_YEAR": {
+      "documented_origin": "administrative_assertion",
+      "basis": "'Year the asset was installed. Usually a database maintained field.'",
+      "records_by_origin": {
+        "administrative_assertion": 23026,
+        "unknown": 11026
+      }
+    }
+  },
+  "plausibility": {
+    "width_zero_on_physical_record": {
+      "records": 4083,
+      "rule": "A physical facility cannot be 0 m wide; 0 is in the City's coded domain."
+    },
+    "width_at_least_10m": {
+      "records": 0,
+      "rule": "Wider than any pedestrian facility here."
+    },
+    "installation_year_outside_1900_to_retrieval": {
+      "records": 2,
+      "rule": "Not a possible installation year."
+    },
+    "last_inspection_year_not_a_plausible_year": {
+      "records": 2,
+      "rule": "Not a four-digit year up to the retrieval year."
+    },
+    "slope_max_over_100_percent": {
+      "records": 16,
+      "rule": "Steeper than 45 degrees along a walking or cycling facility."
+    },
+    "date_after_retrieval": {
+      "records": 0,
+      "rule": "A record date later than the snapshot."
+    },
+    "condition_score_without_condition_date": {
+      "records": 990,
+      "rule": "A calculated score without the date the City documents for it."
+    },
+    "condition_date_without_condition_score": {
+      "records": 391,
+      "rule": "A calculation date without the score."
+    },
+    "roadsegment_side_out_of_domain": {
+      "records": 53,
+      "rule": "A side value outside the City's LEFT/RIGHT/UNKNOWN/NA domain."
+    },
+    "condition_score_values": {
+      "1": 988,
+      "0": 4
+    },
+    "roadsegment_side_values": {
+      "RIGHT": 14415,
+      "LEFT": 14282,
+      "UNDEFINED": 53
+    }
+  },
+  "derived_slope_consistency": {
+    "records_with_slope_max_and_grade_category": 24525,
+    "grade_category_agrees_with_slope_max": 12438,
+    "grade_category_is_the_string_None": 3484,
+    "rule": "GRADE_CATEGORY_MAX compared with the label its own text implies for SLOPE_GRADIENT_MAX (<2, 2-5, 5-10, >=10 percent); integer percents at a boundary are assigned to the higher band.",
+    "slope_gradient_source": {
+      "FME - COKFME21 - C:\\GISProjects\\FME\\Data_Daily\\Daily_Active_Transportation/CalculateTrailGradient.fmw": 27980
+    },
+    "slope_gradient_class": {
+      "Level (0 - 1.5%)": 15440,
+      "Little slope (>1.5 - 3%)": 5717,
+      "Gentle slope (>3 - 6%)": 4642,
+      "Steep slope (>6 - 12%)": 1965,
+      "null": 770,
+      "Very steep slope (>12 %)": 216
+    },
+    "grade": {
+      "UNKNOWN": 33284,
+      "null": 654,
+      "NONE": 106,
+      "FLAT": 8
+    }
+  },
+  "physical_virtual": {
+    "physical_class": {
+      "physical_active": 28727,
+      "virtual_link": 5030,
+      "unofficial_connection": 276,
+      "unresolved": 19
+    },
+    "physical_active_pedestrian": {
+      "records": 26594,
+      "km": 1637.978
+    },
+    "by_class_and_subcategory": {
+      "physical_active / SIDEWALKS AND WALKWAYS / SIDEWALK": 16124,
+      "physical_active / SIDEWALKS AND WALKWAYS / CROSSWALK": 4439,
+      "virtual_link / NETWORK LINKS / LINK (PEDESTRIAN)": 4406,
+      "physical_active / PATHWAYS / MUT": 2254,
+      "physical_active / PATHWAYS / BMUT": 1576,
+      "physical_active / PATHWAYS / MAJOR TRAIL": 1055,
+      "physical_active / CYCLING / BICYCLE LANE": 893,
+      "physical_active / SIDEWALKS AND WALKWAYS / WALKWAY": 860,
+      "virtual_link / NETWORK LINKS / LINK (MUT)": 619,
+      "physical_active / MAINTENANCE ACCESS / SANITARY AND STORMWATER UTILITIES": 226,
+      "unofficial_connection / NETWORK LINKS / DRIVEWAY CONNECTION": 172,
+      "physical_active / PATHWAYS / MINOR TRAIL": 167,
+      "physical_active / CYCLING / PAVED SHOULDER": 147,
+      "physical_active / CYCLING / BICYCLE LANE (SEPARATED)": 135,
+      "physical_active / PATHWAYS / MIXED CROSSRIDE": 122,
+      "physical_active / CYCLING / TRANSITION TO BMUT": 108,
+      "physical_active / CYCLING / CYCLE TRACK": 105,
+      "unofficial_connection / NETWORK LINKS / ON-ROAD CONNECTION": 104,
+      "physical_active / CYCLING / CROSSBIKE": 93,
+      "physical_active / PATHWAYS / SEPARATE CROSSRIDE": 88,
+      "physical_active / CYCLING / MARKED SHARED-USE": 70,
+      "physical_active / CYCLING / NEIGHBOURHOOD BIKEWAY": 57,
+      "physical_active / PATHWAYS / COMBINED CROSSRIDE": 56,
+      "physical_active / PATHWAYS / TRAIL CROSSING": 44,
+      "physical_active / SIDEWALKS AND WALKWAYS / CONTINUOUS SIDEWALK": 41,
+      "physical_active / PATHWAYS / RAISED TRAIL CROSSING": 30,
+      "physical_active / CYCLING / SINGLE TRACK": 14,
+      "unresolved / SIDEWALKS AND WALKWAYS / CROSSWALK": 13,
+      "physical_active / CYCLING / BICYCLE LANE (CONTRAFLOW)": 9,
+      "physical_active / CYCLING / SIGNED ROUTE": 8,
+      "physical_active / SIDEWALKS AND WALKWAYS / MINOR TRAIL": 4,
+      "virtual_link / SIDEWALKS AND WALKWAYS / LINK (PEDESTRIAN)": 4,
+      "unresolved / CYCLING / CROSSBIKE": 2,
+      "unresolved / SIDEWALKS AND WALKWAYS / SIDEWALK": 2,
+      "physical_active / CYCLING / SEPARATE CROSSRIDE": 1,
+      "physical_active / SIDEWALKS AND WALKWAYS / BICYCLE LANE": 1,
+      "unresolved / NETWORK LINKS / CROSSWALK": 1,
+      "unresolved / PATHWAYS / RAISED TRAIL CROSSING": 1,
+      "virtual_link / CYCLING / LINK (PEDESTRIAN)": 1
+    },
+    "unresolved_or_noted": {
+      "virtual code in feature_type, surface_material": 229,
+      "subcategory 'CROSSWALK' with a virtual code in feature_type, surface_material": 11,
+      "subcategory 'LINK (PEDESTRIAN)' filed under category 'SIDEWALKS AND WALKWAYS'": 4,
+      "subcategory 'MINOR TRAIL' filed under category 'SIDEWALKS AND WALKWAYS'": 4,
+      "subcategory 'CROSSBIKE' with a virtual code in feature_type, surface_material": 2,
+      "subcategory 'BICYCLE LANE' filed under category 'SIDEWALKS AND WALKWAYS'": 1,
+      "subcategory 'CROSSWALK' filed under NETWORK LINKS": 1,
+      "subcategory 'CROSSWALK' with a virtual code in feature_type": 1,
+      "subcategory 'CROSSWALK' with a virtual code in surface_material": 1,
+      "subcategory 'LINK (PEDESTRIAN)' filed under category 'CYCLING'": 1,
+      "subcategory 'RAISED TRAIL CROSSING' with a virtual code in feature_type, surface_material": 1,
+      "subcategory 'SIDEWALK' with a virtual code in feature_type, surface_material": 1,
+      "subcategory 'SIDEWALK' with a virtual code in surface_material": 1
+    },
+    "virtual_or_unofficial_in_active_transportation": 5,
+    "lifecycle_by_publication": {
+      "active_transportation / ACTIVE": 28750,
+      "walkability_only / not_published": 5302
+    }
+  },
+  "geography": {
+    "study_area": {
+      "region": "waterloo",
+      "source": "pathable_api.geo.regions: waterloo",
+      "crs": "EPSG:4326 (longitude, latitude)",
+      "shape": "axis-aligned rectangle (ADR 0006: a coverage extent, not a municipal boundary)",
+      "bounds": [
+        -80.59,
+        43.42,
+        -80.46,
+        43.52
+      ],
+      "wkt": "MULTIPOLYGON (((-80.46 43.42, -80.46 43.52, -80.59 43.52, -80.59 43.42, -80.46 43.42)))",
+      "database_boundary_matches_definition": true,
+      "database_boundary_wkt": "MULTIPOLYGON(((-80.46 43.42,-80.46 43.52,-80.59 43.52,-80.59 43.42,-80.46 43.42)))",
+      "dataset": {
+        "dataset_id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+        "status": "active",
+        "checksum": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906",
+        "source_name": "openstreetmap-pbf:waterloo",
+        "source_timestamp": "2026-08-16T23:08:23+00:00",
+        "edge_count": 180554,
+        "bounds_wkt": "POLYGON((-80.4600027 43.420004,-80.4600027 43.5199993,-80.59 43.5199993,-80.59 43.420004,-80.4600027 43.420004))"
+      },
+      "dataset_bounds_max_offset_deg": 3.999999997006398e-06,
+      "edge_extent": [
+        -80.59,
+        43.420004,
+        -80.4600027,
+        43.5199993
+      ],
+      "edges_extend_beyond_study_area": false
+    },
+    "label": "Overlap feasibility only. A record intersecting the study area, or lying near a PathAble edge, is not a match.",
+    "records_total": 34052,
+    "records_intersecting_study_area": 15042,
+    "records_within_study_area": 14880,
+    "km_total": 1948.115,
+    "km_intersecting_study_area": 825.136,
+    "intersecting_by_physical_class": {
+      "physical_active": 12897,
+      "virtual_link": 2019,
+      "unofficial_connection": 116,
+      "unresolved": 10
+    },
+    "intersecting_by_network_role": {
+      "pedestrian_way": 9613,
+      "pedestrian_crossing": 2222,
+      "virtual_link": 2019,
+      "cycling_facility": 857,
+      "cycling_or_shared_crossing": 184,
+      "unofficial_connection": 116,
+      "maintenance_access": 21,
+      "unresolved": 10
+    },
+    "intersecting_by_subcategory": {
+      "SIDEWALK": 7656,
+      "CROSSWALK": 2199,
+      "LINK (PEDESTRIAN)": 1821,
+      "MUT": 742,
+      "BMUT": 495,
+      "BICYCLE LANE": 447,
+      "MAJOR TRAIL": 353,
+      "WALKWAY": 297,
+      "LINK (MUT)": 198,
+      "BICYCLE LANE (SEPARATED)": 127,
+      "CROSSBIKE": 76,
+      "CYCLE TRACK": 73,
+      "DRIVEWAY CONNECTION": 66,
+      "MINOR TRAIL": 56,
+      "MARKED SHARED-USE": 54,
+      "MIXED CROSSRIDE": 51,
+      "NEIGHBOURHOOD BIKEWAY": 51,
+      "ON-ROAD CONNECTION": 50,
+      "SEPARATE CROSSRIDE": 43,
+      "PAVED SHOULDER": 37,
+      "TRANSITION TO BMUT": 37,
+      "TRAIL CROSSING": 22,
+      "SANITARY AND STORMWATER UTILITIES": 21,
+      "COMBINED CROSSRIDE": 16,
+      "CONTINUOUS SIDEWALK": 16,
+      "SINGLE TRACK": 14,
+      "BICYCLE LANE (CONTRAFLOW)": 9,
+      "SIGNED ROUTE": 8,
+      "RAISED TRAIL CROSSING": 7
+    },
+    "intersecting_by_structure": {
+      "BRIDGE": 42,
+      "STAIRS": 40,
+      "UNDERPASS": 37,
+      "OVERPASS": 35,
+      "BOARDWALK": 2
+    },
+    "intersecting_by_publication": {
+      "both": 11799,
+      "walkability_only": 2134,
+      "active_transportation_only": 1109
+    },
+    "intersecting_curbcut_y": 3296,
+    "physical_active_pedestrian_intersecting": 11835,
+    "physical_active_pedestrian_km_intersecting": 685.994,
+    "evidence_on_pedestrian_records": {
+      "scope": "active physical pedestrian ways and crossings; a value counts only when it departs from the template default (a width of 0 is not counted)",
+      "all": {
+        "records": 26594,
+        "stairs": 77,
+        "other_structure": 179,
+        "surface_non_default": 8393,
+        "width_non_default_non_zero": 5975,
+        "curbcut_y": 6717,
+        "railing_y": 131,
+        "condition_fair_poor_unusable": 1089,
+        "with_any_of_these": 15732,
+        "surface_template_default": 18185,
+        "width_template_default": 16685,
+        "condition_unknown": 20867
+      },
+      "in_study_area": {
+        "records": 11835,
+        "stairs": 40,
+        "other_structure": 91,
+        "surface_non_default": 3533,
+        "width_non_default_non_zero": 2140,
+        "curbcut_y": 3233,
+        "railing_y": 58,
+        "condition_fair_poor_unusable": 429,
+        "with_any_of_these": 7137,
+        "surface_template_default": 8297,
+        "width_template_default": 7680,
+        "condition_unknown": 9921
+      }
+    },
+    "proximity_label": "Distance from each intersecting record to the nearest PathAble edge, in the source's native metres. Descriptive; the transformation between the two datums is a null shift with a stated accuracy of a few metres, so the first bands are within that uncertainty.",
+    "proximity_to_any_edge": {
+      "0-1m": 14409,
+      "1-2m": 312,
+      "2-3m": 129,
+      "3-5m": 143,
+      "5-10m": 35,
+      "10-20m": 9,
+      "20-50m": 2,
+      "50-200m": 3,
+      ">200m_or_none": 0
+    },
+    "proximity_of_pedestrian_records_to_any_edge": {
+      "0-1m": 11565,
+      "1-2m": 200,
+      "2-3m": 19,
+      "3-5m": 25,
+      "5-10m": 13,
+      "10-20m": 9,
+      "20-50m": 1,
+      "50-200m": 3,
+      ">200m_or_none": 0
+    },
+    "proximity_of_pedestrian_records_to_osm_footway_or_path": {
+      "0-1m": 11226,
+      "1-2m": 391,
+      "2-3m": 48,
+      "3-5m": 33,
+      "5-10m": 45,
+      "10-20m": 39,
+      "20-50m": 30,
+      "50-200m": 19,
+      ">200m_or_none": 4
+    },
+    "offset_label": "Worst-point offset: every record line is sampled at least every 1 m and the largest distance from a sample point to the nearest OSM footway, path, pedestrian way or steps edge is reported (a directed Hausdorff distance). A small value means the whole line runs along OSM pedestrian geometry. It is consistent with shared lineage, and proves neither lineage nor a match.",
+    "offset_of_pedestrian_records_from_osm_pedestrian_ways": {
+      "0-1m": 6414,
+      "1-2m": 3961,
+      "2-3m": 438,
+      "3-5m": 235,
+      "5-10m": 262,
+      "10-20m": 164,
+      "20-50m": 162,
+      "50-200m": 188,
+      ">200m_or_none": 11
+    },
+    "offset_by_subcategory": {
+      "SIDEWALK": {
+        "records": 7654,
+        "median_m": 0.909,
+        "bands": {
+          "0-1m": 4494,
+          "1-2m": 2696,
+          "2-3m": 189,
+          "3-5m": 85,
+          "5-10m": 30,
+          "10-20m": 33,
+          "20-50m": 36,
+          "50-200m": 85,
+          ">200m_or_none": 6
+        }
+      },
+      "CROSSWALK": {
+        "records": 2194,
+        "median_m": 0.927,
+        "bands": {
+          "0-1m": 1219,
+          "1-2m": 657,
+          "2-3m": 102,
+          "3-5m": 43,
+          "5-10m": 130,
+          "10-20m": 35,
+          "20-50m": 2,
+          "50-200m": 3,
+          ">200m_or_none": 3
+        }
+      },
+      "MUT": {
+        "records": 742,
+        "median_m": 1.375,
+        "bands": {
+          "0-1m": 238,
+          "1-2m": 232,
+          "2-3m": 47,
+          "3-5m": 38,
+          "5-10m": 32,
+          "10-20m": 51,
+          "20-50m": 66,
+          "50-200m": 38,
+          ">200m_or_none": 0
+        }
+      },
+      "BMUT": {
+        "records": 495,
+        "median_m": 1.374,
+        "bands": {
+          "0-1m": 174,
+          "1-2m": 146,
+          "2-3m": 39,
+          "3-5m": 14,
+          "5-10m": 39,
+          "10-20m": 26,
+          "20-50m": 36,
+          "50-200m": 20,
+          ">200m_or_none": 1
+        }
+      },
+      "MAJOR TRAIL": {
+        "records": 353,
+        "median_m": 1.567,
+        "bands": {
+          "0-1m": 82,
+          "1-2m": 129,
+          "2-3m": 40,
+          "3-5m": 27,
+          "5-10m": 12,
+          "10-20m": 11,
+          "20-50m": 13,
+          "50-200m": 38,
+          ">200m_or_none": 1
+        }
+      },
+      "WALKWAY": {
+        "records": 297,
+        "median_m": 0.882,
+        "bands": {
+          "0-1m": 186,
+          "1-2m": 80,
+          "2-3m": 11,
+          "3-5m": 5,
+          "5-10m": 2,
+          "10-20m": 3,
+          "20-50m": 7,
+          "50-200m": 3,
+          ">200m_or_none": 0
+        }
+      },
+      "MINOR TRAIL": {
+        "records": 56,
+        "median_m": 3.477,
+        "bands": {
+          "0-1m": 5,
+          "1-2m": 12,
+          "2-3m": 9,
+          "3-5m": 18,
+          "5-10m": 5,
+          "10-20m": 4,
+          "20-50m": 2,
+          "50-200m": 1,
+          ">200m_or_none": 0
+        }
+      },
+      "TRAIL CROSSING": {
+        "records": 22,
+        "median_m": 3.854,
+        "bands": {
+          "0-1m": 6,
+          "1-2m": 4,
+          "2-3m": 0,
+          "3-5m": 4,
+          "5-10m": 7,
+          "10-20m": 1,
+          "20-50m": 0,
+          "50-200m": 0,
+          ">200m_or_none": 0
+        }
+      },
+      "CONTINUOUS SIDEWALK": {
+        "records": 16,
+        "median_m": 0.811,
+        "bands": {
+          "0-1m": 10,
+          "1-2m": 5,
+          "2-3m": 1,
+          "3-5m": 0,
+          "5-10m": 0,
+          "10-20m": 0,
+          "20-50m": 0,
+          "50-200m": 0,
+          ">200m_or_none": 0
+        }
+      },
+      "RAISED TRAIL CROSSING": {
+        "records": 6,
+        "median_m": 6.619,
+        "bands": {
+          "0-1m": 0,
+          "1-2m": 0,
+          "2-3m": 0,
+          "3-5m": 1,
+          "5-10m": 5,
+          "10-20m": 0,
+          "20-50m": 0,
+          "50-200m": 0,
+          ">200m_or_none": 0
+        }
+      }
+    },
+    "offset_of_curbcut_y_records": {
+      "0-1m": 2127,
+      "1-2m": 859,
+      "2-3m": 129,
+      "3-5m": 95,
+      "5-10m": 56,
+      "10-20m": 20,
+      "20-50m": 9,
+      "50-200m": 1,
+      ">200m_or_none": 0
+    },
+    "graph_along_inventory": {
+      "corridor_m": 20.0,
+      "edges_total": 180554,
+      "edges_along_inventory": 55530,
+      "by_highway": {
+        "footway": 29989,
+        "residential": 9022,
+        "service": 6587,
+        "path": 3038,
+        "secondary": 2468,
+        "cycleway": 1884,
+        "tertiary": 1527,
+        "unclassified": 722,
+        "secondary_link": 93,
+        "steps": 90,
+        "primary": 63,
+        "pedestrian": 14,
+        "platform": 12,
+        "living_street": 11,
+        "corridor": 5,
+        "tertiary_link": 3,
+        "track": 2
+      },
+      "osm_baseline_on_those_edges": {
+        "crossing_edges": 5357,
+        "crossing_edges_with_known_kerb": 2937,
+        "separate_pedestrian_edges": 33131,
+        "separate_pedestrian_edges_with_known_surface": 19193,
+        "separate_pedestrian_edges_with_width": 189,
+        "steps_edges": 90
+      }
+    }
+  },
+  "sample": {
+    "file": "kitchener-geo04-sample.geojson",
+    "method": "Records intersecting the study area, one stratum each by first matching rule; at least 3 per non-empty stratum, the rest of 80 by largest remainder in proportion to stratum size; within a stratum, ascending sha256(seed:snapshot_id:ACTIVETRANSPORTID).",
+    "seed": "pathable-pa-geo-04-sample-v1",
+    "target": 80,
+    "minimum_per_stratum": 3,
+    "records": 80,
+    "strata": {
+      "virtual_link": {
+        "rule": "City's virtual street crossings",
+        "population": 2019,
+        "sampled": 6
+      },
+      "unofficial_connection": {
+        "rule": "City's unofficial driveway and on-road connections",
+        "population": 116,
+        "sampled": 3
+      },
+      "unresolved_semantics": {
+        "rule": "records whose physical or virtual nature the source leaves ambiguous",
+        "population": 10,
+        "sampled": 3
+      },
+      "stairs": {
+        "rule": "FEATURE_TYPE STAIRS",
+        "population": 40,
+        "sampled": 3
+      },
+      "other_structure": {
+        "rule": "bridges, overpasses, underpasses, boardwalks",
+        "population": 116,
+        "sampled": 3
+      },
+      "curb_cut_coded": {
+        "rule": "CURBCUT = Y (a curbcut down to street level)",
+        "population": 3294,
+        "sampled": 9
+      },
+      "not_along_osm_pedestrian_way": {
+        "rule": "pedestrian record with a point 20 m or more from any OSM footway, path, pedestrian way or steps",
+        "population": 341,
+        "sampled": 3
+      },
+      "offset_from_osm_pedestrian_way": {
+        "rule": "pedestrian record whose worst point is 3-20 m from OSM pedestrian ways",
+        "population": 514,
+        "sampled": 3
+      },
+      "crossing": {
+        "rule": "crosswalks, trail crossings and crossrides",
+        "population": 2172,
+        "sampled": 7
+      },
+      "trail": {
+        "rule": "multi-use, boulevard and natural trails",
+        "population": 809,
+        "sampled": 4
+      },
+      "walkway": {
+        "rule": "walkways between neighbourhoods",
+        "population": 185,
+        "sampled": 3
+      },
+      "merged_looking": {
+        "rule": "multi-part or at least 400 m long",
+        "population": 59,
+        "sampled": 3
+      },
+      "split_looking": {
+        "rule": "shorter than 5 m without a curb-cut code",
+        "population": 209,
+        "sampled": 3
+      },
+      "dense_core_sidewalk": {
+        "rule": "sidewalk in the densest tenth of the inventory in the study area",
+        "population": 370,
+        "sampled": 3
+      },
+      "parallel_sidewalk_pair": {
+        "rule": "sidewalk whose road segment has sidewalks on both sides",
+        "population": 3752,
+        "sampled": 14
+      },
+      "residential_sidewalk": {
+        "rule": "sidewalk whose nearest OSM road is residential",
+        "population": 168,
+        "sampled": 3
+      },
+      "ordinary_sidewalk": {
+        "rule": "any other active sidewalk",
+        "population": 82,
+        "sampled": 3
+      },
+      "other_physical": {
+        "rule": "cycling, maintenance and remaining physical records",
+        "population": 786,
+        "sampled": 4
+      }
+    },
+    "content_sha256": "682e312f128a69b91d613c50da5404cae9a88a781eee84714fe2381ad6ad25e5"
+  },
+  "adoption": {
+    "routing_use": "none — no Kitchener field is approved for routing by PA-GEO-03",
+    "decided_on": "one snapshot, from the figures in each entry's basis",
+    "entries": [
+      {
+        "subject": "identity",
+        "fields": [
+          "ACTIVETRANSPORTID"
+        ],
+        "disposition": "identity/provenance",
+        "scope": "all values",
+        "rationale": "The City documents it as the permanent record id. It is present and unique on every record of both publications and joins them with no field disagreeing.",
+        "basis": {
+          "records": 34052,
+          "null_identity": 0,
+          "duplicate_identity_records": 0,
+          "joined_across_publications": 26499,
+          "fields_differing_between_publications": {}
+        }
+      },
+      {
+        "subject": "service row number",
+        "fields": [
+          "OBJECTID"
+        ],
+        "disposition": "rejected",
+        "scope": "as an identity",
+        "rationale": "The City documents that OBJECTID changes on export and import. The two publications happen to agree on it today, as the basis shows, but a value documented to change cannot identify a record across snapshots. It is used only to check that each request returned the rows it asked for.",
+        "basis": {
+          "objectid_differs_between_publications": 0,
+          "records_in_both_publications": 26499
+        }
+      },
+      {
+        "subject": "source and source date",
+        "fields": [
+          "SOURCE",
+          "SOURCE_DATE"
+        ],
+        "disposition": "identity/provenance",
+        "scope": "all values; SOURCE published by vocabulary class",
+        "rationale": "Record-level provenance: mostly the orthoimagery year a record was digitised from, with SOURCE_DATE matching that year. It dates the capture of the record, not any attribute on it.",
+        "basis": {
+          "source_classes": {
+            "orthoimagery": 30061,
+            "null": 1793,
+            "trail_inventory_2015": 1674,
+            "engineering_plan": 254,
+            "project_or_programme": 129,
+            "staff_assertion": 115,
+            "personal_observation": 20,
+            "street_level_imagery": 3,
+            "placeholder": 2,
+            "other": 1
+          },
+          "source_date_populated": 31993,
+          "source_date_null": 2059,
+          "orthoimagery_year_vs_source_date": {
+            "same_year": 29641,
+            "no_source_date": 237,
+            "different_year": 183
+          }
+        }
+      },
+      {
+        "subject": "record dates",
+        "fields": [
+          "CREATE_DATE",
+          "STATUS_DATE"
+        ],
+        "disposition": "identity/provenance",
+        "scope": "all values",
+        "rationale": "Database-maintained timestamps of record creation and of the last status change. Useful for lineage; not observations of the facility.",
+        "basis": {
+          "CREATE_DATE": {
+            "populated": 28748,
+            "null": 2
+          },
+          "STATUS_DATE": {
+            "populated": 28189,
+            "null": 561
+          }
+        }
+      },
+      {
+        "subject": "update date",
+        "fields": [
+          "UPDATE_DATE"
+        ],
+        "disposition": "rejected",
+        "scope": "as freshness evidence",
+        "rationale": "Nearly every record carries the same update day, written by the database account: it records a maintenance run, not an observation.",
+        "basis": {
+          "records_with_update_date": 28750,
+          "bulk_update_day": "2026-08-24",
+          "records_on_bulk_update_day": 28209,
+          "share_on_bulk_update_day": 0.9812,
+          "accounts_on_bulk_update_day": {
+            "GIS_DATA": 28073,
+            "named_account": 136
+          },
+          "update_accounts": {
+            "GIS_DATA": 28149,
+            "named_account": 495,
+            "AGOL_USER": 106
+          }
+        }
+      },
+      {
+        "subject": "status",
+        "fields": [
+          "STATUS"
+        ],
+        "disposition": "identity/provenance",
+        "scope": "as the publication's lifecycle filter",
+        "rationale": "Every published record is ACTIVE, which is also the template default, because only active records are published: the field distinguishes nothing in the open data. What the City asserts is the record's presence in its active inventory, which belongs to the record, not to this field. Planned, potential and closed records cannot be studied from the open data, and the network links carry no status at all.",
+        "basis": {
+          "lifecycle": {
+            "ACTIVE": 28750,
+            "not_published": 5302
+          },
+          "lifecycle_by_publication": {
+            "active_transportation / ACTIVE": 28750,
+            "walkability_only / not_published": 5302
+          }
+        }
+      },
+      {
+        "subject": "classification",
+        "fields": [
+          "CATEGORY",
+          "SUBCATEGORY"
+        ],
+        "disposition": "matching/conflation input only",
+        "scope": "all values",
+        "rationale": "Separates sidewalks, crossings, trails, links and connections, which is what a matcher needs to pair a record with the right kind of OSM way. It is not an accessibility fact.",
+        "basis": {
+          "network_role": {
+            "pedestrian_way": 22081,
+            "virtual_link": 5030,
+            "pedestrian_crossing": 4513,
+            "cycling_facility": 1547,
+            "cycling_or_shared_crossing": 360,
+            "unofficial_connection": 276,
+            "maintenance_access": 226,
+            "unresolved": 19
+          },
+          "unresolved_or_noted": {
+            "virtual code in feature_type, surface_material": 229,
+            "subcategory 'CROSSWALK' with a virtual code in feature_type, surface_material": 11,
+            "subcategory 'LINK (PEDESTRIAN)' filed under category 'SIDEWALKS AND WALKWAYS'": 4,
+            "subcategory 'MINOR TRAIL' filed under category 'SIDEWALKS AND WALKWAYS'": 4,
+            "subcategory 'CROSSBIKE' with a virtual code in feature_type, surface_material": 2,
+            "subcategory 'BICYCLE LANE' filed under category 'SIDEWALKS AND WALKWAYS'": 1,
+            "subcategory 'CROSSWALK' filed under NETWORK LINKS": 1,
+            "subcategory 'CROSSWALK' with a virtual code in feature_type": 1,
+            "subcategory 'CROSSWALK' with a virtual code in surface_material": 1,
+            "subcategory 'LINK (PEDESTRIAN)' filed under category 'CYCLING'": 1,
+            "subcategory 'RAISED TRAIL CROSSING' with a virtual code in feature_type, surface_material": 1,
+            "subcategory 'SIDEWALK' with a virtual code in feature_type, surface_material": 1,
+            "subcategory 'SIDEWALK' with a virtual code in surface_material": 1
+          }
+        }
+      },
+      {
+        "subject": "stairs and structures",
+        "fields": [
+          "FEATURE_TYPE"
+        ],
+        "disposition": "eligible for normalized evidence",
+        "scope": "STAIRS, BRIDGE, OVERPASS, UNDERPASS, BOARDWALK only",
+        "rationale": "These are deliberate departures from the template value SURFACE and translate directly into steps, bridge and tunnel evidence. SURFACE is the template default and is never read as 'no stairs'.",
+        "basis": {
+          "structures": {
+            "BRIDGE": 94,
+            "STAIRS": 77,
+            "UNDERPASS": 74,
+            "OVERPASS": 49,
+            "BOARDWALK": 17
+          },
+          "structures_in_study_area": {
+            "BRIDGE": 42,
+            "STAIRS": 40,
+            "UNDERPASS": 37,
+            "OVERPASS": 35,
+            "BOARDWALK": 2
+          },
+          "template_default_SURFACE": 28473,
+          "non_default": 311,
+          "not_applicable_virtual": 5266,
+          "railing_on_stairs": {
+            "Y": 57,
+            "N": 20
+          }
+        }
+      },
+      {
+        "subject": "geometry",
+        "fields": [
+          "SHAPE"
+        ],
+        "disposition": "matching/conflation input only",
+        "scope": "all records",
+        "rationale": "Centrelines digitised from orthoimagery. In the study area most pedestrian records run within 2 m of an OSM pedestrian way along their whole length, which is consistent with shared lineage: the geometry is input to matching and a lineage question, not independent evidence of where a path is.",
+        "basis": {
+          "geometry_issues": {
+            "valid": 34052
+          },
+          "documented_feature_accuracy": "+/- 0.5 m (City layer metadata)",
+          "crs_transformation": "Inverse of UTM zone 17N + NAD83 to WGS 84 (1) + axis order change (2D)",
+          "crs_transformation_accuracy_m": 4.0,
+          "offset_of_pedestrian_records_from_osm_pedestrian_ways": {
+            "0-1m": 6414,
+            "1-2m": 3961,
+            "2-3m": 438,
+            "3-5m": 235,
+            "5-10m": 262,
+            "10-20m": 164,
+            "20-50m": 162,
+            "50-200m": 188,
+            ">200m_or_none": 11
+          }
+        }
+      },
+      {
+        "subject": "width",
+        "fields": [
+          "WIDTH_M"
+        ],
+        "disposition": "comparison only",
+        "scope": "non-default, non-zero values; 1.5 and 0 never",
+        "rationale": "A value from a coded list, not a measurement. 1.5 is the template default and sits on almost every sidewalk; the documented 1.8 m default never occurs; 0 stands in for crossings and links. Other widths may be compared with OSM widths; none is adopted.",
+        "basis": {
+          "equal_to_template_default_1_5": 18543,
+          "equal_to_documented_default_1_8": 0,
+          "sidewalks_at_1_5": {
+            "matching": 15489,
+            "records": 16126,
+            "share": 0.9605
+          },
+          "zero": 8751,
+          "zero_by_subcategory": {
+            "LINK (PEDESTRIAN)": 3887,
+            "CROSSWALK": 3880,
+            "LINK (MUT)": 619,
+            "DRIVEWAY CONNECTION": 108,
+            "MARKED SHARED-USE": 60,
+            "NEIGHBOURHOOD BIKEWAY": 57,
+            "ON-ROAD CONNECTION": 43,
+            "SIDEWALK": 39,
+            "COMBINED CROSSRIDE": 18,
+            "TRAIL CROSSING": 11,
+            "SIGNED ROUTE": 8,
+            "RAISED TRAIL CROSSING": 7,
+            "MIXED CROSSRIDE": 6,
+            "SEPARATE CROSSRIDE": 5,
+            "BICYCLE LANE (CONTRAFLOW)": 1,
+            "BMUT": 1,
+            "CROSSBIKE": 1
+          },
+          "non_default_non_zero": 6684,
+          "domain_size": 27
+        }
+      },
+      {
+        "subject": "surface material",
+        "fields": [
+          "SURFACE_MATERIAL"
+        ],
+        "disposition": "eligible for normalized evidence",
+        "scope": "non-default values only; CONCRETE never",
+        "rationale": "Asphalt, stonedust, gravel, natural, brick, wood and the rest are deliberate departures from the template and translate into surface classes. CONCRETE is the template default and cannot be told from an unedited record.",
+        "basis": {
+          "concrete": 18317,
+          "sidewalks_concrete": {
+            "matching": 15888,
+            "records": 16126,
+            "share": 0.9852
+          },
+          "non_concrete_distribution": {
+            "ASPHALT": 6988,
+            "NA (VIRTUAL LINK)": 5269,
+            "ASPHALT (PAINTED)": 2049,
+            "STONEDUST": 918,
+            "NATURAL": 178,
+            "GRAVEL": 113,
+            "BRICK": 112,
+            "WOOD": 50,
+            "UNKNOWN": 18,
+            "TAR AND CHIP": 12,
+            "STEEL": 10,
+            "COBBLESTONE": 9,
+            "STONE": 9
+          },
+          "evidence_for_non_default": {
+            "records": 10448,
+            "with_source_date": 10221,
+            "with_orthoimagery_source": 8539,
+            "with_document_survey_or_staff_source": 1727,
+            "with_last_inspection_year": 8557,
+            "with_condition_date": 284
+          }
+        }
+      },
+      {
+        "subject": "surface condition",
+        "fields": [
+          "SURFACE_CONDITION"
+        ],
+        "disposition": "eligible as raw evidence",
+        "scope": "FAIR, POOR and UNUSABLE, as a claim dated 2015 by the City's documentation",
+        "rationale": "Documented as found in the 2015 trail inventory. A 2015 condition is not a current fact, so it may be kept only as a dated source claim. GOOD is the template default; UNKNOWN is explicit and most common, and stays unknown.",
+        "basis": {
+          "distribution": {
+            "UNKNOWN": 21776,
+            "GOOD": 5518,
+            "FAIR": 927,
+            "POOR": 288,
+            "null": 232,
+            "UNUSABLE": 9
+          },
+          "good": {
+            "records": 5518,
+            "with_last_inspection_year": 3756,
+            "with_condition_date": 329,
+            "with_condition_score": 534,
+            "with_source_date": 5193,
+            "source_is_2015_trail_inventory": 871
+          },
+          "fair_poor_unusable": {
+            "records": 1224,
+            "with_last_inspection_year": 1156,
+            "with_condition_date": 61,
+            "with_condition_score": 396,
+            "with_source_date": 1218,
+            "source_is_2015_trail_inventory": 727
+          }
+        }
+      },
+      {
+        "subject": "curb cut",
+        "fields": [
+          "CURBCUT"
+        ],
+        "disposition": "eligible for normalized evidence",
+        "scope": "Y only; N is never 'no curb cut', U is unknown",
+        "rationale": "Y marks short segments that are 'a curbcut down to street level' — a deliberate, located claim that translates into kerb-ramp evidence. Whether the ramp is lowered or flush is not stated. N is the template default.",
+        "basis": {
+          "distribution": {
+            "N": 21786,
+            "Y": 6888,
+            "null": 76
+          },
+          "segment_length_m": {
+            "Y": {
+              "records": 6888,
+              "p10": 1.04,
+              "median": 2.22,
+              "p90": 4.79
+            },
+            "N": {
+              "records": 21786,
+              "p10": 9.44,
+              "median": 58.63,
+              "p90": 199.01
+            }
+          },
+          "y_in_study_area": 3296,
+          "offset_of_y_records_from_osm_pedestrian_ways": {
+            "0-1m": 2127,
+            "1-2m": 859,
+            "2-3m": 129,
+            "3-5m": 95,
+            "5-10m": 56,
+            "10-20m": 20,
+            "20-50m": 9,
+            "50-200m": 1,
+            ">200m_or_none": 0
+          },
+          "osm_crossing_edges_along_inventory": {
+            "crossing_edges": 5357,
+            "crossing_edges_with_known_kerb": 2937,
+            "separate_pedestrian_edges": 33131,
+            "separate_pedestrian_edges_with_known_surface": 19193,
+            "separate_pedestrian_edges_with_width": 189,
+            "steps_edges": 90
+          }
+        }
+      },
+      {
+        "subject": "railing",
+        "fields": [
+          "RAILING"
+        ],
+        "disposition": "eligible as raw evidence",
+        "scope": "Y only",
+        "rationale": "Y is deliberate and N is the template default. PathAble's cost model has no railing input, so it can only be kept as a source claim.",
+        "basis": {
+          "distribution": {
+            "N": 28617,
+            "Y": 133
+          },
+          "y_by_feature_type": {
+            "STAIRS": 57,
+            "SURFACE": 50,
+            "BRIDGE": 16,
+            "OVERPASS": 5,
+            "UNDERPASS": 3,
+            "BOARDWALK": 2
+          },
+          "stairs": {
+            "Y": 57,
+            "N": 20
+          }
+        }
+      },
+      {
+        "subject": "grade",
+        "fields": [
+          "GRADE"
+        ],
+        "disposition": "rejected",
+        "scope": "all values",
+        "rationale": "Documented as script-calculated, and almost every record says UNKNOWN.",
+        "basis": {
+          "distribution": {
+            "UNKNOWN": 33284,
+            "null": 654,
+            "NONE": 106,
+            "FLAT": 8
+          },
+          "unknown_share": 0.9774
+        }
+      },
+      {
+        "subject": "slope",
+        "fields": [
+          "SLOPE_GRADIENT_PERCENT",
+          "SLOPE_GRADIENT_CLASS",
+          "SLOPE_GRADIENT_MAX",
+          "SLOPE_GRADIENT_MIN",
+          "SLOPE_GRADIENT_AVG"
+        ],
+        "disposition": "comparison only",
+        "scope": "against PathAble's own derived grade",
+        "rationale": "Derived by the City's FME script from an unstated surface model, with some values over 100%. PathAble derives grade from 1 m LiDAR itself; a derived value may be compared with it, never adopted over it.",
+        "basis": {
+          "slope_gradient_source": {
+            "FME - COKFME21 - C:\\GISProjects\\FME\\Data_Daily\\Daily_Active_Transportation/CalculateTrailGradient.fmw": 27980
+          },
+          "slope_gradient_class": {
+            "Level (0 - 1.5%)": 15440,
+            "Little slope (>1.5 - 3%)": 5717,
+            "Gentle slope (>3 - 6%)": 4642,
+            "Steep slope (>6 - 12%)": 1965,
+            "null": 770,
+            "Very steep slope (>12 %)": 216
+          },
+          "over_100_percent": 16
+        }
+      },
+      {
+        "subject": "grade category",
+        "fields": [
+          "GRADE_CATEGORY_MAX"
+        ],
+        "disposition": "rejected",
+        "scope": "all values",
+        "rationale": "Undocumented, and it disagrees with the City's own SLOPE_GRADIENT_MAX on about half of the records where both are present.",
+        "basis": {
+          "compared": 24525,
+          "agrees_with_slope_max": 12438,
+          "agreement_share": 0.5072,
+          "string_None": 3484
+        }
+      },
+      {
+        "subject": "condition score and date",
+        "fields": [
+          "CONDITION_SCORE",
+          "CONDITION_DATE"
+        ],
+        "disposition": "rejected",
+        "scope": "all values",
+        "rationale": "Documented as a calculated Cityworks score, but only 0 and 1 occur, and a score and its date almost never appear on the same record.",
+        "basis": {
+          "values": {
+            "1": 988,
+            "0": 4
+          },
+          "score_without_date": 990,
+          "date_without_score": 391,
+          "condition_date_years": {
+            "2016": 135,
+            "2017": 220,
+            "2018": 1,
+            "2019": 9,
+            "2020": 28
+          }
+        }
+      },
+      {
+        "subject": "inspection year",
+        "fields": [
+          "LAST_INSPECTION_YEAR"
+        ],
+        "disposition": "eligible as raw evidence",
+        "scope": "plausible years, as the date a record was last inspected",
+        "rationale": "Documented as the last year the segment was inspected by the City's programmes. It says the facility was looked at, not what was found: it may date a record's existence, never an attribute.",
+        "basis": {
+          "last_inspection_year": {
+            "2026": 17071,
+            "2021": 4082,
+            "null": 2839,
+            "2019": 2015,
+            "2023": 1521,
+            "2025": 415,
+            "2024": 287,
+            "2018": 265,
+            "2017": 80,
+            "2020": 70,
+            "2022": 57,
+            "2016": 11,
+            "2013": 8,
+            "2011": 7,
+            "2014": 6,
+            "2010": 5,
+            "2015": 5,
+            "2012": 4,
+            "0": 2
+          },
+          "implausible": 2
+        }
+      },
+      {
+        "subject": "installation year",
+        "fields": [
+          "INSTALLATION_YEAR"
+        ],
+        "disposition": "unresolved",
+        "scope": "all values",
+        "rationale": "A single year covers a large share of populated values, which looks like a bulk load rather than installation dates; the documentation says only 'usually a database maintained field'.",
+        "basis": {
+          "modal": {
+            "value": 1997,
+            "records": 9514,
+            "share_of_populated": 0.4132
+          },
+          "implausible": 2
+        }
+      },
+      {
+        "subject": "virtual links",
+        "fields": [
+          "NETWORK LINKS / LINK (PEDESTRIAN)",
+          "NETWORK LINKS / LINK (MUT)"
+        ],
+        "disposition": "matching/conflation input only",
+        "scope": "topology and crossing location only",
+        "rationale": "The City's virtual street crossings say where its network connects. They are never a physical routable segment, and never evidence that a crossing facility exists.",
+        "basis": {
+          "records": 5030,
+          "in_study_area": 2019,
+          "published_only_in_walkability": 5302
+        }
+      },
+      {
+        "subject": "unofficial connections",
+        "fields": [
+          "NETWORK LINKS / DRIVEWAY CONNECTION",
+          "NETWORK LINKS / ON-ROAD CONNECTION"
+        ],
+        "disposition": "comparison only",
+        "scope": "connectivity context only",
+        "rationale": "Unofficial routes along roads or driveways, documented as such; not pedestrian infrastructure.",
+        "basis": {
+          "records": 276,
+          "in_study_area": 116
+        }
+      },
+      {
+        "subject": "road relationship",
+        "fields": [
+          "ROADSEGMENTID",
+          "ROADSEGMENT_SIDE"
+        ],
+        "disposition": "matching/conflation input only",
+        "scope": "LEFT and RIGHT",
+        "rationale": "Which road and which side a sidewalk belongs to — what a matcher needs to pair it with OSM's sidewalk on that side. UNDEFINED is outside the City's own domain.",
+        "basis": {
+          "roadsegment_side_values": {
+            "RIGHT": 14415,
+            "LEFT": 14282,
+            "UNDEFINED": 53
+          },
+          "out_of_domain": 53
+        }
+      },
+      {
+        "subject": "notes",
+        "fields": [
+          "NOTES"
+        ],
+        "disposition": "rejected",
+        "scope": "all values",
+        "rationale": "Documented as free text, but the snapshot holds only two workflow words whose meaning is not documented.",
+        "basis": {
+          "values": {
+            "CHECK": 18258,
+            "DONE": 10476
+          },
+          "unlisted_free_text_records": 0
+        }
+      }
+    ]
+  },
+  "exit_gate": {
+    "q1_geographic_overlap": {
+      "records_intersecting_study_area": 15042,
+      "share_of_records": 0.4417,
+      "km_intersecting_study_area": 825.136,
+      "km_total": 1948.115,
+      "pathable_edges_along_inventory": 55530,
+      "share_of_pathable_edges": 0.3076
+    },
+    "q2_active_physical_pedestrian_records": {
+      "total": 26594,
+      "km_total": 1637.978,
+      "in_study_area": 11835,
+      "km_in_study_area": 685.994
+    },
+    "q3_populated_beyond_template_defaults": {
+      "on_active_physical_pedestrian_records": {
+        "scope": "active physical pedestrian ways and crossings; a value counts only when it departs from the template default (a width of 0 is not counted)",
+        "all": {
+          "records": 26594,
+          "stairs": 77,
+          "other_structure": 179,
+          "surface_non_default": 8393,
+          "width_non_default_non_zero": 5975,
+          "curbcut_y": 6717,
+          "railing_y": 131,
+          "condition_fair_poor_unusable": 1089,
+          "with_any_of_these": 15732,
+          "surface_template_default": 18185,
+          "width_template_default": 16685,
+          "condition_unknown": 20867
+        },
+        "in_study_area": {
+          "records": 11835,
+          "stairs": 40,
+          "other_structure": 91,
+          "surface_non_default": 3533,
+          "width_non_default_non_zero": 2140,
+          "curbcut_y": 3233,
+          "railing_y": 58,
+          "condition_fair_poor_unusable": 429,
+          "with_any_of_these": 7137,
+          "surface_template_default": 8297,
+          "width_template_default": 7680,
+          "condition_unknown": 9921
+        }
+      },
+      "all_records": {
+        "FEATURE_TYPE_structures": 311,
+        "SURFACE_MATERIAL_non_default": 10448,
+        "WIDTH_M_non_default_non_zero": 6684,
+        "CURBCUT_Y": 6888,
+        "RAILING_Y": 133,
+        "SURFACE_CONDITION_fair_poor_unusable": 1224,
+        "SURFACE_CONDITION_unknown": 21776,
+        "GRADE_known": 114,
+        "records_with_every_accessibility_field_at_default": 553
+      }
+    },
+    "q4_provenance_and_freshness": {
+      "records_with_source_date": 31993,
+      "records_with_last_inspection_year": 25911,
+      "last_inspection_year": {
+        "2026": 17071,
+        "2021": 4082,
+        "null": 2839,
+        "2019": 2015,
+        "2023": 1521,
+        "2025": 415,
+        "2024": 287,
+        "2018": 265,
+        "2017": 80,
+        "2020": 70,
+        "2022": 57,
+        "2016": 11,
+        "2013": 8,
+        "2011": 7,
+        "2014": 6,
+        "2010": 5,
+        "2015": 5,
+        "2012": 4,
+        "0": 2
+      },
+      "update_date_share_on_bulk_day": 0.9812,
+      "non_default_values_with_source_date": {
+        "SURFACE_MATERIAL": {
+          "records": 10448,
+          "with_source": 10269,
+          "with_source_date": 10221,
+          "with_update_date": 10398,
+          "with_update_date_off_the_bulk_update_day": 203,
+          "with_last_inspection_year": 8557
+        },
+        "CURBCUT": {
+          "records": 6888,
+          "with_source": 6649,
+          "with_source_date": 6563,
+          "with_update_date": 6888,
+          "with_update_date_off_the_bulk_update_day": 101,
+          "with_last_inspection_year": 6272
+        },
+        "SURFACE_CONDITION": {
+          "records": 1224,
+          "with_source": 1218,
+          "with_source_date": 1218,
+          "with_update_date": 1224,
+          "with_update_date_off_the_bulk_update_day": 5,
+          "with_last_inspection_year": 1156
+        },
+        "FEATURE_TYPE": {
+          "records": 311,
+          "with_source": 307,
+          "with_source_date": 307,
+          "with_update_date": 311,
+          "with_update_date_off_the_bulk_update_day": 11,
+          "with_last_inspection_year": 275
+        }
+      }
+    },
+    "q5_stairs_crossings_curb": {
+      "stairs": 77,
+      "stairs_in_study_area": 40,
+      "pedestrian_crossings": 4513,
+      "pedestrian_crossings_in_study_area": 2222,
+      "curbcut_y": 6888,
+      "curbcut_y_in_study_area": 3296
+    },
+    "q6_virtual_or_non_physical": {
+      "virtual_link": 5030,
+      "unofficial_connection": 276,
+      "unresolved": 19,
+      "in_study_area": {
+        "virtual_link": 2019,
+        "unofficial_connection": 116,
+        "unresolved": 10
+      }
+    },
+    "q7_inputs": {
+      "pedestrian_records_whose_whole_line_is_within_2m_of_osm_pedestrian_ways": 10375,
+      "pedestrian_records_in_study_area": 11835,
+      "osm_baseline_along_inventory": {
+        "crossing_edges": 5357,
+        "crossing_edges_with_known_kerb": 2937,
+        "separate_pedestrian_edges": 33131,
+        "separate_pedestrian_edges_with_known_surface": 19193,
+        "separate_pedestrian_edges_with_width": 189,
+        "steps_edges": 90
+      }
+    }
+  },
+  "measurement": {
+    "profile_seconds": 1.97,
+    "geography_seconds": 24.02,
+    "total_seconds": 73.02,
+    "environment": {
+      "python": "3.13.2",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "git_commit": "8cf068df49b8ffe4cea8403f8a9b6d652221f4af"
+    },
+    "machine_memory_mb": 16498.0,
+    "peak_process_memory_mb": 644.2,
+    "process_memory_method": "windows:GetProcessMemoryInfo working set"
+  },
+  "content_sha256": "54595abdfd1b3baee85e95978679e06e58be2113cd7bb940b3bdd8800d754487"
+}

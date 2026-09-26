@@ -289,6 +289,44 @@ identically; activation switched in 33.8 ms and rollback in 31.7 ms after an
 - Zero-downtime deployment. The switch is short and measured; a running API
   picks up a new dataset on its next request, which has not been load-tested.
 
+### PA-GEO-03 — Kitchener secondary-source freeze and empirical audit _(draft, PR #69)_
+
+**Delivered** — [`KITCHENER_ACTIVE_TRANSPORT.md`](../architecture/KITCHENER_ACTIVE_TRANSPORT.md)
+
+| Area           | What exists                                                                                                            |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Snapshot       | `pathable kitchener snapshot`: both City publications read by object id, checked request by request, frozen and hashed |
+| Licence check  | The licence text served with the data is checked, sentence by sentence, against the terms relied on, on every run      |
+| Normalization  | `pathable kitchener normalize`: one byte-reproducible GeoParquet 1.1.0 file, native and CRS84 geometry, no staff names |
+| Classification | Value states that keep null, blank, unknown, not-applicable, default and non-default apart; evidence origin per field  |
+| Profile        | `pathable kitchener audit`: DuckDB profile, study geography, descriptive overlap, adoption matrix, exit-gate figures   |
+| Lineage sample | A deterministic, stratified 80-record sample for PA-GEO-04, reproducible from the snapshot and a documented seed       |
+| Safety         | Reads PathAble in a `READ ONLY` transaction, from migration 0005 onward; no Kitchener field reaches routing            |
+
+**What it measured** — see the `kitchener-*` files in
+[`docs/evidence/`](../evidence/README.md):
+
+- The City publishes one internal layer through two incomplete services: only
+  active records, and the network links in only one of them.
+- 11,835 active pedestrian records (686.0 km) intersect the pilot.
+- 87.7% of them run within 2 m of an OSM pedestrian way along their whole length;
+  the City permits its data in OSM.
+- 96.1% of sidewalks carry the template 1.5 m width and 98.5% the template
+  CONCRETE.
+- What is genuinely non-default is located: 6,888 curb-cut segments, 77 stairs
+  and 133 railings.
+
+**Decision: LIMITED GO** to PA-GEO-04, for curb cuts, stairs and structures,
+non-default surfaces, dated trail condition and the network links' topology —
+with OSM lineage settled first.
+
+**Still does not exist.**
+
+- Any Kitchener value in routing, feasibility, cost, uncertainty or explanations.
+- Matching, match thresholds, conflation, reconciliation, or any graph change.
+- A cross-source canonical model; §10 of the audit document lists the
+  requirements the real source supports.
+
 ---
 
 ## Stitch Route Planner integration (PA-UX-03)
