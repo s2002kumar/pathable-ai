@@ -43,6 +43,8 @@ export type MapInstance = {
   readonly off: (event: string, handler: (payload: never) => void) => void;
   readonly fitBounds: (bounds: [[number, number], [number, number]], options?: unknown) => void;
   readonly remove: () => void;
+  /** Screen position of a coordinate; used to place evidence labels over the map. */
+  readonly project?: (lngLat: [number, number]) => { x: number; y: number };
 };
 
 export type UseMapLibreResult = {

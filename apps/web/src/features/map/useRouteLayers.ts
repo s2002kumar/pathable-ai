@@ -66,6 +66,12 @@ export type UseRouteLayersOptions = {
    * "where are the stairs" is asking about the route already on screen.
    */
   readonly stairs?: RecordedStairs | null;
+  /**
+   * Incremented by the viewer's "Fit routes" control. A change re-frames the
+   * routes even though they have not changed — the one time the camera moves
+   * for something other than a new answer.
+   */
+  readonly fitRequest?: number;
 };
 
 /**
@@ -86,11 +92,13 @@ export function useRouteLayers({
   focus = null,
   fitPadding,
   stairs = null,
+  fitRequest = 0,
 }: UseRouteLayersOptions): void {
   // The last bounds we fitted to. Refitting on every render would fight the user
   // for control of the viewport; refitting only when the route actually changes
   // keeps their pan and zoom.
   const lastFitted = useRef<string | null>(null);
+  const lastFitRequest = useRef(fitRequest);
 
   // Read at fit time rather than depended on, for the reason above. Synced in
   // an effect rather than during render, and declared before the effect that
@@ -121,7 +129,9 @@ export function useRouteLayers({
     }
 
     const signature = JSON.stringify(bounds);
-    if (signature === lastFitted.current) return;
+    const asked = fitRequest !== lastFitRequest.current;
+    lastFitRequest.current = fitRequest;
+    if (signature === lastFitted.current && !asked) return;
     lastFitted.current = signature;
 
     map.fitBounds(bounds, {
@@ -130,7 +140,7 @@ export function useRouteLayers({
       // Capped, and nothing at all for a viewer who asked for less motion.
       duration: cameraDuration(prefersReducedMotion()),
     });
-  }, [map, standardRoute, accessibleRoute, origin, destination, showStandardRoute]);
+  }, [map, standardRoute, accessibleRoute, origin, destination, showStandardRoute, fitRequest]);
 
   // The stairway overlay, like focus, is data and paint only: no camera move,
   // no refit. Setting the source to an empty collection is what removes it,

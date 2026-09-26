@@ -3,6 +3,7 @@
 import { useId, useRef } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Route } from '@pathable/contracts';
+import { type MapMarker, MapMarkers } from './MapMarkers';
 import { MapStatusOverlay } from './MapStatusOverlay';
 import type { Padding, RecordedStairs, RouteFocus } from './route-layers';
 import { useMapClick } from './useMapClick';
@@ -35,6 +36,10 @@ export type MapCanvasProps = {
   readonly fitPadding?: Padding;
   /** Recorded stairways to draw over the route, or null for none. */
   readonly stairs?: RecordedStairs | null;
+  /** Labels pinned to the map: what the profile rules out, the steepest climb. */
+  readonly markers?: readonly MapMarker[];
+  /** Incremented to re-frame the routes on request. */
+  readonly fitRequest?: number;
   /**
    * Called with the clicked position. Absent when the map is decorative, which
    * is what keeps this component usable outside the planner.
@@ -64,6 +69,8 @@ export function MapCanvas({
   focusedRoute = null,
   fitPadding,
   stairs = null,
+  markers = NO_MARKERS,
+  fitRequest = 0,
   onSelectPoint,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -87,6 +94,7 @@ export function MapCanvas({
     focus: focusedRoute,
     ...(fitPadding ? { fitPadding } : {}),
     stairs,
+    fitRequest,
   });
   useMapClick(map, onSelectPoint ?? noop);
 
@@ -108,10 +116,13 @@ export function MapCanvas({
         {...(describedById !== undefined ? { 'aria-describedby': describedById } : {})}
         id={fallbackId}
       />
+      <MapMarkers map={map} markers={markers} />
       <MapStatusOverlay status={status} />
     </div>
   );
 }
+
+const NO_MARKERS: readonly MapMarker[] = [];
 
 function noop(): void {
   // The map is still clickable when no handler is supplied; it just does nothing.
