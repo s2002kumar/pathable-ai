@@ -21,7 +21,8 @@ from pathable_api.core.logging import get_logger
 from pathable_api.geo.elevation import elevation_attribution
 from pathable_api.geo.models import DatasetVersion
 from pathable_api.routing.comparison import RouteComparison, compare_routes
-from pathable_api.routing.engine import Route
+from pathable_api.routing.cost import BlockReason
+from pathable_api.routing.engine import GradeExtreme, GradientSummary, Route
 from pathable_api.routing.graph import GraphRepository, NoActiveDatasetError
 from pathable_api.routing.profiles import (
     PROFILES,
@@ -36,6 +37,8 @@ from pathable_api.schemas.routing import (
     CostComponentModel,
     DatasetProvenance,
     ExplanationModel,
+    GradeExtremeModel,
+    GradientSummaryModel,
     MobilityProfileListResponse,
     MobilityProfileModel,
     RouteCompareRequest,
@@ -226,14 +229,18 @@ def _to_response(
         profile=comparison.profile.key,
         profile_display_name=comparison.profile.display_name,
         profile_description=comparison.profile.description,
-        standard_route=_route_model(comparison.standard_route),
+        standard_route=_route_model(
+            comparison.standard_route, exclusions=comparison.standard_exclusions
+        ),
         accessible_route=_route_model(comparison.accessible_route),
         standard_failure=comparison.standard_failure,
         accessible_failure=comparison.accessible_failure,
         extra_distance_m=comparison.extra_distance_m,
         extra_distance_fraction=comparison.extra_distance_fraction,
         explanations=[
-            ExplanationModel(code=item.code, summary=item.summary, evidence=item.evidence)
+            ExplanationModel(
+                code=item.code, summary=item.summary, basis=item.basis, evidence=item.evidence
+            )
             for item in comparison.explanations
         ],
         cautions=[
@@ -245,7 +252,36 @@ def _to_response(
     )
 
 
-def _route_model(route: Route | None) -> RouteModel | None:
+def _exclusion(exclusions: tuple[BlockReason | None, ...], index: int) -> str | None:
+    """The hard limit that rules out segment `index`, if any was reported."""
+    reason = exclusions[index] if index < len(exclusions) else None
+    return None if reason is None else reason.value
+
+
+def _extreme_model(extreme: GradeExtreme | None) -> GradeExtremeModel | None:
+    if extreme is None:
+        return None
+    return GradeExtremeModel(
+        percent=round(extreme.percent, 2),
+        direction=extreme.direction,
+        source=extreme.source,
+        segment_index=extreme.segment_index,
+    )
+
+
+def _gradient_model(summary: GradientSummary) -> GradientSummaryModel:
+    return GradientSummaryModel(
+        steepest_uphill=_extreme_model(summary.steepest_uphill),
+        steepest_downhill=_extreme_model(summary.steepest_downhill),
+        recorded_fraction=round(summary.share(summary.recorded_length_m), 4),
+        estimated_fraction=round(summary.share(summary.estimated_length_m), 4),
+        unknown_fraction=round(summary.share(summary.unknown_length_m), 4),
+    )
+
+
+def _route_model(
+    route: Route | None, *, exclusions: tuple[BlockReason | None, ...] = ()
+) -> RouteModel | None:
     if route is None:
         return None
 
@@ -255,6 +291,7 @@ def _route_model(route: Route | None) -> RouteModel | None:
         distance_m=round(route.distance_m, 1),
         effective_distance_m=round(route.effective_distance_m, 1),
         estimated_duration_seconds=round(route.estimated_duration_seconds),
+        pace_profile=route.pace_profile_key,
         coordinates=list(route.coordinates),
         segments=[
             RouteSegmentModel(
@@ -270,6 +307,7 @@ def _route_model(route: Route | None) -> RouteModel | None:
                 steps=segment.steps,
                 step_count=segment.step_count,
                 incline_percent=segment.incline_percent,
+                derived_grade_percent=segment.derived_grade_percent,
                 kerb=segment.kerb,
                 is_crossing=segment.is_crossing,
                 width_m=segment.width_m,
@@ -282,8 +320,9 @@ def _route_model(route: Route | None) -> RouteModel | None:
                     )
                     for component in segment.cost_components
                 ],
+                excluded_by_profile=_exclusion(exclusions, index),
             )
-            for segment in route.segments
+            for index, segment in enumerate(route.segments)
         ],
         origin=SnappedPointModel(
             longitude=route.origin.longitude,
@@ -300,6 +339,7 @@ def _route_model(route: Route | None) -> RouteModel | None:
         crossing_count=route.crossing_count,
         unknown_kerb_crossing_count=route.unknown_kerb_crossing_count,
         steepest_incline_percent=route.steepest_incline_percent,
+        gradient=_gradient_model(route.gradient),
         evidence_coverage={
             name: round(value, 4) for name, value in route.evidence_coverage.items()
         },

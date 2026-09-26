@@ -182,6 +182,52 @@ a public launch.
 
 ---
 
+## Recruiting presentation sprint (PA-UX-02)
+
+A short, self-contained sprint: make the engineering visible through the
+interface, then publish a truthful showcase. It builds no new routing
+capability and moves no phase gate. Status is recorded here rather than in
+another roadmap.
+
+| Card      | Deliverable                                                      | Status                                                                            |
+| --------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| PA-UX-02A | Map-led initial and comparison states, proven in the running app | **Done** — interaction direction approved 2026-09-23; the finish was not approved |
+| PA-UX-02B | The accepted interface finished and merged                       | **Done** — approved and merged through PR #64                                     |
+| PA-UX-02C | Static showcase, refreshed demo, interview handoff               | Not started                                                                       |
+
+**What was approved, exactly.** The founder approved the interaction direction
+— Start → Destination → Travel profile → Compare → Explore why, with stronger
+colour and a more refined map — and authorised building the complete
+candidate. In their own words that "is not a claim that the finished visual
+result has already been accepted": PA-UX-02B returned for one further visual
+review, and the founder approved it for merging on 2026-09-26.
+
+**Branch / worktree.** `feat/premium-map-experience`, PR #64, in
+`../pathable-ai-wt/premium-map-experience`. Baseline for this sprint: `f099aaf`
+(the PA-UX-01/01F candidate). Base `main` at `29a7749`.
+
+**Preview.** Isolated envelope stack — API `8001`, database `5434`, web `3001`.
+Open it at **`http://127.0.0.1:3001`**, not `localhost:3001`: Docker Desktop's
+IPv6 proxy resets the connection on this host, and the browser does not fall
+back. From that address the page reaches the API with no flags; the status
+badge reads "API online". The dataset is `pathable-envelope-db-data` at
+migration `0005_kerb_tiers`, 155,714 nodes and 180,554 segments. See
+`docs/deployment/PRODUCTION_SMOKE.md`.
+
+**Evidence.** `docs/evidence/FRONTEND_POLISH.md` — the PA-UX-02A revision entry
+records what changed, at which viewports it was checked, and against which
+build.
+
+**Not verified here.** Live place-name search. The envelope API answers
+`{"provider":"disabled","enabled":false}` by design — `GEOCODING_PROVIDER` is
+unset — and choosing a provider is a founder decision ADR 0005 leaves open.
+The search fields are covered by stubbed provider responses and degrade
+honestly in the preview.
+
+**Next executable action.** PA-UX-02C, when it is scheduled.
+
+---
+
 ## Geospatial data lane (PA-GEO)
 
 A research lane: can PathAble combine pedestrian datasets from more than one
@@ -214,7 +260,7 @@ attributes examined.
 - A second, independent pedestrian source, a source-independent evidence model,
   conflation, or any coverage improvement.
 
-### PA-GEO-02 — Dataset lifecycle integrity and OSM version provenance _(draft PR #68)_
+### PA-GEO-02 — Dataset lifecycle integrity and OSM version provenance _(merged, PR #68)_
 
 **Delivered** — [ADR 0010](../adr/0010-dataset-lifecycle.md)
 
@@ -242,6 +288,69 @@ identically; activation switched in 33.8 ms and rollback in 31.7 ms after an
   external-source enrichment.
 - Zero-downtime deployment. The switch is short and measured; a running API
   picks up a new dataset on its next request, which has not been load-tested.
+
+---
+
+## Stitch Route Planner integration (PA-UX-03)
+
+The founder approved a Stitch design — the Route Planner screen of Stitch
+project `17093004989141973251` — as the visual and product target, after a
+capability audit of every feature it shows. It is its own card rather than more
+of PA-UX-02, because making it truthful needs backend fixes and additions to the
+API contract, and PA-UX-02 builds no routing capability.
+
+| Card      | Deliverable                                                                                       | Status                           |
+| --------- | ------------------------------------------------------------------------------------------------- | -------------------------------- |
+| PA-UX-03A | Correctness and API foundation: defects D1–D8, gradient summary, evidence basis, comparable times | **Done** — merged through PR #65 |
+| PA-UX-03B | The Stitch frontend, on that foundation                                                           | **Done** — merged through PR #67 |
+
+**Founder decisions (2026-09-24).** The product is named PathAble — not
+WayPoint, not "PathAble AI", and never "AI-powered". Only the five real
+profiles; the design's "Standard" and "Gentle" do not ship. The custom
+maximum-slope control defaults to Off. No aggregate "% verified" or "% known"
+figure — per-category recorded and estimated coverage only. PathAble is a route
+planner, not turn-by-turn navigation. Unlike time estimates are never presented
+as comparable. A detour's explanation names every constraint responsible, not
+stairs alone. The uncommitted pan-pad work on `feat/premium-map-experience` was
+discarded; a clean Fit/Recenter Route action belongs to 03B.
+
+**PA-UX-03A.** No route moved: `routing_policy_version` stays 2, and the twenty
+corpus journeys return identical routes, distances and nodes expanded before and
+after (dataset `51e75f78`, 2026-09-25). What changed is what the API says about
+a route — see the changelog — and the four places the existing interface
+misstated it (D1, D5, D6, D7). The founder approved 03A and 03B for merging on
+2026-09-26.
+
+**Branch / worktree.** `feat/stitch-route-planner` in
+`../pathable-ai-wt/stitch-route-planner`, branched from `feat/premium-map-experience`
+at `01e26da`; its PR was stacked on PR #64 and retargeted to `main` when #64
+merged.
+
+**PA-UX-03B.** The Stitch information architecture on the 03A contract, in the
+existing light token system. What a person sees first is the verdict, the two
+routes as a keyboard radio group, the reason that decided the route and how much
+of it the map is silent about; every statement below carries the label of what it
+rests on — Recorded, Estimated from elevation, Not recorded, Your profile rule.
+A route the chosen profile cannot use gets no travel time ("Time unavailable for
+this profile"), read from `excluded_by_profile`, never from a stairway count.
+Coverage is per category against its own denominator, kerbs per crossing, with no
+total. Recorded stairways are always drawn; what the profile rules out and the
+steepest climb are pinned to the map as text. Profile rules come from
+`/routes/profiles`; the uphill limit is off until the traveller sets it, and is
+sent exactly as typed as a custom profile the API builds. The interface is named
+PathAble. Routing is untouched: no backend file changed. Evidence:
+`docs/evidence/FRONTEND_POLISH.md`, "The Stitch route planner (PA-UX-03B)".
+
+**Branch / worktree (03B).** `feat/stitch-route-planner-ui` in
+`../pathable-ai-wt/stitch-route-planner-ui`, from the 03A head after it took PR
+#64's final commit; its PR was stacked on PR #65 and retargeted to `main` when
+#65 merged.
+
+**Still open.** A production geocoder and a production tile provider (ADR 0005)
+— the dark Stitch basemap is a second style for that decision, and the dark
+panel theme was not adopted with it. The name is corrected in the interface
+only; these documents, the changelog and the README still say "PathAble AI" in
+places, and a repository-wide rename was deliberately not part of 03B.
 
 ---
 

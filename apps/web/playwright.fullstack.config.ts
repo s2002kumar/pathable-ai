@@ -41,6 +41,21 @@ const WEB_PORT = Number(process.env.FULLSTACK_WEB_PORT ?? 3200);
  */
 const againstCompose = process.env.FULLSTACK_TARGET === 'compose';
 
+/**
+ * Extra Chromium flags, separated by ';', for the machine this runs on.
+ *
+ * Exists for one documented reason: on a Windows host where `localhost`
+ * resolves to `::1` first and Docker Desktop's IPv6 proxy resets the
+ * connection, the page's own calls to the API die before IPv4 is tried.
+ * `PLAYWRIGHT_CHROMIUM_ARGS="--host-resolver-rules=MAP localhost 127.0.0.1"`
+ * pins the browser to IPv4 without touching the app or the containers. CI
+ * leaves it unset.
+ */
+const EXTRA_CHROMIUM_ARGS = (process.env.PLAYWRIGHT_CHROMIUM_ARGS ?? '')
+  .split(';')
+  .map((arg) => arg.trim())
+  .filter((arg) => arg.length > 0);
+
 const API_BASE_URL = againstCompose
   ? (process.env.FULLSTACK_API_URL ?? 'http://localhost:8000')
   : `http://127.0.0.1:${API_PORT}`;
@@ -87,7 +102,12 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },
         launchOptions: {
-          args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--enable-unsafe-swiftshader',
+            ...EXTRA_CHROMIUM_ARGS,
+          ],
         },
       },
     },

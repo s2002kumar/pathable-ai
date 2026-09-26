@@ -5,8 +5,9 @@ test.describe('application shell', () => {
   test('loads and shows the product identity', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveTitle(/PathAble AI/);
-    await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
+    // The interface names the product PathAble, with no suffix.
+    await expect(page).toHaveTitle(/^PathAble — /);
+    await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
     await expect(page.getByTestId('pilot-region')).toContainText('Waterloo, Ontario');
   });
 
@@ -126,12 +127,21 @@ test.describe('application shell', () => {
     expect(container.width).toBeGreaterThanOrEqual(frame.width - 4);
   });
 
-  test('offers the mobility profiles as a labelled radio group', async ({ page }) => {
+  test('offers every mobility profile as one group of radio buttons', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByRole('radiogroup', { name: /mobility profile/i })).toBeVisible();
-    await expect(page.getByRole('radio')).toHaveCount(5);
-    await expect(page.getByRole('radio', { name: /Wheelchair/ })).toBeChecked();
+    // Native radio buttons drawn as chips: all five on show, one tab stop,
+    // and the arrow keys move the choice — the platform's own behaviour.
+    const group = page.getByRole('group', { name: /how do you travel/i });
+    await expect(group).toBeVisible();
+    await expect(group.getByRole('radio')).toHaveCount(5);
+    const wheelchair = group.getByRole('radio', { name: 'Wheelchair' });
+    await expect(wheelchair).toBeChecked();
+
+    await wheelchair.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(group.getByRole('radio', { name: 'Walker' })).toBeChecked();
+    await expect(group.getByRole('radio', { name: 'Walker' })).toBeFocused();
   });
 
   test('explains how to start before any point is chosen', async ({ page }) => {
@@ -139,7 +149,7 @@ test.describe('application shell', () => {
 
     const status = page.getByTestId('route-status');
     await expect(status).toHaveAttribute('data-route-state', 'idle');
-    await expect(status).toContainText(/choose a start and an end/i);
+    await expect(status).toContainText(/name both ends to begin/i);
   });
 
   test('gives keyboard focus a visible indicator', async ({ page }) => {

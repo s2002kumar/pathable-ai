@@ -13,6 +13,10 @@ deliberate:
 * Cost is reported both as real distance and as effective metres, with the
   components that produced it. A route people are asked to trust has to be able
   to show its working.
+
+Gradient is carried twice over, never merged: ``incline_percent`` is what a
+mapper recorded and ``derived_grade_percent`` is what the elevation model
+suggests. The route-level ``gradient`` summary says which one each figure is.
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ from typing import Annotated, Literal, get_args
 from pydantic import BaseModel, ConfigDict, Field
 
 from pathable_api.geo.enums import KerbType, SmoothnessClass, SurfaceClass, TriState
+from pathable_api.routing.cost import BlockReason
 from pathable_api.routing.profiles import SELECTABLE_PROFILE_KEYS
 
 #: Waterloo sits near (-80.52, 43.47); the ranges here are the WGS84 limits, and
@@ -47,6 +52,34 @@ def _check_profile_keys_match_registry() -> None:
 
 
 _check_profile_keys_match_registry()
+
+#: Why the chosen profile rules a segment out. Mirrors `BlockReason`.
+ExclusionReason = Literal[
+    "foot_prohibited",
+    "steps",
+    "too_steep",
+    "too_narrow",
+    "surface_excluded",
+    "smoothness_excluded",
+]
+
+#: Where a gradient came from: recorded by a mapper, or estimated from terrain.
+GradeSource = Literal["osm_incline", "derived_elevation"]
+
+#: What a statement about the route rests on.
+EvidenceBasis = Literal["recorded", "estimated", "mixed", "not_recorded", "profile_rule"]
+
+
+def _check_exclusion_reasons_match_cost_model() -> None:
+    """Fail at import if the wire enum drifts from the reasons the cost model gives."""
+    declared = set(get_args(ExclusionReason))
+    actual = {reason.value for reason in BlockReason}
+    if declared != actual:
+        msg = f"Exclusion reasons out of step with the cost model: {sorted(declared ^ actual)}"
+        raise RuntimeError(msg)
+
+
+_check_exclusion_reasons_match_cost_model()
 
 
 class Coordinate(BaseModel):
@@ -75,7 +108,12 @@ class CustomProfileOptions(BaseModel):
     exclude_steps: bool | None = Field(default=None, description="Treat stairways as impassable.")
     max_incline_percent: Annotated[float, Field(ge=0.0, le=45.0)] | None = Field(
         default=None,
-        description="Steepest recorded gradient to allow. Unrecorded gradients are never excluded.",
+        description=(
+            "Steepest uphill gradient to allow, in the direction of travel. It applies to the "
+            "gradient routing uses: recorded in OpenStreetMap where one is, otherwise estimated "
+            "from the elevation model. A segment with no gradient at all is never excluded, and "
+            "neither is a descent. Repeated back exactly as sent."
+        ),
     )
     min_width_m: Annotated[float, Field(ge=0.0, le=5.0)] | None = Field(
         default=None,
@@ -160,7 +198,20 @@ class RouteSegmentModel(BaseModel):
     )
     step_count: int | None = None
     incline_percent: float | None = Field(
-        default=None, description="Recorded gradient. Null means unrecorded, not flat."
+        default=None,
+        description=(
+            "Gradient recorded in OpenStreetMap, signed along travel: positive climbs. Null "
+            "means unrecorded, not flat."
+        ),
+    )
+    derived_grade_percent: float | None = Field(
+        default=None,
+        description=(
+            "Gradient estimated from the elevation model, signed along travel: positive climbs. "
+            "It describes the ground, not the path, so it cannot see a ramp or a step. Null when "
+            "the model gives none — no coverage, a segment too short for it to resolve, or an "
+            "implausible value. Routing uses `incline_percent` where present and this otherwise."
+        ),
     )
     kerb: KerbType
     is_crossing: bool
@@ -171,6 +222,14 @@ class RouteSegmentModel(BaseModel):
         description="Routing-relevant attributes nobody has recorded for this segment."
     )
     cost_components: list[CostComponentModel]
+    excluded_by_profile: ExclusionReason | None = Field(
+        default=None,
+        description=(
+            "Set on the shortest route only: the chosen profile's hard limit that rules this "
+            "segment out. Null where the profile can use it, and always null on the route "
+            "computed for the profile."
+        ),
+    )
 
 
 class SnappedPointModel(BaseModel):
@@ -182,6 +241,50 @@ class SnappedPointModel(BaseModel):
     latitude: float
     distance_m: float = Field(
         description="How far the requested point was from the nearest mapped path."
+    )
+
+
+class GradeExtremeModel(BaseModel):
+    """The steepest gradient on a route in one direction."""
+
+    model_config = ConfigDict(frozen=True)
+
+    percent: float = Field(ge=0.0, description="Size of the gradient in percent, without sign.")
+    direction: Literal["uphill", "downhill"] = Field(description="In the direction of travel.")
+    source: GradeSource = Field(
+        description=(
+            "'osm_incline' — recorded by a mapper in OpenStreetMap; 'derived_elevation' — "
+            "estimated from the elevation model."
+        )
+    )
+    segment_index: int = Field(ge=0, description="Position in this route's `segments`.")
+
+
+class GradientSummaryModel(BaseModel):
+    """The gradients a route was costed on, recorded and estimated kept apart."""
+
+    model_config = ConfigDict(frozen=True)
+
+    steepest_uphill: GradeExtremeModel | None = Field(
+        description="Steepest climb along travel, or null when no known gradient climbs."
+    )
+    steepest_downhill: GradeExtremeModel | None = Field(
+        description="Steepest descent along travel, or null when no known gradient descends."
+    )
+    recorded_fraction: float = Field(
+        ge=0.0, le=1.0, description="Share of the route's length with a gradient recorded in OSM."
+    )
+    estimated_fraction: float = Field(
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Share whose gradient is estimated from the elevation model because OSM records none."
+        ),
+    )
+    unknown_fraction: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Share with no gradient at all. Unknown, not flat.",
     )
 
 
@@ -198,8 +301,15 @@ class RouteModel(BaseModel):
     )
     estimated_duration_seconds: float = Field(
         description=(
-            "Rough planning estimate from distance and obstacle counts. Not measured, and not "
-            "specific to any individual."
+            "Rough planning estimate from distance and obstacle counts, at the assumed pace of "
+            "`pace_profile`. Not measured, and not specific to any individual."
+        )
+    )
+    pace_profile: str = Field(
+        description=(
+            "Profile whose assumed walking pace produced `estimated_duration_seconds`. In a "
+            "comparison both routes use the chosen profile's pace — its base preset's, for a "
+            "custom profile — so the two estimates can be compared directly."
         )
     )
     coordinates: list[tuple[float, float]] = Field(
@@ -212,7 +322,18 @@ class RouteModel(BaseModel):
     step_count: int = Field(description="Recorded steps across all stairways on this route.")
     crossing_count: int
     unknown_kerb_crossing_count: int
-    steepest_incline_percent: float | None
+    steepest_incline_percent: float | None = Field(
+        description=(
+            "Steepest gradient recorded in OpenStreetMap, either direction, as a magnitude. "
+            "Recorded values only — estimates are in `gradient`, which is what to display."
+        )
+    )
+    gradient: GradientSummaryModel = Field(
+        description=(
+            "Every gradient this route was costed on — recorded where OSM has one, estimated "
+            "from the elevation model otherwise — with its source and direction."
+        )
+    )
     unknown_data_fraction: float = Field(
         ge=0.0,
         le=1.0,
@@ -238,12 +359,26 @@ class RouteModel(BaseModel):
 
 
 class ExplanationModel(BaseModel):
-    """An evidence-backed statement about why the accessible route differs."""
+    """An evidence-backed statement about why the accessible route differs.
+
+    One is produced for every constraint of the chosen profile on which the two
+    routes differ: each hard limit the shortest route breaks, and each penalty
+    the accessible route incurs less of. No single one is the reason for a
+    detour unless it is the only one listed.
+    """
 
     model_config = ConfigDict(frozen=True)
 
     code: str
     summary: str
+    basis: EvidenceBasis = Field(
+        description=(
+            "What the statement rests on: 'recorded' in OpenStreetMap; 'estimated' from the "
+            "elevation model; 'mixed' — recorded and estimated gradients together; "
+            "'not_recorded' — the statement is about data nobody has recorded; 'profile_rule' — "
+            "a consequence of the profile's rules rather than an observation."
+        )
+    )
     evidence: dict[str, object] = Field(
         default_factory=dict,
         description="The recorded values this statement was derived from.",
@@ -365,8 +500,9 @@ class MobilityProfileModel(BaseModel):
     max_incline_percent: float | None = Field(
         default=None,
         description=(
-            "A hard limit: recorded gradients above this are excluded. Null for every "
-            "preset — a preset expresses gradient as preference, not impossibility."
+            "A hard limit: uphill gradients above this, recorded or estimated, are excluded. "
+            "Null for every preset — a preset expresses gradient as preference, not "
+            "impossibility."
         ),
     )
     min_width_m: float | None = Field(

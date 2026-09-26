@@ -8,6 +8,8 @@ export type VerifiedExampleCardProps = {
   readonly onRun: (example: VerifiedExample) => void;
   /** True once this example's endpoints are the ones loaded. */
   readonly active: boolean;
+  /** True once any endpoint is set, by the example or by hand. */
+  readonly journeyStarted?: boolean;
   readonly busy: boolean;
 };
 
@@ -21,16 +23,27 @@ export type VerifiedExampleCardProps = {
  * afterwards is the live answer and can be wrong in public if the engine
  * regresses.
  */
-export function VerifiedExampleCard({ example, onRun, active, busy }: VerifiedExampleCardProps) {
-  // Once the example has been run, the answer is directly below this card and
-  // needs the room. The card keeps its button and its provenance, and loses the
-  // paragraph explaining an offer the viewer has already accepted.
-  if (active) {
+export function VerifiedExampleCard({
+  example,
+  onRun,
+  active,
+  journeyStarted = false,
+  busy,
+}: VerifiedExampleCardProps) {
+  // Once a journey is under way — this example's, or one the viewer started by
+  // hand — the answer is directly below this card and needs the room. The card
+  // keeps its button and its provenance, and loses the paragraph explaining an
+  // offer the viewer has already accepted or declined.
+  if (active || journeyStarted) {
     return (
-      <section className={styles.exampleCompact} data-testid="verified-example" data-active="true">
+      <section
+        className={styles.exampleCompact}
+        data-testid="verified-example"
+        data-active={active}
+      >
         <p className={styles.exampleDetail} id="verified-example-detail">
-          <strong>Example journey:</strong> {example.originLabel} to {example.destinationLabel}.{' '}
-          {example.provenance} Computed live.
+          <strong>Example journey:</strong> {example.originLabel} to {example.destinationLabel}
+          {active ? ', computed live.' : '. Computed live when you run it.'}
         </p>
         <button
           type="button"
@@ -39,7 +52,7 @@ export function VerifiedExampleCard({ example, onRun, active, busy }: VerifiedEx
           data-testid="run-verified-example"
           aria-describedby="verified-example-detail"
         >
-          {busy ? 'Comparing…' : 'Run it again'}
+          {busy && active ? 'Comparing…' : active ? 'Run it again' : 'Try the example'}
         </button>
       </section>
     );
@@ -47,11 +60,6 @@ export function VerifiedExampleCard({ example, onRun, active, busy }: VerifiedEx
 
   return (
     <section className={styles.example} data-testid="verified-example" data-active="false">
-      <h3 className={styles.exampleTitle}>New here?</h3>
-      <p className={styles.exampleBody}>
-        Load a journey from our published evaluation corpus and compare a wheelchair route against
-        the shortest walking route.
-      </p>
       <button
         type="button"
         className={styles.exampleButton}
@@ -61,10 +69,23 @@ export function VerifiedExampleCard({ example, onRun, active, busy }: VerifiedEx
       >
         Try a wheelchair route example
       </button>
+      {/* Short enough to read before pressing. The corpus's own caveat — these
+          are approximate positions, not surveyed points — moves behind the
+          disclosure rather than out of the product: it qualifies the inputs,
+          and the inputs are the only thing this preset supplies. */}
       <p className={styles.exampleDetail} id="verified-example-detail">
-        {example.originLabel} to {example.destinationLabel}. {example.description}.{' '}
-        {example.provenance} The comparison is computed live by the routing engine each time.
+        {example.originLabel} to {example.destinationLabel}, computed live.
       </p>
+      <details className="disclosure" data-testid="verified-example-provenance">
+        <summary>Where these points come from</summary>
+        <div className={styles.exampleProvenance}>
+          <p>
+            {example.description}. {example.provenance} PathAble snaps them to the nearest routable
+            segment exactly as it would a map click, and the comparison is computed by the routing
+            engine on every press — no distance, stairway count or explanation is stored here.
+          </p>
+        </div>
+      </details>
     </section>
   );
 }

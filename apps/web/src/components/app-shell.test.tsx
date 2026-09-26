@@ -50,7 +50,7 @@ describe('AppHeader', () => {
 
     renderHeader();
 
-    expect(screen.getByText('PathAble AI')).toBeInTheDocument();
+    expect(screen.getByText('PathAble')).toBeInTheDocument();
     expect(screen.getByText('Accessibility-aware pedestrian routing')).toBeInTheDocument();
   });
 

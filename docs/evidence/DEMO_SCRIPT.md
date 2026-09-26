@@ -34,29 +34,42 @@ wheelchair profile, and sends a real request. Measured at 2.8 s desktop and
 3.5 s mobile from page load to the comparison on screen.
 
 **0:20 — The map.** Two routes, distinguishable without colour: the wheelchair
-route is a solid line, the shortest walking route is dashed, and the key beside
-the map names both in words.
+route is a solid line, the shortest walking route is dashed, and the key on the
+map names both in words. The recorded stairways are drawn on the line in burnt
+orange, and a label pinned where they start says **Ruled out: 4 stairways**.
+The camera frames both routes in the part of the map the planner does not
+cover; _Fit routes_ brings them back after a pan.
 
-**0:30 — The answer.** _Why are they different?_
+**0:30 — The answer.** Read the first screen top to bottom:
 
-|                        |                             |
-| ---------------------- | --------------------------- |
-| Shortest walking route | 287 m, 4 stairways          |
-| Wheelchair route       | 354 m, no stairways         |
-| Extra distance         | +67 m, to avoid 4 stairways |
+|                        |                                                                        |
+| ---------------------- | ---------------------------------------------------------------------- |
+| Verdict                | The wheelchair route is 67 m longer than the shortest walking route    |
+| Wheelchair route       | 354 m · a time estimate · no recorded stairs · +67 m longer            |
+| Shortest walking route | 287 m · **Time unavailable for this profile** · Ruled out: 4 stairways |
+| The reason             | Stairs · Recorded — the engine's own sentence about the stairways      |
+| Incomplete data        | how much of the route is missing at least one record                   |
+
+The shortest route has no time on purpose: a wheelchair user cannot take it, and
+a time beside it would read as a trip they could. Press the shortest route's row
+(or use the arrow keys) and the map brings that line forward; the other stays
+drawn.
 
 **0:40 — Where each claim comes from.** Four labels, because four different
 kinds of statement are on screen and a viewer who cannot tell them apart cannot
 judge any of them:
 
-- **Recorded in OpenStreetMap** — "Avoids 4 stairways (16 steps in total, plus 2
-  with no recorded step count)." A surveyor wrote that down.
-- **Your profile's rules** — the 67 m detour, and why the wheelchair profile
+- **Recorded** — "Avoids 4 recorded stairways on the shortest route (16 steps in
+  total, plus 2 with no recorded step count), which this profile excludes." A
+  mapper wrote that down in OpenStreetMap.
+- **Your profile rule** — the 67 m detour, and why the wheelchair profile
   produces it.
-- **Derived from an elevation model** — slope came from NRCan's terrain model of
-  the ground, not from a survey of the path.
-- **Not recorded** — OpenStreetMap has no accessibility details for 100% of this
-  route. Missing information, not a clear path.
+- **Estimated from elevation** — the steepest climb came from NRCan's terrain
+  model of the ground, not from a survey of the path.
+- **Not recorded** — what nobody has mapped. Scroll to _What the map records_:
+  one bar per category, each against its own denominator (kerbs per crossing),
+  and no total. Missing information, not a clear path — and not "nothing is
+  known": the four stairways are recorded.
 
 **0:55 — The point.** That last label is the product. Every routing system can
 draw a line; this one distinguishes what was observed, what was inferred, what
@@ -81,10 +94,12 @@ and the depth behind them in the [project defence](../PROJECT_DEFENSE.md).
 ## Recording it
 
 **A recording already exists:** [`media/pathable-demo.webm`](media/pathable-demo.webm),
-66.8 s, captured from exactly this script against the production containers, with
-a 13.5-second excerpt at [`media/pathable-demo.gif`](media/pathable-demo.gif) for
-the README. Use them when you cannot bring the stack up; give the demo live when
-you can, because a live answer is worth more than a recording of one.
+66.8 s, captured from an earlier version of this script against the production
+containers, with a 13.5-second excerpt at
+[`media/pathable-demo.gif`](media/pathable-demo.gif) for the README. It shows the
+interface before PA-UX-03B; the current one is recorded in
+[`screenshots/ux-03b/`](screenshots/ux-03b/). Give the demo live when you can,
+because a live answer is worth more than a recording of one.
 
 `http://localhost:3001/?example=campus-library-to-student-life` preselects the
 journey and issues the same live request on load, which makes a screen recording

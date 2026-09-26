@@ -1,35 +1,86 @@
+/*
+ * The planner. On a phone it is a sheet across the bottom of the map; on a
+ * laptop it floats against the map's left edge. Either way it is a sequence of
+ * sections in one surface, separated by rules rather than nested cards, so the
+ * eye reads a list of answers rather than a pile of boxes.
+ *
+ * The spacing is tight on purpose. This is a control panel over live
+ * cartography, not a page: an ordinary 700 px-tall laptop window has about
+ * 600 px of panel to spend, and the example, the search, both endpoints and the
+ * profile chooser all have to be reachable without hunting for them.
+ */
+
 .panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-5);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-}
-
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.eyebrow {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-caps);
-  color: var(--color-text-subtle);
-}
-
-.title {
-  font-size: var(--text-xl);
-  letter-spacing: -0.015em;
-  color: var(--color-text);
+  gap: var(--space-3);
 }
 
 /* --- Origin and destination ---------------------------------------------- */
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+/*
+ * The region's accessible name, and nothing else.
+ *
+ * It labels the planning landmark that "Edit journey or profile" lands on, so
+ * it has to exist — but the panel's own title one line above already says the
+ * same thing to anybody who can see it, and on a 700 px-tall window the
+ * duplicate line is paid for out of the space Compare needs.
+ */
+.planHeading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The planning section is a focus target for "Edit journey or profile". The
+   ring is drawn here, on the whole section, so the landing is visible. */
+.plan:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* One compact way back to the controls from the answer, styled as the
+   secondary action it is: the figures are the point, this is the exit. */
+.editButton {
+  align-self: flex-start;
+  /* 36 px: comfortably above the 24 px target minimum, and a line shorter
+     than it was, which is what a phone's first screen was short of. */
+  min-height: 2.25rem;
+  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-brand);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-brand-border);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.editButton:hover {
+  background: var(--color-brand-soft);
+}
+
+.editButton:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
 
 .points {
   display: flex;
@@ -37,15 +88,19 @@
   gap: var(--space-2);
 }
 
+/* Not a control — it is what the map click filled in — so it is not held to a
+   touch-target height and can be tighter than the search box above it. */
 .point {
   display: grid;
   grid-template-columns: auto auto 1fr;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3);
+  min-height: 2.375rem;
+  padding: var(--space-1) var(--space-3);
   background: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 /* The point waiting to be set is outlined, not merely tinted: a colour change
@@ -64,12 +119,12 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   color: #ffffff;
-  background: var(--color-brand);
+  background: var(--color-marker-origin);
   border-radius: var(--radius-pill);
 }
 
 .pointMarker[data-marker='B'] {
-  background: var(--color-danger-dot);
+  background: var(--color-marker-destination);
 }
 
 .pointLabel {
@@ -81,6 +136,7 @@
 .pointValue {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
   text-align: right;
 }
@@ -106,63 +162,101 @@
 
 .legend {
   padding: 0;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
 }
 
+/* A wrapping row of chips: every profile on show at once, in two or three
+   short lines. The radio buttons are real and keep the platform's keyboard
+   behaviour; they are drawn as the chip itself rather than as a dot inside
+   it, which is what lets five fit in the width of the panel. */
 .profiles {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
 }
 
 .profileOption {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas:
-    'input label'
-    '.     hint';
-  gap: 0 var(--space-3);
-  padding: var(--space-3);
+  position: relative;
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  /* 32 px: above the 24 px minimum target, and the chips still pack two to
+     a line in the narrowest panel. */
+  min-height: 2rem;
+  padding: 2px var(--space-3);
   cursor: pointer;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: border-color var(--duration-fast) var(--ease-out);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
+.profileOption:hover {
+  border-color: var(--color-brand-border);
+}
+
+/* Chosen: filled, and a tick as well as the fill, so the state is a shape and
+   not only a colour. The tick is decoration — the radio itself is what
+   assistive technology reports as checked. */
 .profileOption[data-selected='true'] {
   background: var(--color-brand-soft);
   border-color: var(--color-brand);
 }
 
+.profileOption[data-selected='true']::before {
+  content: '✓' / '';
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-brand-strong);
+}
+
+/* The radio, present for the keyboard and the accessibility tree, drawn by
+   the chip around it. */
+.chipInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
 /* Focus lives on the label because the radio itself is visually small; without
    this, keyboard users see the ring on a 16px control inside a large target. */
 .profileOption:focus-within {
-  outline: 2px solid var(--color-focus);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .profileInput {
-  grid-area: input;
-  align-self: center;
-  width: 1rem;
-  height: 1rem;
+  flex: 0 0 auto;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: 0;
   accent-color: var(--color-brand);
 }
 
 .profileLabel {
-  grid-area: label;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
   color: var(--color-text);
+  white-space: nowrap;
 }
 
-.profileHint {
-  grid-area: hint;
+/* The rules the chosen profile actually applies. Plain text, never hidden:
+   which constraints are in force is the whole difference between the two
+   routes, and they are engineering judgement rather than measurement. */
+.profileRule {
+  margin-top: var(--space-1);
   font-size: var(--text-xs);
+  line-height: var(--leading-snug);
   color: var(--color-text-subtle);
 }
 
@@ -171,11 +265,11 @@
 .status {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .hint {
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   line-height: var(--leading-normal);
   color: var(--color-text-muted);
 }
@@ -196,66 +290,57 @@
 .results {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
+}
+
+/* The answer: headline, figures, extra distance and the uncertainty line, in
+   one block, so the map and the numbers read as a single result. */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* 10 px rather than 12: under the wider Linux system font the answer
+     needed every line it could get to clear a 700 px window. */
+  padding: 0.625rem;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  animation: rise var(--duration-base) var(--ease-out);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .headline,
-.headlineGood,
-.headlineBad {
-  padding: var(--space-3) var(--space-4);
+.headlineGood {
   font-size: var(--text-base);
   line-height: var(--leading-snug);
-  border-radius: var(--radius-md);
+  color: var(--color-text);
 }
 
-.headline {
-  color: var(--color-text);
-  background: var(--color-surface-sunken);
-  border: 1px solid var(--color-border);
+/* A phone-width column: the same block, a little tighter, so the figures and
+   the uncertainty line share the first screen with the map. */
+@media (max-width: 40rem) {
+  .headline,
+  .headlineGood {
+    font-size: var(--text-sm);
+  }
+
+  .difference {
+    gap: var(--space-2);
+  }
 }
 
 .headlineGood {
   color: var(--color-ok-text);
-  background: var(--color-ok-surface);
-  border: 1px solid var(--color-ok-border);
-}
-
-.headlineBad {
-  color: var(--color-danger-text);
-  background: var(--color-danger-surface);
-  border: 1px solid var(--color-danger-border);
-}
-
-.routeCards {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.routeCard {
-  padding: var(--space-4);
-  background: var(--color-surface-sunken);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.routeCardPrimary {
-  background: var(--color-surface);
-  border-color: var(--color-brand-border);
-  box-shadow: var(--shadow-sm);
-}
-
-.routeCardHeader {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-  margin-bottom: var(--space-3);
-}
-
-.routeCardTitle {
-  font-size: var(--text-md);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
 }
 
 /* Matches the map line styling — solid for the accessible route, dashed for the
@@ -270,34 +355,12 @@
 }
 
 .swatch[data-variant='accessible'] {
-  border-top-color: #0b6bcb;
+  border-top-color: var(--color-route-accessible);
 }
 
 .swatch[data-variant='standard'] {
   border-top-style: dashed;
-  border-top-color: #5b6470;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--space-2) var(--space-4);
-}
-
-.stat {
-  display: contents;
-}
-
-.stat dt {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-
-.stat dd {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  color: var(--color-text);
-  text-align: right;
+  border-top-color: var(--color-route-standard);
 }
 
 .section {
@@ -310,6 +373,13 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
+}
+
+.disclosureBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
 }
 
 .reasonList,
@@ -343,20 +413,25 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding-top: var(--space-4);
   font-size: var(--text-xs);
   line-height: var(--leading-snug);
   color: var(--color-text-subtle);
-  border-top: 1px solid var(--color-border);
 }
 
 .attribution code {
   font-family: var(--font-mono);
 }
 
+.noModel {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--color-text-subtle);
+}
+
 /* --- Buttons -------------------------------------------------------------- */
 
 .secondaryButton {
+  min-height: 2.75rem;
   padding: var(--space-2) var(--space-4);
   font: inherit;
   font-size: var(--text-sm);
@@ -366,6 +441,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .secondaryButton:hover:not(:disabled) {
@@ -373,7 +449,7 @@
 }
 
 .secondaryButton:focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -383,12 +459,6 @@
   opacity: 0.6;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .profileOption {
-    transition: none;
-  }
-}
-
 /* ---------------------------------------------------------------------------
  * The verified example: the fastest route to understanding the product.
  * ------------------------------------------------------------------------ */
@@ -396,41 +466,57 @@
 .example {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4);
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
   background: var(--color-brand-soft);
   border: 1px solid var(--color-brand-border);
   border-radius: var(--radius-md);
 }
 
-.exampleTitle {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
+/* The disclosure rule inside a tinted card would draw a line across it. */
+.example > .disclosure,
+.example :global(.disclosure) {
+  border-top-color: var(--color-brand-border);
 }
 
-.exampleBody {
-  margin: 0;
-  font-size: var(--text-sm);
+.example :global(.disclosure) > summary {
+  min-height: 2.25rem;
+}
+
+.exampleProvenance {
+  padding-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
   color: var(--color-text-muted);
 }
 
 .exampleButton {
-  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-height: 2.75rem;
   padding: var(--space-2) var(--space-4);
   font: inherit;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   color: var(--color-text-inverse);
   cursor: pointer;
   background: var(--color-brand);
   border: 1px solid var(--color-brand);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .exampleButton:hover {
   background: var(--color-brand-strong);
+}
+
+.exampleButton:active {
+  transform: translateY(1px);
 }
 
 .exampleButton:focus-visible {
@@ -445,6 +531,47 @@
   color: var(--color-text-muted);
 }
 
+/* The example card after it has been used: same information, a fraction of the
+   height, because the answer below it is what the viewer is now reading. */
+.exampleCompact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-brand-soft);
+  border: 1px solid var(--color-brand-border);
+  border-radius: var(--radius-md);
+}
+
+.exampleCompact .exampleDetail {
+  flex: 1 1 12rem;
+}
+
+.exampleButtonQuiet {
+  flex: 0 0 auto;
+  min-height: 2.25rem;
+  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-brand);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--color-brand-border);
+  border-radius: var(--radius-sm);
+}
+
+.exampleButtonQuiet:hover {
+  background: var(--color-surface);
+}
+
+.exampleButtonQuiet:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 /* ---------------------------------------------------------------------------
  * Why the two routes differ. The answer, above everything that qualifies it.
  * ------------------------------------------------------------------------ */
@@ -452,48 +579,14 @@
 .difference {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  background: var(--color-surface-sunken);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  gap: var(--space-2);
 }
 
-.differenceHeading {
+.coincident {
   margin: 0;
-  font-size: var(--text-md);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-}
-
-.differenceFigures {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-  gap: var(--space-3);
-  margin: 0;
-}
-
-.differenceFigure dt {
   font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  color: var(--color-text-muted);
-}
-
-.differenceFigure dd {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0;
-  font-size: var(--text-lg);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-  font-variant-numeric: tabular-nums;
-}
-
-.differenceNote {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-regular);
-  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+  color: var(--color-text-subtle);
 }
 
 .evidenceList {
@@ -506,10 +599,6 @@
 }
 
 .evidenceItem {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: baseline;
   font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--color-text);
@@ -518,8 +607,10 @@
 /* The tag is the whole point of this block: it says what kind of claim the
    sentence beside it is. Text, never colour alone. */
 .evidenceTag {
+  display: inline-block;
   flex: 0 0 auto;
-  padding: 2px var(--space-2);
+  padding: 1px var(--space-2);
+  white-space: nowrap;
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   border: 1px solid;
@@ -555,7 +646,7 @@
    and an alarm every time would be ignored by the second route. */
 .uncertainty {
   margin: 0;
-  padding: var(--space-2) var(--space-3);
+  padding: 6px var(--space-3);
   font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--color-warn-text);
@@ -570,38 +661,744 @@
   border-color: var(--color-ok-border);
 }
 
-/* The example card after it has been used: same information, a fraction of the
-   height, because the answer below it is what the viewer is now reading. */
-.exampleCompact {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: baseline;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-brand-soft);
-  border: 1px solid var(--color-brand-border);
-  border-radius: var(--radius-md);
+@media (prefers-reduced-motion: reduce) {
+  .result {
+    animation: none;
+  }
 }
 
-.exampleButtonQuiet {
+/* ---------------------------------------------------------------------------
+ * Named endpoints: Start and Destination, each with its own search.
+ * ------------------------------------------------------------------------ */
+
+.endpoint {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.endpointMarker {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  /* Aligns with the field's label rather than its input. */
+  margin-top: 1rem;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-inverse);
+  background: var(--color-marker-origin);
+  border-radius: var(--radius-pill);
+}
+
+.endpointMarker[data-marker='B'] {
+  background: var(--color-marker-destination);
+}
+
+.endpointBody {
+  min-width: 0;
+}
+
+/* Flush against the input above it: the form's own gap is the separation, and
+   a second one here cost exactly the five pixels that kept Compare off a
+   390 x 844 first screen. */
+.endpointRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.endpointValue,
+.endpointEmpty {
+  min-width: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.endpointEmpty {
+  color: var(--color-text-subtle);
+}
+
+.endpointName {
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+/* The coordinate is secondary to the name, not the other way round: a place a
+   person recognises is the useful identifier, and the numbers are what it
+   resolved to. */
+.endpointCoords {
+  color: var(--color-text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.endpointActions {
+  display: flex;
   flex: 0 0 auto;
+  gap: var(--space-2);
+}
+
+/* 32 px in the endpoint rows: still well above the 24 px minimum target, and
+   the two rows are what stands between the first screen and Compare. */
+.endpointActions .quietButton {
+  min-height: 2rem;
+}
+
+/* No height of its own: the button sits in the marker gutter, between A and
+   B, and the negative margin cancels the column gap this row would add. */
+.swapRow {
+  position: relative;
+  height: 0;
+  margin-top: calc(var(--space-2) * -1);
+}
+
+.swapButton {
+  position: absolute;
+  top: -2.5rem;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  font: inherit;
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--color-brand);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+
+.swapButton:hover:not(:disabled) {
+  background: var(--color-surface-sunken);
+}
+
+.swapButton:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.swapButton:disabled {
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.submitRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons
+ * ------------------------------------------------------------------------ */
+
+.primaryButton {
+  flex: 1 1 auto;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  background: var(--color-brand);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--color-brand-strong);
+  border-color: var(--color-brand-strong);
+}
+
+.primaryButton:disabled {
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border);
+}
+
+/* A control that is real but secondary. Never smaller than a comfortable
+   target: these are the ones somebody uses repeatedly while planning. */
+.quietButton {
+  min-height: 2.25rem;
   padding: var(--space-1) var(--space-3);
   font: inherit;
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   color: var(--color-brand);
   cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--color-brand-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.quietButton:hover:not(:disabled) {
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand-border);
+}
+
+.quietButton[aria-pressed='true'] {
+  color: var(--color-brand-strong);
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand);
+}
+
+.quietButton:disabled {
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+  border-color: var(--color-border);
+}
+
+/* ---------------------------------------------------------------------------
+ * The journey an answer belongs to.
+ * ------------------------------------------------------------------------ */
+
+.journeyLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: baseline;
+  font-size: var(--text-sm);
+}
+
+.journeyLine .editButton {
+  margin-left: auto;
+}
+
+.journeyPlaces {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.journeyProfile {
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-brand-strong);
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-pill);
+}
+
+.staleNote {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--color-warn-text);
+  background: var(--color-warn-surface);
+  border: 1px solid var(--color-warn-border);
   border-radius: var(--radius-sm);
 }
 
-.exampleButtonQuiet:hover {
-  background: var(--color-surface);
+/* ---------------------------------------------------------------------------
+ * The result block, where there is little room for it.
+ *
+ * On a phone, and on any window under 800 px tall, the answer has to fit the
+ * first screen, and the lines that pay for it are the ones that repeat
+ * something: the profile chip (the verdict and the route's own row name the
+ * profile) and the edit control's five-word label, which wrapped the journey
+ * line to three rows. The label stays five words for anything that reads it;
+ * only the glyphs shorten. Measured under the Linux runner's DejaVu Sans, which
+ * sets these lines noticeably wider than a Windows or macOS system font.
+ * ------------------------------------------------------------------------ */
+
+@media (max-height: 49.999rem) {
+  .editLong,
+  .journeyProfile {
+    display: none;
+  }
+
+  .headline,
+  .headlineGood {
+    font-size: var(--text-sm);
+  }
 }
 
-.exampleButtonQuiet:focus-visible {
+@media (max-width: 47.999rem) {
+  .editLong {
+    display: none;
+  }
+
+  /* The headline and the route's own card already name the profile; on a
+     phone the chip only pushed the journey line onto a second row. */
+  .journeyProfile {
+    display: none;
+  }
+
+  .result {
+    padding: var(--space-2);
+  }
+
+  .journeyLine .editButton {
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 48rem) and (min-height: 50rem) {
+  .editShort {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The two routes, as rows to choose between.
+ *
+ * Rows, not columns: side by side in a 336 px panel, "Shortest walking route"
+ * wrapped to three lines and the pair cost 220 px; stacked, each route's name
+ * and distance share one line and the numbers still sit one above the other,
+ * right-aligned, where a reader compares them. The chosen row carries the
+ * brand border and a filled marker; the other stays at full strength, because
+ * it is half of the answer, not a rejected option.
+ * ------------------------------------------------------------------------ */
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  color: var(--color-text);
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+button.option {
+  cursor: pointer;
+}
+
+button.option:hover {
+  border-color: var(--color-border-strong);
+}
+
+button.option:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+.option[data-checked='true'] {
+  border-color: var(--color-brand);
+  box-shadow: inset 0 0 0 1px var(--color-brand);
+}
+
+/* The radio's own mark, top right: an outline, filled when chosen. Shape, not
+   only colour, says which card is chosen. */
+button.option::after {
+  position: absolute;
+  top: calc(var(--space-2) + 0.4rem);
+  right: var(--space-3);
+  width: 0.875rem;
+  height: 0.875rem;
+  content: '';
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+}
+
+.option[data-checked='true']::after {
+  background: radial-gradient(circle, var(--color-brand) 0 40%, transparent 45%);
+  border-color: var(--color-brand);
+}
+
+.optionHead {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  justify-content: space-between;
+  /* Room for the radio mark in the corner. */
+  padding-right: var(--space-5);
+}
+
+button.option .optionHead {
+  padding-right: var(--space-6);
+}
+
+.optionTitle {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+/* 18 px, not 22: at 22 the figure pushed "Shortest walking route" onto a
+   second line in the narrowest panel, and the name matters as much as the
+   number. Weight and tabular digits still make it the thing the eye finds. */
+.optionValue {
+  flex: 0 0 auto;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.optionDetail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--space-3);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+/* "Time unavailable" is a finding, not a missing figure: it is said at the
+   weight of the time it replaces. */
+.optionTime {
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.optionTime[data-kind='unavailable'],
+.optionTime[data-kind='not_comparable'] {
+  color: var(--color-warn-text);
+}
+
+.optionNote {
+  color: var(--color-text-muted);
+}
+
+.optionExtra {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.optionBlocked {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  padding: 2px var(--space-2);
+  font-weight: var(--weight-semibold);
+  color: var(--color-danger-text);
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm);
+}
+
+/* The reason that decided it: the engine's own sentence, with its topic and
+   what it rests on. */
+.mainDifference {
+  margin: 0;
+  padding: 6px var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-brand);
+  border-radius: var(--radius-sm);
+}
+
+.mainDifference .evidenceTag,
+.evidenceItem .evidenceTag {
+  margin-right: var(--space-1);
+}
+
+.categoryChip {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  background: var(--color-neutral-surface);
+  border-radius: var(--radius-pill);
+}
+
+.categoryChip[data-category='stairs'] {
+  color: #15283a;
+  background: var(--color-stairs-soft);
+}
+
+/* The calm answer when nothing meets the profile. Not an error: the service
+   worked, and "there is no route you can use" is a real result. */
+.noRoute {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-left: 4px solid var(--color-warn-dot);
+  border-radius: var(--radius-sm);
+}
+
+.noRouteTitle {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.noRouteDetail {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Why they differ, by topic -------------------------------------------- */
+
+.reasonGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reasonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.reasonGroupHeading {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+}
+
+.hardChip {
+  padding: 0 var(--space-2);
+  font-size: 0.6875rem;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-danger-text);
+  text-transform: none;
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-pill);
+}
+
+/* --- What the map records -------------------------------------------------
+ * One bar per category, each with its own denominator and the sentence that
+ * states it. Recorded is solid, estimated is striped and not recorded is an
+ * amber hatch — three textures, so the difference survives greyscale and
+ * colour-vision deficiency. There is no total bar on purpose.
+ * ------------------------------------------------------------------------ */
+
+.coverageKey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.keyItem {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.keyNote {
+  flex-basis: 100%;
+  color: var(--color-text-subtle);
+}
+
+.keySwatch {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 2px;
+}
+
+.coverageList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.coverageItem {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 2px var(--space-2);
+  align-items: center;
+}
+
+.coverageLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.coverageBar {
+  display: flex;
+  height: 0.5rem;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+
+.coverageItem[data-status='not_applicable'] .coverageBar,
+.coverageItem[data-status='not_reported'] .coverageBar {
+  border-style: dashed;
+}
+
+.coveragePart[data-kind='recorded'],
+.keySwatch[data-kind='recorded'] {
+  background: var(--color-brand);
+}
+
+.coveragePart[data-kind='estimated'],
+.keySwatch[data-kind='estimated'] {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-brand) 0 2px,
+    var(--color-brand-soft) 2px 4px
+  );
+}
+
+.coveragePart[data-kind='unknown'],
+.keySwatch[data-kind='unknown'] {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--color-warn-dot) 0 1.5px,
+    var(--color-warn-surface) 1.5px 4px
+  );
+}
+
+.coverageText {
+  grid-column: 2;
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  color: var(--color-text-muted);
+}
+
+.gradeFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.gradeFact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gradeFact dt {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.gradeFact dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: baseline;
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+/* --- The traveller's own uphill limit -------------------------------------- */
+
+.profileRule p {
+  margin: 0;
+}
+
+.uphill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.uphillToggle {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  align-self: flex-start;
+  min-height: 2rem;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.uphillField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-5);
+}
+
+.uphillLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+
+.uphillInput {
+  width: 6rem;
+  min-height: 2.5rem;
+  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.uphillInput:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.uphillInput[aria-invalid='true'] {
+  border-color: var(--color-danger-border);
+}
+
+.uphillNote,
+.uphillError {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+.uphillNote {
+  color: var(--color-text-subtle);
+}
+
+.uphillError {
+  color: var(--color-danger-text);
 }

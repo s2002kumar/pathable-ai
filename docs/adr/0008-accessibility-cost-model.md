@@ -106,6 +106,26 @@ Telling somebody a blocked path is passable can strand them somewhere they
 cannot leave. Telling them a passable path is difficult costs them a detour. The
 weights lean toward the second, deliberately.
 
+### Why the routes differ is read from the same costs _(PA-UX-03A, 2026-09-25)_
+
+Explanations used to be written from a scan of the segments the shortest route
+used and the accessible one did not. That produced statements for stairs, some
+kerbs, rough surface and recorded incline, and nothing for the other constraints
+the profile weighs — so a detour caused by crossings and missing data read as
+though stairs were the whole story.
+
+Both routes are now costed under the chosen profile with `evaluate_edge`, and a
+statement is made for every constraint on which they differ: each hard limit the
+shortest route breaks, then each penalty the chosen route incurs less of, largest
+difference first. A penalty charged per kind or per class (kerb, crossing,
+surface, surface condition) is stated per kind, so a count in the sentence always
+moves in the same direction as the cost behind it. A constraint the profile does
+not charge is never claimed.
+
+Every statement also carries its `basis` — recorded in OpenStreetMap, estimated
+from the elevation model, both, not recorded, or the profile's own rule — so an
+absence of data is never labelled as an observation.
+
 ## Consequences
 
 - A route can always be explained from the same numbers the router optimised.

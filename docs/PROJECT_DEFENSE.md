@@ -177,9 +177,12 @@ for it.
 
 ## 10. Deterministic explanations
 
-Each explanation names something concrete on the route that was avoided, with the evidence it came from —
-`avoids_stairs` carries the stairway count, the step count, and the segment identifiers. The frontend does not
-paraphrase; it sorts the statements by provenance and renders them.
+Each explanation names something concrete that differs between the two routes, with the evidence it came from —
+`avoids_stairs` carries the stairway count, the step count, and the segment identifiers. They are read from the cost
+model itself: both routes are costed under the chosen profile, and every constraint on which they differ gets a
+statement, so a detour caused by kerbs and missing data is not presented as if stairs were the whole story. Each
+statement carries a `basis` — recorded, estimated, not recorded, or the profile's own rule — and the frontend labels
+it from that rather than paraphrasing.
 
 Uncertainty is reported **per category**, never as one score. "Surface data is missing for 38% of this route" is
 actionable. A single combined figure is not: two routes missing completely different things produce the same

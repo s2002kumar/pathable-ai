@@ -245,6 +245,23 @@ FULLSTACK_API_URL=http://localhost:8001 \
 That is the only configuration where the request path is
 `browser -> web container -> api container -> postgis container`.
 
+On a Windows host where `localhost` resolves to `::1` first and Docker
+Desktop's IPv6 proxy resets the connection, every request in that chain dies
+before IPv4 is tried and the whole suite reports `ECONNRESET`. Point the URLs
+at `127.0.0.1` and pin the browser to IPv4 for the page's own calls to the API
+origin baked into the image:
+
+```bash
+PLAYWRIGHT_CHROMIUM_ARGS="--host-resolver-rules=MAP localhost 127.0.0.1" \
+FULLSTACK_TARGET=compose FULLSTACK_WEB_URL=http://127.0.0.1:3001 \
+FULLSTACK_API_URL=http://127.0.0.1:8001 \
+  pnpm --filter @pathable/web exec playwright test --config=playwright.fullstack.config.ts
+```
+
+`PLAYWRIGHT_CHROMIUM_ARGS` is read only by the full-stack configuration and
+only appends flags to the browser launch (several are separated by `;`); CI
+leaves it unset.
+
 The web image is Next.js standalone output served by `node apps/web/server.js`
 as uid 10001, with npm, corepack and the Next CLI removed — so a development
 server cannot be started in it. The map worker is in

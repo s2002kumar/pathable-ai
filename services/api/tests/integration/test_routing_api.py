@@ -178,6 +178,76 @@ class TestCompare:
         assert wheelchair["profile"] == "wheelchair"
         assert reduced["profile"] == "reduced_mobility"
 
+    def test_both_routes_are_timed_at_the_travellers_pace(self, client: TestClient) -> None:
+        # Regression (D5): the shortest route's estimate used a standard walking
+        # pace beside the accessible route's wheelchair pace, so the two times
+        # on screen were not comparable.
+        body = compare(client, profile="walker")
+
+        assert body["standard_route"]["pace_profile"] == "walker"
+        assert body["accessible_route"]["pace_profile"] == "walker"
+
+    def test_a_custom_profile_is_timed_at_its_base_pace(self, client: TestClient) -> None:
+        # Regression (D3), through the API: "custom" used to mean wheelchair pace.
+        body = compare(
+            client,
+            profile="custom",
+            custom={"base": "stroller", "max_incline_percent": 10},
+        )
+
+        assert body["accessible_route"]["pace_profile"] == "stroller"
+        assert body["standard_route"]["pace_profile"] == "stroller"
+
+    def test_every_explanation_names_what_it_rests_on(self, client: TestClient) -> None:
+        body = compare(client)
+        by_code = {item["code"]: item for item in body["explanations"]}
+
+        allowed = {"recorded", "estimated", "mixed", "not_recorded", "profile_rule"}
+        assert all(item["basis"] in allowed for item in body["explanations"])
+        # Regression (D6): an absence of data must never carry a "recorded" label.
+        assert by_code["avoids_unrecorded_kerbs"]["basis"] == "not_recorded"
+        assert by_code["avoids_stairs"]["basis"] == "recorded"
+        assert by_code["distance_difference"]["basis"] == "profile_rule"
+
+    def test_the_detour_is_explained_by_every_constraint_not_stairs_alone(
+        self, client: TestClient
+    ) -> None:
+        # Regression (D7): the synthetic detour avoids a stairway *and* an
+        # unmarked crossing whose kerb nobody recorded; both must be stated.
+        codes = [item["code"] for item in compare(client)["explanations"]]
+
+        assert "avoids_stairs" in codes
+        assert "avoids_unrecorded_kerbs" in codes
+        assert "fewer_unmarked_crossings" in codes
+
+    def test_the_shortest_route_marks_what_the_profile_rules_out(self, client: TestClient) -> None:
+        body = compare(client)
+
+        excluded = [
+            segment
+            for segment in body["standard_route"]["segments"]
+            if segment["excluded_by_profile"] is not None
+        ]
+        assert [segment["excluded_by_profile"] for segment in excluded] == ["steps"]
+        assert excluded[0]["steps"] == "yes"
+        assert all(
+            segment["excluded_by_profile"] is None
+            for segment in body["accessible_route"]["segments"]
+        )
+
+    def test_every_route_carries_a_gradient_summary(self, client: TestClient) -> None:
+        # No elevation in this dataset: every gradient is either recorded by a
+        # mapper or unknown — and the summary must say which, not call it flat.
+        route = compare(client)["accessible_route"]
+        gradient = route["gradient"]
+
+        assert gradient["estimated_fraction"] == 0
+        assert gradient["recorded_fraction"] + gradient["unknown_fraction"] == pytest.approx(
+            1.0, abs=1e-3
+        )
+        assert gradient["steepest_uphill"]["source"] == "osm_incline"
+        assert gradient["steepest_uphill"]["percent"] == pytest.approx(4.0)
+
 
 class TestProvenance:
     def test_every_response_names_the_dataset_it_came_from(self, client: TestClient) -> None:
@@ -228,12 +298,13 @@ class TestProvenance:
         assert "Open Government Licence" in body["dataset"]["elevation_attribution"]
 
 
-async def _apply_fake_hrdem(database_url: str) -> None:
+async def _apply_fake_hrdem(database_url: str, provider: _LabelledAsHrdem | None = None) -> None:
     """Build an elevated candidate and put it live in place of the fixture.
 
     Elevation is applied only to a candidate — the live dataset is sealed —
-    so this goes the way an operator would: a fresh build, enriched, then
-    promoted through the regression gate with the reason recorded.
+    so this goes the way an operator would: a fresh build, enriched with the
+    given terrain, then promoted through the regression gate with the reason
+    recorded.
     """
     engine = create_async_engine(database_url, poolclass=NullPool)
     try:
@@ -241,11 +312,11 @@ async def _apply_fake_hrdem(database_url: str) -> None:
             candidate = await load_synthetic_dataset(session, activate=False)
             dataset = await session.get(DatasetVersion, candidate.dataset_id)
             assert dataset is not None
-            await apply_elevation(session, dataset=dataset, provider=_LabelledAsHrdem())
+            await apply_elevation(session, dataset=dataset, provider=provider or _LabelledAsHrdem())
             await promote(
                 session,
                 candidate.dataset_id,
-                acceptance_reason="A flat stand-in terrain replaces the tagged gradients in a test.",
+                acceptance_reason="A stand-in terrain replaces the tagged gradients in a test.",
             )
             await session.commit()
     finally:
@@ -261,11 +332,107 @@ class _LabelledAsHrdem:
     enabled = True
     attribution = HRDEM_ATTRIBUTION
 
+    def elevation(self, _longitude: float, _latitude: float) -> float:
+        return 300.0
+
     async def sample(self, points: Sequence[tuple[float, float]]) -> list[ElevationSample]:
         return [
-            ElevationSample(longitude, latitude, 300.0, self.name, self.dataset, self.resolution_m)
+            ElevationSample(
+                longitude,
+                latitude,
+                self.elevation(longitude, latitude),
+                self.name,
+                self.dataset,
+                self.resolution_m,
+            )
             for longitude, latitude in points
         ]
+
+
+class _RisingNorthward(_LabelledAsHrdem):
+    """Ground that climbs 2% to the north, so segments off the east-west axis slope.
+
+    Gentle on purpose: the only segment of the synthetic step-free route with no
+    recorded incline (the signalised crossing, C -> E) gets an estimate of about
+    1.6%, while the mapper's 4% on the ramp stays the steepest — the exact mix in
+    which the interface once credited the recorded figure to the terrain model.
+    """
+
+    def elevation(self, _longitude: float, latitude: float) -> float:
+        return 300.0 + 0.02 * (latitude - NODES["F"][1]) * 111_320.0
+
+
+@pytest.fixture
+def sloped_client(seeded_database_url: str) -> Iterator[TestClient]:
+    # Applied on its own loop before the app starts, for the reason given in
+    # test_hrdem_grades_carry_the_open_government_licence_credit.
+    asyncio.run(
+        _apply_fake_hrdem(seeded_database_url, _RisingNorthward()),
+        loop_factory=selector_loop_factory(),
+    )
+    settings = Settings(
+        _env_file=None,
+        environment="test",
+        database_url=seeded_database_url,
+        allowed_origins=("http://localhost:3000",),
+        log_level="WARNING",
+        log_format="console",
+    )
+    with TestClient(create_app(settings)) as test_client:
+        yield test_client
+
+
+class TestEstimatedGradient:
+    """Elevation-derived gradient, through PostGIS, the graph loader and the API."""
+
+    def test_estimates_reach_the_response_beside_what_mappers_recorded(
+        self, sloped_client: TestClient
+    ) -> None:
+        # Regression (D2): the estimate shaped route cost but had no field on the
+        # wire, so no client could show a single estimated number.
+        route = compare(sloped_client)["accessible_route"]
+        crossing = next(
+            segment for segment in route["segments"] if segment["incline_percent"] is None
+        )
+
+        assert crossing["derived_grade_percent"] == pytest.approx(1.6, abs=0.2)
+        assert route["gradient_source"] == "mixed"
+        assert 0 < route["gradient"]["estimated_fraction"] < 1
+
+    def test_the_steepest_recorded_gradient_is_labelled_recorded_on_a_mixed_route(
+        self, sloped_client: TestClient
+    ) -> None:
+        # Regression (D1): on a route mixing recorded and estimated gradients the
+        # interface said the steepest one "comes from a terrain model" — but the
+        # only figure it had was OSM's. The summary now says which it is.
+        route = compare(sloped_client)["accessible_route"]
+        steepest = route["gradient"]["steepest_uphill"]
+
+        assert steepest["source"] == "osm_incline"
+        assert steepest["percent"] == pytest.approx(4.0)
+        assert route["segments"][steepest["segment_index"]]["incline_percent"] == pytest.approx(4.0)
+
+    def test_a_slope_limit_applies_to_estimated_gradients(self, sloped_client: TestClient) -> None:
+        # Steps allowed, so the only thing separating these two answers is the
+        # 1.5% limit against the crossing's ~1.6% estimated climb.
+        base = {"base": "wheelchair", "exclude_steps": False}
+        free = compare(sloped_client, profile="custom", custom=base)["accessible_route"]
+        limited = compare(
+            sloped_client, profile="custom", custom={**base, "max_incline_percent": 1.5}
+        )
+
+        def steepest_estimated_climb(route: dict[str, Any]) -> float:
+            climbs = [
+                segment["derived_grade_percent"]
+                for segment in route["segments"]
+                if segment["incline_percent"] is None and segment["derived_grade_percent"]
+            ]
+            return max(climbs, default=0.0)
+
+        assert steepest_estimated_climb(free) > 1.5
+        assert steepest_estimated_climb(limited["accessible_route"]) <= 1.5
+        # Regression (D4): the limit is repeated exactly as it was sent.
+        assert "above 1.5%" in limited["profile_description"]
 
 
 class TestCustomProfile:

@@ -1,6 +1,7 @@
 'use client';
 
 import { type RefObject, useEffect, useState } from 'react';
+import { applyBasemapTone } from './basemap-tone';
 import {
   INITIAL_MAP_STATUS,
   MAP_ERROR_MESSAGE,
@@ -36,10 +37,14 @@ export type MapInstance = {
   readonly removeLayer: (id: string) => void;
   readonly getLayer: (id: string) => unknown;
   readonly removeSource: (id: string) => void;
+  readonly setPaintProperty: (layer: string, name: string, value: unknown) => void;
+  readonly setLayoutProperty: (layer: string, name: string, value: unknown) => void;
   readonly on: (event: string, handler: (payload: never) => void) => void;
   readonly off: (event: string, handler: (payload: never) => void) => void;
   readonly fitBounds: (bounds: [[number, number], [number, number]], options?: unknown) => void;
   readonly remove: () => void;
+  /** Screen position of a coordinate; used to place evidence labels over the map. */
+  readonly project?: (lngLat: [number, number]) => { x: number; y: number };
 };
 
 export type UseMapLibreResult = {
@@ -143,6 +148,9 @@ export function useMapLibre({
           if (cancelled) return;
           ready = true;
           clearTimeout(timer);
+          // Tone the basemap before anyone sees it: the style is parsed by now,
+          // and the overrides only touch layers that exist.
+          applyBasemapTone(instance as unknown as MapInstance);
           setMapStatus({ state: 'ready', message: null });
           // Published only after `load`: adding a source before the style is
           // parsed throws, and every consumer of this wants to add layers.

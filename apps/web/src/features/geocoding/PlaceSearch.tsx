@@ -11,7 +11,11 @@ type SearchState =
   | { readonly status: 'idle' }
   | { readonly status: 'searching' }
   | { readonly status: 'disabled' }
-  | { readonly status: 'results'; readonly matches: readonly GeocodeMatch[] }
+  | {
+      readonly status: 'results';
+      readonly matches: readonly GeocodeMatch[];
+      readonly attribution: string | null;
+    }
   | { readonly status: 'error'; readonly message: string };
 
 export type PlaceSearchProps = {
@@ -19,6 +23,18 @@ export type PlaceSearchProps = {
   readonly region: string;
   readonly onSelect: (position: { longitude: number; latitude: number }, label: string) => void;
   readonly fetchImpl?: typeof fetch;
+  /**
+   * Per-instance identity. The defaults are the single-field wording this
+   * component shipped with, so one on its own is unchanged; a page with two
+   * must give each a distinct accessible name, or every query for "Search for
+   * a place" becomes ambiguous and the announcements land on the wrong field.
+   */
+  readonly label?: string;
+  readonly placeholder?: string;
+  readonly submitAccessibleName?: string;
+  readonly testId?: string;
+  /** Rendered after the input row: what this field currently resolves to. */
+  readonly children?: React.ReactNode;
 };
 
 /**
@@ -33,7 +49,17 @@ export type PlaceSearchProps = {
  * this says so too rather than reporting "no results", which would send someone
  * off to rephrase a query that was never sent.
  */
-export function PlaceSearch({ apiBaseUrl, region, onSelect, fetchImpl }: PlaceSearchProps) {
+export function PlaceSearch({
+  apiBaseUrl,
+  region,
+  onSelect,
+  fetchImpl,
+  label = 'Search for a place',
+  placeholder = 'e.g. Waterloo Public Square',
+  submitAccessibleName,
+  testId = 'place-search',
+  children,
+}: PlaceSearchProps) {
   const [query, setQuery] = useState('');
   const [state, setState] = useState<SearchState>({ status: 'idle' });
   const inFlight = useRef<AbortController | null>(null);
@@ -77,7 +103,11 @@ export function PlaceSearch({ apiBaseUrl, region, onSelect, fetchImpl }: PlaceSe
         } else if (!payload.enabled) {
           setState({ status: 'disabled' });
         } else {
-          setState({ status: 'results', matches: payload.matches });
+          setState({
+            status: 'results',
+            matches: payload.matches,
+            attribution: payload.attribution ?? null,
+          });
         }
       } catch (error) {
         const timedOut = error instanceof Error && error.name === 'AbortError';
@@ -95,9 +125,9 @@ export function PlaceSearch({ apiBaseUrl, region, onSelect, fetchImpl }: PlaceSe
   );
 
   return (
-    <form className={styles.form} onSubmit={submit} data-testid="place-search">
+    <form className={styles.form} onSubmit={submit} data-testid={testId}>
       <label className={styles.label} htmlFor={inputId}>
-        Search for a place
+        {label}
       </label>
       <div className={styles.row}>
         <input
@@ -106,15 +136,22 @@ export function PlaceSearch({ apiBaseUrl, region, onSelect, fetchImpl }: PlaceSe
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="e.g. Waterloo Public Square"
+          placeholder={placeholder}
           autoComplete="off"
           // No aria-live on the input: results are announced by the region below.
           enterKeyHint="search"
         />
-        <button type="submit" className={styles.button} disabled={query.trim().length === 0}>
+        <button
+          type="submit"
+          className={styles.button}
+          disabled={query.trim().length === 0}
+          {...(submitAccessibleName ? { 'aria-label': submitAccessibleName } : {})}
+        >
           Search
         </button>
       </div>
+
+      {children}
 
       <div className={styles.results} aria-live="polite" data-search-state={state.status}>
         {state.status === 'searching' ? <p className={styles.note}>Searching…</p> : null}
@@ -138,23 +175,36 @@ export function PlaceSearch({ apiBaseUrl, region, onSelect, fetchImpl }: PlaceSe
         ) : null}
 
         {state.status === 'results' && state.matches.length > 0 ? (
-          <ul className={styles.matchList}>
-            {state.matches.map((match) => (
-              <li key={`${match.label}:${match.longitude}:${match.latitude}`}>
-                <button
-                  type="button"
-                  className={styles.match}
-                  onClick={() => {
-                    onSelect({ longitude: match.longitude, latitude: match.latitude }, match.label);
-                    setState({ status: 'idle' });
-                    setQuery('');
-                  }}
-                >
-                  {match.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className={styles.matchList}>
+              {state.matches.map((match) => (
+                <li key={`${match.label}:${match.longitude}:${match.latitude}`}>
+                  <button
+                    type="button"
+                    className={styles.match}
+                    onClick={() => {
+                      onSelect(
+                        { longitude: match.longitude, latitude: match.latitude },
+                        match.label,
+                      );
+                      setState({ status: 'idle' });
+                      setQuery('');
+                    }}
+                  >
+                    {match.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {/* The API returns the provider's attribution with every result set
+                specifically so a client cannot display results without it.
+                This component previously dropped it. */}
+            {state.attribution ? (
+              <p className={styles.attribution} data-testid="search-attribution">
+                {state.attribution}
+              </p>
+            ) : null}
+          </>
         ) : null}
       </div>
     </form>

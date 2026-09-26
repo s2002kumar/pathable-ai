@@ -16,7 +16,7 @@ export type ConfigurationErrorProps = {
 export function ConfigurationError({ issues }: ConfigurationErrorProps) {
   return (
     <main className={styles.configError} role="alert" data-testid="configuration-error">
-      <h1 className={styles.configErrorTitle}>PathAble AI is misconfigured</h1>
+      <h1 className={styles.configErrorTitle}>PathAble is misconfigured</h1>
       <p className={styles.configErrorBody}>
         {issues.length === 1
           ? 'One environment variable has an invalid value:'

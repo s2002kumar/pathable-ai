@@ -3,7 +3,9 @@
 import { useId, useRef } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Route } from '@pathable/contracts';
+import { type MapMarker, MapMarkers } from './MapMarkers';
 import { MapStatusOverlay } from './MapStatusOverlay';
+import type { Padding, RecordedStairs, RouteFocus } from './route-layers';
 import { useMapClick } from './useMapClick';
 import { useMapLibre } from './useMapLibre';
 import { useRouteLayers } from './useRouteLayers';
@@ -27,6 +29,17 @@ export type MapCanvasProps = {
   readonly origin?: MapPoint | null;
   readonly destination?: MapPoint | null;
   readonly showStandardRoute?: boolean;
+  /** Which route to bring forward on the map, if the viewer asked for one. */
+  readonly focusedRoute?: RouteFocus;
+  /** Room to leave around a fitted route, so the panel floating over the map
+   *  never sits on top of the answer. */
+  readonly fitPadding?: Padding;
+  /** Recorded stairways to draw over the route, or null for none. */
+  readonly stairs?: RecordedStairs | null;
+  /** Labels pinned to the map: what the profile rules out, the steepest climb. */
+  readonly markers?: readonly MapMarker[];
+  /** Incremented to re-frame the routes on request. */
+  readonly fitRequest?: number;
   /**
    * Called with the clicked position. Absent when the map is decorative, which
    * is what keeps this component usable outside the planner.
@@ -53,6 +66,11 @@ export function MapCanvas({
   origin = null,
   destination = null,
   showStandardRoute = true,
+  focusedRoute = null,
+  fitPadding,
+  stairs = null,
+  markers = NO_MARKERS,
+  fitRequest = 0,
   onSelectPoint,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,7 +84,18 @@ export function MapCanvas({
     attribution,
   });
 
-  useRouteLayers({ map, standardRoute, accessibleRoute, origin, destination, showStandardRoute });
+  useRouteLayers({
+    map,
+    standardRoute,
+    accessibleRoute,
+    origin,
+    destination,
+    showStandardRoute,
+    focus: focusedRoute,
+    ...(fitPadding ? { fitPadding } : {}),
+    stairs,
+    fitRequest,
+  });
   useMapClick(map, onSelectPoint ?? noop);
 
   return (
@@ -87,10 +116,13 @@ export function MapCanvas({
         {...(describedById !== undefined ? { 'aria-describedby': describedById } : {})}
         id={fallbackId}
       />
+      <MapMarkers map={map} markers={markers} />
       <MapStatusOverlay status={status} />
     </div>
   );
 }
+
+const NO_MARKERS: readonly MapMarker[] = [];
 
 function noop(): void {
   // The map is still clickable when no handler is supplied; it just does nothing.

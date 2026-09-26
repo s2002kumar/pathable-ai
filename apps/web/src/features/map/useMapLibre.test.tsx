@@ -28,6 +28,20 @@ class FakeMap {
     this.controls.push(control);
   }
 
+  // The basemap tone runs on `load` and asks for layers by ID; a style with
+  // none of them is toned by doing nothing, which is what this fake proves.
+  getLayer(): undefined {
+    return undefined;
+  }
+
+  setPaintProperty(): void {
+    throw new Error('no layer to paint');
+  }
+
+  setLayoutProperty(): void {
+    throw new Error('no layer to lay out');
+  }
+
   remove(): void {
     this.removed += 1;
   }

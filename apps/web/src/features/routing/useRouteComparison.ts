@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { compareRoutes } from './compare-routes';
-import type { PlannerPoints, ProfileSelection, RouteRequestState } from './types';
+import { type Journey, type RouteRequestState, profileSelectionOf } from './types';
 
 export type UseRouteComparisonOptions = {
   readonly apiBaseUrl: string;
   readonly region: string;
-  readonly points: PlannerPoints;
-  readonly profile: ProfileSelection;
+  /**
+   * The journey that has been submitted for comparison, or null for none.
+   *
+   * A *submitted* journey, not the panel's draft: the request fires when the
+   * viewer commits one, not while they are still assembling it.
+   */
+  readonly journey: Journey | null;
   readonly fetchImpl?: typeof fetch;
 };
 
@@ -23,36 +28,37 @@ const LOADING: RouteRequestState = { status: 'loading' };
 type Settled = { readonly key: string; readonly state: RouteRequestState };
 
 /**
- * Requests a comparison whenever both endpoints and the profile are settled.
+ * Requests a comparison for the journey that has been submitted.
  *
- * Automatic rather than behind a "find route" button: the user has already
- * expressed the whole request by placing two points and choosing a profile, and
- * making them confirm it again adds a step without adding information. Changing
- * the profile re-requests, which is the point — the comparison is what the
- * product is for.
+ * It used to fire the moment two endpoints existed. That was fine while a
+ * point was only ever a map click, and wrong once endpoints are named things
+ * a person types: a half-finished destination would be routed to, and editing
+ * either end would fire a request nobody asked for. The panel now commits a
+ * journey and this hook answers it.
  *
- * The visible state is *derived* from the request key rather than assigned in an
- * effect. That does two things: it removes a synchronous setState from the
+ * The visible state is *derived* from the request key rather than assigned in
+ * an effect. That does two things: it removes a synchronous setState from the
  * effect body, and it means a result can never be shown against the wrong
- * request — changing the profile shows "comparing…" on the very same render that
- * changes it, not one render later.
+ * request — committing a new journey shows "comparing…" on the very same
+ * render that commits it, not one render later. Keeping that property is why
+ * the key is still computed during render rather than stored when submitting.
  */
 export function useRouteComparison({
   apiBaseUrl,
   region,
-  points,
-  profile,
+  journey,
   fetchImpl,
 }: UseRouteComparisonOptions): UseRouteComparisonResult {
   const [settled, setSettled] = useState<Settled | null>(null);
   const [attempt, setAttempt] = useState(0);
 
-  const { origin, destination } = points;
-  const profileKey = profile.key;
-  const customSignature = profile.custom ? JSON.stringify(profile.custom) : '';
+  const origin = journey?.origin.position ?? null;
+  const destination = journey?.destination.position ?? null;
+  const profile = journey === null ? null : profileSelectionOf(journey);
+  const profileSignature = profile === null ? null : JSON.stringify(profile);
 
   const requestKey =
-    origin === null || destination === null
+    journey === null || origin === null || destination === null || profileSignature === null
       ? null
       : [
           apiBaseUrl,
@@ -61,13 +67,14 @@ export function useRouteComparison({
           origin.latitude,
           destination.longitude,
           destination.latitude,
-          profileKey,
-          customSignature,
+          profileSignature,
           attempt,
         ].join('|');
 
   useEffect(() => {
-    if (requestKey === null || origin === null || destination === null) return;
+    if (requestKey === null || origin === null || destination === null || profile === null) {
+      return;
+    }
 
     const controller = new AbortController();
 
@@ -76,7 +83,7 @@ export function useRouteComparison({
       region,
       origin,
       destination,
-      profile: { key: profileKey, ...(customSignature ? { custom: profile.custom } : {}) },
+      profile,
       signal: controller.signal,
       ...(fetchImpl ? { fetchImpl } : {}),
     }).then((result) => {
@@ -93,9 +100,9 @@ export function useRouteComparison({
       // A superseded request must not overwrite a newer answer.
       controller.abort();
     };
-    // `profile` is compared by key and serialised options rather than identity:
-    // a parent re-render creates a new object every time, which would otherwise
-    // re-request on every unrelated state change.
+    // The journey is compared through the serialised key rather than by
+    // identity: a parent re-render creates a new object every time, which
+    // would otherwise re-request on every unrelated state change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey, fetchImpl]);
 

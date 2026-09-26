@@ -116,9 +116,10 @@ Protect behaviour, not coverage percentages.
 - Draft PR early; mark ready only when required checks are green.
 - Never fabricate history, contributors, reviews or activity.
 - Never force-push published work without explicit justification.
-- The repository has been public since 2026-09-14 (source-visible, all rights
-  reserved — never "open source"). Any further publication decision, including
-  a public deployment, is the founder's.
+- The repository has been public since 2026-09-14 (`v0.3.0-public-release`;
+  source-visible, all rights reserved — never "open source"). Only the founder
+  changes visibility or licensing, and any further publication decision,
+  including a public deployment, is the founder's.
 - **No `Co-Authored-By: Claude` trailers and no "Generated with Claude Code"
   footers** in commits, PRs or issues unless the founder asks for them. This is
   the founder's work history, not a promotional surface.

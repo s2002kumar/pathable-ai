@@ -111,8 +111,24 @@ test.describe('the recruiter demo', () => {
     await expect(page.getByTestId('difference-accessible')).toContainText(
       `${Math.round(answer.accessible_route.distance_m)} m`,
     );
-    await expect(page.getByTestId('difference-extra')).toContainText(
-      `to avoid ${answer.standard_route.stairway_count} stairways`,
+    // The detour is not credited to the stairs alone (D7): the extra-distance
+    // line states the figure, and the reasons — every constraint the engine
+    // found the routes differ on — are listed beneath it, stairs among them.
+    await expect(page.getByTestId('difference-extra')).not.toContainText('to avoid');
+    await expect(page.getByTestId('difference-reasons')).toContainText(
+      `Avoids ${answer.standard_route.stairway_count} recorded stairways`,
+    );
+
+    // The shortest route crosses stairs a wheelchair cannot use, so it gets no
+    // travel time — read from the segments the live API marks, not the count.
+    await expect(page.getByTestId('difference-shortest-time')).toHaveText(
+      'Time unavailable for this profile',
+    );
+    await expect(page.getByTestId('route-blocked')).toContainText(
+      `Ruled out: ${answer.standard_route.stairway_count} stairways`,
+    );
+    await expect(page.getByTestId('map-marker-barrier-steps')).toHaveText(
+      `Ruled out: ${answer.standard_route.stairway_count} stairways`,
     );
   });
 
@@ -123,14 +139,30 @@ test.describe('the recruiter demo', () => {
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
     await runExample(page);
 
-    const difference = page.getByTestId('route-difference');
-    await expect(difference.getByText('Recorded in OpenStreetMap')).toBeVisible();
-    await expect(difference.getByText('Not recorded')).toBeVisible();
+    // The reason that decided it, labelled with what it rests on.
+    const main = page.getByTestId('main-difference');
+    await expect(main).toBeVisible();
+    await expect(main).toContainText('Stairs');
+    await expect(main.getByText('Recorded', { exact: true })).toBeVisible();
+
+    // Every statement's label comes from its basis. A reason about missing
+    // records is never labelled as a recorded one (D6), and is filed under
+    // missing information rather than under the topic it is about.
+    const reasons = page.getByTestId('difference-reasons');
+    for (const reason of await reasons.locator('li[data-basis="recorded"]').all()) {
+      await expect(reason.locator('span').first()).toHaveText('Recorded');
+    }
+    for (const reason of await reasons.locator('li[data-basis="not_recorded"]').all()) {
+      await expect(reason.locator('span').first()).toHaveText('Not recorded');
+      await expect(page.getByTestId('reason-group-missing')).toContainText(
+        (await reason.textContent())!.replace('Not recorded', '').trim(),
+      );
+    }
 
     // The most dangerous possible bug: an absence of data reading as a clearance.
-    const unknown = page.getByTestId('difference-unknown');
-    await expect(unknown).toContainText(/missing information, not a clear path/i);
-    await expect(unknown).not.toContainText(/\b(verified|safe|guaranteed|confident)\b/i);
+    const coverage = page.getByTestId('evidence-coverage');
+    await expect(coverage).toContainText(/not recorded is not the same as clear/i);
+    await expect(coverage).not.toContainText(/\b(verified|safe|guaranteed|confident)\b/i);
   });
 
   test('the incompleteness of the data is visible without scrolling', async ({ page }) => {
@@ -140,8 +172,8 @@ test.describe('the recruiter demo', () => {
 
     const summary = page.getByTestId('uncertainty-summary');
     await expect(summary).toBeVisible();
-    await expect(summary).toContainText('Accessibility data is incomplete');
-    await expect(summary).not.toContainText(/(safe|verified|confident|guaranteed)/i);
+    await expect(summary).toContainText('Incomplete data');
+    await expect(summary).not.toContainText(/\b(safe|verified|confident|guaranteed)\b/i);
 
     // Visible is not the same as in the viewport: the panel scrolls, and an
     // element below the fold still reports itself visible to Playwright.
@@ -151,10 +183,10 @@ test.describe('the recruiter demo', () => {
     });
     expect(inViewport).toBe(true);
 
-    // And the fuller explanation is still there, further down.
-    await expect(page.getByTestId('difference-unknown')).toContainText(
-      /missing information, not a clear path/i,
-    );
+    // And the per-category breakdown is still there, further down, each
+    // category against its own denominator.
+    await expect(page.getByTestId('coverage-width')).toContainText(/not recorded/);
+    await expect(page.getByTestId('coverage-gradient')).toContainText(/estimated/);
   });
 
   test('both routes are drawn, and the key names them in words', async ({ page }) => {
@@ -168,8 +200,8 @@ test.describe('the recruiter demo', () => {
     await expect(legend).toContainText('Route for your profile');
     await expect(legend).toContainText('Shortest walking route');
 
-    await expect(page.getByTestId('route-card-accessible')).toBeVisible();
-    await expect(page.getByTestId('route-card-standard')).toBeVisible();
+    await expect(page.getByTestId('difference-accessible')).toBeVisible();
+    await expect(page.getByTestId('difference-shortest')).toBeVisible();
   });
 
   test('the deep link starts the same live request', async ({ page }) => {
@@ -202,14 +234,14 @@ test.describe('the recruiter demo', () => {
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
     await runExample(page);
 
-    await page.getByRole('button', { name: 'Clear' }).click();
-    await expect(page.getByTestId('point-start')).toContainText(/click the map to set/i);
+    await page.getByTestId('clear-journey').click();
+    await expect(page.getByTestId('endpoint-origin-value')).toContainText(/not set/i);
 
     const map = page.getByTestId('map-frame');
     const box = await map.boundingBox();
     if (box === null) throw new Error('the map has no box to click');
-    await map.click({ position: { x: box.width * 0.4, y: box.height * 0.5 } });
-    await expect(page.getByTestId('point-start')).not.toContainText(/click the map to set/i);
+    await map.click({ position: { x: box.width * 0.6, y: box.height * 0.4 } });
+    await expect(page.getByTestId('endpoint-origin-value')).not.toContainText(/not set/i);
   });
 
   test('the example is reachable and operable from the keyboard', async ({ page }) => {
@@ -250,7 +282,7 @@ test.describe('the demo on a phone', () => {
 
     // The uncertainty line has to survive the narrow viewport too.
     const summary = page.getByTestId('uncertainty-summary');
-    await expect(summary).toContainText('Accessibility data is incomplete');
+    await expect(summary).toContainText('Incomplete data');
     const inViewport = await summary.evaluate((element) => {
       const rect = element.getBoundingClientRect();
       return rect.top >= 0 && rect.bottom > 0 && rect.top < window.innerHeight;

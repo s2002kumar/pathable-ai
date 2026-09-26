@@ -71,6 +71,12 @@ a:hover {
   color: var(--color-brand-strong);
 }
 
+/* Route figures are read as a column of numbers; tabular digits keep the
+   decimal places aligned and stop "287 m" and "354 m" jittering in width. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- Focus --------------------------------------------------------------
  * A visible focus ring is not decoration on this product. Never replace this
  * with `outline: none`.
@@ -120,6 +126,54 @@ a:hover {
   border: 0;
 }
 
+/* --- Disclosure ------------------------------------------------------------
+ * One look for every expandable section: a real <details>, so it works with
+ * no script, and a summary that is clearly a control rather than a heading.
+ */
+
+.disclosure {
+  border-top: 1px solid var(--color-border);
+}
+
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  cursor: pointer;
+  list-style: none;
+}
+
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure > summary::after {
+  content: '';
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: var(--space-1);
+  border-right: 2px solid var(--color-text-subtle);
+  border-bottom: 2px solid var(--color-text-subtle);
+  transform: rotate(45deg);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.disclosure[open] > summary::after {
+  transform: rotate(225deg);
+}
+
+.disclosure > summary:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+
 /* --- Reduced motion ------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -138,10 +192,53 @@ a:hover {
  * their own behaviour and accessible names.
  */
 
+/*
+ * Keep the library's own chrome out from under the floating panel.
+ *
+ * ODbL requires the credit to be visible, and a panel drawn over the bottom of
+ * the map would cover it — quietly, and in exactly the screenshot somebody
+ * would publish. The scale bar has the same problem for a different reason: a
+ * distance legend the reader cannot see is worse than none. Both corners are
+ * pushed in by whatever the workspace says the panel is covering, so this
+ * tracks the real panel rather than a guess about it.
+ *
+ * Only the two bottom corners move. Navigation is top-right, which no layout
+ * covers.
+ */
+/*
+ * !important, like the rules above it, and for the same reason: MapLibre's
+ * stylesheet is imported inside the dynamically loaded map component, so it is
+ * injected after this file and wins on order at equal specificity. Without it
+ * the credit stays pinned to the viewport corner and a bottom sheet covers it
+ * — which is exactly how a 320 px browser test caught this.
+ */
+.maplibregl-ctrl-bottom-left {
+  bottom: var(--map-inset-bottom, 0px) !important;
+  left: var(--map-inset-left, 0px) !important;
+  transition:
+    bottom var(--duration-base) var(--ease-out),
+    left var(--duration-base) var(--ease-out);
+}
+
+.maplibregl-ctrl-bottom-right {
+  bottom: var(--map-inset-bottom, 0px) !important;
+  transition: bottom var(--duration-base) var(--ease-out);
+}
+
 .maplibregl-ctrl-group {
   border-radius: var(--radius-md) !important;
   box-shadow: var(--shadow-md) !important;
+  background: var(--color-surface-overlay) !important;
   overflow: hidden;
+}
+
+.maplibregl-ctrl-group button {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top-color: var(--color-border) !important;
 }
 
 .maplibregl-ctrl-group button:focus-visible {
@@ -152,4 +249,17 @@ a:hover {
 .maplibregl-ctrl-attrib {
   font-size: var(--text-xs);
   border-radius: var(--radius-sm) 0 0 0;
+  background: var(--color-surface-overlay) !important;
+  color: var(--color-text-muted);
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--color-text);
+}
+
+.maplibregl-ctrl-scale {
+  background: var(--color-surface-overlay) !important;
+  border-color: var(--color-text-subtle) !important;
+  color: var(--color-text-muted) !important;
+  font-size: var(--text-xs) !important;
 }

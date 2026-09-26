@@ -1,0 +1,143 @@
+[
+  {
+    "state": "campus example, wheelchair",
+    "viewport": "1440x900",
+    "answeredMs": 3112,
+    "answer": {
+      "headline": "The wheelchair route is 67 m longer than the shortest walking route (23%).",
+      "accessible": "Wheelchair route 354 m Est. 6 min No recorded stairs +67 m longer",
+      "shortest": "Shortest walking route 287 m Time unavailable for this profile Ruled out: 4 stairways · 16 recorded steps",
+      "reason": "Stairs Recorded Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "uncertainty": "Incomplete data. 100% of this route is missing at least one record — largest gap: surface condition, 100%. Unrecorded is not the same as clear.",
+      "markers": ["Ruled out: 4 stairways", "Steepest climb 3.4% · estimated"]
+    },
+    "firstScreen": {
+      "difference-accessible": true,
+      "difference-shortest": true,
+      "difference-extra": true,
+      "main-difference": true,
+      "uncertainty-summary": true
+    }
+  },
+  {
+    "state": "campus example, wheelchair",
+    "viewport": "1366x768",
+    "answeredMs": 1781,
+    "answer": {
+      "headline": "The wheelchair route is 67 m longer than the shortest walking route (23%).",
+      "accessible": "Wheelchair route 354 m Est. 6 min No recorded stairs +67 m longer",
+      "shortest": "Shortest walking route 287 m Time unavailable for this profile Ruled out: 4 stairways · 16 recorded steps",
+      "reason": "Stairs Recorded Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "uncertainty": "Incomplete data. 100% of this route is missing at least one record — largest gap: surface condition, 100%. Unrecorded is not the same as clear.",
+      "markers": ["Ruled out: 4 stairways", "Steepest climb 3.4% · estimated"]
+    },
+    "firstScreen": {
+      "difference-accessible": true,
+      "difference-shortest": true,
+      "difference-extra": true,
+      "main-difference": true,
+      "uncertainty-summary": true
+    }
+  },
+  {
+    "state": "campus example, wheelchair",
+    "viewport": "1000x700",
+    "answeredMs": 1638,
+    "answer": {
+      "headline": "The wheelchair route is 67 m longer than the shortest walking route (23%).",
+      "accessible": "Wheelchair route 354 m Est. 6 min No recorded stairs +67 m longer",
+      "shortest": "Shortest walking route 287 m Time unavailable for this profile Ruled out: 4 stairways · 16 recorded steps",
+      "reason": "Stairs Recorded Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "uncertainty": "Incomplete data. 100% of this route is missing at least one record — largest gap: surface condition, 100%. Unrecorded is not the same as clear.",
+      "markers": ["Ruled out: 4 stairways", "Steepest climb 3.4% · estimated"]
+    },
+    "firstScreen": {
+      "difference-accessible": true,
+      "difference-shortest": true,
+      "difference-extra": true,
+      "main-difference": true,
+      "uncertainty-summary": true
+    }
+  },
+  {
+    "state": "campus example, wheelchair",
+    "viewport": "412x915",
+    "answeredMs": 911,
+    "answer": {
+      "headline": "The wheelchair route is 67 m longer than the shortest walking route (23%).",
+      "accessible": "Wheelchair route 354 m Est. 6 min No recorded stairs +67 m longer",
+      "shortest": "Shortest walking route 287 m Time unavailable for this profile Ruled out: 4 stairways · 16 recorded steps",
+      "reason": "Stairs Recorded Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "uncertainty": "Incomplete data. 100% of this route is missing at least one record — largest gap: surface condition, 100%. Unrecorded is not the same as clear.",
+      "markers": ["Ruled out: 4 stairways", "Steepest climb 3.4% · estimated"]
+    },
+    "firstScreen": {
+      "difference-accessible": true,
+      "difference-shortest": true,
+      "difference-extra": true,
+      "main-difference": true,
+      "uncertainty-summary": true
+    }
+  },
+  {
+    "state": "campus example, wheelchair",
+    "viewport": "390x844",
+    "answeredMs": 1372,
+    "answer": {
+      "headline": "The wheelchair route is 67 m longer than the shortest walking route (23%).",
+      "accessible": "Wheelchair route 354 m Est. 6 min No recorded stairs +67 m longer",
+      "shortest": "Shortest walking route 287 m Time unavailable for this profile Ruled out: 4 stairways · 16 recorded steps",
+      "reason": "Stairs Recorded Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "uncertainty": "Incomplete data. 100% of this route is missing at least one record — largest gap: surface condition, 100%. Unrecorded is not the same as clear.",
+      "markers": ["Ruled out: 4 stairways", ""]
+    },
+    "firstScreen": {
+      "difference-accessible": true,
+      "difference-shortest": true,
+      "difference-extra": true,
+      "main-difference": true,
+      "uncertainty-summary": true
+    }
+  },
+  {
+    "state": "campus example, shortest route chosen",
+    "viewport": "1440x900",
+    "coverageHeading": "What the map records on the shortest walking route",
+    "answer": {
+      "headline": "The wheelchair route is 67 m longer than the shortest walking route (23%).",
+      "accessible": "Wheelchair route 354 m Est. 6 min No recorded stairs +67 m longer",
+      "shortest": "Shortest walking route 287 m Time unavailable for this profile Ruled out: 4 stairways · 16 recorded steps",
+      "reason": "Stairs Recorded Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "uncertainty": "Incomplete data. 100% of this route is missing at least one record — largest gap: surface condition, 100%. Unrecorded is not the same as clear.",
+      "markers": ["Ruled out: 4 stairways", "Steepest climb 3.5% · estimated"]
+    }
+  },
+  {
+    "state": "campus example, custom uphill limit 2.5%",
+    "viewport": "1440x900",
+    "answer": {
+      "headline": "The custom route is 80 m longer than the shortest walking route (28%).",
+      "accessible": "Custom route 367 m Est. 6 min No recorded stairs +80 m longer",
+      "shortest": "Shortest walking route 287 m Time unavailable for this profile Ruled out: 4 stairways · 16 recorded steps, 1 segment above your gradient limit",
+      "reason": "Stairs Recorded Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "uncertainty": "Incomplete data. 100% of this route is missing at least one record — largest gap: surface condition, 100%. Unrecorded is not the same as clear.",
+      "markers": [
+        "Ruled out: 4 stairways",
+        "Ruled out: 1 segment above your gradient limit",
+        "Steepest climb 1.1% · estimated"
+      ]
+    },
+    "noRoute": null,
+    "reasons": [
+      "STAIRS",
+      "Hard limit",
+      "RecordedAvoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "GRADIENT",
+      "Hard limit",
+      "Estimated from elevationAvoids 1 segment of the shortest route that climbs more steeply than the 2.5% you set (steepest 3.5% uphill, estimated).",
+      "PROFILE RULES",
+      "Your profile rule80 m longer than the shortest route (367 m instead of 287 m, 28% longer). Based on wheelchair; cannot use steps, cannot manage uphill gradients above 2.5%.",
+      "Your profile ruleTimes use the same assumed wheelchair pace, with fixed allowances for steps and crossings. Neither is measured."
+    ]
+  }
+]
