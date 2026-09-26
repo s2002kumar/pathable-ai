@@ -92,6 +92,7 @@ from pathable_api.geo.kitchener.study import (
     load_history,
     load_inputs,
     run_study,
+    slim,
 )
 from pathable_api.geo.lifecycle import (
     SealRefusedError,
@@ -578,7 +579,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--repeat-labels", type=Path, default=None, help="Repeat-review labels."
     )
     lineage_study.add_argument(
-        "--json", type=Path, required=True, help="Write the study document here."
+        "--json", type=Path, required=True, help="Write the evidence document here."
+    )
+    lineage_study.add_argument(
+        "--full-json",
+        type=Path,
+        default=None,
+        help="Also write the unabridged document, every candidate's metrics included.",
     )
     lineage_study.add_argument("--html", type=Path, default=None, help="Write the review here.")
     lineage_study.add_argument(
@@ -1360,7 +1367,11 @@ def _kitchener_lineage_study(args: argparse.Namespace) -> int:
         print(f"error: {error}", file=sys.stderr)
         return EXIT_FAILED
     document["run"] = _run_measurements()
-    write_json(args.json, document)
+    evidence = slim(document)
+    evidence["content_sha256"] = content_sha256(evidence)
+    write_json(args.json, evidence)
+    if args.full_json is not None:
+        write_json(args.full_json, document)
     print(f"\nLineage study over {len(document['records'])} records")
     summary = document.get("summary")
     if summary is not None:

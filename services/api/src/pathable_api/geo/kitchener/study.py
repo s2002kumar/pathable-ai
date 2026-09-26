@@ -171,6 +171,9 @@ class StudyInputs:
     kitchener: KitchenerIndex
     details: dict[int, dict[str, Any]]
     osm: OsmIndex
+    parquet: Path | None = None
+    #: The study box, in longitude and latitude, as the OSM dataset recorded it.
+    bounds: tuple[float, float, float, float] | None = None
 
 
 def load_sample(
@@ -255,7 +258,9 @@ def load_inputs(
             "selection": manifest.get("selection"),
         },
     }
-    return StudyInputs(sample, identity, kitchener, details, osm)
+    box = manifest["dataset"].get("source_bbox")
+    bounds = (float(box[0]), float(box[1]), float(box[2]), float(box[3])) if box else None
+    return StudyInputs(sample, identity, kitchener, details, osm, parquet, bounds)
 
 
 def _kitchener(
@@ -369,7 +374,9 @@ def history_elements(analysis: Mapping[str, Any], *, near_m: float = HISTORY_NEA
     wanted: set[str] = set()
     for record in analysis["records"]:
         for candidate in record["candidates"]:
-            if candidate["metrics"]["min_distance_m"] <= near_m:
+            # Evidence files keep only identity and distance for far candidates.
+            metrics = candidate.get("metrics") or candidate
+            if metrics["min_distance_m"] <= near_m:
                 wanted.add(candidate["osm"])
         for node in record["nodes_near"]:
             wanted.add(node["osm"])
@@ -813,7 +820,46 @@ def attribute_comparisons(
             "osm_crossing_nodes_within_8m": crossing_nodes,
             "osm_correspondence": str(label.correspondence) if label else None,
         }
+    osm_only = _osm_only(kitchener, ways, elements)
+    if corresponded and osm_only:
+        results["osm_only"] = osm_only
     return results
+
+
+def _osm_only(
+    kitchener: Mapping[str, Any], ways: Sequence[str], elements: Mapping[str, Mapping[str, Any]]
+) -> dict[str, Any]:
+    """What OSM says about the corresponding ways where the City asserts nothing.
+
+    A City template default or unknown is not an assertion, so this is never a
+    conflict: it is information only OSM has.
+    """
+    found: dict[str, Any] = {}
+    if kitchener["state_surface_material"] != "non_default":
+        surfaces = {
+            w: elements[w]["tags"]["surface"] for w in ways if "surface" in elements[w]["tags"]
+        }
+        if surfaces:
+            found["surface"] = surfaces
+    if kitchener["structure"] is None:
+        structures = {
+            w: _structure_tags(elements[w]["tags"])
+            for w in ways
+            if elements[w]["tags"].get("highway") == "steps"
+            or elements[w]["tags"].get("bridge", "no") != "no"
+            or elements[w]["tags"].get("tunnel", "no") != "no"
+        }
+        if structures:
+            found["structure"] = structures
+    if kitchener["railing"] != "Y":
+        handrails = {
+            w: {k: v for k, v in elements[w]["tags"].items() if k.startswith("handrail")}
+            for w in ways
+            if any(k.startswith("handrail") for k in elements[w]["tags"])
+        }
+        if handrails:
+            found["railing"] = handrails
+    return found
 
 
 def _structure_tags(tags: Mapping[str, str]) -> dict[str, str]:
@@ -982,6 +1028,160 @@ def _describe(values: Sequence[float]) -> dict[str, Any]:
     }
 
 
+def attribute_summary(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """B14: for each attribute the City asserts, what OSM says, over the labelled sample."""
+    summary: dict[str, Any] = {}
+    for key in ("curb_cut", "structure", "railing", "surface", "condition", "virtual_link"):
+        items = [r for r in records if key in (r.get("attributes") or {})]
+        comparisons: Counter[str] = Counter()
+        lineage: Counter[str] = Counter()
+        examples: dict[str, list[int]] = defaultdict(list)
+        corresponded = 0
+        for record in items:
+            block = record["attributes"][key]
+            label = record.get("labels") or {}
+            if label.get("correspondence") in (
+                str(Correspondence.OBVIOUS),
+                str(Correspondence.AMBIGUOUS),
+            ):
+                corresponded += 1
+            outcome = block.get("comparison") or (
+                "osm_crossing_way"
+                if block.get("osm_crossing_ways_within_5m")
+                else "osm_crossing_node_only"
+                if block.get("osm_crossing_nodes_within_8m")
+                else "no_osm_crossing"
+            )
+            comparisons[outcome] += 1
+            examples[outcome].append(record["activetransportid"])
+            for finding in _attribute_findings(block):
+                lineage[finding] += 1
+        summary[key] = {
+            "sample_records": len(items),
+            "corresponded": corresponded,
+            "comparison": dict(sorted(comparisons.items())),
+            "osm_value_lineage": dict(sorted(lineage.items())),
+            "examples": {k: v[:6] for k, v in sorted(examples.items())},
+        }
+    osm_only: dict[str, list[int]] = defaultdict(list)
+    for record in records:
+        for key in (record.get("attributes") or {}).get("osm_only", {}):
+            osm_only[key].append(record["activetransportid"])
+    summary["osm_only"] = {
+        key: {"records": len(ids), "examples": ids[:6]} for key, ids in sorted(osm_only.items())
+    }
+    return summary
+
+
+def _attribute_findings(block: Mapping[str, Any]) -> list[str]:
+    findings = [n["lineage"]["label"] for n in block.get("osm_kerb_nodes", []) if n.get("lineage")]
+    findings += [s["lineage"]["label"] for s in block.get("osm_structure", []) if s.get("lineage")]
+    findings += [f["label"] for f in (block.get("lineage") or {}).values() if f]
+    return findings
+
+
+def population_context(inputs: StudyInputs) -> dict[str, Any] | None:
+    """Proximity, not correspondence: OSM kerb and steps near every in-area City record.
+
+    Over every CURBCUT = Y record and every STAIRS record intersecting the
+    study box — not the sample — how many have an OSM kerb node, or OSM steps,
+    within :data:`KERB_ASSOCIATION_M`. Nothing here is a match; it says how much
+    of the City's evidence has OSM information of the same kind beside it.
+    """
+    if inputs.parquet is None or inputs.bounds is None:
+        return None
+    connection = duckdb.connect(database=":memory:")
+    try:
+        connection.execute("SET autoinstall_known_extensions = false")
+        connection.execute("SET autoload_known_extensions = false")
+        rows = connection.execute(
+            "SELECT activetransportid, curbcut, state_curbcut, feature_type, geometry, "
+            "geometry_native FROM read_parquet(?) WHERE geometry IS NOT NULL AND "
+            "((curbcut = 'Y' AND state_curbcut = 'non_default') OR feature_type = 'STAIRS')",
+            [inputs.parquet.as_posix()],
+        ).fetchall()
+    finally:
+        connection.close()
+    box = shapely.box(*inputs.bounds)
+    osm = inputs.osm
+    steps = [w for w in osm.way_ids if osm.extract.ways[w].tags.get("highway") == "steps"]
+    steps_tree = shapely.STRtree([osm.lines[w] for w in steps]) if steps else None
+    curb: Counter[str] = Counter()
+    stairs: Counter[str] = Counter()
+    for _record_id, curbcut, _state, feature_type, geometry, native in rows:
+        if not shapely.from_wkb(bytes(geometry)).intersects(box):
+            continue
+        line = shapely.from_wkb(bytes(native))
+        if curbcut == "Y":
+            hits = osm.fact_tree.query(line, predicate="dwithin", distance=KERB_ASSOCIATION_M)
+            values = {
+                osm.extract.nodes[osm.fact_ids[int(h)]].tags["kerb"]
+                for h in hits
+                if "kerb" in osm.extract.nodes[osm.fact_ids[int(h)]].tags
+            }
+            if not values:
+                curb["no_osm_kerb_node_within_3m"] += 1
+            elif values & KERB_CONSISTENT and not values & KERB_CONFLICT:
+                curb["lowered_or_flush"] += 1
+            elif values <= KERB_CONFLICT:
+                curb["raised"] += 1
+            else:
+                curb["other_or_mixed"] += 1
+        if feature_type == "STAIRS":
+            near = (
+                len(steps_tree.query(line, predicate="dwithin", distance=KERB_ASSOCIATION_M))
+                if steps_tree is not None
+                else 0
+            )
+            stairs["osm_steps_within_3m" if near else "no_osm_steps_within_3m"] += 1
+    return {
+        "what_this_is": (
+            "Proximity over every in-area record, not correspondence: an OSM kerb node or steps "
+            "within 3 m. A nearby value may belong to a different corner or stair."
+        ),
+        "curb_cut_records": sum(curb.values()),
+        "curb_cut": dict(sorted(curb.items())),
+        "stairs_records": sum(stairs.values()),
+        "stairs": dict(sorted(stairs.items())),
+    }
+
+
+#: Candidates this near a record, or cited by a label, keep every metric in the
+#: evidence; the rest keep their identity, class and distance.
+EVIDENCE_NEAR_M = HISTORY_NEAR_M
+
+
+def slim(document: dict[str, Any]) -> dict[str, Any]:
+    """The committed evidence: every candidate listed, full metrics where they matter."""
+    referenced: set[str] = set()
+    records = []
+    for record in document["records"]:
+        cited = set((record.get("labels") or {}).get("osm", [])) | set(
+            (record.get("repeat_labels") or {}).get("osm", [])
+        )
+        candidates = []
+        for candidate in record["candidates"]:
+            if (
+                candidate["metrics"]["min_distance_m"] <= EVIDENCE_NEAR_M
+                or candidate["osm"] in cited
+            ):
+                candidates.append(candidate)
+                referenced.add(candidate["osm"])
+            else:
+                candidates.append(
+                    {
+                        "osm": candidate["osm"],
+                        "osm_class": candidate["osm_class"],
+                        "min_distance_m": candidate["metrics"]["min_distance_m"],
+                    }
+                )
+        if record["road"]["osm"]:
+            referenced.add(record["road"]["osm"])
+        records.append({**record, "candidates": candidates})
+    elements = {k: v for k, v in document["osm_elements"].items() if k in referenced}
+    return {**document, "records": records, "osm_elements": elements}
+
+
 # ---------------------------------------------------------------------------
 # The whole study
 # ---------------------------------------------------------------------------
@@ -1046,7 +1246,9 @@ def run_study(
     }
     if primary:
         document["summary"] = summarise(records)
+        document["attribute_results"] = attribute_summary(records)
         document["matcher_signals"] = matcher_signals(records, elements)
+        document["population_context"] = population_context(inputs)
     if primary and second:
         document["repeat_review"] = repeat_review(primary, second)
     document["measurement"] = {"seconds": round(time.perf_counter() - started, 2)}

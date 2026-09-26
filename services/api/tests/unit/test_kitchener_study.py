@@ -31,6 +31,7 @@ from pathable_api.geo.kitchener.study import (
     municipal_since,
     repeat_subset,
     run_study,
+    slim,
 )
 from tests import kitchener_lineage_fixture as osm_fixture
 from tests.kitchener_fixture import snapshot
@@ -274,6 +275,38 @@ class TestHistory:
         assert "version 2" in str(behind[1])
         moved = ((coordinates[0][0] + 0.001, coordinates[0][1]), coordinates[1])
         assert completeness("way/501", [contribution(2, moved)], extract)[0] is False
+
+
+class TestAttributeResults:
+    def test_results_per_attribute_and_what_only_osm_says(self, inputs: StudyInputs) -> None:
+        results = run_study(inputs, labels=osm_fixture.labels())["attribute_results"]
+
+        assert results["curb_cut"]["comparison"] == {"same": 1}
+        assert results["structure"]["comparison"] == {"same": 1}
+        # Trail 1005's STONEDUST against gravel; crosswalk 1003's painted asphalt
+        # beside an OSM crossing with no surface tag.
+        assert results["surface"]["comparison"] == {"conflict": 1, "kitchener_only": 1}
+        assert results["condition"]["comparison"] == {"both_present": 1}
+        # Sidewalk 1001's CONCRETE is a template default: OSM's surface is OSM's alone.
+        assert 1001 in results["osm_only"]["surface"]["examples"]
+
+    def test_population_context_is_proximity_over_every_record(self, inputs: StudyInputs) -> None:
+        context = run_study(inputs, labels=osm_fixture.labels())["population_context"]
+
+        assert context["curb_cut"] == {"lowered_or_flush": 1}
+        assert context["stairs"] == {"osm_steps_within_3m": 1}
+        assert "not correspondence" in context["what_this_is"]
+
+    def test_the_evidence_keeps_far_candidates_as_identity_and_distance(
+        self, inputs: StudyInputs
+    ) -> None:
+        evidence = slim(run_study(inputs, labels=osm_fixture.labels()))
+
+        far = [c for r in evidence["records"] for c in r["candidates"] if "metrics" not in c]
+        assert far
+        assert all(c["min_distance_m"] > 10 for c in far)
+        near = {c["osm"] for r in evidence["records"] for c in r["candidates"] if "metrics" in c}
+        assert near <= set(evidence["osm_elements"])
 
 
 class TestPieces:
