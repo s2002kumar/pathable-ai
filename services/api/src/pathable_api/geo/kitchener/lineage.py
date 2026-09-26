@@ -297,23 +297,30 @@ def raw_agreement(
 
 class Signal(StrEnum):
     KITCHENER = "kitchener_data"
-    MUNICIPAL_IMAGERY = "municipal_orthoimagery"
+    #: Region of Waterloo, Ontario or City orthophotos: photographs the City's own
+    #: ORTHO-sourced records may have been traced from too.
+    PUBLIC_IMAGERY = "public_orthoimagery"
     OTHER_GOVERNMENT = "other_government_data"
     IMPORT = "import_or_external_data"
     SURVEY = "survey"
-    STREET_LEVEL = "street_level_imagery"
+    STREET_LEVEL = "declared_street_level_imagery"
     DECLARED_IMAGERY = "declared_unrelated_imagery"
+    #: What an editor recorded as displayed, not what the mapper said they used.
     EDITOR_IMAGERY = "editor_recorded_imagery"
+    EDITOR_STREET_LEVEL = "editor_recorded_street_level_imagery"
+    EDITOR_GPS = "editor_recorded_gps_trace"
     UNSPECIFIED_IMAGERY = "unspecified_imagery"
     GOOGLE = "google_named"
 
 
 #: Signals that tie a contribution to the City's data or to data it may share.
-SHARED = frozenset({Signal.MUNICIPAL_IMAGERY, Signal.OTHER_GOVERNMENT, Signal.IMPORT})
+SHARED = frozenset({Signal.PUBLIC_IMAGERY, Signal.OTHER_GOVERNMENT, Signal.IMPORT})
+#: Signals made by the mapper (or a survey app), as opposed to recorded by an editor.
+DECLARED = frozenset({Signal.SURVEY, Signal.STREET_LEVEL, Signal.DECLARED_IMAGERY})
 
 # Source tags join words with underscores and digits ("Geobase_Import_2009",
-# "Bing_2015"), and an underscore is a word character, so  would miss them:
-# a "word" here ends wherever letters do.
+# "Bing_2015"), and an underscore is a word character, so a word boundary would
+# miss them: a "word" here ends wherever letters do.
 _A, _Z = r"(?<![a-z])", r"(?![a-z])"
 _IMAGERY_WORDS = r"ortho|aerial|imagery|photo|satellite"
 _DATA_WORDS = (
@@ -325,6 +332,13 @@ _MUNICIPAL_PLACES = re.compile(
     rf"region of waterloo|waterloo region|city of waterloo|{_A}cambridge{_Z}|{_A}woolwich{_Z}",
     re.IGNORECASE,
 )
+#: The Region's and the Province's orthophotos, however a mapper or an editor
+#: names them: "Region of Waterloo 2024", the Region's imagery WMS, the Ontario mosaics.
+_PUBLIC_IMAGERY = re.compile(
+    r"region of waterloo \d{4}|regionofwaterloo|waimagery|geospatial ontario|"
+    rf"ontario (imagery|mosaic|orthophoto)|{_A}swoop{_Z}|{_A}oids{_Z}",
+    re.IGNORECASE,
+)
 _GOVERNMENT = re.compile(
     rf"canvec|geobase|nrcan|statistics canada|statcan|ontario road network|{_A}orn{_Z}|"
     rf"land information ontario|{_A}lio{_Z}|government",
@@ -332,27 +346,50 @@ _GOVERNMENT = re.compile(
 )
 _IMAGERY = re.compile(_IMAGERY_WORDS, re.IGNORECASE)
 _DATA = re.compile(_DATA_WORDS, re.IGNORECASE)
+# Not preceded by a letter: "Geobase_Import_2009" names an import.
 _IMPORT = re.compile(rf"{_A}import", re.IGNORECASE)
 _SURVEY = re.compile(
     rf"{_A}survey|{_A}gps{_Z}|{_A}gnss{_Z}|on[- ]the[- ]ground|local knowledge|ground truth|"
     rf"{_A}in person{_Z}|streetcomplete|every ?door",
     re.IGNORECASE,
 )
-_STREET_LEVEL = re.compile(r"mapillary|kartaview|openstreetcam|panoramax|streetside", re.IGNORECASE)
+_STREET_LEVEL = re.compile(
+    r"mapillary|kartaview|openstreetcam|panoramax|streetside|streetlevel|street[- ]level",
+    re.IGNORECASE,
+)
 _NAMED_IMAGERY = re.compile(
-    rf"{_A}bing{_Z}|{_A}esri{_Z}|mapbox|maxar|digitalglobe|world ?imagery", re.IGNORECASE
+    rf"{_A}bing{_Z}|{_A}esri{_Z}|mapbox|maxar|digitalglobe|world ?imagery|nearmap|vexcel",
+    re.IGNORECASE,
 )
 _GOOGLE = re.compile(r"google", re.IGNORECASE)
 _SURVEY_EDITORS = re.compile(r"^(streetcomplete|every ?door)", re.IGNORECASE)
+#: The words iD writes into a changeset's source tag by itself, from the layers
+#: that were on screen. A mapper's own choices ("survey", "local knowledge",
+#: "gps") are ticked, not written for them, so those stay the mapper's.
+_ID_RECORDED = frozenset(
+    {
+        "aerial imagery",
+        "streetlevel imagery",
+        "mapillary",
+        "openstreetcam",
+        "kartaview",
+        "streetside",
+        "bing streetside",
+        "panoramax",
+    }
+)
 
 
 def signals_in_source(value: str) -> set[Signal]:
-    """What a ``source``-like value — a tag that names a source — says."""
+    """What a ``source``-like value, a tag a mapper wrote to name a source, says."""
     found: set[Signal] = set()
+    public_imagery = bool(_PUBLIC_IMAGERY.search(value))
+    if public_imagery:
+        found.add(Signal.PUBLIC_IMAGERY)
     if _KITCHENER.search(value):
-        found.add(Signal.MUNICIPAL_IMAGERY if _IMAGERY.search(value) else Signal.KITCHENER)
-    if _MUNICIPAL_PLACES.search(value):
-        found.add(Signal.MUNICIPAL_IMAGERY if _IMAGERY.search(value) else Signal.OTHER_GOVERNMENT)
+        found.add(Signal.PUBLIC_IMAGERY if _IMAGERY.search(value) else Signal.KITCHENER)
+    if _MUNICIPAL_PLACES.search(value) and not public_imagery:
+        found.add(Signal.PUBLIC_IMAGERY if _IMAGERY.search(value) else Signal.OTHER_GOVERNMENT)
     if _GOVERNMENT.search(value):
         found.add(Signal.OTHER_GOVERNMENT)
     if _IMPORT.search(value) or re.search(r"open ?data", value, re.IGNORECASE):
@@ -370,6 +407,47 @@ def signals_in_source(value: str) -> set[Signal]:
     return found
 
 
+def signals_in_imagery_used(value: str) -> set[Signal]:
+    """What an editor's record of the layers on screen says, layer by layer."""
+    found: set[Signal] = set()
+    for layer in (part.strip() for part in value.split(";")):
+        if not layer or layer.lower() == "none":
+            continue
+        if (
+            _PUBLIC_IMAGERY.search(layer)
+            or _KITCHENER.search(layer)
+            or _MUNICIPAL_PLACES.search(layer)
+        ):
+            found.add(Signal.PUBLIC_IMAGERY)
+        elif _STREET_LEVEL.search(layer):
+            found.add(Signal.EDITOR_STREET_LEVEL)
+        elif ".gpx" in layer.lower():
+            found.add(Signal.EDITOR_GPS)
+        elif _NAMED_IMAGERY.search(layer):
+            found.add(Signal.EDITOR_IMAGERY)
+        elif _GOOGLE.search(layer):
+            found.add(Signal.GOOGLE)
+        else:
+            found.add(Signal.UNSPECIFIED_IMAGERY)
+    return found
+
+
+def signals_in_changeset_source(value: str, *, editor: str) -> set[Signal]:
+    """A changeset's source tag. From iD, the layer words are the editor's own record."""
+    if not editor.startswith("iD "):
+        return signals_in_source(value)
+    found: set[Signal] = set()
+    for word in (part.strip() for part in value.split(";")):
+        if not word:
+            continue
+        if word.lower() in _ID_RECORDED:
+            street_level = _STREET_LEVEL.search(word)
+            found.add(Signal.EDITOR_STREET_LEVEL if street_level else Signal.UNSPECIFIED_IMAGERY)
+        else:
+            found |= signals_in_source(word)
+    return found
+
+
 def signals_in_comment(value: str) -> set[Signal]:
     """What free text says. A place name alone is not a source: "Kitchener" must
     come with words about data or imagery to count."""
@@ -384,7 +462,7 @@ def signals_in_comment(value: str) -> set[Signal]:
             if data:
                 found.add(as_data)
             elif imagery:
-                found.add(Signal.MUNICIPAL_IMAGERY)
+                found.add(Signal.PUBLIC_IMAGERY)
     if _IMPORT.search(value):
         found.add(Signal.IMPORT)
     if _SURVEY.search(value):
@@ -419,18 +497,17 @@ def changeset_evidence(changeset: Changeset | None) -> list[Evidence]:
         return []
     evidence: list[Evidence] = []
     tags = changeset.tags
-    for key in ("source", "imagery_used"):
-        if key not in tags:
-            continue
-        for signal in sorted(signals_in_source(tags[key])):
-            # An editor records the imagery it displayed; a mapper typing a
-            # source declares one. Only the second is the mapper's statement.
-            recorded = key == "imagery_used" and signal is Signal.DECLARED_IMAGERY
-            evidence.append(
-                Evidence(
-                    Signal.EDITOR_IMAGERY if recorded else signal, f"changeset {key}", tags[key]
-                )
-            )
+    editor = tags.get("created_by", "")
+    if "source" in tags:
+        evidence.extend(
+            Evidence(signal, "changeset source", tags["source"])
+            for signal in sorted(signals_in_changeset_source(tags["source"], editor=editor))
+        )
+    if "imagery_used" in tags:
+        evidence.extend(
+            Evidence(signal, "changeset imagery_used", tags["imagery_used"])
+            for signal in sorted(signals_in_imagery_used(tags["imagery_used"]))
+        )
     if "comment" in tags:
         for signal in sorted(signals_in_comment(tags["comment"])):
             match = _COMMENT_EXCERPT.search(tags["comment"])
@@ -438,7 +515,6 @@ def changeset_evidence(changeset: Changeset | None) -> list[Evidence]:
             evidence.append(Evidence(signal, "changeset comment", excerpt[:80]))
     if tags.get("import", "").lower() in ("yes", "true"):
         evidence.append(Evidence(Signal.IMPORT, "changeset import", tags["import"]))
-    editor = tags.get("created_by", "")
     if _SURVEY_EDITORS.search(editor):
         evidence.append(Evidence(Signal.SURVEY, "changeset created_by", editor.split(" ")[0]))
     return evidence
@@ -482,8 +558,38 @@ RESTRICTED = "restricted_or_unresolved_lineage"
 #: independent answer wins.
 _COMBINE = (Lineage.KNOWN, Lineage.POSSIBLE, Lineage.UNKNOWN, Lineage.INDEPENDENT)
 
-#: Attributes that can be read from above, so an editor's imagery record counts for them.
+#: What counts as positive evidence of an unrelated source depends on what the
+#: source could show. A shape can be traced from aerial imagery, a GPS trace or
+#: on the ground; street-level photos place nothing precisely.
+GEOMETRY_EVIDENCE = frozenset(
+    {
+        Signal.SURVEY,
+        Signal.STREET_LEVEL,
+        Signal.DECLARED_IMAGERY,
+        Signal.EDITOR_IMAGERY,
+        Signal.EDITOR_GPS,
+    }
+)
+#: A surface, stairs or a bridge can be seen from above and from the street.
 VISIBLE_FROM_ABOVE = frozenset({"surface", "highway", "bridge", "tunnel", "layer"})
+ABOVE_EVIDENCE = frozenset(
+    {
+        Signal.SURVEY,
+        Signal.STREET_LEVEL,
+        Signal.DECLARED_IMAGERY,
+        Signal.EDITOR_IMAGERY,
+        Signal.EDITOR_STREET_LEVEL,
+    }
+)
+#: A kerb height, tactile paving or a handrail only from the street.
+STREET_EVIDENCE = frozenset({Signal.SURVEY, Signal.STREET_LEVEL, Signal.EDITOR_STREET_LEVEL})
+
+
+def accepted_evidence(key: str | None) -> frozenset[Signal]:
+    """The signals that count as an unrelated source for a geometry (None) or a tag."""
+    if key is None:
+        return GEOMETRY_EVIDENCE
+    return ABOVE_EVIDENCE if key in VISIBLE_FROM_ABOVE else STREET_EVIDENCE
 
 
 @dataclass(frozen=True, slots=True)
@@ -510,10 +616,15 @@ class LineageFinding:
     reasons: tuple[str, ...]
     steps: tuple[Step, ...]
     notes: tuple[str, ...] = ()
+    #: For apparent independence: "declared" when every contribution's evidence
+    #: includes the mapper's own statement, "editor_recorded" when some rests only
+    #: on what an editor recorded, "dates" when the shape predates the City's record.
+    basis: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "label": str(self.label),
+            "basis": self.basis,
             "reasons": list(self.reasons),
             "steps": [s.as_dict() for s in self.steps],
             "notes": list(self.notes),
@@ -545,10 +656,7 @@ def _kinds(contribution: Contribution) -> str:
     return "+".join(flags) or "unflagged"
 
 
-def _positive(evidence: Iterable[Evidence], *, editor_imagery_counts: bool) -> list[Evidence]:
-    accepted = {Signal.SURVEY, Signal.STREET_LEVEL, Signal.DECLARED_IMAGERY}
-    if editor_imagery_counts:
-        accepted.add(Signal.EDITOR_IMAGERY)
+def _positive(evidence: Iterable[Evidence], accepted: frozenset[Signal]) -> list[Evidence]:
     return [e for e in evidence if e.signal in accepted]
 
 
@@ -587,7 +695,7 @@ def geometry_lineage(
         history,
         municipal_since=municipal_since,
         vertex_coincidence=vertex_coincidence,
-        editor_imagery_counts=True,
+        accepted=accepted_evidence(None),
         missing_changesets=[s.changeset for s in steps if s.changeset not in changesets],
     )
 
@@ -632,10 +740,12 @@ def attribute_lineage(
         history,
         municipal_since=municipal_since,
         vertex_coincidence=False,
-        editor_imagery_counts=key in VISIBLE_FROM_ABOVE,
+        accepted=accepted_evidence(key),
         missing_changesets=[] if contribution.changeset in changesets else [contribution.changeset],
     )
-    return LineageFinding(finding.label, finding.reasons, finding.steps, (*finding.notes, *notes))
+    return LineageFinding(
+        finding.label, finding.reasons, finding.steps, (*finding.notes, *notes), finding.basis
+    )
 
 
 def _decide(
@@ -644,7 +754,7 @@ def _decide(
     *,
     municipal_since: str | None,
     vertex_coincidence: bool,
-    editor_imagery_counts: bool,
+    accepted: frozenset[Signal],
     missing_changesets: Sequence[int],
 ) -> LineageFinding:
     notes = []
@@ -673,29 +783,24 @@ def _decide(
         return LineageFinding(Lineage.POSSIBLE, tuple(reasons), tuple(steps), tuple(notes))
     if history.reaches_frozen_state and not missing_changesets:
         predates = municipal_since is not None and max(s.timestamp for s in steps) < municipal_since
-        independent = [
-            bool(_positive(step.evidence, editor_imagery_counts=editor_imagery_counts))
-            for step in steps
-        ]
-        if predates or all(independent):
+        positive = [_positive(step.evidence, accepted) for step in steps]
+        if predates or all(positive):
             reasons = []
+            basis = "dates"
             if predates:
                 reasons.append(f"last shaping edit predates the City's record ({municipal_since})")
-            if all(independent):
-                signals = sorted(
-                    {
-                        str(e.signal)
-                        for step in steps
-                        for e in _positive(
-                            step.evidence, editor_imagery_counts=editor_imagery_counts
-                        )
-                    }
-                )
+            if all(positive):
+                signals = sorted({str(e.signal) for found in positive for e in found})
                 reasons.append(
                     f"every contribution states an unrelated source: {', '.join(signals)}"
                 )
-            return LineageFinding(Lineage.INDEPENDENT, tuple(reasons), tuple(steps), tuple(notes))
-        if any(independent):
+                declared = all(any(e.signal in DECLARED for e in found) for found in positive)
+                if not predates:
+                    basis = "declared" if declared else "editor_recorded"
+            return LineageFinding(
+                Lineage.INDEPENDENT, tuple(reasons), tuple(steps), tuple(notes), basis
+            )
+        if any(positive):
             notes.append("some contributions state an unrelated source, others state none")
     reason = (
         "the stated sources do not settle it" if evidence else "no contribution states a source"

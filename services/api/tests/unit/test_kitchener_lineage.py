@@ -23,7 +23,9 @@ from pathable_api.geo.kitchener.lineage import (
     parse_label,
     parse_labels,
     raw_agreement,
+    signals_in_changeset_source,
     signals_in_comment,
+    signals_in_imagery_used,
     signals_in_source,
 )
 from pathable_api.geo.kitchener.osm_history import Changeset, Contribution
@@ -135,7 +137,7 @@ class TestSignals:
         ("value", "expected"),
         [
             ("City of Kitchener Open Data", {Signal.KITCHENER, Signal.IMPORT}),
-            ("Kitchener orthophoto 2019", {Signal.MUNICIPAL_IMAGERY}),
+            ("Kitchener orthophoto 2019", {Signal.PUBLIC_IMAGERY}),
             ("Region of Waterloo", {Signal.OTHER_GOVERNMENT}),
             ("Bing", {Signal.DECLARED_IMAGERY}),
             ("survey;Bing", {Signal.SURVEY, Signal.DECLARED_IMAGERY}),
@@ -147,16 +149,58 @@ class TestSignals:
             ("NRCan-CanVec-8.0", {Signal.OTHER_GOVERNMENT}),
             ("Kitchenerville", set()),
             ("aerial imagery", {Signal.UNSPECIFIED_IMAGERY}),
+            # The Region's orthophoto layer, which the City's ORTHO records may share.
+            ("Region of Waterloo 2024", {Signal.PUBLIC_IMAGERY}),
+            (
+                "GRT GTFS; GRT Schedule; Region of Waterloo 2024; Bing",
+                {Signal.PUBLIC_IMAGERY, Signal.DECLARED_IMAGERY},
+            ),
         ],
     )
     def test_a_source_value_names_its_kind(self, value: str, expected: set[Signal]) -> None:
         assert signals_in_source(value) == expected
 
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (
+                "Esri World Imagery;Mapillary Images;OpenStreetCam Images",
+                {Signal.EDITOR_IMAGERY, Signal.EDITOR_STREET_LEVEL},
+            ),
+            (
+                "Custom (https://gis.regionofwaterloo.ca/waimagery/services/Imagery_2024/"
+                "ImageServer/WMSServer)",
+                {Signal.PUBLIC_IMAGERY},
+            ),
+            ("Bing Maps Aerial;.gpx data file", {Signal.EDITOR_IMAGERY, Signal.EDITOR_GPS}),
+            ("None", set()),
+        ],
+    )
+    def test_an_editor_record_is_read_layer_by_layer(
+        self, value: str, expected: set[Signal]
+    ) -> None:
+        assert signals_in_imagery_used(value) == expected
+
+    def test_the_words_id_writes_itself_are_the_editors_not_the_mappers(self) -> None:
+        written = "streetlevel imagery;mapillary;openstreetcam;aerial imagery"
+
+        assert signals_in_changeset_source(written, editor="iD 2.20.1") == {
+            Signal.EDITOR_STREET_LEVEL,
+            Signal.UNSPECIFIED_IMAGERY,
+        }
+        assert Signal.SURVEY in signals_in_changeset_source(
+            f"{written};local knowledge", editor="iD 2.20.1"
+        )
+        # Typed into another editor, the same words are the mapper's statement.
+        assert signals_in_changeset_source(written, editor="JOSM/1.5 (18969 en)") == {
+            Signal.STREET_LEVEL
+        }
+
     def test_a_place_name_in_a_comment_is_not_a_source(self) -> None:
         assert signals_in_comment("Added sidewalks in Kitchener") == set()
         assert signals_in_comment("Kitchener open data sidewalks") >= {Signal.KITCHENER}
         assert signals_in_comment("Traced sidewalks in Kitchener from aerial imagery") == {
-            Signal.MUNICIPAL_IMAGERY
+            Signal.PUBLIC_IMAGERY
         }
 
     def test_an_editor_imagery_record_is_not_a_mapper_declaration(self) -> None:
@@ -238,10 +282,9 @@ class TestGeometryLineage:
         both = _changesets(c1={"source": "Bing"}, c2={"source": "survey"}, c3={})
         one = _changesets(c1={"source": "Bing"}, c2={}, c3={})
 
-        assert (
-            geometry_lineage(history, both, municipal_since=None, vertex_coincidence=False).label
-            is Lineage.INDEPENDENT
-        )
+        found = geometry_lineage(history, both, municipal_since=None, vertex_coincidence=False)
+        assert found.label is Lineage.INDEPENDENT
+        assert found.basis == "declared"  # both sources typed by the mapper
         partial = geometry_lineage(history, one, municipal_since=None, vertex_coincidence=False)
         assert partial.label is Lineage.UNKNOWN
         assert any("others state none" in note for note in partial.notes)
@@ -332,6 +375,20 @@ class TestAttributeLineage:
         assert kerb.label is Lineage.UNKNOWN
         assert surface.label is Lineage.INDEPENDENT
         assert "introduced in the same contribution as the geometry it sits on" in surface.notes
+
+    def test_street_level_photos_on_screen_vouch_for_a_kerb_as_an_editor_record(self) -> None:
+        history = _history(
+            _contribution(1, "2020-01-01T00:00:00Z", creation=True, tags={"kerb": "lowered"})
+        )
+        changesets = _changesets(
+            c1={"imagery_used": "Bing Maps Aerial;Mapillary Images", "created_by": "iD 2.27.0"}
+        )
+
+        finding = attribute_lineage(history, changesets, "kerb", municipal_since=None)
+
+        assert finding is not None
+        assert finding.label is Lineage.INDEPENDENT
+        assert finding.basis == "editor_recorded"
 
     def test_no_value_no_finding(self) -> None:
         history = _history(_contribution(1, "2020-01-01T00:00:00Z", creation=True))
