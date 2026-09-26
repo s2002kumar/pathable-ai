@@ -65,14 +65,34 @@ from pathable_api.geo.kitchener.geography import (
     read_dataset_source,
     read_pathable_edges,
 )
+from pathable_api.geo.kitchener.lineage import LabelError
 from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
 from pathable_api.geo.kitchener.osm_extract import (
     EXTRACT_FORMAT_VERSION,
     ExtractSourceError,
+    load_study_extract,
     read_study_extract,
     write_study_extract,
 )
+from pathable_api.geo.kitchener.osm_history import (
+    OHSOME_API,
+    ChangesetDump,
+    HistoryError,
+    dump_identity,
+    fetch_history,
+    ohsome_metadata,
+    ohsome_requests,
+)
+from pathable_api.geo.kitchener.review import render_review
 from pathable_api.geo.kitchener.snapshot import SnapshotError, SnapshotPlan, take_snapshot
+from pathable_api.geo.kitchener.study import (
+    StudyError,
+    history_document,
+    history_elements,
+    load_history,
+    load_inputs,
+    run_study,
+)
 from pathable_api.geo.lifecycle import (
     SealRefusedError,
     enrich_with_elevation,
@@ -528,6 +548,79 @@ def build_parser() -> argparse.ArgumentParser:
     )
     lineage_extract.add_argument(
         "--json", type=Path, required=True, help="Write its manifest here."
+    )
+
+    lineage_study = kitchener_actions.add_parser(
+        "lineage-study",
+        help=(
+            "PA-GEO-04: candidates, review page and evidence for the Kitchener sample against "
+            "the frozen OSM extract. Offline; never touches the database."
+        ),
+    )
+    lineage_study.add_argument(
+        "--sample", type=Path, required=True, help="The PA-GEO-03 sample GeoJSON."
+    )
+    lineage_study.add_argument(
+        "--sample-sha256", default=None, help="Refuse the sample unless it hashes to this."
+    )
+    lineage_study.add_argument(
+        "--normalized", type=Path, required=True, help="The normalized snapshot folder."
+    )
+    lineage_study.add_argument(
+        "--extract", type=Path, required=True, help="The frozen OSM study extract."
+    )
+    lineage_study.add_argument("--extract-manifest", type=Path, required=True)
+    lineage_study.add_argument(
+        "--history", type=Path, default=None, help="From the lineage-history command."
+    )
+    lineage_study.add_argument("--labels", type=Path, default=None, help="Primary labels.")
+    lineage_study.add_argument(
+        "--repeat-labels", type=Path, default=None, help="Repeat-review labels."
+    )
+    lineage_study.add_argument(
+        "--json", type=Path, required=True, help="Write the study document here."
+    )
+    lineage_study.add_argument("--html", type=Path, default=None, help="Write the review here.")
+    lineage_study.add_argument(
+        "--blind-html",
+        type=Path,
+        default=None,
+        help="Write a page of the repeat-review subset without labels or history here.",
+    )
+
+    lineage_history = kitchener_actions.add_parser(
+        "lineage-history",
+        help=(
+            "Read the edit history of the study's OSM candidates from the ohsome API and their "
+            "changesets from a planet changeset dump. Never uses the OSM editing API."
+        ),
+    )
+    lineage_history.add_argument(
+        "--study", type=Path, required=True, help="A document from the lineage-study command."
+    )
+    lineage_history.add_argument("--extract", type=Path, required=True)
+    lineage_history.add_argument("--extract-manifest", type=Path, required=True)
+    lineage_history.add_argument(
+        "--dump", type=Path, required=True, help="A planet changesets-*.osm.bz2 file."
+    )
+    lineage_history.add_argument(
+        "--dump-index",
+        type=Path,
+        default=None,
+        help="The dump's stream index; built beside the dump when missing.",
+    )
+    lineage_history.add_argument(
+        "--cache",
+        type=Path,
+        default=Path(".kitchener-data/osm/ohsome"),
+        help="ohsome answers, kept by request hash and reused.",
+    )
+    lineage_history.add_argument("--ohsome-url", default=OHSOME_API)
+    lineage_history.add_argument(
+        "--out",
+        type=Path,
+        required=True,
+        help="Write the history here. It holds changeset comments: keep it out of git.",
     )
 
     return parser
@@ -1146,6 +1239,10 @@ def _osm_ids(raw_ids: Iterable[str]) -> set[int]:
 
 
 def _kitchener_offline(args: argparse.Namespace) -> int:
+    if args.kitchener_command == "lineage-study":
+        return _kitchener_lineage_study(args)
+    if args.kitchener_command == "lineage-history":
+        return _kitchener_lineage_history(args)
     if args.kitchener_command == "snapshot":
         if args.chunk_size < 1:
             print("error: --chunk-size must be at least 1.", file=sys.stderr)
@@ -1242,7 +1339,104 @@ async def _kitchener_audit(database: Database, args: argparse.Namespace) -> int:
 
 
 #: `pathable kitchener` commands that need no database.
-_KITCHENER_OFFLINE = frozenset({"snapshot", "normalize"})
+_KITCHENER_OFFLINE = frozenset({"snapshot", "normalize", "lineage-study", "lineage-history"})
+
+
+def _kitchener_lineage_study(args: argparse.Namespace) -> int:
+    try:
+        inputs = load_inputs(
+            args.sample,
+            args.normalized,
+            args.extract,
+            args.extract_manifest,
+            expected_sample_sha256=args.sample_sha256,
+            progress=print,
+        )
+        history = load_history(args.history) if args.history else None
+        labels = json.loads(args.labels.read_text("utf-8")) if args.labels else None
+        repeat = json.loads(args.repeat_labels.read_text("utf-8")) if args.repeat_labels else None
+        document = run_study(inputs, history=history, labels=labels, repeat=repeat, progress=print)
+    except (StudyError, NormalizationError, ExtractSourceError, LabelError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    document["run"] = _run_measurements()
+    write_json(args.json, document)
+    print(f"\nLineage study over {len(document['records'])} records")
+    summary = document.get("summary")
+    if summary is not None:
+        for name, count in summary["all"]["correspondence"].items():
+            print(f"  {name:<28}{count:>4}")
+    print(f"Wrote {args.json}")
+    for path, blind in ((args.html, False), (args.blind_html, True)):
+        if path is None:
+            continue
+        subset = document["method"]["repeat_subset"]["records"] if blind else None
+        page = render_review(document, inputs.kitchener, inputs.osm, blind=blind, only=subset)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(page, encoding="utf-8", newline="\n")
+        print(f"Wrote {path}")
+    return EXIT_OK
+
+
+def _kitchener_lineage_history(args: argparse.Namespace) -> int:
+    study = json.loads(args.study.read_text("utf-8"))
+    manifest = json.loads(args.extract_manifest.read_text("utf-8"))
+    transport = RequestsTransport(timeout_seconds=300.0)
+    try:
+        extract = load_study_extract(args.extract, expected_sha256=manifest["output"]["sha256"])
+        metadata = ohsome_metadata(transport, base_url=args.ohsome_url)
+        elements = history_elements(study)
+        west, south, east, north = manifest["dataset"]["source_bbox"]
+        # ohsome keeps elements that intersect the box; a margin keeps candidates
+        # that lie just outside it.
+        margin = 0.01
+        requests = ohsome_requests(
+            elements,
+            bbox=(west - margin, south - margin, east + margin, north + margin),
+            time_range=(metadata["temporal_extent"]["from"], metadata["temporal_extent"]["to"]),
+        )
+        print(f"{len(elements)} elements in {len(requests)} ohsome requests")
+        fetched = fetch_history(
+            requests,
+            transport=transport,
+            cache_dir=args.cache,
+            base_url=args.ohsome_url,
+            progress=print,
+        )
+        wanted = sorted({c.changeset for c in fetched.contributions})
+        index = args.dump_index or args.dump.with_name(args.dump.name + ".streams.json")
+        dump = ChangesetDump.open(args.dump, index, workers=16, progress=print)
+        changesets = dump.lookup(wanted)
+        identity = {
+            "role": (
+                "metadata about how the frozen geometry came to be: history ends where the "
+                "ohsome extent ends, and none of it is the geometry compared"
+            ),
+            "frozen_extract_sha256": manifest["output"]["sha256"],
+            "ohsome": {**metadata, "requests": fetched.requests},
+            "changeset_dump": dump_identity(args.dump),
+            "elements_requested": len(elements),
+            "elements_with_history": len({c.element for c in fetched.contributions}),
+            "contributions": len(fetched.contributions),
+            "changesets_requested": len(wanted),
+            "changesets_found": len(changesets),
+            "privacy": (
+                "changeset user names and ids are dropped while parsing; comments stay in this "
+                "local file and reach committed evidence only as matched source phrases"
+            ),
+        }
+    except (HistoryError, ExtractSourceError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    document = history_document(fetched.contributions, changesets, extract, identity)
+    write_json(args.out, document)
+    reaching = sum(1 for item in document["elements"].values() if item["reaches_frozen_state"])
+    print(
+        f"\n{identity['elements_with_history']} elements with history, {reaching} reaching the "
+        f"frozen state; {len(changesets)} of {len(wanted)} changesets found"
+    )
+    print(f"Wrote {args.out}")
+    return EXIT_OK
 
 
 async def _kitchener_lineage_extract(database: Database, args: argparse.Namespace) -> int:
@@ -1279,12 +1473,14 @@ async def _kitchener_lineage_extract(database: Database, args: argparse.Namespac
         "kitchener_osm_extract_version": EXTRACT_FORMAT_VERSION,
         "dataset": source.as_dict(),
         "selection": (
-            "every way with a highway tag that touches the dataset's recorded bounding box, "
-            "whole; the nodes they use; and tagged nodes inside the box carrying kerb, "
-            "crossing, barrier or highway facts"
+            "every way with a highway tag that has a node inside the dataset's recorded "
+            "bounding box, kept whole however far it runs beyond it; the nodes they use; and "
+            "tagged nodes inside the box carrying kerb, crossing, barrier or highway facts"
         ),
         "source": {k: facts[k] for k in ("source_file", "source_sha256", "bounds")},
-        "counts": {k: facts[k] for k in ("nodes_near_box", "fact_nodes", "ways", "nodes")},
+        "counts": {
+            k: facts[k] for k in ("fact_nodes", "ways", "ways_with_unresolved_nodes", "nodes")
+        },
         "output": {"file": args.out.name, "bytes": args.out.stat().st_size, "sha256": sha256},
         "run": {"seconds": round(time.perf_counter() - started, 2), **_run_measurements()},
     }
