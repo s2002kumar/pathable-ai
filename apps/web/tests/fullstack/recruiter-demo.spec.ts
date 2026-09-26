@@ -141,7 +141,7 @@ test.describe('the recruiter demo', () => {
     const summary = page.getByTestId('uncertainty-summary');
     await expect(summary).toBeVisible();
     await expect(summary).toContainText('Accessibility data is incomplete');
-    await expect(summary).not.toContainText(/(safe|verified|confident|guaranteed)/i);
+    await expect(summary).not.toContainText(/\b(safe|verified|confident|guaranteed)\b/i);
 
     // Visible is not the same as in the viewport: the panel scrolls, and an
     // element below the fold still reports itself visible to Playwright.
@@ -168,8 +168,8 @@ test.describe('the recruiter demo', () => {
     await expect(legend).toContainText('Route for your profile');
     await expect(legend).toContainText('Shortest walking route');
 
-    await expect(page.getByTestId('route-card-accessible')).toBeVisible();
-    await expect(page.getByTestId('route-card-standard')).toBeVisible();
+    await expect(page.getByTestId('difference-accessible')).toBeVisible();
+    await expect(page.getByTestId('difference-shortest')).toBeVisible();
   });
 
   test('the deep link starts the same live request', async ({ page }) => {
@@ -202,14 +202,14 @@ test.describe('the recruiter demo', () => {
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
     await runExample(page);
 
-    await page.getByRole('button', { name: 'Clear' }).click();
-    await expect(page.getByTestId('point-start')).toContainText(/click the map to set/i);
+    await page.getByTestId('clear-journey').click();
+    await expect(page.getByTestId('endpoint-origin-value')).toContainText(/not set/i);
 
     const map = page.getByTestId('map-frame');
     const box = await map.boundingBox();
     if (box === null) throw new Error('the map has no box to click');
-    await map.click({ position: { x: box.width * 0.4, y: box.height * 0.5 } });
-    await expect(page.getByTestId('point-start')).not.toContainText(/click the map to set/i);
+    await map.click({ position: { x: box.width * 0.6, y: box.height * 0.4 } });
+    await expect(page.getByTestId('endpoint-origin-value')).not.toContainText(/not set/i);
   });
 
   test('the example is reachable and operable from the keyboard', async ({ page }) => {

@@ -1,17 +1,13 @@
 'use client';
 
+import { type ReactNode, useCallback, useRef } from 'react';
 import type { ProfileKey } from '@pathable/contracts';
-import { PlaceSearch } from '@/features/geocoding/PlaceSearch';
+import { type RouteFocus, prefersReducedMotion } from '@/features/map/route-layers';
+import { EndpointField } from './EndpointField';
 import { RouteComparisonView } from './RouteComparisonView';
 import { VerifiedExampleCard } from './VerifiedExample';
 import type { VerifiedExample } from './verified-example';
-import {
-  type LngLat,
-  type PlannerPoints,
-  type RouteRequestState,
-  formatCoordinate,
-  nextRole,
-} from './types';
+import type { LngLat, PlannerPoints, PointRole, RouteRequestState, StairsTarget } from './types';
 import styles from './RoutePlanner.module.css';
 
 /**
@@ -21,6 +17,11 @@ import styles from './RoutePlanner.module.css';
  * immediately and stays usable when the backend is down — the profile list is
  * part of the contract, and a network round trip to learn five stable labels
  * would trade a real cost for no benefit. The API still validates the key.
+ *
+ * The hints are deliberately client-side: the API's `description` is a full
+ * sentence rather than a one-line rule summary, and there is no short-hint
+ * field to read. They describe what the profile does to the route, and they
+ * are engineering judgement rather than a measurement of how anybody travels.
  */
 const PROFILE_OPTIONS: ReadonlyArray<{ key: ProfileKey; label: string; hint: string }> = [
   { key: 'wheelchair', label: 'Wheelchair', hint: 'No steps, paved surfaces, gentle grades' },
@@ -44,13 +45,32 @@ export type RoutePlannerProps = {
   readonly region: string;
   readonly example: VerifiedExample;
   readonly exampleActive: boolean;
+  /** True once both endpoints are set and a comparison can be asked for. */
+  readonly canCompare: boolean;
+  /** True when the draft has moved away from the journey on screen. */
+  readonly pendingEdits: boolean;
+  /** Which endpoint the next map click fills, if the viewer asked for one. */
+  readonly pickTarget: PointRole | null;
+  /** The journey the result on screen belongs to, for labelling it. */
+  readonly submittedSummary: string | null;
+  /** Which route's recorded stairs are highlighted, if any. */
+  readonly stairsTarget: StairsTarget;
+  /** Which route is brought forward on the map; optional for callers without a map. */
+  readonly focusedRoute?: RouteFocus;
+  readonly onFocusRoute?: (focus: RouteFocus) => void;
+  readonly onShowStairs?: (target: StairsTarget) => void;
   readonly onRunExample: (example: VerifiedExample) => void;
   readonly onProfileChange: (key: ProfileKey) => void;
-  readonly onClearPoints: () => void;
+  readonly onCompare: () => void;
+  readonly onClearPoint: (role: PointRole) => void;
+  readonly onClearAll: () => void;
   readonly onSwapPoints: () => void;
   readonly onRetry: () => void;
-  readonly onSelectPlace: (position: LngLat) => void;
+  readonly onSelectPlace: (role: PointRole, position: LngLat, label: string) => void;
+  readonly onPickOnMap: (role: PointRole) => void;
   readonly fetchImpl?: typeof fetch;
+  /** The page's purpose statement, placed after the controls. */
+  readonly intro?: ReactNode;
 };
 
 export function RoutePlanner({
@@ -61,38 +81,50 @@ export function RoutePlanner({
   region,
   example,
   exampleActive,
+  canCompare,
+  pendingEdits,
+  pickTarget,
+  submittedSummary,
+  stairsTarget,
+  focusedRoute = null,
+  onFocusRoute = () => {},
+  onShowStairs = () => {},
   onRunExample,
   onProfileChange,
-  onClearPoints,
+  onCompare,
+  onClearPoint,
+  onClearAll,
   onSwapPoints,
   onRetry,
   onSelectPlace,
+  onPickOnMap,
   fetchImpl,
+  intro,
 }: RoutePlannerProps) {
+  const planRef = useRef<HTMLDivElement>(null);
+
+  // "Edit journey or profile" from the result: scroll the planning section
+  // into view and move focus to it. Nothing about the request changes — the
+  // comparison stays rendered and the map keeps its routes — the viewer is
+  // simply taken to the controls that are already there. A reduced-motion
+  // preference makes the scroll instant.
+  const handleEditJourney = useCallback(() => {
+    const plan = planRef.current;
+    if (plan === null) return;
+    if (typeof plan.scrollIntoView === 'function') {
+      plan.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+    }
+    plan.focus({ preventScroll: true });
+  }, []);
+
   return (
     <section className={styles.panel} aria-labelledby="route-planner-heading">
-      <header className={styles.header}>
-        <p className={styles.eyebrow}>Plan a journey</p>
-        <h2 className={styles.title} id="route-planner-heading">
-          Compare routes
-        </h2>
-      </header>
-
-      <VerifiedExampleCard
-        example={example}
-        onRun={onRunExample}
-        active={exampleActive}
-        busy={state.status === 'loading'}
-      />
-
-      {/* Directly under the example, because that is where the answer to
-          pressing it belongs. Measured during the PA-RR-06 audit: with the
-          inputs above it, pressing the example changed the map and left the
-          panel showing the coordinates it had just filled in, with the
-          comparison two screens down. The region is always rendered and
-          never empty — an aria-live container has to exist before anything
-          is put into it, and an empty box is not something a viewer can
-          see. */}
+      {/* The answer, at the top of the panel.
+          Before there is one this is a single line of instruction, and the
+          controls below it are what the viewer came for. The region is always
+          rendered and never empty: an aria-live container has to exist before
+          anything is put into it, and an empty box is not something a viewer
+          can see. */}
       <div
         className={styles.status}
         // Results replace one another in place, so the region has to announce
@@ -104,8 +136,7 @@ export function RoutePlanner({
       >
         {state.status === 'idle' ? (
           <p className={styles.hint}>
-            Choose a start and an end on the map, or press the example above, and PathAble will
-            compare the shortest walking route with one that suits how you travel.
+            {canCompare ? 'Both ends are set — compare the routes.' : 'Name both ends to begin.'}
           </p>
         ) : null}
 
@@ -125,121 +156,154 @@ export function RoutePlanner({
           </div>
         ) : null}
 
-        {state.status === 'success' ? <RouteComparisonView comparison={state.comparison} /> : null}
+        {state.status === 'success' ? (
+          <RouteComparisonView
+            comparison={state.comparison}
+            focusedRoute={focusedRoute}
+            onFocusRoute={onFocusRoute}
+            onEditJourney={handleEditJourney}
+            stairsTarget={stairsTarget}
+            onShowStairs={onShowStairs}
+            {...(submittedSummary ? { journeySummary: submittedSummary } : {})}
+            pendingEdits={pendingEdits}
+          />
+        ) : null}
       </div>
 
-      <PlaceSearch
-        apiBaseUrl={apiBaseUrl}
-        region={region}
-        onSelect={onSelectPlace}
-        {...(fetchImpl ? { fetchImpl } : {})}
-      />
+      {/* Focusable as a landmark, not as a control: "Edit journey or profile"
+          lands here, the heading is announced, and the next Tab reaches the
+          start field. */}
+      <div
+        className={styles.plan}
+        ref={planRef}
+        tabIndex={-1}
+        role="region"
+        aria-labelledby="route-planner-heading"
+        data-testid="plan-journey"
+      >
+        <h2 className={styles.planHeading} id="route-planner-heading">
+          Plan a journey
+        </h2>
 
-      <PointFields points={points} onClear={onClearPoints} onSwap={onSwapPoints} />
+        <EndpointField
+          role="origin"
+          endpoint={points.origin}
+          apiBaseUrl={apiBaseUrl}
+          region={region}
+          picking={pickTarget === 'origin'}
+          onSelectPlace={onSelectPlace}
+          onPickOnMap={onPickOnMap}
+          onClear={onClearPoint}
+          {...(fetchImpl ? { fetchImpl } : {})}
+        />
 
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>How do you travel?</legend>
-        <div className={styles.profiles} role="radiogroup" aria-label="Mobility profile">
-          {PROFILE_OPTIONS.map((option) => (
-            <label
-              key={option.key}
-              className={styles.profileOption}
-              data-selected={option.key === profileKey}
-            >
-              <input
-                type="radio"
-                name="mobility-profile"
-                value={option.key}
-                checked={option.key === profileKey}
-                onChange={() => onProfileChange(option.key)}
-                className={styles.profileInput}
-              />
-              <span className={styles.profileLabel}>{option.label}</span>
-              <span className={styles.profileHint}>{option.hint}</span>
-            </label>
-          ))}
+        <div className={styles.swapRow}>
+          <button
+            type="button"
+            className={styles.quietButton}
+            onClick={onSwapPoints}
+            disabled={points.origin === null && points.destination === null}
+            data-testid="swap-points"
+          >
+            Swap ends
+          </button>
         </div>
-      </fieldset>
+
+        <EndpointField
+          role="destination"
+          endpoint={points.destination}
+          apiBaseUrl={apiBaseUrl}
+          region={region}
+          picking={pickTarget === 'destination'}
+          onSelectPlace={onSelectPlace}
+          onPickOnMap={onPickOnMap}
+          onClear={onClearPoint}
+          {...(fetchImpl ? { fetchImpl } : {})}
+        />
+
+        <ProfileChooser selected={profileKey} onChange={onProfileChange} />
+
+        <div className={styles.submitRow}>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={onCompare}
+            disabled={!canCompare}
+            data-testid="compare-routes"
+          >
+            {state.status === 'loading' ? 'Comparing…' : 'Compare routes'}
+          </button>
+          <button
+            type="button"
+            className={styles.quietButton}
+            onClick={onClearAll}
+            disabled={points.origin === null && points.destination === null}
+            data-testid="clear-journey"
+          >
+            Clear
+          </button>
+        </div>
+
+        <VerifiedExampleCard
+          example={example}
+          onRun={onRunExample}
+          active={exampleActive}
+          journeyStarted={points.origin !== null || points.destination !== null}
+          busy={state.status === 'loading'}
+        />
+      </div>
+
+      {intro}
     </section>
   );
 }
 
-function PointFields({
-  points,
-  onClear,
-  onSwap,
+/**
+ * The five profiles, as one labelled control and one line of rules.
+ *
+ * A native `select`, not a custom widget. Every profile stays offered, and the
+ * keyboard and screen-reader behaviour is the platform's own rather than an
+ * imitation of it. As a row of chips this wrapped to five lines in a 20 rem
+ * panel — 168 px, measured — which is what pushed Compare and the example off
+ * the first screen at 1000 x 700.
+ *
+ * The rule line is not hidden behind anything. Which constraints are applied
+ * is the difference between the two routes, and they are engineering judgement
+ * rather than measurements of how people with these aids travel — so they have
+ * to be inspectable.
+ */
+function ProfileChooser({
+  selected,
+  onChange,
 }: {
-  readonly points: PlannerPoints;
-  readonly onClear: () => void;
-  readonly onSwap: () => void;
+  readonly selected: ProfileKey;
+  readonly onChange: (key: ProfileKey) => void;
 }) {
-  const pending = nextRole(points);
+  const chosen = PROFILE_OPTIONS.find((option) => option.key === selected);
 
   return (
-    <div className={styles.points}>
-      <PointRow
-        label="Start"
-        marker="A"
-        point={points.origin}
-        awaiting={points.origin === null && pending === 'origin'}
-      />
-      <PointRow
-        label="End"
-        marker="B"
-        point={points.destination}
-        awaiting={points.destination === null && pending === 'destination'}
-      />
-
-      <div className={styles.pointActions}>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          onClick={onSwap}
-          disabled={points.origin === null || points.destination === null}
-        >
-          Swap
-        </button>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          onClick={onClear}
-          disabled={points.origin === null && points.destination === null}
-        >
-          Clear
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function PointRow({
-  label,
-  marker,
-  point,
-  awaiting,
-}: {
-  readonly label: string;
-  readonly marker: string;
-  readonly point: LngLat | null;
-  readonly awaiting: boolean;
-}) {
-  return (
-    <div
-      className={styles.point}
-      data-awaiting={awaiting}
-      data-testid={`point-${label.toLowerCase()}`}
-    >
-      <span className={styles.pointMarker} data-marker={marker} aria-hidden="true">
-        {marker}
-      </span>
-      <span className={styles.pointLabel}>{label}</span>
-      <span className={styles.pointValue}>
-        {point === null ? (
-          <span className={styles.pointEmpty}>{awaiting ? 'Click the map to set' : 'Not set'}</span>
-        ) : (
-          formatCoordinate(point)
-        )}
-      </span>
+    <div className={styles.fieldset}>
+      <label className={styles.legend} htmlFor="mobility-profile">
+        How do you travel?
+      </label>
+      <select
+        id="mobility-profile"
+        className={styles.profileSelect}
+        value={selected}
+        onChange={(event) => onChange(event.target.value as ProfileKey)}
+        data-testid="mobility-profile"
+      >
+        {PROFILE_OPTIONS.map((option) => (
+          <option key={option.key} value={option.key}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {chosen ? (
+        <p className={styles.profileRule} data-testid="profile-rule">
+          {chosen.hint}
+        </p>
+      ) : null}
     </div>
   );
 }

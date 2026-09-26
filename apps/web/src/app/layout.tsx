@@ -4,12 +4,12 @@ import '@/styles/globals.css';
 export const metadata: Metadata = {
   title: 'PathAble AI — accessibility-aware pedestrian routing',
   description:
-    'An early engineering build of PathAble AI, a project to compare ordinary ' +
-    'pedestrian routes against accessibility-aware routes. Phase 0: no routing or ' +
-    'machine learning is implemented yet.',
+    'PathAble compares the shortest walking route with one that suits how you ' +
+    'travel, and explains the difference using what OpenStreetMap actually records. ' +
+    'A local engineering build for Waterloo, Ontario: it advises, it does not certify.',
   applicationName: 'PathAble AI',
-  // Nothing here is ready to be indexed or shared, and an early build being
-  // surfaced as a working accessibility tool would be actively harmful.
+  // Not deployed and not certified. An early build being surfaced by a search
+  // engine as a working accessibility tool would be actively harmful.
   robots: { index: false, follow: false },
 };
 
@@ -19,8 +19,8 @@ export const viewport: Viewport = {
   // Never below 5: capping zoom locks out low-vision users who rely on it.
   maximumScale: 5,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f191c' },
+    { media: '(prefers-color-scheme: light)', color: '#fffdf9' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a1816' },
   ],
 };
 

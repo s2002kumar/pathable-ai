@@ -2,17 +2,34 @@
  * Design tokens.
  *
  * Semantic names only at the point of use — components reference `--color-text`,
- * never `--teal-700`. That is what makes the dark theme a token swap rather than a
- * rewrite, and it is what will let a future high-contrast mode drop in.
+ * never `--ivory-100`. That is what makes the dark theme a token swap rather than
+ * a rewrite, and it is what will let a future high-contrast mode drop in.
+ *
+ * The palette is a navigation product's: a cool near-white ground, solid white
+ * controls, deep-teal identity, and a clear cobalt route over distinctly
+ * coloured water, parks and buildings. Colour carries meaning here — teal is
+ * selection and identity, cobalt is the route for your profile, amber is
+ * missing information and burnt orange is a recorded stairway. None of them
+ * ever means a route is safe.
+ *
+ * Contrast figures in the comments were computed for the named pairing from
+ * these sRGB values. They are arithmetic, not a certification of the rendered
+ * UI: opacity, focus rings, disabled states and anything drawn over live
+ * cartography are checked in a browser instead.
  *
  * Contrast: every text/background pairing below meets WCAG 2.1 AA (4.5:1 for body
- * text, 3:1 for large text and UI boundaries) in both themes.
+ * text, 3:1 for large text and UI boundaries) in both themes. Figures quoted in
+ * comments were computed for the pairing named; the axe e2e scan checks the
+ * rendered result.
  */
 
 :root {
   color-scheme: light dark;
 
   /* --- Type ------------------------------------------------------------- */
+  /* The platform's own UI face, on purpose. It is already installed, already
+     hinted for the screen it is on, and costs no bytes; a webfont here would be
+     novelty with a licence to track. */
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     'Noto Sans', sans-serif;
@@ -56,107 +73,178 @@
   --radius-pill: 999px;
 
   /* --- Elevation --------------------------------------------------------- */
-  --shadow-sm: 0 1px 2px rgb(9 30 34 / 8%);
-  --shadow-md: 0 4px 12px -2px rgb(9 30 34 / 12%), 0 2px 4px -2px rgb(9 30 34 / 8%);
-  --shadow-lg: 0 16px 40px -12px rgb(9 30 34 / 22%), 0 4px 12px -4px rgb(9 30 34 / 10%);
+  --shadow-sm: 0 1px 2px rgb(16 24 32 / 8%);
+  --shadow-md: 0 4px 12px -2px rgb(16 24 32 / 12%), 0 2px 4px -2px rgb(16 24 32 / 8%);
+  --shadow-lg: 0 16px 40px -12px rgb(16 24 32 / 22%), 0 4px 12px -4px rgb(16 24 32 / 10%);
+  /* The one elevation that has to read against live cartography rather than a
+     page: the floating panel and the map chips. */
+  --shadow-panel: 0 1px 2px rgb(16 24 32 / 10%), 0 8px 28px -8px rgb(16 24 32 / 28%);
 
-  /* --- Motion ------------------------------------------------------------ */
+  /* --- Motion ------------------------------------------------------------
+   * Short and decelerating. Panel and focus changes use --duration-base; the
+   * only longer movement on the page is the map camera, which is capped in
+   * `route-layers.ts` at CAMERA_DURATION_MS. Reduced motion collapses all of it
+   * in globals.css, and the camera reads the same preference.
+   */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --duration-fast: 120ms;
-  --duration-base: 220ms;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
 
   /* --- Layout ------------------------------------------------------------ */
-  --header-height: 3.5rem;
-  --panel-width: 22.5rem;
+  --header-height: 3rem;
+  /* The floating planning surface: between 336 and 400 px, following the viewport
+     in between. An ordinary 1000 px laptop window keeps 64% of its width as live
+     map; 320 px was a few percent more map, but it wrapped the comparison onto so
+     many lines under a wider system font (DejaVu Sans on Linux) that the answer
+     no longer fitted a 700 px-tall screen. */
+  --panel-width: clamp(21rem, 28vw, 25rem);
+  /* Room between the floating surfaces and the edges of the viewport. */
+  --panel-gap: var(--space-3);
+  /* How far the panel reaches into the map from the edge it is anchored to.
+     Declared here so the first paint already places the map key and the map's
+     own credit clear of the panel; the workspace overwrites them from the
+     measured panel, because the camera needs real pixels, not an estimate. */
+  --map-inset-left: 0px;
+  --map-inset-bottom: 0px;
   --content-max: 78rem;
 
   /* --- Colour: light ----------------------------------------------------- */
-  --color-canvas: #eef2f3;
+  --color-canvas: #f4f7fa;
   --color-surface: #ffffff;
-  --color-surface-sunken: #f5f8f9;
-  --color-surface-overlay: rgb(255 255 255 / 94%);
-  --color-border: #d5dee1;
-  --color-border-strong: #b3c2c7;
+  --color-surface-sunken: #eef2f7;
+  /* Opaque enough that route lines never show through a control that has text
+     on it; the blur behind it does the rest of the work. */
+  --color-surface-overlay: rgb(255 255 255 / 95%);
+  --color-border: #d9e0e8;
+  --color-border-strong: #aab6c2;
 
-  --color-text: #10262b;
-  --color-text-muted: #4c5f65;
-  /* 5.9:1 on --color-surface and 5.6:1 on --color-surface-sunken. The lighter
-     #66787e this replaced measured 4.32:1 against the sunken surface, which fails
-     AA for the 12px labels that use it. Verified by the axe e2e scan. */
-  --color-text-subtle: #55676d;
-  --color-text-inverse: #f2f8f9;
+  /* Ink with a blue cast, to sit with the cobalt route rather than fight it.
+     15.0:1 on white. */
+  --color-text: #15283a;
+  /* 6.3:1 on --color-surface. */
+  --color-text-muted: #526274;
+  /*
+   * Supporting labels only, never body copy — but still held to 4.5:1,
+   * because "supporting" is not a licence to be unreadable.
+   *
+   * Measured against every surface it actually sits on: 5.5:1 on white,
+   * 4.9:1 on the sunken surface, 5.1:1 on the canvas, 4.8:1 on the selected
+   * tint, 5.0:1 on the missing-data notice. The first value tried here was
+   * 4.03:1 on the sunken surface — a real axe failure on the pilot chip in
+   * the header, not a theoretical one.
+   */
+  --color-text-subtle: #5b6b7d;
+  --color-text-inverse: #ffffff;
 
-  --color-brand: #0b5c68;
-  --color-brand-strong: #084751;
-  --color-brand-soft: #e2f0f2;
-  --color-brand-border: #a8ccd2;
+  /* 6.4:1 for white text on brand. */
+  --color-brand: #006a68;
+  --color-brand-strong: #005654;
+  /* 5.7:1 for brand text on the selected tint. */
+  --color-brand-soft: #e6f4f1;
+  --color-brand-border: #9ecdc6;
 
-  --color-focus: #0b5c68;
+  --color-focus: #006a68;
 
-  --color-ok-text: #17603a;
-  --color-ok-surface: #e3f4ea;
-  --color-ok-border: #9dcfb4;
-  --color-ok-dot: #1f8a4d;
+  /* --- Route colours -------------------------------------------------------
+   * Shared by the map layers and the legend swatches so the key is the same
+   * signal in both places. The two routes also differ in dash pattern, so the
+   * comparison survives colour-vision deficiency and a greyscale print. Both
+   * reach 3:1 against the muted basemap, and each line is cased in the surface
+   * colour so it stays legible over any road.
+   */
+  /* 5.9:1 on white, so the legend swatch's label and the line agree. */
+  --color-route-accessible: #2456e6;
+  --color-route-standard: #515c6b;
+  --color-marker-origin: #2456e6;
+  --color-marker-destination: #b3261e;
 
-  --color-warn-text: #7a4b00;
-  --color-warn-surface: #fdf1dc;
-  --color-warn-border: #e4bf7f;
-  --color-warn-dot: #b87400;
+  /* A recorded stairway drawn over the route it belongs to. Chosen to be
+     unmistakable against the cobalt route rather than to be pretty, and never
+     used for anything else, so the colour itself carries the meaning. */
+  --color-stairs: #b54708;
+  --color-stairs-soft: #fdead7;
 
-  --color-danger-text: #8f2323;
-  --color-danger-surface: #fbe8e8;
-  --color-danger-border: #e0a4a4;
-  --color-danger-dot: #bb3232;
+  /* Cartography. Water and parks are allowed real colour — a map whose water
+     is grey is not a map — while buildings stay subordinate to the routes. */
+  --color-map-water: #bfe2f4;
+  --color-map-park: #d6e9d3;
+  --color-map-building: #e4e6eb;
 
-  --color-neutral-text: #4c5f65;
-  --color-neutral-surface: #eef2f3;
-  --color-neutral-border: #c9d4d7;
-  --color-neutral-dot: #7b8d93;
+  --color-ok-text: #15603a;
+  --color-ok-surface: #e3f3e9;
+  --color-ok-border: #a0ceb2;
+  --color-ok-dot: #1d8a4c;
+
+  /* 7.3:1. Missing information, and nothing else. */
+  --color-warn-text: #704900;
+  --color-warn-surface: #fff4db;
+  --color-warn-border: #e8c986;
+  --color-warn-dot: #b47300;
+
+  --color-danger-text: #8a2323;
+  --color-danger-surface: #fbe9e7;
+  --color-danger-border: #e0a8a2;
+  --color-danger-dot: #b93232;
+
+  --color-neutral-text: #495057;
+  --color-neutral-surface: #eceff1;
+  --color-neutral-border: #ccd2d7;
+  --color-neutral-dot: #7d868d;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-canvas: #060d0f;
-    --color-surface: #0f191c;
-    --color-surface-sunken: #0a1214;
-    --color-surface-overlay: rgb(15 25 28 / 94%);
-    --color-border: #23383d;
-    --color-border-strong: #35525a;
+    --color-canvas: #0d1117;
+    --color-surface: #171d25;
+    --color-surface-sunken: #11161d;
+    --color-surface-overlay: rgb(23 29 37 / 95%);
+    --color-border: #2a323c;
+    --color-border-strong: #45505d;
 
-    --color-text: #e9f2f3;
-    --color-text-muted: #a5babf;
-    --color-text-subtle: #8299a0;
-    --color-text-inverse: #08181c;
+    --color-text: #eaeff5;
+    --color-text-muted: #aab6c2;
+    --color-text-subtle: #8593a1;
+    --color-text-inverse: #101720;
 
-    --color-brand: #5cc6d8;
-    --color-brand-strong: #8ddced;
-    --color-brand-soft: #123036;
-    --color-brand-border: #2c565f;
+    /* The teal lifts for a dark ground; the identity is the same hue family. */
+    --color-brand: #4fc2be;
+    --color-brand-strong: #7fd8d4;
+    --color-brand-soft: #123330;
+    --color-brand-border: #2a5f5b;
 
-    --color-focus: #7cd8e8;
+    --color-focus: #7fd8d4;
 
-    --color-ok-text: #7fe0aa;
-    --color-ok-surface: #0e2a1c;
-    --color-ok-border: #2c6244;
-    --color-ok-dot: #4ecf88;
+    /* Stairs and cartography are NOT re-themed. The basemap is the same light
+       cartography in both schemes, so anything drawn on it has to keep
+       matching what is under it rather than the panel beside it. */
 
-    --color-warn-text: #f5c877;
-    --color-warn-surface: #2c2011;
-    --color-warn-border: #6a5127;
-    --color-warn-dot: #e0a33f;
+    /* Route and marker colours are deliberately not re-themed: the basemap is
+       the same light cartography in both schemes, and the legend has to match
+       what is drawn on it, not the panel around it. */
 
-    --color-danger-text: #ffa9a9;
-    --color-danger-surface: #2e1414;
-    --color-danger-border: #6d3434;
-    --color-danger-dot: #e46767;
+    --color-ok-text: #84dfad;
+    --color-ok-surface: #0f2a1d;
+    --color-ok-border: #2b6345;
+    --color-ok-dot: #4ccf87;
 
-    --color-neutral-text: #a5babf;
-    --color-neutral-surface: #162427;
-    --color-neutral-border: #2b4248;
-    --color-neutral-dot: #7e979d;
+    --color-warn-text: #f5cf87;
+    --color-warn-surface: #2c2312;
+    --color-warn-border: #6a5427;
+    --color-warn-dot: #dfa23e;
+
+    --color-danger-text: #ffaaa5;
+    --color-danger-surface: #2d1615;
+    --color-danger-border: #6d3734;
+    --color-danger-dot: #e36666;
+
+    --color-neutral-text: #b0b6bc;
+    --color-neutral-surface: #1f2226;
+    --color-neutral-border: #353a40;
+    --color-neutral-dot: #878e95;
 
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
     --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 50%);
     --shadow-lg: 0 16px 40px -12px rgb(0 0 0 / 65%);
+    --shadow-panel: 0 1px 2px rgb(0 0 0 / 50%), 0 8px 28px -8px rgb(0 0 0 / 70%);
   }
 }

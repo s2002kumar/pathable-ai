@@ -182,6 +182,52 @@ a public launch.
 
 ---
 
+## Recruiting presentation sprint (PA-UX-02)
+
+A short, self-contained sprint: make the engineering visible through the
+interface, then publish a truthful showcase. It builds no new routing
+capability and moves no phase gate. Status is recorded here rather than in
+another roadmap.
+
+| Card      | Deliverable                                                      | Status                                                                            |
+| --------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| PA-UX-02A | Map-led initial and comparison states, proven in the running app | **Done** — interaction direction approved 2026-09-23; the finish was not approved |
+| PA-UX-02B | The accepted interface finished and merged                       | **Done** — approved and merged through PR #64                                     |
+| PA-UX-02C | Static showcase, refreshed demo, interview handoff               | Not started                                                                       |
+
+**What was approved, exactly.** The founder approved the interaction direction
+— Start → Destination → Travel profile → Compare → Explore why, with stronger
+colour and a more refined map — and authorised building the complete
+candidate. In their own words that "is not a claim that the finished visual
+result has already been accepted": PA-UX-02B returned for one further visual
+review, and the founder approved it for merging on 2026-09-26.
+
+**Branch / worktree.** `feat/premium-map-experience`, PR #64, in
+`../pathable-ai-wt/premium-map-experience`. Baseline for this sprint: `f099aaf`
+(the PA-UX-01/01F candidate). Base `main` at `29a7749`.
+
+**Preview.** Isolated envelope stack — API `8001`, database `5434`, web `3001`.
+Open it at **`http://127.0.0.1:3001`**, not `localhost:3001`: Docker Desktop's
+IPv6 proxy resets the connection on this host, and the browser does not fall
+back. From that address the page reaches the API with no flags; the status
+badge reads "API online". The dataset is `pathable-envelope-db-data` at
+migration `0005_kerb_tiers`, 155,714 nodes and 180,554 segments. See
+`docs/deployment/PRODUCTION_SMOKE.md`.
+
+**Evidence.** `docs/evidence/FRONTEND_POLISH.md` — the PA-UX-02A revision entry
+records what changed, at which viewports it was checked, and against which
+build.
+
+**Not verified here.** Live place-name search. The envelope API answers
+`{"provider":"disabled","enabled":false}` by design — `GEOCODING_PROVIDER` is
+unset — and choosing a provider is a founder decision ADR 0005 leaves open.
+The search fields are covered by stubbed provider responses and degrade
+honestly in the preview.
+
+**Next executable action.** PA-UX-02C, when it is scheduled.
+
+---
+
 ## Geospatial data lane (PA-GEO)
 
 A research lane: can PathAble combine pedestrian datasets from more than one
@@ -189,7 +235,7 @@ source, keep provenance and uncertainty, and show with numbers whether the resul
 carries better accessibility information than OpenStreetMap alone? It moves no
 phase gate and changes no route until a card says otherwise.
 
-### PA-GEO-01 — Overture release intake and OSM/GERS identity evidence _(draft PR #66)_
+### PA-GEO-01 — Overture release intake and OSM/GERS identity evidence _(merged, PR #66)_
 
 **Delivered**
 

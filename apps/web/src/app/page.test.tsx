@@ -115,15 +115,26 @@ describe('HomePage', () => {
     );
   });
 
-  it('offers the mobility profiles as a labelled radio group', async () => {
+  it('offers all five mobility profiles from one labelled control', async () => {
+    // A native select, not a custom widget: every profile stays offered and
+    // the keyboard and screen-reader behaviour is the platform's. As chips
+    // this wrapped to five rows in the panel and pushed Compare off the first
+    // screen.
     setEnv(VALID_ENV);
 
     render(await homePage());
 
-    const group = screen.getByRole('radiogroup', { name: /mobility profile/i });
-    expect(group).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Wheelchair/ })).toBeChecked();
-    expect(screen.getAllByRole('radio')).toHaveLength(5);
+    const profile = screen.getByLabelText(/how do you travel/i) as HTMLSelectElement;
+    expect(profile.tagName).toBe('SELECT');
+    expect(profile.options).toHaveLength(5);
+    expect(profile.value).toBe('wheelchair');
+    expect([...profile.options].map((o) => o.textContent)).toEqual([
+      'Wheelchair',
+      'Walker or rollator',
+      'Crutches or cane',
+      'Stroller or pram',
+      'Reduced mobility',
+    ]);
   });
 
   it('explains how to begin before any point is chosen', async () => {
@@ -136,19 +147,20 @@ describe('HomePage', () => {
     // Two ways in, in the order a first-time viewer should meet them: a journey
     // they can run immediately, and the map they can use instead.
     expect(screen.getByTestId('run-verified-example')).toBeInTheDocument();
-    expect(screen.getByTestId('route-status')).toHaveTextContent(/choose a start and an end/i);
+    expect(screen.getByTestId('route-status')).toHaveTextContent(/name both ends to begin/i);
   });
 
-  it('shows a map key explaining the two route lines', async () => {
-    // The legend is real text outside the canvas: one painted into WebGL would
-    // be invisible to a screen reader and unselectable.
+  it('holds the map key back until there are route lines to explain', async () => {
+    // The legend is real text outside the canvas — one painted into WebGL
+    // would be invisible to a screen reader and unselectable — but a key to
+    // two lines that do not exist yet is furniture on top of the map. It
+    // appears with the routes it explains; `routing.test.tsx` covers the
+    // wording, and the browser suite covers it appearing after a comparison.
     setEnv(VALID_ENV);
 
     render(await homePage());
 
-    const legend = screen.getByTestId('map-legend');
-    expect(legend).toHaveTextContent(/Route for your profile/i);
-    expect(legend).toHaveTextContent(/Shortest walking route/i);
+    expect(screen.queryByTestId('map-legend')).not.toBeInTheDocument();
   });
 
   it('shows backend status in the shell', async () => {

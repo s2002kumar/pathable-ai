@@ -349,13 +349,19 @@ def _cautions(
         fraction = route.unknown_data_fraction
         if fraction > 0:
             level = "most" if fraction > _THIN_DATA_FRACTION else "some"
+            # Says which route, and what the figure counts. The fraction is the
+            # share of the route's length over segments missing *at least one*
+            # routing-relevant attribute — a recorded stairway on such a segment
+            # is still recorded — so "no accessibility details" overstated it.
             cautions.append(
                 Caution(
                     code="missing_accessibility_data",
                     summary=(
-                        f"OpenStreetMap has no accessibility details for {level} of this "
-                        f"route ({fraction * 100:.0f}% of its length). Missing data is not "
-                        f"evidence that a path is clear."
+                        f"On {level} of the {route.profile_display_name.lower()} route "
+                        f"({fraction * 100:.0f}% of its length) at least one accessibility "
+                        f"attribute — surface, surface condition, gradient, steps or kerb — "
+                        f"has no record in OpenStreetMap. Missing data is not evidence that "
+                        f"a path is clear."
                     ),
                     evidence={
                         "unknown_data_fraction": round(fraction, 3),

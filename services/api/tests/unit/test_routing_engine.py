@@ -554,3 +554,24 @@ class TestCautions:
         )
         caution = next(c for c in comparison.cautions if c.code == "missing_accessibility_data")
         assert "not evidence" in caution.summary
+
+    def test_the_missing_data_caution_says_what_the_figure_counts(
+        self, graph: RoutableGraph
+    ) -> None:
+        # PA-UX-01F. The fraction is the share of length over segments missing
+        # at least one attribute; a recorded stairway on such a segment is still
+        # recorded. "No accessibility details" claimed more than that, and it
+        # contradicted the stairway count shown beside it.
+        comparison = compare_routes(
+            graph, origin=A, destination=D, profile=get_profile("wheelchair")
+        )
+        caution = next(c for c in comparison.cautions if c.code == "missing_accessibility_data")
+        route = comparison.accessible_route or comparison.standard_route
+        assert route is not None
+
+        assert "at least one accessibility attribute" in caution.summary
+        assert "no accessibility details" not in caution.summary.lower()
+        # It names the route it describes, and the length it is measured over.
+        assert route.profile_display_name.lower() in caution.summary
+        assert f"{route.unknown_data_fraction * 100:.0f}% of its length" in caution.summary
+        assert caution.evidence["route_distance_m"] == round(route.distance_m)

@@ -1,0 +1,206 @@
+{
+ "label": "candidate",
+ "url": "http://localhost:3001",
+ "when": "2026-09-22T22:45:46.790Z",
+ "viewports": {
+  "desktop": {
+   "landing": {
+    "overflowPx": 0,
+    "exampleInViewport": true
+   },
+   "comparison": {
+    "pressToSuccessMs": 503,
+    "pressToDifferenceMs": 566,
+    "overflowPx": 0,
+    "figuresInViewport": true,
+    "extraInViewport": true,
+    "uncertaintyInViewport": true,
+    "legendInViewport": true,
+    "attributionVisible": true,
+    "text": {
+     "shortest": "Shortest walking route\n287 m\n4 stairways\nHighlight",
+     "accessible": "Wheelchair route\n354 m\nno stairways\nHighlight",
+     "extra": "Extra distance\n+67 m\nto avoid 4 stairways",
+     "uncertainty": "Accessibility data is incomplete. At least one accessibility attribute is unrecorded on 100% of this route; largest gap: surface condition, 100%. Unrecorded is not the same as clear."
+    }
+   },
+   "consoleErrors": []
+  },
+  "tablet": {
+   "landing": {
+    "overflowPx": 0,
+    "exampleInViewport": true
+   },
+   "comparison": {
+    "pressToSuccessMs": 214,
+    "pressToDifferenceMs": 253,
+    "overflowPx": 0,
+    "figuresInViewport": true,
+    "extraInViewport": true,
+    "uncertaintyInViewport": true,
+    "legendInViewport": true,
+    "attributionVisible": true,
+    "text": {
+     "shortest": "Shortest walking route\n287 m\n4 stairways\nHighlight",
+     "accessible": "Wheelchair route\n354 m\nno stairways\nHighlight",
+     "extra": "Extra distance\n+67 m\nto avoid 4 stairways",
+     "uncertainty": "Accessibility data is incomplete. At least one accessibility attribute is unrecorded on 100% of this route; largest gap: surface condition, 100%. Unrecorded is not the same as clear."
+    }
+   },
+   "consoleErrors": []
+  },
+  "mobile": {
+   "landing": {
+    "overflowPx": 0,
+    "exampleInViewport": true
+   },
+   "comparison": {
+    "pressToSuccessMs": 137,
+    "pressToDifferenceMs": 178,
+    "overflowPx": 0,
+    "figuresInViewport": true,
+    "extraInViewport": true,
+    "uncertaintyInViewport": true,
+    "legendInViewport": true,
+    "attributionVisible": true,
+    "text": {
+     "shortest": "Shortest walking route\n287 m\n4 stairways\nHighlight",
+     "accessible": "Wheelchair route\n354 m\nno stairways\nHighlight",
+     "extra": "Extra distance\n+67 m\nto avoid 4 stairways",
+     "uncertainty": "Accessibility data is incomplete. At least one accessibility attribute is unrecorded on 100% of this route; largest gap: surface condition, 100%. Unrecorded is not the same as clear."
+    }
+   },
+   "consoleErrors": []
+  },
+  "narrow": {
+   "landing": {
+    "overflowPx": 0,
+    "exampleInViewport": true
+   },
+   "comparison": {
+    "pressToSuccessMs": 130,
+    "pressToDifferenceMs": 162,
+    "overflowPx": 0,
+    "figuresInViewport": false,
+    "extraInViewport": false,
+    "uncertaintyInViewport": false,
+    "legendInViewport": true,
+    "attributionVisible": true,
+    "text": {
+     "shortest": "Shortest walking route\n287 m\n4 stairways\nHighlight",
+     "accessible": "Wheelchair route\n354 m\nno stairways\nHighlight",
+     "extra": "Extra distance\n+67 m\nto avoid 4 stairways",
+     "uncertainty": "Accessibility data is incomplete. At least one accessibility attribute is unrecorded on 100% of this route; largest gap: surface condition, 100%. Unrecorded is not the same as clear."
+    }
+   },
+   "consoleErrors": []
+  },
+  "landscape": {
+   "landing": {
+    "overflowPx": 0,
+    "exampleInViewport": false
+   },
+   "comparison": {
+    "pressToSuccessMs": 227,
+    "pressToDifferenceMs": 339,
+    "overflowPx": 0,
+    "figuresInViewport": false,
+    "extraInViewport": false,
+    "uncertaintyInViewport": false,
+    "legendInViewport": true,
+    "attributionVisible": true,
+    "text": {
+     "shortest": "Shortest walking route\n287 m\n4 stairways\nHighlight",
+     "accessible": "Wheelchair route\n354 m\nno stairways\nHighlight",
+     "extra": "Extra distance\n+67 m\nto avoid 4 stairways",
+     "uncertainty": "Accessibility data is incomplete. At least one accessibility attribute is unrecorded on 100% of this route; largest gap: surface condition, 100%. Unrecorded is not the same as clear."
+    }
+   },
+   "consoleErrors": []
+  }
+ },
+ "warm": {
+  "desktopDifferenceInViewport": false,
+  "desktop": {
+   "runsMs": [
+    187,
+    195,
+    172
+   ],
+   "medianMs": 187
+  },
+  "mobileDifferenceInViewport": false,
+  "mobile": {
+   "runsMs": [
+    176,
+    282,
+    293
+   ],
+   "medianMs": 282
+  }
+ },
+ "js": {
+  "scriptCount": 11,
+  "transferBytes": 551843,
+  "encodings": [
+   "gzip"
+  ],
+  "scripts": [
+   {
+    "url": "/_next/static/chunks/2e3cp0xdmoeze.js",
+    "body": 7364,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/_next/static/chunks/turbopack-07_hc-tn2c-1x.js",
+    "body": 3852,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/_next/static/chunks/1r-yj_uhtmhpx.js",
+    "body": 3679,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/_next/static/chunks/2qqa64o9x7rj1.js",
+    "body": 2063,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/_next/static/chunks/2737nupo5650n.js",
+    "body": 12354,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/_next/static/chunks/2kaqgmhryvu_x.js",
+    "body": 71689,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/_next/static/chunks/2o89hj6976x_2.js",
+    "body": 47210,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/_next/static/chunks/0q7p5snqhtjk_.js",
+    "body": 2945,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/_next/static/chunks/10ey9zfa5un0g.js",
+    "body": 262149,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/maplibre/maplibre-gl-worker.mjs",
+    "body": 0,
+    "encoding": "gzip"
+   },
+   {
+    "url": "/maplibre/maplibre-gl-shared.mjs",
+    "body": 138538,
+    "encoding": "gzip"
+   }
+  ]
+ }
+}

@@ -1,7 +1,10 @@
 'use client';
 
 import type { Route, RouteCompareResponse } from '@pathable/contracts';
+import type { RouteFocus } from '@/features/map/route-layers';
 import { RouteDifference } from './RouteDifference';
+import { differenceIsBelowDisplayPrecision } from './route-identity';
+import type { StairsTarget } from './types';
 import { formatDistance, formatDuration } from './types';
 import styles from './RoutePlanner.module.css';
 
@@ -12,30 +15,106 @@ import styles from './RoutePlanner.module.css';
  * its own. Somebody using a screen reader, or looking at a phone in bright sun,
  * or deciding whether a journey is possible before leaving the house, gets the
  * whole story here without ever interpreting two coloured lines.
+ *
+ * Order matters: the headline and the figures first, the per-route cards and
+ * cautions next, and the fuller detail — what is on the route, where the data
+ * came from — behind labelled disclosures. Nothing is removed; the parts a
+ * viewer opens are the parts they asked for.
  */
-export function RouteComparisonView({ comparison }: { readonly comparison: RouteCompareResponse }) {
+export function RouteComparisonView({
+  comparison,
+  focusedRoute = null,
+  onFocusRoute = () => {},
+  onEditJourney,
+  stairsTarget = null,
+  onShowStairs = () => {},
+  journeySummary,
+  pendingEdits = false,
+}: {
+  readonly comparison: RouteCompareResponse;
+  readonly focusedRoute?: RouteFocus;
+  readonly onFocusRoute?: (focus: RouteFocus) => void;
+  /** Takes the viewer to the planning controls below, keeping this result. */
+  readonly onEditJourney?: () => void;
+  readonly stairsTarget?: StairsTarget;
+  readonly onShowStairs?: (target: StairsTarget) => void;
+  /** The journey this answer belongs to, named. */
+  readonly journeySummary?: string;
+  /** True when the panel's draft has moved on from that journey. */
+  readonly pendingEdits?: boolean;
+}) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
   const bothRoutes = Boolean(standard && accessible);
 
   return (
     <div className={styles.results}>
-      <RouteHeadline comparison={comparison} />
-
-      <RouteDifference comparison={comparison} />
-
-      <div className={styles.routeCards}>
-        {accessible ? (
-          <RouteCard
-            route={accessible}
-            label={comparison.profile_display_name}
-            variant="accessible"
-            emphasis
-          />
+      <div className={styles.result}>
+        {/* The answer names the journey it answered. Without this, editing an
+            endpoint would leave a figure on screen that looks current and is
+            not — the one way a comparison can lie without a single wrong
+            number in it. */}
+        {journeySummary ? (
+          <p className={styles.journeyLine} data-testid="journey-summary">
+            <span className={styles.journeyPlaces}>{journeySummary}</span>
+            <span className={styles.journeyProfile}>{comparison.profile_display_name}</span>
+            {/* Beside the journey it edits, rather than a block of its own
+                further down: it is the same thought, and on a phone the block
+                was what pushed the caution off the first screen. */}
+            {onEditJourney ? (
+              <button
+                type="button"
+                className={styles.editButton}
+                onClick={onEditJourney}
+                // The accessible name is the full phrase at every width; only
+                // the glyphs shorten, because at 390 px the five-word label
+                // wrapped the journey line to three lines.
+                aria-label="Edit journey or profile"
+                data-testid="edit-journey"
+              >
+                <span className={styles.editLong}>Edit journey or profile</span>
+                <span className={styles.editShort}>Edit</span>
+              </button>
+            ) : null}
+          </p>
         ) : null}
-        {standard ? (
-          <RouteCard route={standard} label="Shortest walking route" variant="standard" />
+
+        {pendingEdits ? (
+          <p className={styles.staleNote} role="status" data-testid="stale-result">
+            You have changed the journey. This answer is still for the one named above — press
+            Compare routes to update it.
+          </p>
         ) : null}
+
+        <RouteHeadline comparison={comparison} />
+        <RouteDifference
+          comparison={comparison}
+          focusedRoute={focusedRoute}
+          onFocusRoute={onFocusRoute}
+          stairsTarget={stairsTarget}
+          onShowStairs={onShowStairs}
+        />
       </div>
+
+      {/* Only where there is nothing to compare against. With both routes
+          present, `RouteDifference` above already carries each route's
+          distance, walking time and stairways beside the control that
+          highlights it on the map; a second pair of cards repeating those
+          figures was the longest block in the panel and said nothing new. */}
+      {bothRoutes ? null : (
+        <div className={styles.routeCards}>
+          {accessible ? (
+            <RouteCard
+              route={accessible}
+              label={comparison.profile_display_name}
+              variant="accessible"
+              emphasis
+            />
+          ) : null}
+          {standard ? (
+            <RouteCard route={standard} label="Shortest walking route" variant="standard" />
+          ) : null}
+        </div>
+      )}
 
       {/* RouteDifference above already carries these statements, sorted by
           where each came from. It only renders when there are two routes to
@@ -70,24 +149,43 @@ export function RouteComparisonView({ comparison }: { readonly comparison: Route
         </section>
       ) : null}
 
-      <ObstacleBreakdown route={accessible ?? standard ?? null} />
+      <details className="disclosure" data-testid="route-detail">
+        <summary>What is on this route</summary>
+        <div className={styles.disclosureBody}>
+          <ObstacleBreakdown route={accessible ?? standard ?? null} />
+        </div>
+      </details>
 
-      <footer className={styles.provenance}>
-        <p>
-          Routing uses recorded map attributes only — no predictions, no scoring, no machine
-          learning. PathAble advises; it cannot guarantee a journey is passable.
-        </p>
-        <MapAge dataset={comparison.dataset} />
-        <p className={styles.attribution}>
-          {comparison.dataset.attribution} · dataset{' '}
-          <code>{comparison.dataset.checksum.slice(0, 8)}</code>
-        </p>
-        {comparison.dataset.elevation_attribution ? (
-          <p className={styles.attribution} data-testid="elevation-attribution">
-            {comparison.dataset.elevation_attribution}
+      <details className="disclosure" data-testid="route-provenance">
+        <summary>Where this comes from</summary>
+        <div className={`${styles.disclosureBody} ${styles.provenance}`}>
+          <MapAge dataset={comparison.dataset} />
+          <p className={styles.attribution}>
+            {comparison.dataset.attribution} · dataset{' '}
+            <code>{comparison.dataset.checksum.slice(0, 8)}</code>
           </p>
-        ) : null}
-      </footer>
+          <p>
+            Routing policy <code>{comparison.routing_policy_version}</code>. Machine-learning
+            predictions used: <code>{String(comparison.ml_predictions_used)}</code>.
+          </p>
+        </div>
+      </details>
+
+      {/* Outside the disclosure above, deliberately. The elevation licence
+          asks to be carried by anything that uses the data, and a credit
+          somebody has to open a control to find is not being carried. The
+          map's own OpenStreetMap attribution is always on the canvas; this is
+          the one that would otherwise have been hidden. */}
+      {comparison.dataset.elevation_attribution ? (
+        <p className={styles.attribution} data-testid="elevation-attribution">
+          {comparison.dataset.elevation_attribution}
+        </p>
+      ) : null}
+
+      <p className={styles.noModel}>
+        Routing uses recorded map attributes only — no predictions, no scoring, no machine learning.
+        PathAble advises; it cannot guarantee a journey is passable.
+      </p>
     </div>
   );
 }
@@ -119,12 +217,26 @@ function MapAge({ dataset }: { readonly dataset: RouteCompareResponse['dataset']
   );
 }
 
+/**
+ * The one-sentence answer.
+ *
+ * It states the difference the response reports, in the profile's own name,
+ * and it never rounds a real difference away: a 10 m detour is "10 m longer".
+ * The only time it says "the same length" is when the two distances display
+ * as the same number — differences under half a metre, the display precision
+ * of `formatDistance` — and then it says "to the nearest metre". A missing
+ * difference is reported as missing, not as equality. Nothing here says the
+ * routes are the same path; that is a question of geometry, answered by
+ * `routesSharePath` from the response's own segments.
+ */
 function RouteHeadline({ comparison }: { readonly comparison: RouteCompareResponse }) {
+  const profile = comparison.profile_display_name.toLowerCase();
+
   if (comparison.accessible_route === null) {
     return (
       <p className={styles.headlineBad} role="status">
         {comparison.accessible_failure ??
-          `No route meets the ${comparison.profile_display_name.toLowerCase()} profile between these points.`}
+          `No route meets the ${profile} profile between these points.`}
       </p>
     );
   }
@@ -132,16 +244,25 @@ function RouteHeadline({ comparison }: { readonly comparison: RouteCompareRespon
   if (comparison.standard_route === null) {
     return (
       <p className={styles.headline} role="status">
-        A route was found for {comparison.profile_display_name.toLowerCase()}.
+        A route was found for {profile}.
       </p>
     );
   }
 
-  const extra = comparison.extra_distance_m ?? 0;
-  if (Math.abs(extra) < 15) {
+  const extra = comparison.extra_distance_m;
+  if (typeof extra !== 'number') {
+    return (
+      <p className={styles.headline} role="status">
+        A {profile} route and the shortest walking route were both found; the response did not
+        report the difference in length.
+      </p>
+    );
+  }
+
+  if (differenceIsBelowDisplayPrecision(extra)) {
     return (
       <p className={styles.headlineGood} role="status">
-        The accessible route is the same length as the shortest route.
+        The {profile} route and the shortest walking route are the same length to the nearest metre.
       </p>
     );
   }
@@ -149,8 +270,8 @@ function RouteHeadline({ comparison }: { readonly comparison: RouteCompareRespon
   const fraction = comparison.extra_distance_fraction ?? 0;
   return (
     <p className={styles.headline} role="status">
-      The accessible route is <strong>{formatDistance(Math.abs(extra))}</strong>{' '}
-      {extra > 0 ? 'longer' : 'shorter'} than the shortest route
+      The {profile} route is <strong className="tabular">{formatDistance(Math.abs(extra))}</strong>{' '}
+      {extra > 0 ? 'longer' : 'shorter'} than the shortest walking route
       {Math.abs(fraction) >= 0.01 ? ` (${Math.round(Math.abs(fraction) * 100)}%)` : ''}.
     </p>
   );
@@ -286,10 +407,7 @@ function ObstacleBreakdown({ route }: { readonly route: Route | null }) {
   if (route === null) return null;
 
   return (
-    <section className={styles.section} aria-labelledby="route-detail-heading">
-      <h3 className={styles.sectionHeading} id="route-detail-heading">
-        What is on this route
-      </h3>
+    <section className={styles.section} aria-label="What is on this route">
       <dl className={styles.stats}>
         <div className={styles.stat}>
           <dt>Road crossings</dt>

@@ -85,7 +85,10 @@ const CAMPUS_RESPONSE = {
   cautions: [
     {
       code: 'missing_accessibility_data',
-      summary: 'OpenStreetMap has no accessibility details for most of this route.',
+      summary:
+        'On most of the wheelchair route (100% of its length) at least one accessibility ' +
+        'attribute — surface, surface condition, gradient, steps or kerb — has no record in ' +
+        'OpenStreetMap. Missing data is not evidence that a path is clear.',
       evidence: { unknown_data_fraction: 1 },
     },
   ],
@@ -202,10 +205,13 @@ describe('the verified example', () => {
     await user.click(screen.getByTestId('run-verified-example'));
     await screen.findByTestId('route-difference');
 
-    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await user.click(screen.getByTestId('clear-journey'));
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent(/click the map to set/i);
-    expect(screen.getByTestId('point-end')).toHaveTextContent(/not set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent(/not set/i);
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
+    // Clearing clears the request too: the answer for the example's journey
+    // must not be left on screen with nothing naming it.
+    expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'idle');
   });
 });
 
@@ -228,13 +234,17 @@ describe('why the routes differ', () => {
       within(screen.getByTestId('difference-shortest')).getByText('287 m'),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByTestId('difference-shortest')).getByText('4 stairways'),
+      // "recorded" is load-bearing: step_count sums only the stairways
+      // somebody counted, and two of these four have no recorded count.
+      within(screen.getByTestId('difference-shortest')).getByText(
+        '4 stairways (16 recorded steps)',
+      ),
     ).toBeInTheDocument();
     expect(
       within(screen.getByTestId('difference-accessible')).getByText('354 m'),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByTestId('difference-accessible')).getByText('no stairways'),
+      within(screen.getByTestId('difference-accessible')).getByText('no recorded stairways'),
     ).toBeInTheDocument();
 
     const extra = screen.getByTestId('difference-extra');
@@ -265,7 +275,7 @@ describe('why the routes differ', () => {
     expect(summary).toHaveTextContent('Accessibility data is incomplete');
     expect(summary).toHaveTextContent('100% of this route');
     expect(summary).toHaveTextContent(/unrecorded is not the same as clear/i);
-    expect(summary).not.toHaveTextContent(/(safe|verified|confident|guaranteed)/i);
+    expect(summary).not.toHaveTextContent(/\b(safe|verified|confident|guaranteed)\b/i);
   });
 
   it('reports the largest gap when the route is not wholly unrecorded', () => {
@@ -299,8 +309,10 @@ describe('why the routes differ', () => {
 
     const summary = screen.getByTestId('uncertainty-summary');
     expect(summary).toHaveAttribute('data-complete', 'true');
-    expect(summary).toHaveTextContent(/every accessibility category .* is recorded/i);
-    expect(summary).not.toHaveTextContent(/(safe|accessible route|verified|guaranteed)/i);
+    // PA-UX-01F: a statement about the record, not "everything was recorded".
+    expect(summary).toHaveTextContent(/no gaps reported in the assessed categories/i);
+    expect(summary).not.toHaveTextContent(/every accessibility category/i);
+    expect(summary).not.toHaveTextContent(/\b(safe|accessible route|verified|guaranteed)\b/i);
   });
 
   it('never presents missing data as a clear path', () => {

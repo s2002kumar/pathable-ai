@@ -8,13 +8,18 @@
  * click reach the planner.
  */
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouteWorkspace } from '@/features/routing/RouteWorkspace';
 import {
+  ACCESSIBLE_CASING_LAYER_ID,
   ACCESSIBLE_LAYER_ID,
   ACCESSIBLE_SOURCE_ID,
   POINTS_SOURCE_ID,
+  POINTS_HALO_LAYER_ID,
+  POINTS_LAYER_ID,
+  STANDARD_CASING_LAYER_ID,
   STANDARD_LAYER_ID,
   STANDARD_SOURCE_ID,
 } from './route-layers';
@@ -28,6 +33,8 @@ class FakeMap {
   sources = new Map<string, { type: string; data: unknown }>();
   layerIds: string[] = [];
   fitted: Array<[[number, number], [number, number]]> = [];
+  paint: Array<{ layer: string; name: string; value: unknown }> = [];
+  layout: Array<{ layer: string; name: string; value: unknown }> = [];
   removed = false;
 
   constructor() {
@@ -87,6 +94,16 @@ class FakeMap {
 
   removeLayer(id: string) {
     this.layerIds = this.layerIds.filter((existing) => existing !== id);
+  }
+
+  setPaintProperty(layer: string, name: string, value: unknown) {
+    if (!this.layerIds.includes(layer)) throw new Error(`layer ${layer} does not exist`);
+    this.paint.push({ layer, name, value });
+  }
+
+  setLayoutProperty(layer: string, name: string, value: unknown) {
+    if (!this.layerIds.includes(layer)) throw new Error(`layer ${layer} does not exist`);
+    this.layout.push({ layer, name, value });
   }
 
   fitBounds(bounds: [[number, number], [number, number]]) {
@@ -208,6 +225,19 @@ async function clickMap(map: FakeMap, lng: number, lat: number) {
   });
 }
 
+/**
+ * Ask for the comparison.
+ *
+ * Placing two points is now a draft, not a request: the planner commits a
+ * journey when the viewer presses Compare. These tests exercise the map's
+ * click handling, so they still click — and then say so.
+ */
+async function compare() {
+  await act(async () => {
+    screen.getByTestId('compare-routes').click();
+  });
+}
+
 beforeEach(() => {
   FakeMap.instances.length = 0;
   // jsdom has no WebGL, so the real capability check would report "unsupported"
@@ -254,6 +284,7 @@ describe('route layers', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
 
     // FakeMap.addSource throws on a duplicate, so reaching here proves it.
     await waitFor(() => expect(map.dataOf(POINTS_SOURCE_ID).features).toHaveLength(2));
@@ -266,6 +297,7 @@ describe('route layers', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
 
     await waitFor(() => {
       expect(map.dataOf(ACCESSIBLE_SOURCE_ID).features).toHaveLength(1);
@@ -282,6 +314,77 @@ describe('route layers', () => {
 
     await waitFor(() => expect(map.fitted.length).toBeGreaterThan(0));
   });
+
+  it('cases each line directly beneath it, and halos the markers', async () => {
+    // A casing above its own line would hide it; a casing under the *other*
+    // route would draw a pale stripe through it. Each sits immediately below
+    // the line it belongs to, and the marker halo below the marker.
+    render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const { layerIds } = FakeMap.instances[0]!;
+    expect(layerIds.indexOf(STANDARD_LAYER_ID)).toBe(
+      layerIds.indexOf(STANDARD_CASING_LAYER_ID) + 1,
+    );
+    expect(layerIds.indexOf(ACCESSIBLE_LAYER_ID)).toBe(
+      layerIds.indexOf(ACCESSIBLE_CASING_LAYER_ID) + 1,
+    );
+    expect(layerIds.indexOf(POINTS_LAYER_ID)).toBe(layerIds.indexOf(POINTS_HALO_LAYER_ID) + 1);
+  });
+
+  it('highlights a route by paint alone, without moving the camera', async () => {
+    const user = userEvent.setup();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+    const fitsBefore = map.fitted.length;
+    const paintsBefore = map.paint.length;
+
+    await user.click(screen.getByTestId('focus-accessible'));
+
+    await waitFor(() => expect(map.paint.length).toBeGreaterThan(paintsBefore));
+    const latest = Object.fromEntries(
+      map.paint.slice(paintsBefore).map(({ layer, value }) => [layer, value]),
+    );
+    expect(latest[ACCESSIBLE_LAYER_ID]).toBe(1);
+    expect(latest[STANDARD_LAYER_ID]).toBeLessThan(1);
+    expect(latest[STANDARD_LAYER_ID]).toBeGreaterThan(0);
+    // No refit and no new map: a highlight must not undo the viewer's pan.
+    expect(map.fitted.length).toBe(fitsBefore);
+    expect(FakeMap.instances).toHaveLength(1);
+  });
+
+  it('keeps one map instance across form and result updates', async () => {
+    // Remounting the canvas on a profile change would flash the loading
+    // overlay, drop the viewer's viewport and re-download the style.
+    const user = userEvent.setup();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+
+    await user.selectOptions(screen.getByTestId('mobility-profile'), 'crutches');
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+    await user.click(screen.getByTestId('swap-points'));
+
+    expect(FakeMap.instances).toHaveLength(1);
+    expect(map.removed).toBe(false);
+  });
 });
 
 describe('choosing points on the map', () => {
@@ -291,14 +394,23 @@ describe('choosing points on the map', () => {
 
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
-    expect(screen.getByTestId('point-start')).toHaveTextContent('43.47000, -80.54000');
-    expect(screen.getByTestId('point-end')).toHaveTextContent(/click the map to set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('Selected map point');
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('43.47000, -80.54000');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
 
     await clickMap(map, -80.536, 43.471);
-    expect(screen.getByTestId('point-end')).toHaveTextContent('43.47100, -80.53600');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(
+      'Selected map point',
+    );
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(
+      '43.47100, -80.53600',
+    );
   });
 
-  it('requests a comparison once both points are set', async () => {
+  it('asks for nothing until the viewer presses Compare', async () => {
+    // Placing points is drafting, not asking. It used to fire the moment two
+    // existed, which was fine while a point was only ever a map click and
+    // wrong once an endpoint is a named thing somebody is still typing.
     const fetchImpl = respondWithComparison();
     render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
     await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
@@ -308,7 +420,24 @@ describe('choosing points on the map', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
 
     await clickMap(map, -80.536, 43.47);
+    expect(fetchImpl).not.toHaveBeenCalled();
+
+    await compare();
     await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+  });
+
+  it('sends exactly one request for one Compare press', async () => {
+    const fetchImpl = respondWithComparison();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+
+    await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it('shows the comparison the API returned', async () => {
@@ -318,11 +447,12 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
 
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
-    expect(screen.getByTestId('route-card-accessible')).toHaveTextContent('709 m');
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('709 m');
   });
 
   it('a third click starts a new journey instead of doing nothing', async () => {
@@ -334,8 +464,8 @@ describe('choosing points on the map', () => {
     await clickMap(map, -80.536, 43.47);
     await clickMap(map, -80.53, 43.475);
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent('43.47500, -80.53000');
-    expect(screen.getByTestId('point-end')).toHaveTextContent(/click the map to set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('43.47500, -80.53000');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
   });
 
   it('re-requests when the mobility profile changes', async () => {
@@ -346,11 +476,13 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
     await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
 
-    const radio = screen.getByRole('radio', { name: /Crutches or cane/ }) as HTMLInputElement;
+    const profile = screen.getByTestId('mobility-profile') as HTMLSelectElement;
     await act(async () => {
-      radio.click();
+      profile.value = 'crutches';
+      profile.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
     await waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(2));
@@ -368,13 +500,14 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
     await waitFor(() => expect(map.dataOf(ACCESSIBLE_SOURCE_ID).features).toHaveLength(1));
 
     await act(async () => {
-      screen.getByRole('button', { name: 'Clear' }).click();
+      screen.getByTestId('clear-journey').click();
     });
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent(/click the map to set/i);
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent(/not set/i);
     await waitFor(() => expect(map.dataOf(POINTS_SOURCE_ID).features).toHaveLength(0));
     expect(map.dataOf(ACCESSIBLE_SOURCE_ID).features).toHaveLength(0);
   });
@@ -386,13 +519,16 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.471);
+    await compare();
 
     await act(async () => {
-      screen.getByRole('button', { name: 'Swap' }).click();
+      screen.getByTestId('swap-points').click();
     });
 
-    expect(screen.getByTestId('point-start')).toHaveTextContent('43.47100, -80.53600');
-    expect(screen.getByTestId('point-end')).toHaveTextContent('43.47000, -80.54000');
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('43.47100, -80.53600');
+    expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(
+      '43.47000, -80.54000',
+    );
   });
 
   it('surfaces a failed request without losing the chosen points', async () => {
@@ -409,8 +545,10 @@ describe('choosing points on the map', () => {
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
+    await compare();
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('No route was found.'));
-    expect(screen.getByTestId('point-start')).toHaveTextContent('43.47000, -80.54000');
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('Selected map point');
+    expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('43.47000, -80.54000');
   });
 });
