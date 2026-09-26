@@ -14,14 +14,12 @@ import datetime as dt
 from http import HTTPStatus
 
 from fastapi import APIRouter, Request
-from sqlalchemy import select
 
 from pathable_api.api.deps import DatabaseDep
 from pathable_api.core.errors import ApiError
 from pathable_api.core.logging import get_logger
-from pathable_api.geo.datasets import get_active_dataset
 from pathable_api.geo.elevation import elevation_attribution
-from pathable_api.geo.models import PilotRegion
+from pathable_api.geo.models import DatasetVersion
 from pathable_api.routing.comparison import RouteComparison, compare_routes
 from pathable_api.routing.engine import Route
 from pathable_api.routing.graph import GraphRepository, NoActiveDatasetError
@@ -129,11 +127,11 @@ async def compare(
                 message=str(error),
             ) from error
 
-        region = (
-            await session.execute(select(PilotRegion).where(PilotRegion.slug == payload.region))
-        ).scalar_one()
-        dataset = await get_active_dataset(session, region.id)
-        assert dataset is not None  # noqa: S101 — active_graph already required one
+        # The provenance of the graph that will compute the route — not a second
+        # read of "active", which an activation or rollback committed in between
+        # would answer with a different dataset.
+        dataset = await session.get(DatasetVersion, graph.dataset_id)
+        assert dataset is not None  # noqa: S101 — a loaded graph's dataset exists
 
         provenance = DatasetProvenance(
             dataset_id=str(dataset.id),

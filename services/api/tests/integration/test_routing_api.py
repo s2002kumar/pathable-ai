@@ -16,18 +16,18 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from pathable_api.core.config import Settings
 from pathable_api.core.event_loop import selector_loop_factory
-from pathable_api.geo.datasets import get_active_dataset
 from pathable_api.geo.elevation import HRDEM_ATTRIBUTION, ElevationSample
 from pathable_api.geo.elevation_apply import apply_elevation
 from pathable_api.geo.fixtures import NODES, SYNTHETIC_REGION_SLUG, load_synthetic_dataset
-from pathable_api.geo.models import PilotRegion
+from pathable_api.geo.models import DatasetVersion
 from pathable_api.main import create_app
+from pathable_api.routing.activation import promote
+from pathable_api.routing.graph import GraphRepository, RoutableGraph
 
 pytestmark = pytest.mark.integration
 
@@ -229,17 +229,24 @@ class TestProvenance:
 
 
 async def _apply_fake_hrdem(database_url: str) -> None:
+    """Build an elevated candidate and put it live in place of the fixture.
+
+    Elevation is applied only to a candidate — the live dataset is sealed —
+    so this goes the way an operator would: a fresh build, enriched, then
+    promoted through the regression gate with the reason recorded.
+    """
     engine = create_async_engine(database_url, poolclass=NullPool)
     try:
         async with async_sessionmaker(engine, expire_on_commit=False)() as session:
-            region = (
-                await session.execute(
-                    select(PilotRegion).where(PilotRegion.slug == SYNTHETIC_REGION_SLUG)
-                )
-            ).scalar_one()
-            dataset = await get_active_dataset(session, region.id)
+            candidate = await load_synthetic_dataset(session, activate=False)
+            dataset = await session.get(DatasetVersion, candidate.dataset_id)
             assert dataset is not None
             await apply_elevation(session, dataset=dataset, provider=_LabelledAsHrdem())
+            await promote(
+                session,
+                candidate.dataset_id,
+                acceptance_reason="A flat stand-in terrain replaces the tagged gradients in a test.",
+            )
             await session.commit()
     finally:
         await engine.dispose()
@@ -406,3 +413,47 @@ class TestGraphCaching:
         compare(client)
         assert repository.cached_dataset_ids() == cached
         assert len(cached) == 1
+
+    def test_a_switch_mid_request_cannot_label_one_datasets_route_with_another(
+        self, seeded_database_url: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Regression: the endpoint took its graph from one read of "the active
+        # dataset" and its provenance from a second. An activation committed
+        # between the two labelled a route computed on the old network with the
+        # new network's id. Here the switch lands exactly in that gap.
+        served = asyncio.run(
+            _load_then_switch(seeded_database_url), loop_factory=selector_loop_factory()
+        )
+
+        settings = Settings(
+            _env_file=None,
+            environment="test",
+            database_url=seeded_database_url,
+            allowed_origins=("http://localhost:3000",),
+            log_level="WARNING",
+            log_format="console",
+        )
+        with TestClient(create_app(settings)) as test_client:
+
+            async def graph_read_before_the_switch(*_: object) -> RoutableGraph:
+                return served
+
+            repository = test_client.app.state.graph_repository  # type: ignore[attr-defined]
+            monkeypatch.setattr(repository, "active_graph", graph_read_before_the_switch)
+            body = compare(test_client)
+
+        assert body["dataset"]["dataset_id"] == str(served.dataset_id)
+
+
+async def _load_then_switch(database_url: str) -> RoutableGraph:
+    """The live graph as a request would have loaded it, then a new dataset goes live."""
+    engine = create_async_engine(database_url, poolclass=NullPool)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            repository = GraphRepository()
+            served = await repository.active_graph(session, SYNTHETIC_REGION_SLUG)
+            await load_synthetic_dataset(session)
+            await session.commit()
+            return served
+    finally:
+        await engine.dispose()
