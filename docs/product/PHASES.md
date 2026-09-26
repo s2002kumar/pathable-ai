@@ -244,7 +244,7 @@ API contract, and PA-UX-02 builds no routing capability.
 | Card      | Deliverable                                                                                       | Status                      |
 | --------- | ------------------------------------------------------------------------------------------------- | --------------------------- |
 | PA-UX-03A | Correctness and API foundation: defects D1–D8, gradient summary, evidence basis, comparable times | **Built** — awaiting review |
-| PA-UX-03B | The Stitch frontend, on that foundation                                                           | Not started; waits for 03A  |
+| PA-UX-03B | The Stitch frontend, on that foundation                                                           | **Built** — awaiting review |
 
 **Founder decisions (2026-09-24).** The product is named PathAble — not
 WayPoint, not "PathAble AI", and never "AI-powered". Only the five real
@@ -266,10 +266,30 @@ misstated it (D1, D5, D6, D7). The Stitch interface itself is not started.
 `../pathable-ai-wt/stitch-route-planner`, branched from `feat/premium-map-experience`
 at `01e26da`, so its draft PR is stacked on PR #64.
 
-**Still open before 03B.** A production geocoder and a production tile provider
-(ADR 0005) — the dark Stitch basemap is a second style for that decision. The
-product name still reads "PathAble AI" in the interface and these documents;
-renaming it belongs with the 03B interface work.
+**PA-UX-03B.** The Stitch information architecture on the 03A contract, in the
+existing light token system. What a person sees first is the verdict, the two
+routes as a keyboard radio group, the reason that decided the route and how much
+of it the map is silent about; every statement below carries the label of what it
+rests on — Recorded, Estimated from elevation, Not recorded, Your profile rule.
+A route the chosen profile cannot use gets no travel time ("Time unavailable for
+this profile"), read from `excluded_by_profile`, never from a stairway count.
+Coverage is per category against its own denominator, kerbs per crossing, with no
+total. Recorded stairways are always drawn; what the profile rules out and the
+steepest climb are pinned to the map as text. Profile rules come from
+`/routes/profiles`; the uphill limit is off until the traveller sets it, and is
+sent exactly as typed as a custom profile the API builds. The interface is named
+PathAble. Routing is untouched: no backend file changed. Evidence:
+`docs/evidence/FRONTEND_POLISH.md`, "The Stitch route planner (PA-UX-03B)".
+
+**Branch / worktree (03B).** `feat/stitch-route-planner-ui` in
+`../pathable-ai-wt/stitch-route-planner-ui`, from the 03A head after it took PR
+#64's final commit, so its draft PR is stacked on PR #65.
+
+**Still open.** A production geocoder and a production tile provider (ADR 0005)
+— the dark Stitch basemap is a second style for that decision, and the dark
+panel theme was not adopted with it. The name is corrected in the interface
+only; these documents, the changelog and the README still say "PathAble AI" in
+places, and a repository-wide rename was deliberately not part of 03B.
 
 ---
 
