@@ -1,0 +1,1794 @@
+{
+  "kitchener_snapshot_version": 1,
+  "snapshot_id": "513094727cc139dd29980e2c281570f9d5183c1d0ca8171754ece0cbd7281b38",
+  "publisher": "The Corporation of the City of Kitchener",
+  "publications": {
+    "active_transportation": {
+      "role": "every published attribute; ACTIVE records only; no NETWORK LINKS category",
+      "item": {
+        "id": "9fcaa379310643d1a72094972ee55833",
+        "title": "Active_Transportation",
+        "type": "Feature Service",
+        "owner": "KitchenerGIS",
+        "org_id": "qAo1OsXi67t7XgmS",
+        "url": "https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Active_Transportation/FeatureServer",
+        "access_information": "City of Kitchener - TIS - GeoSpatial Data and Analytics",
+        "snippet": "Active Transportation       (Update Frequency: Daily)      Summary: Inventory of Active Transportation",
+        "content_status": "public_authoritative",
+        "created": "2019-03-29T18:37:00.000Z",
+        "modified": "2026-09-25T08:07:45.000Z",
+        "extent_wgs84": [
+          [
+            -80.57404130114067,
+            43.35317914393634
+          ],
+          [
+            -80.37740503506737,
+            43.50557936944029
+          ]
+        ],
+        "licence_info_sha256": "a8406b1d05d509474ebc3f29875a9e64be0ffdbf6e17d256256dbef9add4faee",
+        "measurement": {
+          "num_views": 55158,
+          "size_bytes": 57057280
+        }
+      },
+      "service": {
+        "service_item_id": "9fcaa379310643d1a72094972ee55833",
+        "description": "Active Transportation       (Update Frequency: Daily)      Summary: Inventory of Active Transportation",
+        "copyright_text": "City of Kitchener - TIS - GeoSpatial Data and Analytics",
+        "capabilities": "Query,Extract",
+        "max_record_count": 2000,
+        "supported_export_formats": "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel",
+        "spatial_reference": {
+          "wkid": 26917,
+          "latestWkid": 26917
+        },
+        "current_version": 12,
+        "layers": [
+          {
+            "id": 0,
+            "name": "Active Transportation"
+          }
+        ]
+      },
+      "layer": {
+        "url": "https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Active_Transportation/FeatureServer/0",
+        "id": 0,
+        "name": "Active Transportation",
+        "geometry_type": "esriGeometryPolyline",
+        "spatial_reference": {
+          "wkid": 26917,
+          "latestWkid": 26917
+        },
+        "extent_native": {
+          "xmin": 534519.4950000001,
+          "ymin": 4800222.2706,
+          "xmax": 550329.7407,
+          "ymax": 4817048.628699999
+        },
+        "object_id_field": "OBJECTID",
+        "global_id_field": null,
+        "type_id_field": "CATEGORY",
+        "max_record_count": 2000,
+        "max_ids_count": 1000000,
+        "date_fields_time_reference": {
+          "timeZone": "UTC",
+          "timeZoneIANA": "Etc/UTC",
+          "respectsDaylightSaving": false
+        },
+        "edit_info": {
+          "lastEditDate": "2026-09-23T08:16:45.878Z",
+          "dataLastEditDate": "2026-09-23T08:16:45.878Z",
+          "schemaLastEditDate": "2026-09-23T08:16:45.878Z"
+        },
+        "fields": [
+          {
+            "name": "WINTER_MAINTAINED_BY",
+            "type": "esriFieldTypeString",
+            "alias": "Winter Maintained By",
+            "nullable": true,
+            "default_value": "UNKNOWN",
+            "domain": "AtMaintainedBy"
+          },
+          {
+            "name": "SIDEWALKER_PROGRAM",
+            "type": "esriFieldTypeString",
+            "alias": "Is sidewalk part of the Sidewalker Program",
+            "nullable": true,
+            "default_value": "N",
+            "domain": "YesNoOnly"
+          },
+          {
+            "name": "UPGRADE_YEAR",
+            "type": "esriFieldTypeInteger",
+            "alias": "UPGRADE_YEAR",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "FACILITY_TYPE",
+            "type": "esriFieldTypeString",
+            "alias": "CTMP_FACILITY_TYPE",
+            "nullable": true,
+            "default_value": "NA",
+            "domain": "AtCtmpFacilityType"
+          },
+          {
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+            "alias": "OBJECTID",
+            "nullable": false,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "ACTIVETRANSPORTID",
+            "type": "esriFieldTypeInteger",
+            "alias": "Activetransportid",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "STATUS",
+            "type": "esriFieldTypeString",
+            "alias": "Status",
+            "nullable": true,
+            "default_value": "ACTIVE",
+            "domain": "AtStatus"
+          },
+          {
+            "name": "STATUS_DATE",
+            "type": "esriFieldTypeDate",
+            "alias": "Status Date",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "CATEGORY",
+            "type": "esriFieldTypeString",
+            "alias": "Category",
+            "nullable": true,
+            "default_value": "SIDEWALKS AND WALKWAYS",
+            "domain": "AtType"
+          },
+          {
+            "name": "SUBCATEGORY",
+            "type": "esriFieldTypeString",
+            "alias": "Subcategory",
+            "nullable": true,
+            "default_value": "SIDEWALK",
+            "domain": "AtSubcategory"
+          },
+          {
+            "name": "TRAIL_MASTER_PLAN_CLASS",
+            "type": "esriFieldTypeString",
+            "alias": "Trail Master Plan Class",
+            "nullable": true,
+            "default_value": "UNKNOWN",
+            "domain": "AtTrailMasterPlanClass"
+          },
+          {
+            "name": "FEATURE_TYPE",
+            "type": "esriFieldTypeString",
+            "alias": "Feature Type",
+            "nullable": true,
+            "default_value": "SURFACE",
+            "domain": "AtFeatureType"
+          },
+          {
+            "name": "SURFACE_MATERIAL",
+            "type": "esriFieldTypeString",
+            "alias": "Surface Material",
+            "nullable": true,
+            "default_value": "CONCRETE",
+            "domain": "AtSurfaceMaterial"
+          },
+          {
+            "name": "ROUTE_NAME_1",
+            "type": "esriFieldTypeString",
+            "alias": "Route Name 1",
+            "nullable": true,
+            "default_value": null,
+            "domain": "AtRouteName1"
+          },
+          {
+            "name": "ROUTE_NAME_2",
+            "type": "esriFieldTypeString",
+            "alias": "Route Name 2",
+            "nullable": true,
+            "default_value": null,
+            "domain": "AtRouteName2"
+          },
+          {
+            "name": "ROUTE_NAME_PROPOSED",
+            "type": "esriFieldTypeString",
+            "alias": "Route Name Proposed",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "WIDTH_M",
+            "type": "esriFieldTypeDouble",
+            "alias": "Width M",
+            "nullable": true,
+            "default_value": 1.5,
+            "domain": "AtWidth"
+          },
+          {
+            "name": "GRADE",
+            "type": "esriFieldTypeString",
+            "alias": "Grade",
+            "nullable": true,
+            "default_value": "UNKNOWN",
+            "domain": "AtGrade"
+          },
+          {
+            "name": "RAILING",
+            "type": "esriFieldTypeString",
+            "alias": "Railing",
+            "nullable": true,
+            "default_value": "N",
+            "domain": "YesNoOnly"
+          },
+          {
+            "name": "CURBCUT",
+            "type": "esriFieldTypeString",
+            "alias": "Curbcut",
+            "nullable": true,
+            "default_value": "N",
+            "domain": "YesNo"
+          },
+          {
+            "name": "STREET",
+            "type": "esriFieldTypeString",
+            "alias": "Street",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "ROADSEGMENTID",
+            "type": "esriFieldTypeInteger",
+            "alias": "Roadsegmentid",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "ROADSEGMENT_SIDE",
+            "type": "esriFieldTypeString",
+            "alias": "Roadsegment Side",
+            "nullable": true,
+            "default_value": "NA",
+            "domain": "AtSide"
+          },
+          {
+            "name": "PARCELID",
+            "type": "esriFieldTypeInteger",
+            "alias": "Parcelid",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "WARD",
+            "type": "esriFieldTypeInteger",
+            "alias": "Ward",
+            "nullable": true,
+            "default_value": null,
+            "domain": "WardCodedValues"
+          },
+          {
+            "name": "SOURCE",
+            "type": "esriFieldTypeString",
+            "alias": "Source",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SOURCE_DATE",
+            "type": "esriFieldTypeDate",
+            "alias": "Source Date",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "NOTES",
+            "type": "esriFieldTypeString",
+            "alias": "Notes",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "OWNERSHIP",
+            "type": "esriFieldTypeString",
+            "alias": "Ownership",
+            "nullable": true,
+            "default_value": "KITCHENER",
+            "domain": "AtOwnership"
+          },
+          {
+            "name": "MAINTAINED_BY",
+            "type": "esriFieldTypeString",
+            "alias": "Maintained By",
+            "nullable": true,
+            "default_value": "UNKNOWN",
+            "domain": "AtMaintainedBy"
+          },
+          {
+            "name": "INSTALLATION_YEAR",
+            "type": "esriFieldTypeInteger",
+            "alias": "Installation Year",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "LAST_INSPECTION_YEAR",
+            "type": "esriFieldTypeString",
+            "alias": "Last Inspection Year",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SURFACE_CONDITION",
+            "type": "esriFieldTypeString",
+            "alias": "Surface Condition",
+            "nullable": true,
+            "default_value": "GOOD",
+            "domain": "AtSurfaceCondition"
+          },
+          {
+            "name": "CONDITION_DATE",
+            "type": "esriFieldTypeDate",
+            "alias": "Condition Date",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "CONDITION_SCORE",
+            "type": "esriFieldTypeInteger",
+            "alias": "Condition Score",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SW_WEIGHT_CLASS",
+            "type": "esriFieldTypeString",
+            "alias": "Sw Weight Class",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SW_PRIORITY",
+            "type": "esriFieldTypeInteger",
+            "alias": "Sw Priority",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "PN_PROJECT_NO",
+            "type": "esriFieldTypeString",
+            "alias": "Pn Project No",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "PN_MAP_CLASS",
+            "type": "esriFieldTypeString",
+            "alias": "Pn Map Class",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "PN_OFFICIAL_PLAN_MAP",
+            "type": "esriFieldTypeString",
+            "alias": "Pn Official Plan Map",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "PN_REGION_CATEGORY",
+            "type": "esriFieldTypeString",
+            "alias": "Pn Region Category",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "CREATE_BY",
+            "type": "esriFieldTypeString",
+            "alias": "Create By",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "CREATE_DATE",
+            "type": "esriFieldTypeDate",
+            "alias": "Create Date",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "UPDATE_BY",
+            "type": "esriFieldTypeString",
+            "alias": "Update By",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "UPDATE_DATE",
+            "type": "esriFieldTypeDate",
+            "alias": "Update Date",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "CW_WORK_AREA",
+            "type": "esriFieldTypeString",
+            "alias": "Cw Work Area",
+            "nullable": true,
+            "default_value": "UNKNOWN",
+            "domain": "CityworksWorkAreaPlow"
+          },
+          {
+            "name": "WAYFINDING",
+            "type": "esriFieldTypeString",
+            "alias": "Wayfinding",
+            "nullable": true,
+            "default_value": "N",
+            "domain": "YesNoOnly"
+          },
+          {
+            "name": "WINTER_MAINTENANCE",
+            "type": "esriFieldTypeString",
+            "alias": "Winter Maintenance",
+            "nullable": true,
+            "default_value": "NONE",
+            "domain": "AtWinterMaintenance"
+          },
+          {
+            "name": "PLOW_OFF_ROAD",
+            "type": "esriFieldTypeInteger",
+            "alias": "Plow Off Road",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "PLOW_DESC_NUM",
+            "type": "esriFieldTypeInteger",
+            "alias": "Plow Desc Num",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SOC_AAA",
+            "type": "esriFieldTypeString",
+            "alias": "Largest AAA network",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SOC_SUP",
+            "type": "esriFieldTypeString",
+            "alias": "Largest supporting network",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SLOPE_GRADIENT_PERCENT",
+            "type": "esriFieldTypeInteger",
+            "alias": "SLOPE_GRADIENT_PERCENT",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SLOPE_GRADIENT_CLASS",
+            "type": "esriFieldTypeString",
+            "alias": "SLOPE_GRADIENT_CLASS",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SLOPE_GRADIENT_SOURCE",
+            "type": "esriFieldTypeString",
+            "alias": "SLOPE_GRADIENT_SOURCE",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SLOPE_GRADIENT_MAX",
+            "type": "esriFieldTypeInteger",
+            "alias": "SLOPE_GRADIENT_MAX",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SLOPE_GRADIENT_MIN",
+            "type": "esriFieldTypeInteger",
+            "alias": "SLOPE_GRADIENT_MIN",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SLOPE_GRADIENT_AVG",
+            "type": "esriFieldTypeInteger",
+            "alias": "SLOPE_GRADIENT_AVG",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "GRADE_CATEGORY_MAX",
+            "type": "esriFieldTypeString",
+            "alias": "GRADE_CATEGORY_MAX",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "PATHWAYS_MAINTENANCE",
+            "type": "esriFieldTypeString",
+            "alias": "PATHWAYS_MAINTENANCE",
+            "nullable": true,
+            "default_value": "N",
+            "domain": "YesNoOnly"
+          },
+          {
+            "name": "PATHWAYS_MAINT_AREA",
+            "type": "esriFieldTypeInteger",
+            "alias": "PATHWAYS_MAINT_AREA",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "ROUTE_CITYWIDE",
+            "type": "esriFieldTypeString",
+            "alias": "ROUTE_CITYWIDE",
+            "nullable": true,
+            "default_value": null,
+            "domain": "AtRouteCitywide"
+          },
+          {
+            "name": "Shape__Length",
+            "type": "esriFieldTypeDouble",
+            "alias": "Shape__Length",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          }
+        ],
+        "contract": {
+          "compatible": true,
+          "missing": [],
+          "mismatched": [],
+          "additional_fields": [
+            "CREATE_BY",
+            "CW_WORK_AREA",
+            "FACILITY_TYPE",
+            "MAINTAINED_BY",
+            "OWNERSHIP",
+            "PARCELID",
+            "PATHWAYS_MAINTENANCE",
+            "PATHWAYS_MAINT_AREA",
+            "PLOW_DESC_NUM",
+            "PLOW_OFF_ROAD",
+            "PN_MAP_CLASS",
+            "PN_OFFICIAL_PLAN_MAP",
+            "PN_PROJECT_NO",
+            "PN_REGION_CATEGORY",
+            "ROUTE_CITYWIDE",
+            "ROUTE_NAME_1",
+            "ROUTE_NAME_2",
+            "ROUTE_NAME_PROPOSED",
+            "SOC_AAA",
+            "SOC_SUP",
+            "SW_PRIORITY",
+            "SW_WEIGHT_CLASS",
+            "TRAIL_MASTER_PLAN_CLASS",
+            "UPGRADE_YEAR",
+            "WARD",
+            "WAYFINDING",
+            "WINTER_MAINTAINED_BY",
+            "WINTER_MAINTENANCE"
+          ]
+        },
+        "template_prototypes": [
+          {
+            "type": "CYCLING",
+            "template": "CYCLING",
+            "attributes": {
+              "STATUS_DATE": null,
+              "ROUTE_CITYWIDE": null,
+              "WINTER_MAINTAINED_BY": "UNKNOWN",
+              "SIDEWALKER_PROGRAM": "N",
+              "UPGRADE_YEAR": null,
+              "FACILITY_TYPE": "NA",
+              "ACTIVETRANSPORTID": null,
+              "STATUS": "ACTIVE",
+              "CATEGORY": "CYCLING",
+              "SUBCATEGORY": "SIDEWALK",
+              "TRAIL_MASTER_PLAN_CLASS": "UNKNOWN",
+              "FEATURE_TYPE": "SURFACE",
+              "SURFACE_MATERIAL": "CONCRETE",
+              "ROUTE_NAME_1": null,
+              "ROUTE_NAME_2": null,
+              "ROUTE_NAME_PROPOSED": null,
+              "WIDTH_M": 1.5,
+              "GRADE": "UNKNOWN",
+              "RAILING": "N",
+              "CURBCUT": "N",
+              "STREET": null,
+              "ROADSEGMENTID": null,
+              "ROADSEGMENT_SIDE": "NA",
+              "PARCELID": null,
+              "WARD": null,
+              "SOURCE": null,
+              "SOURCE_DATE": null,
+              "NOTES": null,
+              "OWNERSHIP": "KITCHENER",
+              "MAINTAINED_BY": "UNKNOWN",
+              "INSTALLATION_YEAR": null,
+              "LAST_INSPECTION_YEAR": null,
+              "SURFACE_CONDITION": "GOOD",
+              "CONDITION_DATE": null,
+              "CONDITION_SCORE": null,
+              "SW_WEIGHT_CLASS": null,
+              "SW_PRIORITY": null,
+              "PN_PROJECT_NO": null,
+              "PN_MAP_CLASS": null,
+              "PN_OFFICIAL_PLAN_MAP": null,
+              "PN_REGION_CATEGORY": null,
+              "CREATE_BY": null,
+              "CREATE_DATE": null,
+              "UPDATE_BY": null,
+              "UPDATE_DATE": null,
+              "CW_WORK_AREA": "UNKNOWN",
+              "WAYFINDING": "N",
+              "WINTER_MAINTENANCE": "NONE",
+              "PLOW_OFF_ROAD": null,
+              "PLOW_DESC_NUM": null,
+              "SOC_AAA": null,
+              "SOC_SUP": null,
+              "SLOPE_GRADIENT_PERCENT": null,
+              "SLOPE_GRADIENT_CLASS": null,
+              "SLOPE_GRADIENT_SOURCE": null,
+              "SLOPE_GRADIENT_MAX": null,
+              "SLOPE_GRADIENT_MIN": null,
+              "SLOPE_GRADIENT_AVG": null,
+              "GRADE_CATEGORY_MAX": null,
+              "PATHWAYS_MAINTENANCE": "N",
+              "PATHWAYS_MAINT_AREA": null
+            }
+          },
+          {
+            "type": "PATHWAYS",
+            "template": "PATHWAYS",
+            "attributes": {
+              "STATUS_DATE": null,
+              "ROUTE_CITYWIDE": null,
+              "WINTER_MAINTAINED_BY": "UNKNOWN",
+              "SIDEWALKER_PROGRAM": "N",
+              "UPGRADE_YEAR": null,
+              "FACILITY_TYPE": "NA",
+              "ACTIVETRANSPORTID": null,
+              "STATUS": "ACTIVE",
+              "CATEGORY": "PATHWAYS",
+              "SUBCATEGORY": "SIDEWALK",
+              "TRAIL_MASTER_PLAN_CLASS": "UNKNOWN",
+              "FEATURE_TYPE": "SURFACE",
+              "SURFACE_MATERIAL": "CONCRETE",
+              "ROUTE_NAME_1": null,
+              "ROUTE_NAME_2": null,
+              "ROUTE_NAME_PROPOSED": null,
+              "WIDTH_M": 1.5,
+              "GRADE": "UNKNOWN",
+              "RAILING": "N",
+              "CURBCUT": "N",
+              "STREET": null,
+              "ROADSEGMENTID": null,
+              "ROADSEGMENT_SIDE": "NA",
+              "PARCELID": null,
+              "WARD": null,
+              "SOURCE": null,
+              "SOURCE_DATE": null,
+              "NOTES": null,
+              "OWNERSHIP": "KITCHENER",
+              "MAINTAINED_BY": "UNKNOWN",
+              "INSTALLATION_YEAR": null,
+              "LAST_INSPECTION_YEAR": null,
+              "SURFACE_CONDITION": "GOOD",
+              "CONDITION_DATE": null,
+              "CONDITION_SCORE": null,
+              "SW_WEIGHT_CLASS": null,
+              "SW_PRIORITY": null,
+              "PN_PROJECT_NO": null,
+              "PN_MAP_CLASS": null,
+              "PN_OFFICIAL_PLAN_MAP": null,
+              "PN_REGION_CATEGORY": null,
+              "CREATE_BY": null,
+              "CREATE_DATE": null,
+              "UPDATE_BY": null,
+              "UPDATE_DATE": null,
+              "CW_WORK_AREA": "UNKNOWN",
+              "WAYFINDING": "N",
+              "WINTER_MAINTENANCE": "NONE",
+              "PLOW_OFF_ROAD": null,
+              "PLOW_DESC_NUM": null,
+              "SOC_AAA": null,
+              "SOC_SUP": null,
+              "SLOPE_GRADIENT_PERCENT": null,
+              "SLOPE_GRADIENT_CLASS": null,
+              "SLOPE_GRADIENT_SOURCE": null,
+              "SLOPE_GRADIENT_MAX": null,
+              "SLOPE_GRADIENT_MIN": null,
+              "SLOPE_GRADIENT_AVG": null,
+              "GRADE_CATEGORY_MAX": null,
+              "PATHWAYS_MAINTENANCE": "N",
+              "PATHWAYS_MAINT_AREA": null
+            }
+          },
+          {
+            "type": "SIDEWALKS AND WALKWAYS",
+            "template": "SIDEWALKS AND WALKWAYS",
+            "attributes": {
+              "STATUS_DATE": null,
+              "ROUTE_CITYWIDE": null,
+              "WINTER_MAINTAINED_BY": "UNKNOWN",
+              "SIDEWALKER_PROGRAM": "N",
+              "UPGRADE_YEAR": null,
+              "FACILITY_TYPE": "NA",
+              "ACTIVETRANSPORTID": null,
+              "STATUS": "ACTIVE",
+              "CATEGORY": "SIDEWALKS AND WALKWAYS",
+              "SUBCATEGORY": "SIDEWALK",
+              "TRAIL_MASTER_PLAN_CLASS": "UNKNOWN",
+              "FEATURE_TYPE": "SURFACE",
+              "SURFACE_MATERIAL": "CONCRETE",
+              "ROUTE_NAME_1": null,
+              "ROUTE_NAME_2": null,
+              "ROUTE_NAME_PROPOSED": null,
+              "WIDTH_M": 1.5,
+              "GRADE": "UNKNOWN",
+              "RAILING": "N",
+              "CURBCUT": "N",
+              "STREET": null,
+              "ROADSEGMENTID": null,
+              "ROADSEGMENT_SIDE": "NA",
+              "PARCELID": null,
+              "WARD": null,
+              "SOURCE": null,
+              "SOURCE_DATE": null,
+              "NOTES": null,
+              "OWNERSHIP": "KITCHENER",
+              "MAINTAINED_BY": "UNKNOWN",
+              "INSTALLATION_YEAR": null,
+              "LAST_INSPECTION_YEAR": null,
+              "SURFACE_CONDITION": "GOOD",
+              "CONDITION_DATE": null,
+              "CONDITION_SCORE": null,
+              "SW_WEIGHT_CLASS": null,
+              "SW_PRIORITY": null,
+              "PN_PROJECT_NO": null,
+              "PN_MAP_CLASS": null,
+              "PN_OFFICIAL_PLAN_MAP": null,
+              "PN_REGION_CATEGORY": null,
+              "CREATE_BY": null,
+              "CREATE_DATE": null,
+              "UPDATE_BY": null,
+              "UPDATE_DATE": null,
+              "CW_WORK_AREA": "UNKNOWN",
+              "WAYFINDING": "N",
+              "WINTER_MAINTENANCE": "NONE",
+              "PLOW_OFF_ROAD": null,
+              "PLOW_DESC_NUM": null,
+              "SOC_AAA": null,
+              "SOC_SUP": null,
+              "SLOPE_GRADIENT_PERCENT": null,
+              "SLOPE_GRADIENT_CLASS": null,
+              "SLOPE_GRADIENT_SOURCE": null,
+              "SLOPE_GRADIENT_MAX": null,
+              "SLOPE_GRADIENT_MIN": null,
+              "SLOPE_GRADIENT_AVG": null,
+              "GRADE_CATEGORY_MAX": null,
+              "PATHWAYS_MAINTENANCE": "N",
+              "PATHWAYS_MAINT_AREA": null
+            }
+          }
+        ]
+      },
+      "query": {
+        "url": "https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Active_Transportation/FeatureServer/0/query",
+        "fixed_parameters": {
+          "outFields": "WINTER_MAINTAINED_BY,SIDEWALKER_PROGRAM,UPGRADE_YEAR,FACILITY_TYPE,OBJECTID,ACTIVETRANSPORTID,STATUS,STATUS_DATE,CATEGORY,SUBCATEGORY,TRAIL_MASTER_PLAN_CLASS,FEATURE_TYPE,SURFACE_MATERIAL,ROUTE_NAME_1,ROUTE_NAME_2,ROUTE_NAME_PROPOSED,WIDTH_M,GRADE,RAILING,CURBCUT,STREET,ROADSEGMENTID,ROADSEGMENT_SIDE,PARCELID,WARD,SOURCE,SOURCE_DATE,NOTES,OWNERSHIP,MAINTAINED_BY,INSTALLATION_YEAR,LAST_INSPECTION_YEAR,SURFACE_CONDITION,CONDITION_DATE,CONDITION_SCORE,SW_WEIGHT_CLASS,SW_PRIORITY,PN_PROJECT_NO,PN_MAP_CLASS,PN_OFFICIAL_PLAN_MAP,PN_REGION_CATEGORY,CREATE_BY,CREATE_DATE,UPDATE_BY,UPDATE_DATE,CW_WORK_AREA,WAYFINDING,WINTER_MAINTENANCE,PLOW_OFF_ROAD,PLOW_DESC_NUM,SOC_AAA,SOC_SUP,SLOPE_GRADIENT_PERCENT,SLOPE_GRADIENT_CLASS,SLOPE_GRADIENT_SOURCE,SLOPE_GRADIENT_MAX,SLOPE_GRADIENT_MIN,SLOPE_GRADIENT_AVG,GRADE_CATEGORY_MAX,PATHWAYS_MAINTENANCE,PATHWAYS_MAINT_AREA,ROUTE_CITYWIDE,Shape__Length",
+          "returnGeometry": "true",
+          "outSR": "26917",
+          "returnZ": "false",
+          "returnM": "false",
+          "returnTrueCurves": "false"
+        },
+        "object_ids_per_request": 1000
+      },
+      "completeness": {
+        "count": 28750,
+        "object_ids": 28750,
+        "features": 28750,
+        "pages": 29,
+        "edit_info_unchanged_during_read": true,
+        "attempts": 1
+      },
+      "features": {
+        "file": "features/active_transportation.jsonl",
+        "records": 28750,
+        "bytes": 52580774,
+        "sha256": "4137e7740abf9e586fc9dd985eb04c5c8b479934150c9d8e36f6114c72d68dac",
+        "municipal_content_sha256": "042cf16ec4aed4946249aa546c9ba33e57b4ffcde003736fd9dc79d06af0fd38"
+      },
+      "pages": [
+        {
+          "file": "pages/active_transportation/0001.json",
+          "bytes": 1834038,
+          "sha256": "8a04343c5edb99cdbe841d3e9340f5184ae1bda8993d12570a3bb380a1cb3fe0",
+          "records": 1000,
+          "first_object_id": 845073,
+          "last_object_id": 846214
+        },
+        {
+          "file": "pages/active_transportation/0002.json",
+          "bytes": 1928920,
+          "sha256": "abf92989a6273188b828a05ef0c71734af088dd116e1f3925027458a267106f2",
+          "records": 1000,
+          "first_object_id": 846215,
+          "last_object_id": 847975
+        },
+        {
+          "file": "pages/active_transportation/0003.json",
+          "bytes": 1896228,
+          "sha256": "fe19de873c209a3f8430e23f7a299a8e8f2d8e0042f02adc90785e151f45a238",
+          "records": 1000,
+          "first_object_id": 847976,
+          "last_object_id": 849313
+        },
+        {
+          "file": "pages/active_transportation/0004.json",
+          "bytes": 1867654,
+          "sha256": "fef1d477a914b27f3218a976a47644c77290e4675f1ccb3cc82fa2b79df8ef7d",
+          "records": 1000,
+          "first_object_id": 849314,
+          "last_object_id": 850413
+        },
+        {
+          "file": "pages/active_transportation/0005.json",
+          "bytes": 1876058,
+          "sha256": "00c33e8e00d7b7d8531ba52d6fda821b08c5ed1d510d92038d3428ced9b255b1",
+          "records": 1000,
+          "first_object_id": 850414,
+          "last_object_id": 851982
+        },
+        {
+          "file": "pages/active_transportation/0006.json",
+          "bytes": 1865702,
+          "sha256": "7319b66e29e00aae0a51e53e9652d71811849ae3d2a129ea0f966882d98de3a8",
+          "records": 1000,
+          "first_object_id": 851983,
+          "last_object_id": 854397
+        },
+        {
+          "file": "pages/active_transportation/0007.json",
+          "bytes": 1858872,
+          "sha256": "eaf1eb586651387c66716cffb144069aa6f7d4d2a65b6a3f9e40a55dcb62c3d5",
+          "records": 1000,
+          "first_object_id": 854398,
+          "last_object_id": 855578
+        },
+        {
+          "file": "pages/active_transportation/0008.json",
+          "bytes": 1821548,
+          "sha256": "3629587d6e26b370474114c699582a2f532aca844d42b22f092ba3e0fb0d44fa",
+          "records": 1000,
+          "first_object_id": 855579,
+          "last_object_id": 856774
+        },
+        {
+          "file": "pages/active_transportation/0009.json",
+          "bytes": 1826661,
+          "sha256": "fed75d275bab7424c41f510cf0448a18688465241b7051fe55d039482ba720ae",
+          "records": 1000,
+          "first_object_id": 856775,
+          "last_object_id": 858010
+        },
+        {
+          "file": "pages/active_transportation/0010.json",
+          "bytes": 1788848,
+          "sha256": "e39103f3a3368afd1af17381dc292941236c99c4c6edbdf6e288e148b6a5b8dc",
+          "records": 1000,
+          "first_object_id": 858011,
+          "last_object_id": 859151
+        },
+        {
+          "file": "pages/active_transportation/0011.json",
+          "bytes": 1826073,
+          "sha256": "43e808a8b5c34e0a38e578d36243e8d41424efdd4ba2029dab5aece09def5560",
+          "records": 1000,
+          "first_object_id": 859152,
+          "last_object_id": 860536
+        },
+        {
+          "file": "pages/active_transportation/0012.json",
+          "bytes": 1871913,
+          "sha256": "354f1ff8b3c0db7b05fdeba4c362e281636c88dd8cdb63dcc681ac9a67258ff1",
+          "records": 1000,
+          "first_object_id": 860537,
+          "last_object_id": 861687
+        },
+        {
+          "file": "pages/active_transportation/0013.json",
+          "bytes": 1898816,
+          "sha256": "8f55611519f6f6c33153a50107f94785f6e536fe3d1d88bdaa3d88660c43c778",
+          "records": 1000,
+          "first_object_id": 861688,
+          "last_object_id": 862799
+        },
+        {
+          "file": "pages/active_transportation/0014.json",
+          "bytes": 1891087,
+          "sha256": "294477c5e563615d2f4324798e392f015b772a84ced62dc6bfa5dbeb44b0efc5",
+          "records": 1000,
+          "first_object_id": 862800,
+          "last_object_id": 863932
+        },
+        {
+          "file": "pages/active_transportation/0015.json",
+          "bytes": 1919310,
+          "sha256": "624799437b2279cae01716916d80d9146dec941f4575a4139e78c6d31b3defb9",
+          "records": 1000,
+          "first_object_id": 863933,
+          "last_object_id": 865105
+        },
+        {
+          "file": "pages/active_transportation/0016.json",
+          "bytes": 1888770,
+          "sha256": "acb3bf7ba9b20b64c30d68490060857674f5013bf133025f2320149da5904393",
+          "records": 1000,
+          "first_object_id": 865106,
+          "last_object_id": 868699
+        },
+        {
+          "file": "pages/active_transportation/0017.json",
+          "bytes": 1914718,
+          "sha256": "70b23d36d896e174a982e406075fc6499f4ae31742f24ff3643d5c615fc2135e",
+          "records": 1000,
+          "first_object_id": 868700,
+          "last_object_id": 869844
+        },
+        {
+          "file": "pages/active_transportation/0018.json",
+          "bytes": 1879022,
+          "sha256": "2a81a6cfc4b210402a558b37a80aa45430dc88e90cb6d2e96e310d61875e0f33",
+          "records": 1000,
+          "first_object_id": 869845,
+          "last_object_id": 870846
+        },
+        {
+          "file": "pages/active_transportation/0019.json",
+          "bytes": 1880391,
+          "sha256": "8aa47cb72ccca4f66d316da7afcbf477f42e938afb8c7ff85e1e852638f67529",
+          "records": 1000,
+          "first_object_id": 870847,
+          "last_object_id": 871866
+        },
+        {
+          "file": "pages/active_transportation/0020.json",
+          "bytes": 1880469,
+          "sha256": "8e1ead626008eecce7e36a831d321196871f4c189a3f03435f9f371805307b9a",
+          "records": 1000,
+          "first_object_id": 871867,
+          "last_object_id": 873110
+        },
+        {
+          "file": "pages/active_transportation/0021.json",
+          "bytes": 1868657,
+          "sha256": "79953071c73b59c46bb8182f5fe6c5bcd60584b7467214464b0bb0fca21fdff8",
+          "records": 1000,
+          "first_object_id": 873111,
+          "last_object_id": 874536
+        },
+        {
+          "file": "pages/active_transportation/0022.json",
+          "bytes": 1854401,
+          "sha256": "fcc7f9d56414a1d258add6938c872fb0922ef45609d03e1a26f9639a228144b3",
+          "records": 1000,
+          "first_object_id": 874537,
+          "last_object_id": 875951
+        },
+        {
+          "file": "pages/active_transportation/0023.json",
+          "bytes": 1855242,
+          "sha256": "ef1d8f3e44a2e7a1b45ff5219b2030432ec2644b2eabb58103efcae07c741531",
+          "records": 1000,
+          "first_object_id": 875952,
+          "last_object_id": 877332
+        },
+        {
+          "file": "pages/active_transportation/0024.json",
+          "bytes": 1864383,
+          "sha256": "9a775d24dc7d0a18084b2e3aa0835cc6b0376bba442433d38fd8e64d0dbc1b70",
+          "records": 1000,
+          "first_object_id": 877333,
+          "last_object_id": 878736
+        },
+        {
+          "file": "pages/active_transportation/0025.json",
+          "bytes": 1857499,
+          "sha256": "d71d67740f9227f3e4673f176f7b7a0f238860c08bad50abba29c45055f3a3ba",
+          "records": 1000,
+          "first_object_id": 878738,
+          "last_object_id": 880079
+        },
+        {
+          "file": "pages/active_transportation/0026.json",
+          "bytes": 1826179,
+          "sha256": "93c047e01d15208e09600d3142a3a193e91f72d8124eaf085b5e8d0598b84752",
+          "records": 1000,
+          "first_object_id": 880080,
+          "last_object_id": 881372
+        },
+        {
+          "file": "pages/active_transportation/0027.json",
+          "bytes": 1832138,
+          "sha256": "62ae16643214685e22f3003ddfc6e65b018601406fa6813a6ff82ede685c2a4c",
+          "records": 1000,
+          "first_object_id": 881373,
+          "last_object_id": 883713
+        },
+        {
+          "file": "pages/active_transportation/0028.json",
+          "bytes": 1812998,
+          "sha256": "d0fdc817b30ed918550e9691d319d4b9dcb3dad89bee3afd0a0ab2be971a9000",
+          "records": 1000,
+          "first_object_id": 883736,
+          "last_object_id": 886469
+        },
+        {
+          "file": "pages/active_transportation/0029.json",
+          "bytes": 1389253,
+          "sha256": "2fa980c3098878960aa823f4810fcd4d7b787de16e54a81008ef80b1bb9ace4a",
+          "records": 750,
+          "first_object_id": 886470,
+          "last_object_id": 888656
+        }
+      ],
+      "measurement": {
+        "seconds": 10.81
+      }
+    },
+    "walkability": {
+      "role": "pedestrian network including NETWORK LINKS; 12 fields; no STATUS",
+      "item": {
+        "id": "64710818a7e044f4aad99b5d6dff4a3f",
+        "title": "Walkability",
+        "type": "Feature Service",
+        "owner": "KitchenerGIS",
+        "org_id": "qAo1OsXi67t7XgmS",
+        "url": "https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Walkability/FeatureServer",
+        "access_information": "City of Kitchener - TIS - GeoSpatial Data and Analytics",
+        "snippet": "Walkability       (Update Frequency: Daily)      Summary: Walkability is a combination of sidewalks, trails and links forming a continuous network.",
+        "content_status": "public_authoritative",
+        "created": "2016-12-14T16:18:41.000Z",
+        "modified": "2026-09-25T07:44:54.000Z",
+        "extent_wgs84": [
+          [
+            -80.56518885976737,
+            43.353206040479876
+          ],
+          [
+            -80.38239054570684,
+            43.50554588166619
+          ]
+        ],
+        "licence_info_sha256": "5343e584bfa45f3e22aaf877d36a54be635b523a467ca3d278450321b6b2dec5",
+        "measurement": {
+          "num_views": 32258,
+          "size_bytes": 21061632
+        }
+      },
+      "service": {
+        "service_item_id": "64710818a7e044f4aad99b5d6dff4a3f",
+        "description": "Walkability       (Update Frequency: Daily)      Summary: Walkability is a combination of sidewalks, trails and links forming a continuous network.",
+        "copyright_text": "City of Kitchener - TIS - GeoSpatial Data and Analytics",
+        "capabilities": "Query,Extract",
+        "max_record_count": 2000,
+        "supported_export_formats": "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel",
+        "spatial_reference": {
+          "wkid": 26917,
+          "latestWkid": 26917
+        },
+        "current_version": 12,
+        "layers": [
+          {
+            "id": 0,
+            "name": "Walkability"
+          }
+        ]
+      },
+      "layer": {
+        "url": "https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Walkability/FeatureServer/0",
+        "id": 0,
+        "name": "Walkability",
+        "geometry_type": "esriGeometryPolyline",
+        "spatial_reference": {
+          "wkid": 26917,
+          "latestWkid": 26917
+        },
+        "extent_native": {
+          "xmin": 535236.9062999999,
+          "ymin": 4800222.2706,
+          "xmax": 549926.6980999997,
+          "ymax": 4817048.628699999
+        },
+        "object_id_field": "OBJECTID",
+        "global_id_field": null,
+        "type_id_field": "CATEGORY",
+        "max_record_count": 2000,
+        "max_ids_count": 1000000,
+        "date_fields_time_reference": {
+          "timeZone": "UTC",
+          "timeZoneIANA": "Etc/UTC",
+          "respectsDaylightSaving": false
+        },
+        "edit_info": {
+          "lastEditDate": "2026-09-25T07:44:44.505Z",
+          "dataLastEditDate": "2026-09-25T07:44:44.505Z",
+          "schemaLastEditDate": "2026-09-25T07:44:44.505Z"
+        },
+        "fields": [
+          {
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+            "alias": "OBJECTID",
+            "nullable": false,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "ACTIVETRANSPORTID",
+            "type": "esriFieldTypeInteger",
+            "alias": "ACTIVETRANSPORTID",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "ROADSEGMENTID",
+            "type": "esriFieldTypeInteger",
+            "alias": "ROADSEGMENTID",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "CATEGORY",
+            "type": "esriFieldTypeString",
+            "alias": "CATEGORY",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SUBCATEGORY",
+            "type": "esriFieldTypeString",
+            "alias": "SUBCATEGORY",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "FEATURE_TYPE",
+            "type": "esriFieldTypeString",
+            "alias": "FEATURE_TYPE",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SURFACE_MATERIAL",
+            "type": "esriFieldTypeString",
+            "alias": "SURFACE_MATERIAL",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "WIDTH_M",
+            "type": "esriFieldTypeDouble",
+            "alias": "WIDTH_M",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "GRADE",
+            "type": "esriFieldTypeString",
+            "alias": "GRADE",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SOURCE",
+            "type": "esriFieldTypeString",
+            "alias": "SOURCE",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "SOURCE_DATE",
+            "type": "esriFieldTypeDate",
+            "alias": "SOURCE_DATE",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          },
+          {
+            "name": "Shape__Length",
+            "type": "esriFieldTypeDouble",
+            "alias": "Shape__Length",
+            "nullable": true,
+            "default_value": null,
+            "domain": null
+          }
+        ],
+        "contract": {
+          "compatible": true,
+          "missing": [],
+          "mismatched": [],
+          "additional_fields": []
+        },
+        "template_prototypes": [
+          {
+            "type": "CYCLING",
+            "template": "CYCLING",
+            "attributes": {
+              "SOURCE_DATE": null,
+              "SOURCE": null,
+              "ACTIVETRANSPORTID": null,
+              "ROADSEGMENTID": null,
+              "CATEGORY": "CYCLING",
+              "SUBCATEGORY": null,
+              "FEATURE_TYPE": null,
+              "SURFACE_MATERIAL": null,
+              "WIDTH_M": null,
+              "GRADE": null
+            }
+          },
+          {
+            "type": "MAINTENANCE ACCESS",
+            "template": "MAINTENANCE ACCESS",
+            "attributes": {
+              "SOURCE_DATE": null,
+              "SOURCE": null,
+              "ACTIVETRANSPORTID": null,
+              "ROADSEGMENTID": null,
+              "CATEGORY": "MAINTENANCE ACCESS",
+              "SUBCATEGORY": null,
+              "FEATURE_TYPE": null,
+              "SURFACE_MATERIAL": null,
+              "WIDTH_M": null,
+              "GRADE": null
+            }
+          },
+          {
+            "type": "NETWORK LINKS",
+            "template": "NETWORK LINKS",
+            "attributes": {
+              "SOURCE_DATE": null,
+              "SOURCE": null,
+              "ACTIVETRANSPORTID": null,
+              "ROADSEGMENTID": null,
+              "CATEGORY": "NETWORK LINKS",
+              "SUBCATEGORY": null,
+              "FEATURE_TYPE": null,
+              "SURFACE_MATERIAL": null,
+              "WIDTH_M": null,
+              "GRADE": null
+            }
+          },
+          {
+            "type": "PATHWAYS",
+            "template": "PATHWAYS",
+            "attributes": {
+              "SOURCE_DATE": null,
+              "SOURCE": null,
+              "ACTIVETRANSPORTID": null,
+              "ROADSEGMENTID": null,
+              "CATEGORY": "PATHWAYS",
+              "SUBCATEGORY": null,
+              "FEATURE_TYPE": null,
+              "SURFACE_MATERIAL": null,
+              "WIDTH_M": null,
+              "GRADE": null
+            }
+          },
+          {
+            "type": "SIDEWALKS AND WALKWAYS",
+            "template": "SIDEWALKS AND WALKWAYS",
+            "attributes": {
+              "SOURCE_DATE": null,
+              "SOURCE": null,
+              "ACTIVETRANSPORTID": null,
+              "ROADSEGMENTID": null,
+              "CATEGORY": "SIDEWALKS AND WALKWAYS",
+              "SUBCATEGORY": null,
+              "FEATURE_TYPE": null,
+              "SURFACE_MATERIAL": null,
+              "WIDTH_M": null,
+              "GRADE": null
+            }
+          }
+        ]
+      },
+      "query": {
+        "url": "https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Walkability/FeatureServer/0/query",
+        "fixed_parameters": {
+          "outFields": "OBJECTID,ACTIVETRANSPORTID,ROADSEGMENTID,CATEGORY,SUBCATEGORY,FEATURE_TYPE,SURFACE_MATERIAL,WIDTH_M,GRADE,SOURCE,SOURCE_DATE,Shape__Length",
+          "returnGeometry": "true",
+          "outSR": "26917",
+          "returnZ": "false",
+          "returnM": "false",
+          "returnTrueCurves": "false"
+        },
+        "object_ids_per_request": 1000
+      },
+      "completeness": {
+        "count": 31801,
+        "object_ids": 31801,
+        "features": 31801,
+        "pages": 32,
+        "edit_info_unchanged_during_read": true,
+        "attempts": 1
+      },
+      "features": {
+        "file": "features/walkability.jsonl",
+        "records": 31801,
+        "bytes": 15722721,
+        "sha256": "a05926a2959a9fc4ceb7ccf74761a9fc8ca0a8c0ca783d976dc8fbb80ec846cc",
+        "municipal_content_sha256": "223affd82a7352375032ac57ce089c348a8f44dd91af9b36b4d4969f5acbf77a"
+      },
+      "pages": [
+        {
+          "file": "pages/walkability/0001.json",
+          "bytes": 482336,
+          "sha256": "7e17ff9afa62b3995ddca1e5b0a4a89295506446f93ebb85f48d9744f24a9d79",
+          "records": 1000,
+          "first_object_id": 845073,
+          "last_object_id": 846248
+        },
+        {
+          "file": "pages/walkability/0002.json",
+          "bytes": 570025,
+          "sha256": "c6135c0f6ebef25d61f61140f64afc596d7fa0b52803e888a4037aad65eaa932",
+          "records": 1000,
+          "first_object_id": 846249,
+          "last_object_id": 848162
+        },
+        {
+          "file": "pages/walkability/0003.json",
+          "bytes": 523095,
+          "sha256": "969c182edbced7b06ca1e971756ceb037c0bf7ba18245eeba82cd55a8d0e0dc4",
+          "records": 1000,
+          "first_object_id": 848163,
+          "last_object_id": 849372
+        },
+        {
+          "file": "pages/walkability/0004.json",
+          "bytes": 511930,
+          "sha256": "1d3937a924c7dee396863c2ad9d340fc9e2f52cbd466af9f9c86daf6e066e7e9",
+          "records": 1000,
+          "first_object_id": 849373,
+          "last_object_id": 850461
+        },
+        {
+          "file": "pages/walkability/0005.json",
+          "bytes": 513727,
+          "sha256": "11f47d9392ec139e4c8d55f5ce6d04a51223bf28477ebc24ad261f1073f47a32",
+          "records": 1000,
+          "first_object_id": 850462,
+          "last_object_id": 852104
+        },
+        {
+          "file": "pages/walkability/0006.json",
+          "bytes": 509026,
+          "sha256": "acfa14cebcac92f9351977a102ba3531b56ea89eb36cc6e42449e6c8bd8b185f",
+          "records": 1000,
+          "first_object_id": 852105,
+          "last_object_id": 854385
+        },
+        {
+          "file": "pages/walkability/0007.json",
+          "bytes": 487285,
+          "sha256": "59474fd702f97cac5267fd6ec9e55cb223b142e7556ae93c85de856fe11a20ec",
+          "records": 1000,
+          "first_object_id": 854388,
+          "last_object_id": 855564
+        },
+        {
+          "file": "pages/walkability/0008.json",
+          "bytes": 441854,
+          "sha256": "664a5278fe6b74e930978a1a64905ae95e0f1f139583981fc4804cd6317c8bd1",
+          "records": 1000,
+          "first_object_id": 855565,
+          "last_object_id": 856692
+        },
+        {
+          "file": "pages/walkability/0009.json",
+          "bytes": 449416,
+          "sha256": "67f01e3f38789cd997963b7a73bbc306cd8094d44b53b4f30b15eefe2bd4ea96",
+          "records": 1000,
+          "first_object_id": 856693,
+          "last_object_id": 857963
+        },
+        {
+          "file": "pages/walkability/0010.json",
+          "bytes": 415057,
+          "sha256": "11d2675240f5f98f2eac98ba49b0900f2c6341768089b743423dd1ffd39fed35",
+          "records": 1000,
+          "first_object_id": 857964,
+          "last_object_id": 859069
+        },
+        {
+          "file": "pages/walkability/0011.json",
+          "bytes": 465000,
+          "sha256": "7468f10abe51f4ec56dc3d2f807af6bf207f227566afb3921fbc937272b79e5d",
+          "records": 1000,
+          "first_object_id": 859070,
+          "last_object_id": 860644
+        },
+        {
+          "file": "pages/walkability/0012.json",
+          "bytes": 512514,
+          "sha256": "0f5d13b01707bd6a4f59137c0df1acf507dc0cc16a824558d10c43a90d20a029",
+          "records": 1000,
+          "first_object_id": 860645,
+          "last_object_id": 861808
+        },
+        {
+          "file": "pages/walkability/0013.json",
+          "bytes": 555289,
+          "sha256": "3dfb969aa75f4b8458ce5846c79951987ea4e1b0503d689ad5fd20d6020811a9",
+          "records": 1000,
+          "first_object_id": 861809,
+          "last_object_id": 862960
+        },
+        {
+          "file": "pages/walkability/0014.json",
+          "bytes": 525290,
+          "sha256": "ef2f5caa10d048157f0907b11bed58f89b709f9bb38287a876ea12b762320902",
+          "records": 1000,
+          "first_object_id": 862961,
+          "last_object_id": 863988
+        },
+        {
+          "file": "pages/walkability/0015.json",
+          "bytes": 553913,
+          "sha256": "4a20c818de4ddff8ee51905792fa955bcc267acf399ad9da13d96e92f67cdc3b",
+          "records": 1000,
+          "first_object_id": 863989,
+          "last_object_id": 865025
+        },
+        {
+          "file": "pages/walkability/0016.json",
+          "bytes": 466534,
+          "sha256": "529e20aadba7ccfeb649a0ce3be1eae29c3840e3bb82a128ef9c17f15e14f941",
+          "records": 1000,
+          "first_object_id": 865026,
+          "last_object_id": 866168
+        },
+        {
+          "file": "pages/walkability/0017.json",
+          "bytes": 427405,
+          "sha256": "9fdf98cac28d4ca91c60f439377ab77d04d59030803af8bc3b39bbdc6e6c579a",
+          "records": 1000,
+          "first_object_id": 866169,
+          "last_object_id": 867269
+        },
+        {
+          "file": "pages/walkability/0018.json",
+          "bytes": 452222,
+          "sha256": "774be4d17c3ccea70b0d03a7db10b7125096f05189bb470d8b05acfe2240fffa",
+          "records": 1000,
+          "first_object_id": 867270,
+          "last_object_id": 868298
+        },
+        {
+          "file": "pages/walkability/0019.json",
+          "bytes": 524009,
+          "sha256": "49a170c352a134a376b881c6879a5f1eb61827b1b1a12eef850adde690e11f57",
+          "records": 1000,
+          "first_object_id": 868299,
+          "last_object_id": 869310
+        },
+        {
+          "file": "pages/walkability/0020.json",
+          "bytes": 542020,
+          "sha256": "2a542b2c913119b30fd2a4022bb0adbafcaed95a1a53f4a8623b8176f9705a6c",
+          "records": 1000,
+          "first_object_id": 869311,
+          "last_object_id": 870310
+        },
+        {
+          "file": "pages/walkability/0021.json",
+          "bytes": 534935,
+          "sha256": "19f40b6d2a4c15e0ff3be33aea3f663b435030af3e0d0b13d0324d43cb789139",
+          "records": 1000,
+          "first_object_id": 870311,
+          "last_object_id": 871314
+        },
+        {
+          "file": "pages/walkability/0022.json",
+          "bytes": 531566,
+          "sha256": "bd555ba4dbf125497c56e4040da4994707b3e34889f2c44fd798b6986a088274",
+          "records": 1000,
+          "first_object_id": 871315,
+          "last_object_id": 872441
+        },
+        {
+          "file": "pages/walkability/0023.json",
+          "bytes": 505221,
+          "sha256": "5aa4316b62e18d335b1eeab935d7117a5ea17fe3e9044fe8975552d2893c84cc",
+          "records": 1000,
+          "first_object_id": 872443,
+          "last_object_id": 873628
+        },
+        {
+          "file": "pages/walkability/0024.json",
+          "bytes": 482075,
+          "sha256": "7f2deaa3a7d499f321717613ce71d42ce24a6e1918eff99db13ce4dca2bc0f49",
+          "records": 1000,
+          "first_object_id": 873629,
+          "last_object_id": 874895
+        },
+        {
+          "file": "pages/walkability/0025.json",
+          "bytes": 486780,
+          "sha256": "a825297d09053277e8c5db61aece6b479eaf3f8bf66e3eb2d709f979512aebb1",
+          "records": 1000,
+          "first_object_id": 874896,
+          "last_object_id": 876096
+        },
+        {
+          "file": "pages/walkability/0026.json",
+          "bytes": 488385,
+          "sha256": "de89cd08ea6c8c16ffc0a6a0b3c38079db493f512b323525ee564cc7cf2f57fc",
+          "records": 1000,
+          "first_object_id": 876097,
+          "last_object_id": 877321
+        },
+        {
+          "file": "pages/walkability/0027.json",
+          "bytes": 493849,
+          "sha256": "01a5da7713830b870c0d08cc72488cdd1adb223f379128275604902e917f8bbc",
+          "records": 1000,
+          "first_object_id": 877322,
+          "last_object_id": 878575
+        },
+        {
+          "file": "pages/walkability/0028.json",
+          "bytes": 501141,
+          "sha256": "03c2fa3e381e08e2d783ef95edce472f2882ec4e15ad1ce596d5203e3bb8fc34",
+          "records": 1000,
+          "first_object_id": 878576,
+          "last_object_id": 879805
+        },
+        {
+          "file": "pages/walkability/0029.json",
+          "bytes": 492474,
+          "sha256": "12aadf212a50cd62174b286af888b1eb1380025ee27c1eb7059bc11a1dde7cbb",
+          "records": 1000,
+          "first_object_id": 879806,
+          "last_object_id": 881008
+        },
+        {
+          "file": "pages/walkability/0030.json",
+          "bytes": 486421,
+          "sha256": "d1736d725bd3b891fe5fa077b781c0d77b13d74a449796537bcd7c38e54acadc",
+          "records": 1000,
+          "first_object_id": 881009,
+          "last_object_id": 882930
+        },
+        {
+          "file": "pages/walkability/0031.json",
+          "bytes": 462701,
+          "sha256": "458e1aa1501fcb4799ba2b94747fc605be9655d64269d6d3d2e52b5d08f472dc",
+          "records": 1000,
+          "first_object_id": 882932,
+          "last_object_id": 886157
+        },
+        {
+          "file": "pages/walkability/0032.json",
+          "bytes": 403845,
+          "sha256": "a8a251f02f902eb16f10895c9ad8c6bf5e93334e4c030bb90156de446c2d8585",
+          "records": 801,
+          "first_object_id": 886158,
+          "last_object_id": 888656
+        }
+      ],
+      "measurement": {
+        "seconds": 9.82
+      }
+    }
+  },
+  "licence": {
+    "name": "Open Government Licence - The Corporation of the City of Kitchener",
+    "version_recorded": "1.0",
+    "text_of_record": "portal item licenseInfo, served with the data",
+    "identical_across_publications": false,
+    "licence_info_sha256": "5343e584bfa45f3e22aaf877d36a54be635b523a467ca3d278450321b6b2dec5",
+    "plain_text_sha256": "694e24d6cf639ccbfe64efc673820be7eb0f13950077df97a9210931fea97cc4",
+    "terms": [
+      {
+        "term": "commercial_use",
+        "reading": "permitted",
+        "phrase": "worldwide, royalty-free, perpetual, non-exclusive licence to use the information, including for commercial purposes",
+        "found": true
+      },
+      {
+        "term": "copy_modify_adapt_distribute",
+        "reading": "permitted",
+        "phrase": "Copy, modify, publish, translate, adapt, distribute or otherwise use the Information in any medium, mode or format for any lawful purpose",
+        "found": true
+      },
+      {
+        "term": "attribution",
+        "reading": "optional",
+        "phrase": "No credit is required",
+        "found": true
+      },
+      {
+        "term": "attribution_text",
+        "reading": "the credit to use when crediting voluntarily",
+        "phrase": "Contains information licensed under the Open Government Licence - The Corporation of the City of Kitchener",
+        "found": true
+      },
+      {
+        "term": "personal_information_excluded",
+        "reading": "personal information is outside the licence",
+        "phrase": "This licence does not grant you any right to use: Personal information",
+        "found": true
+      },
+      {
+        "term": "version",
+        "reading": "1.0",
+        "phrase": "This is version 1.0 of the Open Government Licence - The Corporation of the City of Kitchener",
+        "found": true
+      }
+    ],
+    "matches_recorded_terms": true,
+    "not_legal_advice": true
+  },
+  "documents": [
+    {
+      "key": "metadata_active_transportation",
+      "url": "https://app2.kitchener.ca/appdocs/GISImages/GIS_Web_External/GIS_Metadata_Open_Data/IndividualReports/Active_Transportation.pdf",
+      "why": "The City's layer metadata: source layer, accuracy, history, maintenance.",
+      "http_status": 200,
+      "content_type": "application/pdf",
+      "last_modified": "Wed, 27 May 2026 20:55:07 GMT",
+      "etag": "\"80c748191beedc1:0\"",
+      "file": "documents/metadata_active_transportation.pdf",
+      "bytes": 51592,
+      "sha256": "4570b1686fd12437d1f4ff90e33393e9d0f27fb9bf648e7fd5ba967a78b39caf"
+    },
+    {
+      "key": "metadata_walkability",
+      "url": "https://app2.kitchener.ca/appdocs/GISImages/GIS_Web_External/GIS_Metadata_Open_Data/IndividualReports/Walkability.pdf",
+      "why": "The City's field documentation, defaults and domains (same source layer).",
+      "http_status": 200,
+      "content_type": "application/pdf",
+      "last_modified": "Wed, 27 May 2026 20:54:15 GMT",
+      "etag": "\"80354afa1aeedc1:0\"",
+      "file": "documents/metadata_walkability.pdf",
+      "bytes": 82117,
+      "sha256": "9f0814156515555c386bd3a296ad719ce52d89a57e6810f618321f121208fa8c"
+    },
+    {
+      "key": "licence_page",
+      "url": "https://www.kitchener.ca/council-and-city-administration/data-and-maps/open-data-licence/",
+      "why": "The City's published licence page. The item's own licenceInfo is the text of record.",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "last_modified": null,
+      "etag": null,
+      "file": "documents/licence_page.html",
+      "bytes": 75059,
+      "sha256": "4a347b14a75b2eef8f16b51864ae30c1f4e3568c513d489c102aec1c2a53de9f",
+      "states_version_1_0": true
+    },
+    {
+      "key": "osm_kitchener_authorization_revision",
+      "url": "https://wiki.openstreetmap.org/w/api.php?action=query&prop=revisions&rvprop=ids%7Ctimestamp&format=json&titles=Waterloo_region/Kitchener_authorization",
+      "why": "Which revision of the OpenStreetMap permission record was read.",
+      "http_status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "last_modified": null,
+      "etag": null,
+      "file": "documents/osm_kitchener_authorization_revision.json",
+      "bytes": 317,
+      "sha256": "e23b276065a432c30bbb1a0914f3d4acb896990d9cbeb0e6f1d87a6f55b9c652",
+      "revision": {
+        "revid": 2726386,
+        "timestamp": "2024-07-03T04:39:36Z"
+      }
+    },
+    {
+      "key": "osm_kitchener_authorization",
+      "url": "https://wiki.openstreetmap.org/w/index.php?title=Waterloo_region/Kitchener_authorization&action=raw",
+      "why": "The City's recorded permission to use its data in OpenStreetMap — the reason agreement between the two is not independent confirmation.",
+      "http_status": 200,
+      "content_type": "text/x-wiki; charset=UTF-8",
+      "last_modified": "Wed, 03 Jul 2024 04:39:36 GMT",
+      "etag": null,
+      "file": "documents/osm_kitchener_authorization.wiki",
+      "bytes": 1476,
+      "sha256": "ef2f44c7db173d20b7eaff55193c8d09e4d2afe8eb315bb79c6d48440d6dd777"
+    }
+  ],
+  "acquisition": {
+    "method": "count + every object id, then features by object id in fixed chunks; layer edit info and count re-read afterwards and required unchanged",
+    "chunk_size": 1000,
+    "read_attempts_allowed": 3,
+    "native_crs": "EPSG:26917",
+    "hub_download_not_used": "The Hub's export (the service's replica file cache) is generated asynchronously on request, rewrites date fields as text, covers one publication per file and can be checked only as a whole; this read is checked request by request and keeps the service's own values."
+  },
+  "warnings": [],
+  "retrieved_at": "2026-09-26T12:55:26+00:00",
+  "run": {
+    "seconds": 31.02,
+    "requests": {
+      "requests": 80,
+      "retries": 0,
+      "bytes_received": 70137658
+    },
+    "stored_bytes": 137961539,
+    "environment": {
+      "python": "3.13.2",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "git_commit": "65ba0d4e11816dbb51ea22f793d47d46ccd46573"
+    },
+    "machine_memory_mb": 16498.0,
+    "peak_process_memory_mb": 540.6,
+    "process_memory_method": "windows:GetProcessMemoryInfo working set"
+  },
+  "content_sha256": "a909533e58e546726f20b873cd098eae4c960959452db793426a4a00826b53b5"
+}

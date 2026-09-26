@@ -12,6 +12,24 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **A frozen, audited snapshot of the City of Kitchener's Active Transportation
+  inventory (PA-GEO-03).**
+  - `pathable kitchener snapshot` reads both of the City's hosted publications by
+    object id and checks each request, and checks the licence text served with the
+    data.
+  - `normalize` writes one byte-reproducible GeoParquet 1.1.0 file.
+  - `audit` profiles it, relates it to the Waterloo pilot and draws a deterministic
+    80-record sample for PA-GEO-04.
+  - Findings: 96.1% of sidewalks carry the template 1.5 m width and 98.5% the
+    template CONCRETE. What is genuinely recorded is located: 6,888 curb-cut
+    segments, 77 stairs and 133 railings. 87.7% of the pedestrian records in the
+    pilot run within 2 m of OpenStreetMap along their whole length, and the City
+    permits its data in OSM, so agreement is not independent confirmation.
+  - Decision: LIMITED GO.
+  - Nothing routes on it. The City's licence covers this research and the City
+    permits its data in OSM, but OSMF LWG approval of the Kitchener licence is
+    not confirmed, so production use waits on a founder licensing review.
+  - See [`KITCHENER_ACTIVE_TRANSPORT.md`](docs/architecture/KITCHENER_ACTIVE_TRANSPORT.md).
 - **Gradients reach the API, recorded and estimated kept apart (PA-UX-03A).**
   Elevation already shaped route cost on 53.8% of Waterloo's segments, but no
   field carried a single estimated number, and `steepest_incline_percent` reads

@@ -1,0 +1,747 @@
+{
+  "kitchener_normalized_version": 1,
+  "snapshot_id": "513094727cc139dd29980e2c281570f9d5183c1d0ca8171754ece0cbd7281b38",
+  "inputs": {
+    "snapshot_manifest_sha256": "516ca0168b98aa33d5833dc1282ffd7ce8099106f1ca4c5dafec3458526eb668",
+    "snapshot_manifest_content_sha256": "a909533e58e546726f20b873cd098eae4c960959452db793426a4a00826b53b5",
+    "features": {
+      "active_transportation": "4137e7740abf9e586fc9dd985eb04c5c8b479934150c9d8e36f6114c72d68dac",
+      "walkability": "a05926a2959a9fc4ceb7ccf74761a9fc8ca0a8c0ca783d976dc8fbb80ec846cc"
+    }
+  },
+  "output": {
+    "file": "kitchener-active-transport.parquet",
+    "bytes": 6799591,
+    "sha256": "ffe042be875e10029911d1a4a973f57063519521e4520a73c37ce02b16c8f4e7",
+    "rows": 34052
+  },
+  "geoparquet": {
+    "version": "1.1.0",
+    "primary_column": "geometry",
+    "columns": {
+      "geometry": {
+        "encoding": "WKB",
+        "geometry_types": [
+          "LineString"
+        ],
+        "covering": {
+          "bbox": {
+            "xmin": [
+              "bbox",
+              "xmin"
+            ],
+            "ymin": [
+              "bbox",
+              "ymin"
+            ],
+            "xmax": [
+              "bbox",
+              "xmax"
+            ],
+            "ymax": [
+              "bbox",
+              "ymax"
+            ]
+          }
+        },
+        "bbox": [
+          -80.5734988762126,
+          43.35378899434326,
+          -80.38341693672254,
+          43.50513625082376
+        ]
+      },
+      "geometry_native": {
+        "encoding": "WKB",
+        "geometry_types": [
+          "LineString"
+        ],
+        "crs": {
+          "$schema": "https://proj.org/schemas/v0.7/projjson.schema.json",
+          "type": "ProjectedCRS",
+          "name": "NAD83 / UTM zone 17N",
+          "base_crs": {
+            "name": "NAD83",
+            "datum": {
+              "type": "GeodeticReferenceFrame",
+              "name": "North American Datum 1983",
+              "ellipsoid": {
+                "name": "GRS 1980",
+                "semi_major_axis": 6378137,
+                "inverse_flattening": 298.257222101
+              }
+            },
+            "coordinate_system": {
+              "subtype": "ellipsoidal",
+              "axis": [
+                {
+                  "name": "Geodetic latitude",
+                  "abbreviation": "Lat",
+                  "direction": "north",
+                  "unit": "degree"
+                },
+                {
+                  "name": "Geodetic longitude",
+                  "abbreviation": "Lon",
+                  "direction": "east",
+                  "unit": "degree"
+                }
+              ]
+            },
+            "id": {
+              "authority": "EPSG",
+              "code": 4269
+            }
+          },
+          "conversion": {
+            "name": "UTM zone 17N",
+            "method": {
+              "name": "Transverse Mercator",
+              "id": {
+                "authority": "EPSG",
+                "code": 9807
+              }
+            },
+            "parameters": [
+              {
+                "name": "Latitude of natural origin",
+                "value": 0,
+                "unit": "degree",
+                "id": {
+                  "authority": "EPSG",
+                  "code": 8801
+                }
+              },
+              {
+                "name": "Longitude of natural origin",
+                "value": -81,
+                "unit": "degree",
+                "id": {
+                  "authority": "EPSG",
+                  "code": 8802
+                }
+              },
+              {
+                "name": "Scale factor at natural origin",
+                "value": 0.9996,
+                "unit": "unity",
+                "id": {
+                  "authority": "EPSG",
+                  "code": 8805
+                }
+              },
+              {
+                "name": "False easting",
+                "value": 500000,
+                "unit": "metre",
+                "id": {
+                  "authority": "EPSG",
+                  "code": 8806
+                }
+              },
+              {
+                "name": "False northing",
+                "value": 0,
+                "unit": "metre",
+                "id": {
+                  "authority": "EPSG",
+                  "code": 8807
+                }
+              }
+            ]
+          },
+          "coordinate_system": {
+            "subtype": "Cartesian",
+            "axis": [
+              {
+                "name": "Easting",
+                "abbreviation": "E",
+                "direction": "east",
+                "unit": "metre"
+              },
+              {
+                "name": "Northing",
+                "abbreviation": "N",
+                "direction": "north",
+                "unit": "metre"
+              }
+            ]
+          },
+          "scope": "Engineering survey, topographic mapping.",
+          "area": "North America - between 84°W and 78°W - onshore and offshore. Canada - Nunavut; Ontario; Quebec. United States (USA) - Florida; Georgia; Kentucky; Maryland; Michigan; New York; North Carolina; Ohio; Pennsylvania; South Carolina; Tennessee; Virginia; West Virginia.",
+          "bbox": {
+            "south_latitude": 23.81,
+            "west_longitude": -84,
+            "north_latitude": 84,
+            "east_longitude": -78
+          },
+          "id": {
+            "authority": "EPSG",
+            "code": 26917
+          }
+        },
+        "bbox": [
+          534519.495,
+          4800222.2706,
+          549926.6981,
+          4817048.6287
+        ]
+      }
+    }
+  },
+  "crs": {
+    "native": "EPSG:26917",
+    "primary": "OGC:CRS84",
+    "transformation": "Inverse of UTM zone 17N + NAD83 to WGS 84 (1) + axis order change (2D)",
+    "transformation_accuracy_m": 4.0,
+    "proj_pipeline": "proj=pipeline step inv proj=utm zone=17 ellps=GRS80 step proj=unitconvert xy_in=rad xy_out=deg"
+  },
+  "columns": [
+    {
+      "name": "source_provider",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "source_dataset",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "snapshot_id",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "activetransportid",
+      "type": "BIGINT"
+    },
+    {
+      "name": "identity_state",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "in_active_transportation",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "in_walkability",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "objectid_active_transportation",
+      "type": "BIGINT"
+    },
+    {
+      "name": "objectid_walkability",
+      "type": "BIGINT"
+    },
+    {
+      "name": "attributes_from",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "publication_disagreements",
+      "type": "VARCHAR[]"
+    },
+    {
+      "name": "winter_maintained_by",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "sidewalker_program",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "upgrade_year",
+      "type": "BIGINT"
+    },
+    {
+      "name": "facility_type",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "status",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "status_date",
+      "type": "TIMESTAMPTZ"
+    },
+    {
+      "name": "category",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "subcategory",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "trail_master_plan_class",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "feature_type",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "surface_material",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "route_name_1",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "route_name_2",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "route_name_proposed",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "width_m",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "grade",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "railing",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "curbcut",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "street",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "roadsegmentid",
+      "type": "BIGINT"
+    },
+    {
+      "name": "roadsegment_side",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "parcelid",
+      "type": "BIGINT"
+    },
+    {
+      "name": "ward",
+      "type": "BIGINT"
+    },
+    {
+      "name": "source",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "source_date",
+      "type": "TIMESTAMPTZ"
+    },
+    {
+      "name": "notes",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "ownership",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "maintained_by",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "installation_year",
+      "type": "BIGINT"
+    },
+    {
+      "name": "last_inspection_year",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "surface_condition",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "condition_date",
+      "type": "TIMESTAMPTZ"
+    },
+    {
+      "name": "condition_score",
+      "type": "BIGINT"
+    },
+    {
+      "name": "sw_weight_class",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "sw_priority",
+      "type": "BIGINT"
+    },
+    {
+      "name": "pn_project_no",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "pn_map_class",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "pn_official_plan_map",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "pn_region_category",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "create_date",
+      "type": "TIMESTAMPTZ"
+    },
+    {
+      "name": "update_date",
+      "type": "TIMESTAMPTZ"
+    },
+    {
+      "name": "cw_work_area",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "wayfinding",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "winter_maintenance",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "plow_off_road",
+      "type": "BIGINT"
+    },
+    {
+      "name": "plow_desc_num",
+      "type": "BIGINT"
+    },
+    {
+      "name": "soc_aaa",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "soc_sup",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "slope_gradient_percent",
+      "type": "BIGINT"
+    },
+    {
+      "name": "slope_gradient_class",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "slope_gradient_source",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "slope_gradient_max",
+      "type": "BIGINT"
+    },
+    {
+      "name": "slope_gradient_min",
+      "type": "BIGINT"
+    },
+    {
+      "name": "slope_gradient_avg",
+      "type": "BIGINT"
+    },
+    {
+      "name": "grade_category_max",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "pathways_maintenance",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "pathways_maint_area",
+      "type": "BIGINT"
+    },
+    {
+      "name": "route_citywide",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "shape_length_m",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "update_account",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "lifecycle",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "network_role",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "role_note",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "physical_class",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "structure",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "source_class",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "source_year",
+      "type": "INTEGER"
+    },
+    {
+      "name": "state_status",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_status_date",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_category",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_subcategory",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_feature_type",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_surface_material",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_width_m",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_grade",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_railing",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_curbcut",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_surface_condition",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_last_inspection_year",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_condition_score",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_condition_date",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_installation_year",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_sidewalker_program",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_slope_gradient_percent",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_slope_gradient_class",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_slope_gradient_max",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_grade_category_max",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_source",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_source_date",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_create_date",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_update_date",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_roadsegmentid",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_roadsegment_side",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_street",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "state_notes",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_status",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_feature_type",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_surface_material",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_width_m",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_grade",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_railing",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_curbcut",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_surface_condition",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_last_inspection_year",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_condition_score",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_slope_gradient_percent",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_slope_gradient_class",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_grade_category_max",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "origin_installation_year",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "length_m",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "part_count",
+      "type": "INTEGER"
+    },
+    {
+      "name": "vertex_count",
+      "type": "INTEGER"
+    },
+    {
+      "name": "geometry_issue",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "bbox",
+      "type": "STRUCT(xmin DOUBLE, ymin DOUBLE, xmax DOUBLE, ymax DOUBLE)"
+    },
+    {
+      "name": "geometry",
+      "type": "BLOB"
+    },
+    {
+      "name": "geometry_native",
+      "type": "BLOB"
+    }
+  ],
+  "excluded_fields": [
+    "CREATE_BY",
+    "OBJECTID",
+    "UPDATE_BY"
+  ],
+  "joins": {
+    "rows": 34052,
+    "identity_states": {
+      "unique": 34052
+    },
+    "publications_per_identity": {
+      "active_transportation": 2251,
+      "active_transportation+walkability": 26499,
+      "walkability": 5302
+    },
+    "fields_differing_between_publications": {}
+  },
+  "tools": {
+    "duckdb": "1.5.5",
+    "shapely": "2.1.2",
+    "geos": "3.13.1",
+    "pyproj": "3.7.2",
+    "proj": "9.5.1"
+  },
+  "run": {
+    "seconds": 21.61,
+    "write_seconds": 6.5,
+    "environment": {
+      "python": "3.13.2",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "git_commit": "65ba0d4e11816dbb51ea22f793d47d46ccd46573"
+    },
+    "machine_memory_mb": 16498.0,
+    "peak_process_memory_mb": 972.8,
+    "process_memory_method": "windows:GetProcessMemoryInfo working set"
+  },
+  "content_sha256": "9512a85c8f1a31d2316191b81877c4a9181332384edf367a6007cea1519a991c"
+}

@@ -52,6 +52,17 @@ from pathable_api.geo.elevation import build_provider
 from pathable_api.geo.elevation_apply import summarise
 from pathable_api.geo.enums import SourceType
 from pathable_api.geo.fixtures import load_synthetic_dataset
+from pathable_api.geo.kitchener.arcgis import (
+    DEFAULT_CHUNK_SIZE,
+    ArcGISClient,
+    ArcGISError,
+    RequestsTransport,
+)
+from pathable_api.geo.kitchener.audit import AuditError, run_audit
+from pathable_api.geo.kitchener.audit import write_outputs as write_kitchener_outputs
+from pathable_api.geo.kitchener.geography import PathAbleReadError, read_pathable_edges
+from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
+from pathable_api.geo.kitchener.snapshot import SnapshotError, SnapshotPlan, take_snapshot
 from pathable_api.geo.lifecycle import (
     SealRefusedError,
     enrich_with_elevation,
@@ -442,6 +453,54 @@ def build_parser() -> argparse.ArgumentParser:
     )
     link.add_argument("--json", type=Path, default=None, help="Write the report here.")
 
+    kitchener = subcommands.add_parser(
+        "kitchener",
+        help=(
+            "Audit the City of Kitchener Active Transportation inventory. Never writes to the "
+            "database and never affects routing."
+        ),
+    )
+    kitchener_actions = kitchener.add_subparsers(dest="kitchener_command", required=True)
+    snapshot = kitchener_actions.add_parser(
+        "snapshot", help="Freeze a complete snapshot of the City's publications into local files."
+    )
+    snapshot.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".kitchener-data/snapshots"),
+        help="Root folder; each snapshot gets its own new folder. Keep it out of git.",
+    )
+    snapshot.add_argument(
+        "--chunk-size",
+        type=int,
+        default=DEFAULT_CHUNK_SIZE,
+        help="Features per request (capped at the service's maxRecordCount).",
+    )
+    snapshot.add_argument("--json", type=Path, default=None, help="Also copy the manifest here.")
+    normalize = kitchener_actions.add_parser(
+        "normalize", help="Build the analytical GeoParquet file from a snapshot. Offline."
+    )
+    normalize.add_argument("--snapshot", type=Path, required=True, help="A snapshot folder.")
+    normalize.add_argument(
+        "--out", type=Path, required=True, help="A new folder for the output; never overwritten."
+    )
+    normalize.add_argument("--json", type=Path, default=None, help="Also copy the manifest here.")
+    audit = kitchener_actions.add_parser(
+        "audit",
+        help=(
+            "Profile a normalized snapshot, relate it to a pilot region and draw the PA-GEO-04 "
+            "sample. Reads PathAble in a read-only transaction."
+        ),
+    )
+    audit.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    audit.add_argument("--snapshot", type=Path, required=True)
+    audit.add_argument("--normalized", type=Path, required=True)
+    audit.add_argument("--dataset", default=None, help="Defaults to the active dataset.")
+    audit.add_argument("--json", type=Path, required=True, help="Write the profile here.")
+    audit.add_argument("--sample", type=Path, required=True, help="Write the GeoJSON sample here.")
+
     return parser
 
 
@@ -462,6 +521,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     # Reading an Overture release needs the network but not the database.
     if args.command == "overture" and args.overture_command != "link":
         return _overture_offline(args)
+    # Freezing and normalizing a Kitchener snapshot need no database either.
+    if args.command == "kitchener" and args.kitchener_command != "audit":
+        return _kitchener_offline(args)
 
     try:
         settings.require_database_url()
@@ -500,6 +562,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _benchmark(database, args)
             case "overture":
                 return await _overture_link(database, args)
+            case "kitchener":
+                return await _kitchener_audit(database, args)
             case "datasets" if args.dataset_command == "seal":
                 return await _seal(database, args)
             case "datasets" if args.dataset_command == "checksum":
@@ -1048,6 +1112,102 @@ async def _overture_link(database: Database, args: argparse.Namespace) -> int:
 
 def _osm_ids(raw_ids: Iterable[str]) -> set[int]:
     return {osm_id for osm_id in map(parse_pathable_osm_id, raw_ids) if osm_id is not None}
+
+
+def _kitchener_offline(args: argparse.Namespace) -> int:
+    if args.kitchener_command == "snapshot":
+        if args.chunk_size < 1:
+            print("error: --chunk-size must be at least 1.", file=sys.stderr)
+            return EXIT_MISCONFIGURED
+        try:
+            result = take_snapshot(
+                ArcGISClient(RequestsTransport()),
+                args.out,
+                plan=SnapshotPlan(chunk_size=args.chunk_size),
+                progress=print,
+                measure=_run_measurements,
+            )
+        except (ArcGISError, SnapshotError) as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+        manifest = result.manifest
+        print(f"\nSnapshot {result.snapshot_id[:12]} retrieved {manifest['retrieved_at']}")
+        for key, record in manifest["publications"].items():
+            print(
+                f"  {key:<24}{record['features']['records']:>8} features  "
+                f"sha256 {record['features']['sha256'][:12]}  "
+                f"edited {record['layer']['edit_info']['lastEditDate']}"
+            )
+        print(f"  licence terms as recorded: {'yes' if result.licence_matches else 'NO'}")
+        for warning in result.warnings:
+            print(f"  warning: {warning}")
+        if args.json is not None:
+            write_json(args.json, manifest)
+            print(f"Wrote {args.json}")
+        print(f"Wrote {result.folder}")
+        # A licence that no longer says what the audit relies on stops the card.
+        return EXIT_OK if result.licence_matches else EXIT_REVIEW_REQUIRED
+
+    try:
+        normalized = normalize_snapshot(
+            args.snapshot, args.out, progress=print, measure=_run_measurements
+        )
+    except (SnapshotError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    output = normalized.manifest["output"]
+    # ASCII only: a Windows console piped to a file is cp1252, and a character it
+    # cannot encode would fail the command after the work was done.
+    print(
+        f"\nNormalized {output['rows']} records into {normalized.folder / output['file']} "
+        f"({output['bytes']} bytes, sha256 {output['sha256'][:12]})"
+    )
+    if args.json is not None:
+        write_json(args.json, normalized.manifest)
+        print(f"Wrote {args.json}")
+    return EXIT_OK
+
+
+async def _kitchener_audit(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    try:
+        dataset_id = uuid.UUID(args.dataset) if args.dataset else None
+    except ValueError:
+        print("error: --dataset must be a UUID.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+    async with database.session() as session:
+        try:
+            edges = await read_pathable_edges(
+                session, region_slug=definition.slug, dataset_id=dataset_id
+            )
+        except PathAbleReadError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+    try:
+        result = run_audit(
+            args.snapshot,
+            args.normalized,
+            definition,
+            edges,
+            measure=_run_measurements,
+            progress=print,
+        )
+    except (SnapshotError, NormalizationError, AuditError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    write_kitchener_outputs(result, args.json, args.sample)
+
+    profile = result.profile
+    geography = profile["geography"]
+    print(f"\nKitchener snapshot {profile['snapshot']['snapshot_id'][:12]}")
+    print(f"  records                     {profile['overall']['records']:>8}")
+    for name, count in profile["overall"]["physical_class"].items():
+        print(f"    {name:<26}{count:>8}")
+    print(f"  intersecting {definition.slug:<14}{geography['records_intersecting_study_area']:>8}")
+    print(f"  sample                      {profile['sample']['records']:>8}")
+    print(f"Wrote {args.json}")
+    print(f"Wrote {args.sample}")
+    return EXIT_OK
 
 
 def _run_measurements() -> dict[str, Any]:

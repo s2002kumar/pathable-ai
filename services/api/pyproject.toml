@@ -26,6 +26,11 @@ dependencies = [
     "osmium>=4.3,<5.0",
     "rasterio>=1.5.1",
     "duckdb>=1.5.5,<2.0.0",
+    # Both already present transitively (numpy via shapely, pyproj via osmnx);
+    # declared for the same reason as requests: the geometry and Kitchener
+    # modules import them directly.
+    "numpy>=2.0,<3.0",
+    "pyproj>=3.7,<4.0",
 ]
 
 [project.scripts]
@@ -97,6 +102,11 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# Every query in the Kitchener profile is composed from column names and
+# expressions written in that module, over an in-memory DuckDB view of a local
+# file; values reach it only as bound parameters. Column names cannot be bound,
+# so composition is the point of the module rather than an accident in it.
+"src/pathable_api/geo/kitchener/profile.py" = ["S608"]
 # Tests legitimately use `assert`, and hard-coded local credentials are the point
 # of the integration fixtures.
 "tests/**/*.py" = ["S101", "S105", "S106", "S311"]
