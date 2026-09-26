@@ -295,9 +295,10 @@ ADOPTIONS: tuple[Adoption, ...] = (
         ("OBJECTID",),
         Disposition.REJECTED,
         "as an identity",
-        "The City documents that OBJECTID changes on export and import; it differs between "
-        "the two publications for the same record. It is used only to check each request "
-        "returned the rows it asked for.",
+        "The City documents that OBJECTID changes on export and import. The two publications "
+        "happen to agree on it today, as the basis shows, but a value documented to change "
+        "cannot identify a record across snapshots. It is used only to check that each "
+        "request returned the rows it asked for.",
         _object_id,
     ),
     Adoption(
@@ -331,11 +332,13 @@ ADOPTIONS: tuple[Adoption, ...] = (
     Adoption(
         "status",
         ("STATUS",),
-        Disposition.RAW_EVIDENCE,
-        "ACTIVE, as an administrative assertion that the facility is in service",
-        "Every published record is ACTIVE because only active records are published; "
-        "planned, potential and closed records cannot be studied from the open data, and the "
-        "network links carry no status at all.",
+        Disposition.IDENTITY_PROVENANCE,
+        "as the publication's lifecycle filter",
+        "Every published record is ACTIVE, which is also the template default, because only "
+        "active records are published: the field distinguishes nothing in the open data. What "
+        "the City asserts is the record's presence in its active inventory, which belongs to "
+        "the record, not to this field. Planned, potential and closed records cannot be "
+        "studied from the open data, and the network links carry no status at all.",
         _status,
     ),
     Adoption(
@@ -363,10 +366,10 @@ ADOPTIONS: tuple[Adoption, ...] = (
         ("SHAPE",),
         Disposition.MATCHING_INPUT,
         "all records",
-        "Centrelines digitised from orthoimagery. In the study area almost every pedestrian "
-        "record runs within a couple of metres of an OSM pedestrian way along its whole "
-        "length, which is consistent with shared lineage: the geometry is input to matching "
-        "and a lineage question, not independent evidence of where a path is.",
+        "Centrelines digitised from orthoimagery. In the study area most pedestrian records "
+        "run within 2 m of an OSM pedestrian way along their whole length, which is "
+        "consistent with shared lineage: the geometry is input to matching and a lineage "
+        "question, not independent evidence of where a path is.",
         _geometry,
     ),
     Adoption(
