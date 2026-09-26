@@ -14,13 +14,14 @@ number of edges the search may evaluate are capped.
 from __future__ import annotations
 
 import time
-from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from typing import Literal
 
 from shapely.geometry import Point
 
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.enums import KerbType, SmoothnessClass, SurfaceClass, TriState
+from pathable_api.geo.features import EdgeFeatures
 from pathable_api.geo.geometry import geodesic_distance_m
 from pathable_api.routing.cost import BlockReason, CostComponent, EdgeCost, evaluate_edge
 from pathable_api.routing.graph import DirectedEdge, RoutableEdge, RoutableGraph, SnappedPoint
@@ -53,22 +54,14 @@ MAX_SNAP_DISTANCE_M = 150.0
 #: a normal cross-Waterloo route evaluates a small fraction of this.
 MAX_EDGE_EVALUATIONS = 750_000
 
-#: Metres per second, by profile. Rough averages for planning, not measurements
-#: of any individual — which is why the API calls the result an estimate.
-_WALKING_SPEED_MPS: Mapping[str, float] = {
-    "standard": 1.35,
-    "wheelchair": 0.95,
-    "walker": 0.65,
-    "crutches": 0.75,
-    "stroller": 1.15,
-    "reduced_mobility": 0.90,
-    "custom": 0.95,
-}
-_DEFAULT_SPEED_MPS = 1.0
-
-#: Seconds added for obstacles that cost time rather than distance.
+#: Seconds added for obstacles that cost time rather than distance. The same for
+#: every profile; the pace is the profile's own (`walking_speed_mps`).
 _SECONDS_PER_STEP = 2.5
 _SECONDS_PER_CROSSING = 20.0
+
+#: Where a gradient came from: a mapper's `incline` tag, or the elevation model.
+GradeSource = Literal["osm_incline", "derived_elevation"]
+GradeDirection = Literal["uphill", "downhill"]
 
 
 class RoutingError(RuntimeError):
@@ -132,6 +125,84 @@ class RouteSegment:
     width_m: float | None
     unknown_attributes: tuple[str, ...]
     cost_components: tuple[CostComponent, ...]
+    #: Every attribute this segment was costed from, oriented along travel. Never
+    #: serialised; carried so a comparison can cost the *other* route under the
+    #: chosen profile exactly. Rebuilding features from the fields above dropped
+    #: whatever they did not copy — the derived grade among them, which made a
+    #: slope limit invisible in the "no route" diagnostic.
+    features: EdgeFeatures
+
+
+@dataclass(frozen=True, slots=True)
+class GradeExtreme:
+    """The steepest gradient on a route in one direction, and where it came from."""
+
+    #: Size of the gradient, without sign.
+    percent: float
+    #: In the direction of travel.
+    direction: GradeDirection
+    source: GradeSource
+    #: Position in the route's `segments`.
+    segment_index: int
+
+
+@dataclass(frozen=True, slots=True)
+class GradientSummary:
+    """Every gradient a route was costed on, recorded and estimated kept apart."""
+
+    steepest_uphill: GradeExtreme | None
+    steepest_downhill: GradeExtreme | None
+    #: Length whose gradient a mapper recorded in OpenStreetMap.
+    recorded_length_m: float
+    #: Length whose gradient is estimated from the elevation model, because
+    #: nothing is recorded there.
+    estimated_length_m: float
+    #: Length with no gradient at all — unknown, not flat.
+    unknown_length_m: float
+
+    @property
+    def total_length_m(self) -> float:
+        return self.recorded_length_m + self.estimated_length_m + self.unknown_length_m
+
+    def share(self, length_m: float) -> float:
+        total = self.total_length_m
+        return min(1.0, length_m / total) if total > 0 else 0.0
+
+
+def summarise_gradients(segments: tuple[RouteSegment, ...]) -> GradientSummary:
+    """The gradients a sequence of segments was costed on.
+
+    Uses the same precedence as routing — a recorded incline where there is one,
+    otherwise the elevation estimate — and reports which applied, because "a
+    mapper measured 6%" and "a terrain model suggests 6%" are different claims.
+    Direction is the direction of travel: a segment that climbs going one way is
+    reported as a descent on a route that uses it the other way.
+    """
+    uphill: GradeExtreme | None = None
+    downhill: GradeExtreme | None = None
+    recorded = estimated = unknown = 0.0
+
+    for index, segment in enumerate(segments):
+        grade = segment.features.effective_grade_percent
+        source = segment.features.grade_source
+        if grade is None or source is None:
+            unknown += segment.length_m
+            continue
+        if source == "osm_incline":
+            recorded += segment.length_m
+            origin: GradeSource = "osm_incline"
+        else:
+            estimated += segment.length_m
+            origin = "derived_elevation"
+
+        # Ties keep the first occurrence, so the answer does not depend on
+        # anything but the route itself.
+        if grade > 0 and (uphill is None or grade > uphill.percent):
+            uphill = GradeExtreme(grade, "uphill", origin, index)
+        elif grade < 0 and (downhill is None or -grade > downhill.percent):
+            downhill = GradeExtreme(-grade, "downhill", origin, index)
+
+    return GradientSummary(uphill, downhill, recorded, estimated, unknown)
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +214,9 @@ class Route:
     distance_m: float
     effective_distance_m: float
     estimated_duration_seconds: float
+    #: Whose assumed pace produced `estimated_duration_seconds`. Two estimates
+    #: are only comparable when this matches — see `with_pace_of`.
+    pace_profile_key: str
     coordinates: tuple[tuple[float, float], ...]
     segments: tuple[RouteSegment, ...]
     origin: SnappedPoint
@@ -156,6 +230,26 @@ class Route:
     @property
     def segment_count(self) -> int:
         return len(self.segments)
+
+    @property
+    def gradient(self) -> GradientSummary:
+        """Recorded and estimated gradients, with direction. See `summarise_gradients`."""
+        return summarise_gradients(self.segments)
+
+    def with_pace_of(self, profile: MobilityProfile) -> Route:
+        """The same route, its time estimated at another profile's assumed pace.
+
+        A comparison showed the shortest route at a standard walking pace beside
+        the accessible route at, say, a wheelchair pace — so the gap between the
+        two times mixed a difference in pace into a difference in route. Timing
+        both at the chosen profile's pace makes the two figures comparable. The
+        route itself, and everything it was costed on, is unchanged.
+        """
+        return replace(
+            self,
+            estimated_duration_seconds=_estimate_duration(self.segments, profile),
+            pace_profile_key=profile.pace_profile_key,
+        )
 
     @property
     def step_count(self) -> int:
@@ -182,6 +276,12 @@ class Route:
 
     @property
     def steepest_incline_percent(self) -> float | None:
+        """The steepest gradient a mapper recorded, either direction, as a magnitude.
+
+        OpenStreetMap only — 46 of Waterloo's 180,554 segments carry an
+        `incline`. Kept because the API has always returned it; the gradients
+        routing actually used, estimated ones included, are in `gradient`.
+        """
         gradients = [
             abs(segment.incline_percent)
             for segment in self.segments
@@ -337,6 +437,7 @@ def compute_route(
         distance_m=distance_m,
         effective_distance_m=effective_m,
         estimated_duration_seconds=_estimate_duration(segments, profile),
+        pace_profile_key=profile.pace_profile_key,
         coordinates=_stitch(segments),
         segments=tuple(segments),
         origin=_as_snapped_point(start_snap),
@@ -482,6 +583,7 @@ def _to_segment(edge: DirectedEdge, cost: EdgeCost) -> RouteSegment:
         width_m=features.width_m,
         unknown_attributes=features.unknown_attributes,
         cost_components=cost.components,
+        features=features,
     )
 
 
@@ -496,15 +598,19 @@ def _stitch(segments: list[RouteSegment]) -> tuple[tuple[float, float], ...]:
     return tuple(coordinates)
 
 
-def _estimate_duration(segments: list[RouteSegment], profile: MobilityProfile) -> float:
+def _estimate_duration(
+    segments: list[RouteSegment] | tuple[RouteSegment, ...], profile: MobilityProfile
+) -> float:
     """A planning estimate, from distance and obstacle counts.
 
     Deliberately *not* derived from effective metres: those encode preference as
     well as effort, and a route that avoids an unrecorded kerb is not slower for
     having done so.
+
+    The pace is the profile's own. It used to be looked up by key, and every
+    custom profile — whatever preset it was built on — got the wheelchair pace.
     """
-    speed = _WALKING_SPEED_MPS.get(profile.key, _DEFAULT_SPEED_MPS)
-    seconds = sum(segment.length_m for segment in segments) / speed
+    seconds = sum(segment.length_m for segment in segments) / profile.walking_speed_mps
 
     for segment in segments:
         if segment.steps is TriState.YES:

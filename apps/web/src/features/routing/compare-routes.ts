@@ -27,16 +27,42 @@ export type CompareRoutesResult =
   | { readonly ok: true; readonly data: RouteCompareResponse }
   | { readonly ok: false; readonly message: string; readonly code: string };
 
+/**
+ * A route this version can render honestly: it says whose pace its time uses,
+ * and it carries its gradients with their sources. An older backend without
+ * either would have the page compare unlike times and guess at provenance.
+ */
+function isRenderableRoute(value: unknown): boolean {
+  // An absent route is a real answer ("no route for this profile"), not skew.
+  if (value === null || value === undefined) return true;
+  if (typeof value !== 'object') return false;
+  const route = value as { pace_profile?: unknown; gradient?: unknown };
+  return (
+    typeof route.pace_profile === 'string' &&
+    typeof route.gradient === 'object' &&
+    route.gradient !== null
+  );
+}
+
 function isRouteCompareResponse(value: unknown): value is RouteCompareResponse {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as Partial<RouteCompareResponse>;
   return (
     typeof candidate.profile === 'string' &&
     Array.isArray(candidate.explanations) &&
+    // Every statement must say what it rests on; its label is read from that.
+    candidate.explanations.every(
+      (explanation: unknown) =>
+        typeof explanation === 'object' &&
+        explanation !== null &&
+        typeof (explanation as { basis?: unknown }).basis === 'string',
+    ) &&
     Array.isArray(candidate.cautions) &&
     typeof candidate.dataset === 'object' &&
     candidate.dataset !== null &&
-    candidate.ml_predictions_used === false
+    candidate.ml_predictions_used === false &&
+    isRenderableRoute(candidate.standard_route) &&
+    isRenderableRoute(candidate.accessible_route)
   );
 }
 

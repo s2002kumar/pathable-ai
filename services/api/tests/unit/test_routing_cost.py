@@ -6,6 +6,8 @@ constraint fires only on evidence, and missing data always costs something.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from pathable_api.geo.enums import KerbType, SmoothnessClass, SurfaceClass, TriState
@@ -19,6 +21,7 @@ from pathable_api.routing.profiles import (
     UnknownProfileError,
     build_custom_profile,
     get_profile,
+    plain_number,
 )
 
 LENGTH = 100.0
@@ -369,6 +372,81 @@ class TestCustomProfile:
 
         assert not cost.passable
         assert cost.blocked_reason is BlockReason.TOO_NARROW
+
+    def test_it_keeps_its_base_profiles_pace(self) -> None:
+        # Regression (D3): a custom profile's time estimate used the wheelchair
+        # pace whatever preset it was built on.
+        for base in SELECTABLE_PROFILE_KEYS:
+            custom = build_custom_profile(base=base, max_incline_percent=6.0)
+            assert custom.walking_speed_mps == get_profile(base).walking_speed_mps
+            assert custom.pace_profile_key == base
+
+
+class TestLimitWording:
+    """What a traveller is told about a limit must be the limit they set.
+
+    Regression (D4): limits and gradients were rounded to whole percent, so a
+    4.5% limit read as 4%, a 5.4% slope read as "5% uphill, above the 5% you
+    set", and an estimated gradient was called recorded.
+    """
+
+    def _steep(self, limit: float, *, recorded: float | None, derived: float | None) -> EdgeCost:
+        tags: dict[str, object] = {"highway": "footway"}
+        if recorded is not None:
+            tags["incline"] = f"{recorded}%"
+        features = replace(normalise_edge(tags), derived_grade_percent=derived)
+        profile = build_custom_profile(base="wheelchair", max_incline_percent=limit)
+        return evaluate_edge(features, LENGTH, profile)
+
+    def test_a_declared_limit_is_repeated_exactly(self) -> None:
+        profile = build_custom_profile(base="wheelchair", max_incline_percent=4.5)
+
+        assert "cannot manage uphill gradients above 4.5%" in profile.hard_limits.describe()
+        blocked = self._steep(4.5, recorded=None, derived=4.8)
+        assert "the 4.5% you set" in blocked.blocked_detail
+
+    def test_an_estimated_gradient_is_called_estimated(self) -> None:
+        blocked = self._steep(5.0, recorded=None, derived=6.2)
+
+        assert blocked.blocked_detail.startswith("The estimated gradient is 6.2% uphill")
+
+    def test_a_recorded_gradient_is_called_recorded(self) -> None:
+        # Recorded takes precedence even where an estimate also exists.
+        blocked = self._steep(5.0, recorded=6.0, derived=2.0)
+
+        assert blocked.blocked_detail.startswith("The recorded gradient is 6.0% uphill")
+
+    def test_the_gradient_shown_visibly_exceeds_the_limit_it_broke(self) -> None:
+        blocked = self._steep(5.0, recorded=None, derived=5.04)
+
+        assert "5.04% uphill" in blocked.blocked_detail
+
+    def test_a_limit_is_never_rounded_for_display(self) -> None:
+        assert plain_number(5.0) == "5"
+        assert plain_number(4.5) == "4.5"
+        # Seven significant digits: the short format would round this one.
+        assert plain_number(4.123457) == "4.123457"
+        assert plain_number(4.1234567) == "4.1234567"
+
+    def test_a_declared_width_is_repeated_exactly(self) -> None:
+        profile = build_custom_profile(base="wheelchair", min_width_m=0.875)
+        cost = evaluate_edge(
+            normalise_edge({"highway": "footway", "width": "0.8"}), LENGTH, profile
+        )
+
+        assert "the 0.875 m you need" in cost.blocked_detail
+        assert "needs at least 0.875 m of width" in profile.hard_limits.describe()
+
+    def test_guidance_names_where_its_gradient_came_from(self) -> None:
+        features = replace(normalise_edge({"highway": "footway"}), derived_grade_percent=8.3)
+        cost = evaluate_edge(features, LENGTH, get_profile("wheelchair"))
+
+        guidance = [
+            component.detail
+            for component in cost.components
+            if component.code is CostCode.INCLINE and "prefers" in component.detail
+        ]
+        assert guidance == ["8.3% uphill (estimated), steeper than the 8% this profile prefers."]
 
 
 class TestFeatureClassesUsedByTheModel:

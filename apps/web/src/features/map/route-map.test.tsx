@@ -143,6 +143,7 @@ const COMPARISON = {
     distance_m: 483,
     effective_distance_m: 483,
     estimated_duration_seconds: 380,
+    pace_profile: 'wheelchair',
     coordinates: [
       [-80.54, 43.47],
       [-80.536, 43.47],
@@ -155,6 +156,13 @@ const COMPARISON = {
     crossing_count: 1,
     unknown_kerb_crossing_count: 1,
     steepest_incline_percent: null,
+    gradient: {
+      steepest_uphill: null,
+      steepest_downhill: null,
+      recorded_fraction: 0,
+      estimated_fraction: 0,
+      unknown_fraction: 1,
+    },
     unknown_data_fraction: 0.1,
     computation_ms: 3,
   },
@@ -164,6 +172,7 @@ const COMPARISON = {
     distance_m: 709,
     effective_distance_m: 980,
     estimated_duration_seconds: 746,
+    pace_profile: 'wheelchair',
     coordinates: [
       [-80.54, 43.47],
       [-80.538, 43.469],
@@ -177,6 +186,13 @@ const COMPARISON = {
     crossing_count: 1,
     unknown_kerb_crossing_count: 0,
     steepest_incline_percent: 4,
+    gradient: {
+      steepest_uphill: { percent: 4, direction: 'uphill', source: 'osm_incline', segment_index: 0 },
+      steepest_downhill: null,
+      recorded_fraction: 0.6,
+      estimated_fraction: 0,
+      unknown_fraction: 0.4,
+    },
     unknown_data_fraction: 0.2,
     computation_ms: 5,
   },
@@ -184,7 +200,9 @@ const COMPARISON = {
   accessible_failure: null,
   extra_distance_m: 226,
   extra_distance_fraction: 0.468,
-  explanations: [{ code: 'avoids_stairs', summary: 'Avoids 1 stairway.', evidence: {} }],
+  explanations: [
+    { code: 'avoids_stairs', summary: 'Avoids 1 stairway.', basis: 'recorded', evidence: {} },
+  ],
   cautions: [],
   dataset: {
     dataset_id: 'd',

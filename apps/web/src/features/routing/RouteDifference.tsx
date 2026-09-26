@@ -1,6 +1,11 @@
 'use client';
 
-import type { Route, RouteCompareResponse } from '@pathable/contracts';
+import type {
+  EvidenceBasis,
+  GradientSummary,
+  Route,
+  RouteCompareResponse,
+} from '@pathable/contracts';
 import { type RouteFocus, recordedStairs } from '@/features/map/route-layers';
 import { routesSharePath } from './route-identity';
 import type { StairsTarget } from './types';
@@ -20,8 +25,37 @@ const GAP_NAMES: Readonly<Record<string, string>> = {
 const ASSESSED_CATEGORIES =
   'surface, surface condition, gradient, path width, and kerbs at crossings';
 
-/** Explanation codes that are consequences of the profile's rules, not observations. */
-const PROFILE_RULE_CODES = new Set(['distance_difference', 'same_distance']);
+/**
+ * How each kind of evidence is labelled, read from the statement's own `basis`.
+ *
+ * Never from its code. Tagging by code put "Recorded in OpenStreetMap" on
+ * "no kerb has been recorded" — an absence of data presented as an observation.
+ */
+export const EVIDENCE_TAGS: Readonly<Record<EvidenceBasis, { kind: string; label: string }>> = {
+  recorded: { kind: 'observed', label: 'Recorded in OpenStreetMap' },
+  estimated: { kind: 'derived', label: 'Derived from an elevation model' },
+  mixed: { kind: 'derived', label: 'Recorded and derived from an elevation model' },
+  not_recorded: { kind: 'unknown', label: 'Not recorded' },
+  profile_rule: { kind: 'profile', label: 'Your profile’s rules' },
+};
+
+/** Whose assumed pace a time estimate uses, as a sentence names it. */
+const PACE_NAMES: Readonly<Record<string, string>> = {
+  standard: 'standard walking',
+  wheelchair: 'wheelchair',
+  walker: 'walker or rollator',
+  crutches: 'crutches or cane',
+  stroller: 'stroller or pram',
+  reduced_mobility: 'reduced-mobility',
+};
+
+/** The basis of a statement about a route's gradients, from where they came from. */
+function gradientBasis(gradient: GradientSummary): EvidenceBasis {
+  if (gradient.recorded_fraction > 0 && gradient.estimated_fraction > 0) return 'mixed';
+  if (gradient.recorded_fraction > 0) return 'recorded';
+  if (gradient.estimated_fraction > 0) return 'estimated';
+  return 'not_recorded';
+}
 
 /**
  * The share of a category that is missing, worded with its own denominator.
@@ -192,6 +226,60 @@ function RecordedStairsControl({
   );
 }
 
+/**
+ * The steepest climb on the route, labelled by where that number came from.
+ *
+ * Read from the route's gradient summary. This used to read OpenStreetMap's
+ * `steepest_incline_percent` and say it "comes from a terrain model" whenever
+ * an estimate was present anywhere on the route — crediting a mapper's figure
+ * to the model on every route that mixed the two, while the estimated
+ * gradients themselves were never shown at all.
+ */
+function GradientItem({ gradient }: { readonly gradient: GradientSummary }) {
+  const steepest = gradient.steepest_uphill;
+  const unknown = Math.round(gradient.unknown_fraction * 100);
+  const gap =
+    unknown > 0 && unknown < 100 ? ` No gradient is on record for ${unknown}% of the route.` : '';
+
+  if (steepest === null) {
+    const basis = gradientBasis(gradient);
+    const tag = EVIDENCE_TAGS[basis];
+    return (
+      <li className={styles.evidenceItem} data-testid="difference-gradient" data-basis={basis}>
+        <span className={styles.evidenceTag} data-kind={tag.kind}>
+          {tag.label}
+        </span>
+        <span>
+          {basis === 'not_recorded'
+            ? 'No gradient is on record for this route — not recorded, not flat.'
+            : `No part of this route climbs by a recorded or estimated amount.${gap}`}
+        </span>
+      </li>
+    );
+  }
+
+  const recorded = steepest.source === 'osm_incline';
+  const tag = EVIDENCE_TAGS[recorded ? 'recorded' : 'estimated'];
+  return (
+    <li
+      className={styles.evidenceItem}
+      data-testid="difference-gradient"
+      data-basis={recorded ? 'recorded' : 'estimated'}
+    >
+      <span className={styles.evidenceTag} data-kind={tag.kind}>
+        {tag.label}
+      </span>
+      <span>
+        The steepest climb on this route is {steepest.percent.toFixed(1)}%
+        {recorded
+          ? ', as recorded in OpenStreetMap.'
+          : ', estimated from an elevation model of the ground rather than surveyed on the path, so it cannot see a ramp or a step.'}
+        {gap}
+      </span>
+    </li>
+  );
+}
+
 function stairwayNote(route: Route): string {
   if (route.stairway_count === 0) return 'no recorded stairways';
   const stairways = `${route.stairway_count} ${route.stairway_count === 1 ? 'stairway' : 'stairways'}`;
@@ -213,6 +301,7 @@ function RouteFigure({
   testId,
   focus,
   onFocus,
+  showTime,
 }: {
   readonly route: Route;
   readonly label: string;
@@ -220,6 +309,8 @@ function RouteFigure({
   readonly testId: string;
   readonly focus: RouteFocus;
   readonly onFocus: (focus: RouteFocus) => void;
+  /** False when this estimate used a different pace from the one beside it. */
+  readonly showTime: boolean;
 }) {
   const focused = focus === variant;
   return (
@@ -237,9 +328,13 @@ function RouteFigure({
       <span className={`${styles.figureValue} tabular`}>{formatDistance(route.distance_m)}</span>
       {/* "Est." and not "takes": the figure is distance divided by an assumed
           pace plus fixed allowances, which the schema itself describes as not
-          measured and not specific to any individual. */}
-      <span className={styles.figureMeta}>
-        Est. {formatDuration(route.estimated_duration_seconds)}
+          measured and not specific to any individual. Two estimates only sit
+          side by side when they share that pace — otherwise part of the gap
+          between them would be a difference in assumption, not in route. */}
+      <span className={styles.figureMeta} data-testid={`${testId}-time`}>
+        {showTime
+          ? `Est. ${formatDuration(route.estimated_duration_seconds)}`
+          : 'Time not comparable'}
       </span>
       <span className={styles.figureFooter}>
         <span className={styles.figureNote}>{stairwayNote(route)}</span>
@@ -292,8 +387,10 @@ export function RouteDifference({
   // both as optional as well as nullable, so this is a truthiness check.
   if (!standard || !accessible) return null;
 
-  const avoided = comparison.explanations.filter(
-    (explanation) => !PROFILE_RULE_CODES.has(explanation.code),
+  // Every constraint the engine found the routes differ on, whatever it is.
+  // Profile-rule statements — the distance — are handled separately below.
+  const reasons = comparison.explanations.filter(
+    (explanation) => explanation.basis !== 'profile_rule',
   );
   // The distance statement is a consequence of the profile, and the headline
   // above already states the exact figure. The engine's `same_distance`
@@ -302,14 +399,16 @@ export function RouteDifference({
   const distance = comparison.explanations.find(
     (explanation) => explanation.code === 'distance_difference',
   );
-  const stairsAvoided = standard.stairway_count - accessible.stairway_count;
-  const gradientDerived =
-    accessible.gradient_source === 'derived_elevation' || accessible.gradient_source === 'mixed';
   const unknownShare = accessible.unknown_data_fraction ?? 0;
   const extra = comparison.extra_distance_m;
   // Identity comes from the response's segments or geometry, never from the
   // distance: two routes can measure the same and be different paths.
   const samePath = routesSharePath(standard, accessible);
+  // Two time estimates are comparable only at the same assumed pace. The API
+  // times both routes at the traveller's pace; if a response ever disagrees,
+  // the shortest route's time is withheld rather than shown beside the other.
+  const sharedPace =
+    standard.pace_profile === accessible.pace_profile ? accessible.pace_profile : null;
 
   return (
     <section
@@ -329,6 +428,7 @@ export function RouteDifference({
           testId="difference-accessible"
           focus={focusedRoute}
           onFocus={onFocusRoute}
+          showTime
         />
         <RouteFigure
           route={standard}
@@ -337,9 +437,13 @@ export function RouteDifference({
           testId="difference-shortest"
           focus={focusedRoute}
           onFocus={onFocusRoute}
+          showTime={sharedPace !== null}
         />
       </div>
 
+      {/* The figure alone. The reasons are the list below — every constraint
+          the routes differ on — and naming one of them here, as this line once
+          did with "to avoid N stairways", credited the whole detour to it. */}
       <p className={styles.extra} data-testid="difference-extra">
         <span>Extra distance</span>
         <span className={`${styles.extraValue} tabular`}>
@@ -347,11 +451,6 @@ export function RouteDifference({
             ? `${extra >= 0 ? '+' : '−'}${formatDistance(Math.abs(extra))}`
             : 'Not reported'}
         </span>
-        {stairsAvoided > 0 ? (
-          <span>
-            to avoid {stairsAvoided} {stairsAvoided === 1 ? 'stairway' : 'stairways'}
-          </span>
-        ) : null}
       </p>
 
       {samePath ? (
@@ -376,20 +475,27 @@ export function RouteDifference({
           somebody chooses to ask next. */}
       <RecordedStairsControl comparison={comparison} target={stairsTarget} onShow={onShowStairs} />
 
-      <ul className={styles.evidenceList}>
-        {avoided.map((explanation) => (
-          <li className={styles.evidenceItem} key={explanation.code}>
-            <span className={styles.evidenceTag} data-kind="observed">
-              Recorded in OpenStreetMap
-            </span>
-            <span>{explanation.summary}</span>
-          </li>
-        ))}
+      <ul className={styles.evidenceList} data-testid="difference-reasons">
+        {reasons.map((explanation) => {
+          const tag = EVIDENCE_TAGS[explanation.basis];
+          return (
+            <li
+              className={styles.evidenceItem}
+              key={explanation.code}
+              data-basis={explanation.basis}
+            >
+              <span className={styles.evidenceTag} data-kind={tag.kind}>
+                {tag.label}
+              </span>
+              <span>{explanation.summary}</span>
+            </li>
+          );
+        })}
 
         {distance ? (
           <li className={styles.evidenceItem} key={distance.code}>
-            <span className={styles.evidenceTag} data-kind="profile">
-              Your profile&rsquo;s rules
+            <span className={styles.evidenceTag} data-kind={EVIDENCE_TAGS.profile_rule.kind}>
+              {EVIDENCE_TAGS.profile_rule.label}
             </span>
             <span>
               {distance.summary} {comparison.profile_description}
@@ -397,18 +503,19 @@ export function RouteDifference({
           </li>
         ) : null}
 
-        {gradientDerived ? (
-          <li className={styles.evidenceItem} key="gradient-provenance">
-            <span className={styles.evidenceTag} data-kind="derived">
-              Derived from an elevation model
+        {sharedPace !== null ? (
+          <li className={styles.evidenceItem} key="pace" data-testid="difference-pace">
+            <span className={styles.evidenceTag} data-kind={EVIDENCE_TAGS.profile_rule.kind}>
+              {EVIDENCE_TAGS.profile_rule.label}
             </span>
             <span>
-              {accessible.steepest_incline_percent === null
-                ? 'No gradient is recorded on this route, so slope came from a terrain model of the ground rather than a survey of the path.'
-                : `The steepest gradient here, ${Math.abs(accessible.steepest_incline_percent ?? 0).toFixed(0)}%, comes from a terrain model of the ground rather than a survey of the path.`}
+              Both times are estimated at the same assumed {PACE_NAMES[sharedPace] ?? sharedPace}{' '}
+              pace, with fixed allowances for steps and crossings. Neither is measured.
             </span>
           </li>
         ) : null}
+
+        <GradientItem gradient={accessible.gradient} />
 
         {unknownShare > 0 ? (
           <li className={styles.evidenceItem} key="unknown" data-testid="difference-unknown">

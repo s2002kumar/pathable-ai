@@ -62,6 +62,22 @@ export type CostComponent = ApiSchemas['CostComponentModel'];
 /** An evidence-backed statement about why the accessible route differs. */
 export type RouteExplanation = ApiSchemas['ExplanationModel'];
 
+/**
+ * What a statement rests on: recorded in OpenStreetMap, estimated from the
+ * elevation model, both, a record that is missing, or the profile's own rules.
+ * Label a statement from this, never from its code.
+ */
+export type EvidenceBasis = RouteExplanation['basis'];
+
+/**
+ * The gradients a route was costed on — recorded where OpenStreetMap has one,
+ * estimated from the elevation model otherwise — kept apart, with direction.
+ */
+export type GradientSummary = ApiSchemas['GradientSummaryModel'];
+
+/** The steepest gradient on a route in one direction, and where it came from. */
+export type GradeExtreme = ApiSchemas['GradeExtremeModel'];
+
 /** Something to weigh before relying on a route. */
 export type RouteCaution = ApiSchemas['CautionModel'];
 

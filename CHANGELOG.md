@@ -10,7 +10,62 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Gradients reach the API, recorded and estimated kept apart (PA-UX-03A).**
+  Elevation already shaped route cost on 53.8% of Waterloo's segments, but no
+  field carried a single estimated number, and `steepest_incline_percent` reads
+  OpenStreetMap's `incline` — present on 46 of 180,554 segments. Every route now
+  has a `gradient` summary: the steepest climb and descent in the direction of
+  travel, each marked `osm_incline` or `derived_elevation`, and the share of the
+  route whose gradient is recorded, estimated or unknown. Every segment carries
+  `derived_grade_percent` beside `incline_percent`.
+- **Every explanation says what it rests on.** A `basis` of `recorded`,
+  `estimated`, `mixed`, `not_recorded` or `profile_rule`, which the interface
+  now labels statements from instead of guessing from the code.
+- **The shortest route marks what the chosen profile rules out**
+  (`excluded_by_profile` per segment), and every route names whose assumed pace
+  its time estimate uses (`pace_profile`).
+
+### Changed
+
+- **Explanations are read from the cost model, constraint by constraint.** Both
+  routes are costed under the chosen profile and one statement is made for every
+  constraint on which they differ — each hard limit the shortest route breaks,
+  and each penalty the chosen route incurs less of: stairs, kerbs by kind, road
+  crossings, surface and surface condition by class, gradient, width and missing
+  records. No route moved: `routing_policy_version` stays 2, and the twenty
+  corpus journeys return identical routes, distances and nodes expanded before
+  and after, checked with `pathable evaluate` against dataset `51e75f78` on
+  2026-09-25. (The shortest route's time in a comparison does change — see D5.)
+
 ### Fixed
+
+- **The steepest gradient was credited to the wrong source (D1).** On a route
+  mixing recorded and estimated gradients, the comparison said the steepest
+  "comes from a terrain model" — but the only figure it had was OpenStreetMap's.
+  It now states the steepest climb from the gradient summary, with its source.
+- **A custom profile was timed at the wheelchair pace, whatever it was built on
+  (D3).** A walker-based profile on a 712 m route estimated 769 s where the
+  walker preset estimates 1,115 s. Pace now lives on the profile and a custom
+  profile keeps its base's.
+- **Declared limits were rounded, and estimates called recorded (D4).** A 4.5%
+  limit read "4%", and a 4.8% estimated slope read "The recorded gradient is 5%
+  uphill, above the 4% you set". Limits are repeated exactly, a gradient is shown
+  precisely enough to exceed the limit it broke, and "recorded" or "estimated"
+  says which it is. Hard limits say "uphill", which is what they apply to.
+- **The two routes' times assumed different paces (D5).** The shortest route was
+  timed at a standard walking pace beside the traveller's route at theirs. Both
+  are now timed at the chosen profile's pace, and the interface withholds a time
+  estimated at a different pace rather than showing it alongside.
+- **"No kerb has been recorded" was labelled "Recorded in OpenStreetMap" (D6).**
+  Labels now come from each statement's `basis`.
+- **The detour was credited to stairs alone (D7).** The extra-distance line said
+  "to avoid N stairways" whatever else the profile weighed. It now states the
+  figure only, and the reasons below it cover every constraint that differs.
+- **"No route" gave no reason when a slope limit blocked estimated gradients
+  (D8).** The diagnostic rebuilt segments from a few copied fields and lost the
+  derived grade. Segments now carry the features they were costed from.
 
 - **The demo link was a dead end for anyone reading it on GitHub.** Verified
   anonymously after publication: GitHub's blob view answers a 2.23 MB WebM with

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Route, RouteCompareResponse } from '@pathable/contracts';
+import type { GradientSummary, Route, RouteCompareResponse } from '@pathable/contracts';
 import type { RouteFocus } from '@/features/map/route-layers';
 import { RouteDifference } from './RouteDifference';
 import { differenceIsBelowDisplayPrecision } from './route-identity';
@@ -371,30 +371,52 @@ function EvidenceGaps({ route }: { readonly route: Route | null }) {
   );
 }
 
-/** Whether a gradient was measured on the path or inferred from the terrain. */
-function GradientProvenance({ route }: { readonly route: Route | null }) {
-  if (route === null || route.steepest_incline_percent === null) return null;
+/** A share of the route, as a sentence states it. */
+function sharePhrase(share: number): string {
+  const percent = Math.round(share * 100);
+  if (percent === 0) return 'under 1%';
+  if (percent === 100 && share < 1) return 'over 99%';
+  return `${percent}%`;
+}
 
-  switch (route.gradient_source) {
-    case 'derived_elevation':
-      return (
-        <p className={styles.hint}>
-          Gradient is estimated from an elevation model of the ground, not surveyed on the path
-          itself, so it cannot see a ramp or a step.
-        </p>
-      );
-    case 'mixed':
-      return (
-        <p className={styles.hint}>
-          Some gradients here are recorded in OpenStreetMap; the rest are estimated from an
-          elevation model of the ground.
-        </p>
-      );
-    case 'osm_incline':
-      return <p className={styles.hint}>Gradient is as recorded in OpenStreetMap.</p>;
-    default:
-      return null;
+/**
+ * Where this route's gradients came from, share by share.
+ *
+ * Read from the gradient summary, which keeps recorded and estimated apart. It
+ * used to hinge on OpenStreetMap's steepest figure and stay silent whenever a
+ * route's gradients were all estimated — which, with incline recorded on 46 of
+ * 180,554 Waterloo segments, is almost every route.
+ */
+function GradientProvenance({ route }: { readonly route: Route | null }) {
+  if (route === null) return null;
+  const { recorded_fraction, estimated_fraction, unknown_fraction } = route.gradient;
+
+  const parts: string[] = [];
+  if (recorded_fraction > 0) {
+    parts.push(`recorded in OpenStreetMap for ${sharePhrase(recorded_fraction)} of it`);
   }
+  if (estimated_fraction > 0) {
+    parts.push(
+      `estimated from an elevation model of the ground for ${sharePhrase(estimated_fraction)} — it describes the ground, not the path, so it cannot see a ramp or a step`,
+    );
+  }
+  if (unknown_fraction > 0) {
+    parts.push(`not on record for ${sharePhrase(unknown_fraction)}`);
+  }
+  if (parts.length === 0) return null;
+
+  return (
+    <p className={styles.hint} data-testid="gradient-provenance">
+      Gradient on this route: {parts.join('; ')}.
+    </p>
+  );
+}
+
+/** A steepest gradient, with the kind of evidence it rests on. */
+function gradeText(extreme: GradientSummary['steepest_uphill']): string {
+  if (extreme === null) return 'None on record';
+  const kind = extreme.source === 'osm_incline' ? 'recorded' : 'estimated';
+  return `${extreme.percent.toFixed(1)}% (${kind})`;
 }
 
 /**
@@ -418,12 +440,12 @@ function ObstacleBreakdown({ route }: { readonly route: Route | null }) {
           <dd>{route.unknown_kerb_crossing_count}</dd>
         </div>
         <div className={styles.stat}>
-          <dt>Steepest recorded gradient</dt>
-          <dd>
-            {route.steepest_incline_percent === null
-              ? 'Not recorded'
-              : `${Math.abs(route.steepest_incline_percent).toFixed(0)}%`}
-          </dd>
+          <dt>Steepest climb</dt>
+          <dd data-testid="steepest-climb">{gradeText(route.gradient.steepest_uphill)}</dd>
+        </div>
+        <div className={styles.stat}>
+          <dt>Steepest descent</dt>
+          <dd data-testid="steepest-descent">{gradeText(route.gradient.steepest_downhill)}</dd>
         </div>
       </dl>
       <GradientProvenance route={route} />

@@ -111,8 +111,12 @@ test.describe('the recruiter demo', () => {
     await expect(page.getByTestId('difference-accessible')).toContainText(
       `${Math.round(answer.accessible_route.distance_m)} m`,
     );
-    await expect(page.getByTestId('difference-extra')).toContainText(
-      `to avoid ${answer.standard_route.stairway_count} stairways`,
+    // The detour is not credited to the stairs alone (D7): the extra-distance
+    // line states the figure, and the reasons — every constraint the engine
+    // found the routes differ on — are listed beneath it, stairs among them.
+    await expect(page.getByTestId('difference-extra')).not.toContainText('to avoid');
+    await expect(page.getByTestId('difference-reasons')).toContainText(
+      `Avoids ${answer.standard_route.stairway_count} recorded stairways`,
     );
   });
 
@@ -124,8 +128,17 @@ test.describe('the recruiter demo', () => {
     await runExample(page);
 
     const difference = page.getByTestId('route-difference');
-    await expect(difference.getByText('Recorded in OpenStreetMap')).toBeVisible();
-    await expect(difference.getByText('Not recorded')).toBeVisible();
+    await expect(difference.getByText('Recorded in OpenStreetMap').first()).toBeVisible();
+    // More than one "Not recorded" label is expected on real data: each reason
+    // about missing records carries it, as well as the overall gap line.
+    await expect(difference.getByText('Not recorded').first()).toBeVisible();
+    // And a reason about missing records is never labelled as a recorded one (D6).
+    const unrecordedReasons = page
+      .getByTestId('difference-reasons')
+      .locator('li[data-basis="not_recorded"]');
+    for (const reason of await unrecordedReasons.all()) {
+      await expect(reason).not.toContainText('Recorded in OpenStreetMap');
+    }
 
     // The most dangerous possible bug: an absence of data reading as a clearance.
     const unknown = page.getByTestId('difference-unknown');

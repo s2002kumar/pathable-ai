@@ -232,7 +232,7 @@ export interface components {
             exclude_steps?: boolean | null;
             /**
              * Max Incline Percent
-             * @description Steepest recorded gradient to allow. Unrecorded gradients are never excluded.
+             * @description Steepest uphill gradient to allow, in the direction of travel. It applies to the gradient routing uses: recorded in OpenStreetMap where one is, otherwise estimated from the elevation model. A segment with no gradient at all is never excluded, and neither is a descent. Repeated back exactly as sent.
              */
             max_incline_percent?: number | null;
             /**
@@ -335,8 +335,19 @@ export interface components {
         /**
          * ExplanationModel
          * @description An evidence-backed statement about why the accessible route differs.
+         *
+         *     One is produced for every constraint of the chosen profile on which the two
+         *     routes differ: each hard limit the shortest route breaks, and each penalty
+         *     the accessible route incurs less of. No single one is the reason for a
+         *     detour unless it is the only one listed.
          */
         ExplanationModel: {
+            /**
+             * Basis
+             * @description What the statement rests on: 'recorded' in OpenStreetMap; 'estimated' from the elevation model; 'mixed' — recorded and estimated gradients together; 'not_recorded' — the statement is about data nobody has recorded; 'profile_rule' — a consequence of the profile's rules rather than an observation.
+             * @enum {string}
+             */
+            basis: "recorded" | "estimated" | "mixed" | "not_recorded" | "profile_rule";
             /** Code */
             code: string;
             /**
@@ -411,6 +422,59 @@ export interface components {
              * @description Which geocoder answered, or 'disabled'.
              */
             provider: string;
+        };
+        /**
+         * GradeExtremeModel
+         * @description The steepest gradient on a route in one direction.
+         */
+        GradeExtremeModel: {
+            /**
+             * Direction
+             * @description In the direction of travel.
+             * @enum {string}
+             */
+            direction: "uphill" | "downhill";
+            /**
+             * Percent
+             * @description Size of the gradient in percent, without sign.
+             */
+            percent: number;
+            /**
+             * Segment Index
+             * @description Position in this route's `segments`.
+             */
+            segment_index: number;
+            /**
+             * Source
+             * @description 'osm_incline' — recorded by a mapper in OpenStreetMap; 'derived_elevation' — estimated from the elevation model.
+             * @enum {string}
+             */
+            source: "osm_incline" | "derived_elevation";
+        };
+        /**
+         * GradientSummaryModel
+         * @description The gradients a route was costed on, recorded and estimated kept apart.
+         */
+        GradientSummaryModel: {
+            /**
+             * Estimated Fraction
+             * @description Share whose gradient is estimated from the elevation model because OSM records none.
+             */
+            estimated_fraction: number;
+            /**
+             * Recorded Fraction
+             * @description Share of the route's length with a gradient recorded in OSM.
+             */
+            recorded_fraction: number;
+            /** @description Steepest descent along travel, or null when no known gradient descends. */
+            steepest_downhill: components["schemas"]["GradeExtremeModel"] | null;
+            /** @description Steepest climb along travel, or null when no known gradient climbs. */
+            steepest_uphill: components["schemas"]["GradeExtremeModel"] | null;
+            /**
+             * Unknown Fraction
+             * @description Share with no gradient at all. Unknown, not flat.
+             */
+            unknown_fraction: number;
         };
         /**
          * KerbType
@@ -488,7 +552,7 @@ export interface components {
             key: string;
             /**
              * Max Incline Percent
-             * @description A hard limit: recorded gradients above this are excluded. Null for every preset — a preset expresses gradient as preference, not impossibility.
+             * @description A hard limit: uphill gradients above this, recorded or estimated, are excluded. Null for every preset — a preset expresses gradient as preference, not impossibility.
              */
             max_incline_percent?: number | null;
             /**
@@ -691,7 +755,7 @@ export interface components {
             effective_distance_m: number;
             /**
              * Estimated Duration Seconds
-             * @description Rough planning estimate from distance and obstacle counts. Not measured, and not specific to any individual.
+             * @description Rough planning estimate from distance and obstacle counts, at the assumed pace of `pace_profile`. Not measured, and not specific to any individual.
              */
             estimated_duration_seconds: number;
             /**
@@ -701,12 +765,19 @@ export interface components {
             evidence_coverage?: {
                 [key: string]: number;
             };
+            /** @description Every gradient this route was costed on — recorded where OSM has one, estimated from the elevation model otherwise — with its source and direction. */
+            gradient: components["schemas"]["GradientSummaryModel"];
             /**
              * Gradient Source
              * @description Where gradient information came from: 'osm_incline' (recorded by a mapper), 'derived_elevation' (inferred from a terrain model), 'mixed', or null when the route has no gradient information at all.
              */
             gradient_source?: string | null;
             origin: components["schemas"]["SnappedPointModel"];
+            /**
+             * Pace Profile
+             * @description Profile whose assumed walking pace produced `estimated_duration_seconds`. In a comparison both routes use the chosen profile's pace — its base preset's, for a custom profile — so the two estimates can be compared directly.
+             */
+            pace_profile: string;
             /**
              * Profile
              * @description Profile key this route was computed for.
@@ -718,7 +789,10 @@ export interface components {
             segments: components["schemas"]["RouteSegmentModel"][];
             /** Stairway Count */
             stairway_count: number;
-            /** Steepest Incline Percent */
+            /**
+             * Steepest Incline Percent
+             * @description Steepest gradient recorded in OpenStreetMap, either direction, as a magnitude. Recorded values only — estimates are in `gradient`, which is what to display.
+             */
             steepest_incline_percent: number | null;
             /**
              * Step Count
@@ -749,6 +823,11 @@ export interface components {
             /** Cost Components */
             cost_components: components["schemas"]["CostComponentModel"][];
             /**
+             * Derived Grade Percent
+             * @description Gradient estimated from the elevation model, signed along travel: positive climbs. It describes the ground, not the path, so it cannot see a ramp or a step. Null when the model gives none — no coverage, a segment too short for it to resolve, or an implausible value. Routing uses `incline_percent` where present and this otherwise.
+             */
+            derived_grade_percent?: number | null;
+            /**
              * Edge Identity
              * @description Stable identity of this segment within the dataset.
              */
@@ -758,11 +837,16 @@ export interface components {
              * @description What this segment cost the chosen profile, in effective metres.
              */
             effective_metres: number;
+            /**
+             * Excluded By Profile
+             * @description Set on the shortest route only: the chosen profile's hard limit that rules this segment out. Null where the profile can use it, and always null on the route computed for the profile.
+             */
+            excluded_by_profile?: ("foot_prohibited" | "steps" | "too_steep" | "too_narrow" | "surface_excluded" | "smoothness_excluded") | null;
             /** Highway */
             highway?: string | null;
             /**
              * Incline Percent
-             * @description Recorded gradient. Null means unrecorded, not flat.
+             * @description Gradient recorded in OpenStreetMap, signed along travel: positive climbs. Null means unrecorded, not flat.
              */
             incline_percent?: number | null;
             /** Is Crossing */

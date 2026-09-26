@@ -21,7 +21,7 @@ from enum import StrEnum
 
 from pathable_api.geo.enums import KerbType, SmoothnessClass, SurfaceClass, TriState
 from pathable_api.geo.features import EdgeFeatures
-from pathable_api.routing.profiles import MobilityProfile
+from pathable_api.routing.profiles import MobilityProfile, plain_number
 
 
 class BlockReason(StrEnum):
@@ -77,6 +77,30 @@ class EdgeCost:
 #: Returned for a segment nobody may use. Infinity rather than a large number, so
 #: a blocked segment can never be outbid by a long enough detour.
 BLOCKED_COST = float("inf")
+
+
+def grade_kind(features: EdgeFeatures) -> str:
+    """Say which kind of gradient a segment was costed on.
+
+    "Recorded" is a mapper's assertion about the path; "estimated" is inferred
+    from a terrain model that cannot see a ramp or a step. Calling an estimate
+    recorded is exactly the confusion the two separate fields exist to prevent.
+    """
+    return "recorded" if features.grade_source == "osm_incline" else "estimated"
+
+
+def grade_beyond(value: float, threshold: float) -> str:
+    """Write a gradient precisely enough that it visibly exceeds its threshold.
+
+    Rounding to whole percent produced "The gradient is 5% uphill, above the 5%
+    you set" for a 5.4% slope and a 5% limit: true, and unreadable as true. One
+    decimal is enough almost always; two, or the full value, otherwise.
+    """
+    for digits in (1, 2):
+        text = f"{value:.{digits}f}"
+        if float(text) > threshold:
+            return text
+    return repr(value)
 
 
 def evaluate_edge(features: EdgeFeatures, length_m: float, profile: MobilityProfile) -> EdgeCost:
@@ -151,8 +175,9 @@ def _hard_constraint(
         if gradient is not None and gradient > limits.max_incline_percent:
             return (
                 BlockReason.TOO_STEEP,
-                f"The recorded gradient is {gradient:.0f}% uphill, above the "
-                f"{limits.max_incline_percent:.0f}% you set.",
+                f"The {grade_kind(features)} gradient is "
+                f"{grade_beyond(gradient, limits.max_incline_percent)}% uphill, above the "
+                f"{plain_number(limits.max_incline_percent)}% you set.",
             )
 
     if (
@@ -162,8 +187,8 @@ def _hard_constraint(
     ):
         return (
             BlockReason.TOO_NARROW,
-            f"The recorded width is {features.width_m:.2f} m, below the "
-            f"{limits.min_width_m:.2f} m you need.",
+            f"The recorded width is {plain_number(features.width_m)} m, below the "
+            f"{plain_number(limits.min_width_m)} m you need.",
         )
 
     if limits.exclude_rough_surface and features.surface_class is SurfaceClass.ROUGH:
@@ -234,8 +259,9 @@ def _guidance_cost(
                 CostComponent(
                     CostCode.INCLINE,
                     length_m * excess * profile.guidance_penalty_factor,
-                    f"{gradient:.0f}% uphill, steeper than the {profile.steep_incline_percent:.0f}% "
-                    f"this profile prefers.",
+                    f"{grade_beyond(gradient, profile.steep_incline_percent)}% uphill "
+                    f"({grade_kind(features)}), steeper than the "
+                    f"{plain_number(profile.steep_incline_percent)}% this profile prefers.",
                 )
             )
 
@@ -249,8 +275,8 @@ def _guidance_cost(
             CostComponent(
                 CostCode.WIDTH,
                 length_m * shortfall_cm * 0.1 * profile.guidance_penalty_factor,
-                f"{features.width_m:.2f} m wide, narrower than the "
-                f"{profile.narrow_width_m:.2f} m this profile prefers.",
+                f"{plain_number(features.width_m)} m wide (recorded), narrower than the "
+                f"{plain_number(profile.narrow_width_m)} m this profile prefers.",
             )
         )
 
@@ -276,7 +302,7 @@ def _incline_cost(
         CostComponent(
             CostCode.INCLINE,
             length_m * excess * weight,
-            f"{abs(gradient):.0f}% {direction} gradient.",
+            f"{abs(gradient):.1f}% {direction} gradient ({grade_kind(features)}).",
         )
     ]
 
@@ -322,6 +348,11 @@ def _kerb_cost(features: EdgeFeatures, profile: MobilityProfile) -> list[CostCom
     return [CostComponent(CostCode.KERB, penalty, detail)]
 
 
+#: Crossing types charged at the reduced rate. Shared with the comparison, so the
+#: statement "fewer signalised or marked crossings" means exactly what was costed.
+MARKED_CROSSING_TYPES: frozenset[str] = frozenset({"traffic_signals", "marked", "zebra"})
+
+
 def _crossing_cost(features: EdgeFeatures, profile: MobilityProfile) -> list[CostComponent]:
     if not features.is_crossing or not profile.crossing_penalty_m:
         return []
@@ -329,7 +360,7 @@ def _crossing_cost(features: EdgeFeatures, profile: MobilityProfile) -> list[Cos
     described = features.crossing_type or "unspecified"
     # A signalised crossing is materially safer than an unmarked one, and the
     # cost should say so.
-    factor = 0.4 if described in {"traffic_signals", "marked", "zebra"} else 1.0
+    factor = 0.4 if described in MARKED_CROSSING_TYPES else 1.0
     return [
         CostComponent(
             CostCode.CROSSING,
