@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 from alembic import command
 from alembic.script import ScriptDirectory
 from sqlalchemy import Engine, create_engine, text
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
+from pathable_api.core.event_loop import selector_loop_factory
+from pathable_api.geo.fixtures import load_synthetic_dataset
 from tests.integration.conftest import API_ROOT, alembic_config
 
 pytestmark = pytest.mark.integration
@@ -136,5 +143,57 @@ class TestDowngrade:
         try:
             assert postgis_version(engine) is not None
             assert current_revision(engine) == HEAD_REVISION
+        finally:
+            engine.dispose()
+
+
+async def _load_live_fixture(url: str) -> None:
+    engine = create_async_engine(url, poolclass=NullPool)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            await load_synthetic_dataset(session)
+            await session.commit()
+    finally:
+        await engine.dispose()
+
+
+class TestDatasetLifecycleMigration:
+    def test_a_dataset_live_before_it_stays_live_with_no_invented_evidence(
+        self, migrated_database_url: str
+    ) -> None:
+        # Stored under 0006, taken down to 0005 and back up: the state of every
+        # database that held a live dataset before content checksums existed.
+        asyncio.run(_load_live_fixture(migrated_database_url), loop_factory=selector_loop_factory())
+        config = alembic_config(migrated_database_url)
+        command.downgrade(config, "0005_kerb_tiers")
+        command.upgrade(config, "head")
+
+        engine = engine_for(migrated_database_url)
+        try:
+            with engine.connect() as connection:
+                dataset = connection.execute(
+                    text(
+                        "SELECT status, content_checksum, content_checksum_version, "
+                        "validated_content_checksum FROM dataset_versions"
+                    )
+                ).one()
+                # Still live, and nothing claims it was hashed or validated
+                # under rules it never went through.
+                assert tuple(dataset) == ("active", None, None, None)
+                assert (
+                    connection.execute(
+                        text("SELECT count(osm_version) + count(osm_edited_at) FROM graph_nodes")
+                    ).scalar_one()
+                    == 0
+                )
+                assert (
+                    connection.execute(
+                        text("SELECT count(*) FROM dataset_activation_events")
+                    ).scalar_one()
+                    == 0
+                )
+                # And it is frozen from the moment the migration lands.
+                with pytest.raises(IntegrityError, match="can no longer change"):
+                    connection.execute(text("UPDATE graph_edges SET derived_grade_percent = 1"))
         finally:
             engine.dispose()

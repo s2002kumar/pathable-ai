@@ -73,18 +73,25 @@ elevation was a gate requirement rather than an enhancement.
 
 ## 4. Dataset versioning and activation
 
-Ingestion never edits an activated dataset version. It writes a **new** version, validates it, and swaps
-activation inside one transaction; a failed import cannot degrade the live network, and a database constraint —
-not application discipline — enforces that only one dataset per region is active.
+A dataset is written as a **draft candidate**, enriched (elevation), then **sealed**: the stored rows are
+validated and hashed, and from then on PostgreSQL triggers refuse any insert, update or delete of its rows and
+any change to what it records. Before it can go live it is **judged**: the twenty-journey corpus is routed under
+every profile on the candidate and on the live dataset, and both outcomes and every difference are stored against
+both content checksums. Differences — or no live dataset to compare with — need a recorded human reason. The
+switch itself is one short, per-region locked transaction that re-checks that evidence against what is live now.
+**Rollback** reactivates a retired dataset after re-hashing its rows; it never rebuilds
+([ADR 0010](adr/0010-dataset-lifecycle.md)).
 
-This is what makes the in-memory cache safe — with one exception still open: elevation sampling writes into an
-existing dataset, the live one by default, so a running API keeps its pre-elevation graph until it restarts
-([KI-10](development/KNOWN_ISSUES.md)). The graph is keyed by dataset version id, so a new dataset is a new key
-and, apart from that exception, a cached graph cannot go stale. It also makes "what answered this request?" answerable — every route
-response carries the dataset id, its checksum, and the upstream publication timestamp.
+PA-GEO-01 found that the earlier version of this promise did not hold — elevation was sampled into the live
+Waterloo dataset seven minutes after it went live ([KI-10](development/KNOWN_ISSUES.md)). It is now enforced by
+the database rather than by the code path, which is what makes the in-memory cache safe: the graph is keyed by
+dataset version id, and the content under an id can no longer change. It also makes "what answered this
+request?" answerable — every route response carries the id of the dataset its graph was loaded from, its ingest
+checksum and the upstream publication timestamp.
 
-**Checksums are over content**, computed deterministically from the network payload, so "has this actually
-changed?" has an answer that survives re-ingestion.
+**Two checksums.** The ingest checksum covers the network as it arrived, before enrichment, and stays in the API.
+The **content checksum** (versioned, v2) covers the rows actually stored — elevation and derived grade included,
+lifecycle state excluded — and is what activation, regression runs and rollback name a dataset by.
 
 ---
 
@@ -469,7 +476,9 @@ I should not be claiming them.
 
 - `POST /api/v1/routes/compare` → `GraphRepository.active_graph` → `load_graph` → snap → `compute_route` ×2 →
   `compare_routes` → explanation assembly → response.
-- `pathable ingest pbf` → `geo/pbf.py` → `normalise_edge` → validation → `ingest_network` → activation.
+- `pathable ingest pbf` → `geo/pbf.py` → `normalise_edge` → validation → `ingest_network` (a draft) →
+  `elevation apply` → `datasets seal` (`geo/lifecycle.py`) → `datasets evaluate` / `accept` / `activate`
+  (`routing/activation.py`).
 - Startup: entrypoint → alembic → lifespan → `GraphWarmup.start` → readiness flipping 503 → 200.
 - `load_graph`'s Core-column select, and why each of the 34 columns is there.
 

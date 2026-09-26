@@ -1,15 +1,17 @@
-"""Dataset lifecycle: create, populate, validate, checksum, activate.
+"""Dataset ingestion: a source network becomes a new candidate.
 
 The lifecycle exists to make one guarantee: *the network people route on is
-always a network that passed validation*. Every path into the database goes
-through :func:`ingest_network`, so there is no way to populate a live network by
-accident.
+always a network that passed validation and a route regression, and it does not
+change underneath them*. Ingestion is the first step and only the first:
+:func:`ingest_network` validates the network in memory, writes it as a **draft**
+candidate, and stops. It never activates anything.
 
-States move in one direction — ``draft → validating → validated → active →
-retired`` — with ``failed`` as a terminal branch off validation. A dataset that
-never reached ``validated`` can never be activated, and that rule is checked here
-*and* enforced by a partial unique index in the schema, because application
-discipline alone is not a guarantee.
+``draft → validated → active → retired``, with ``retired → active`` for rollback
+and ``failed`` as a terminal branch. Enrichment happens while a dataset is a
+draft; sealing (:mod:`pathable_api.geo.lifecycle`) freezes it; activation and
+rollback (:mod:`pathable_api.routing.activation`) are gated on recorded
+evidence. The transitions and the freeze are enforced by the database as well as
+here, because application discipline alone is not a guarantee.
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ from typing import Any
 
 from geoalchemy2.elements import WKTElement
 from shapely.geometry import box
-from sqlalchemy import insert, select, update
+from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.core.logging import get_logger
@@ -43,6 +45,12 @@ logger = get_logger(__name__)
 #: thousands of round trips, small enough not to build a multi-hundred-MB
 #: statement in memory.
 _INSERT_CHUNK = 2_000
+
+
+#: Where a candidate records the enrichment it must carry before it is sealed.
+ENRICHMENT_KEY = "enrichment"
+REQUIRED = "required"
+NOT_REQUIRED = "not_required"
 
 
 class DatasetLifecycleError(RuntimeError):
@@ -70,7 +78,6 @@ class IngestionResult:
     edge_count: int
     status: DatasetStatus
     report: ValidationReport
-    activated: bool
 
 
 def _utcnow() -> dt.datetime:
@@ -108,15 +115,19 @@ async def ingest_network(
     source_type: SourceType,
     source_name: str,
     ingestion_configuration: dict[str, Any],
+    elevation_required: bool,
     source_timestamp: dt.datetime | None = None,
     declared_bounds: tuple[float, float, float, float] | None = None,
-    activate: bool = True,
 ) -> IngestionResult:
-    """Persist a network as a new dataset version and, optionally, activate it.
+    """Persist a network as a new draft candidate.
 
-    The whole sequence runs inside the caller's transaction. If anything raises,
-    the caller rolls back and the previously active dataset is untouched — a
-    failed import cannot degrade the live network.
+    The whole sequence runs inside the caller's transaction, and nothing about
+    it touches the active dataset: a failed import cannot degrade the live
+    network, and a successful one is only a candidate.
+
+    ``elevation_required`` is recorded with the candidate and checked when it is
+    sealed. It has no default: whether a network may go live without elevation
+    is a decision, and a real import should not be able to skip it by omission.
     """
     checksum = payload.checksum()
     bounds = payload.bounds()
@@ -129,7 +140,10 @@ async def ingest_network(
         source_timestamp=source_timestamp,
         acquired_at=_utcnow(),
         checksum=checksum,
-        ingestion_configuration=ingestion_configuration,
+        ingestion_configuration={
+            **ingestion_configuration,
+            ENRICHMENT_KEY: {"elevation": REQUIRED if elevation_required else NOT_REQUIRED},
+        },
         bounds=_bounds_geometry(bounds),
         node_count=payload.node_count,
         edge_count=payload.edge_count,
@@ -149,7 +163,6 @@ async def ingest_network(
     # --- Validate before writing a single graph row -----------------------
     # Structural problems are cheaper to find in memory than after inserting
     # 40,000 edges, and a dataset that cannot pass has no reason to occupy space.
-    dataset.status = DatasetStatus.VALIDATING
     report = validate_network(
         payload,
         # The meaningful check is against the *region's* extent — geometry that
@@ -178,19 +191,12 @@ async def ingest_network(
 
     await _persist_nodes_and_edges(session, dataset.id, payload)
 
-    dataset.status = DatasetStatus.VALIDATED
-    dataset.validated_at = _utcnow()
     run.status = IngestionStatus.SUCCEEDED
     run.completed_at = _utcnow()
     await session.flush()
 
-    activated = False
-    if activate:
-        await activate_dataset(session, dataset)
-        activated = True
-
     logger.info(
-        "Dataset ingested",
+        "Candidate dataset ingested",
         extra={
             "dataset_id": str(dataset.id),
             "region": region.slug,
@@ -198,7 +204,6 @@ async def ingest_network(
             "node_count": payload.node_count,
             "edge_count": payload.edge_count,
             "warning_count": len(report.warnings),
-            "activated": activated,
         },
     )
 
@@ -209,41 +214,7 @@ async def ingest_network(
         edge_count=payload.edge_count,
         status=dataset.status,
         report=report,
-        activated=activated,
     )
-
-
-async def activate_dataset(session: AsyncSession, dataset: DatasetVersion) -> None:
-    """Make a validated dataset the live network for its region.
-
-    Retiring the incumbent and promoting the successor happen in one statement
-    pair inside one transaction, so there is no window in which a region has two
-    active datasets or none.
-    """
-    if dataset.status not in {DatasetStatus.VALIDATED, DatasetStatus.ACTIVE}:
-        msg = (
-            f"Dataset {dataset.id} has status {dataset.status}; only a validated "
-            f"dataset may be activated."
-        )
-        raise DatasetLifecycleError(msg)
-
-    if dataset.status is DatasetStatus.ACTIVE:
-        return
-
-    now = _utcnow()
-    await session.execute(
-        update(DatasetVersion)
-        .where(
-            DatasetVersion.pilot_region_id == dataset.pilot_region_id,
-            DatasetVersion.status == DatasetStatus.ACTIVE,
-            DatasetVersion.id != dataset.id,
-        )
-        .values(status=DatasetStatus.RETIRED, retired_at=now)
-    )
-
-    dataset.status = DatasetStatus.ACTIVE
-    dataset.activated_at = now
-    await session.flush()
 
 
 def _bounds_geometry(bounds: tuple[float, float, float, float] | None) -> WKTElement | None:
@@ -279,6 +250,8 @@ async def _persist_nodes_and_edges(
                 "source_node_id": node.source_node_id,
                 "geometry": WKTElement(node.geometry.wkt, srid=SRID),
                 "elevation_m": None,
+                "osm_version": None if node.osm is None else node.osm.version,
+                "osm_edited_at": None if node.osm is None else node.osm.edited_at,
                 "raw_tags": node.raw_tags,
             }
         )
@@ -291,6 +264,9 @@ async def _persist_nodes_and_edges(
                 "id": uuid.uuid4(),
                 "dataset_version_id": dataset_id,
                 "source_way_id": edge.source_way_id,
+                "osm_way_version": None if edge.osm_way is None else edge.osm_way.version,
+                "osm_way_edited_at": None if edge.osm_way is None else edge.osm_way.edited_at,
+                "osm_way_latest_edit_at": edge.osm_way_latest_edit_at,
                 "source_u": edge.source_u,
                 "source_v": edge.source_v,
                 "edge_key": edge.edge_key,

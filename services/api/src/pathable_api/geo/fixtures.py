@@ -31,7 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.geo.datasets import IngestionResult, ingest_network
 from pathable_api.geo.directionality import normalise_foot_direction
-from pathable_api.geo.enums import SourceType
+from pathable_api.geo.enums import DatasetStatus, SourceType
 from pathable_api.geo.features import normalise_edge
 from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload
 from pathable_api.geo.regions import WATERLOO_SYNTHETIC, seed_region
@@ -208,19 +208,28 @@ def build_synthetic_network() -> NetworkPayload:
     return NetworkPayload(nodes=nodes, edges=edges)
 
 
+#: Recorded as the acceptance reason when the fixture goes live with no dataset
+#: to compare against, or with routes that differ from the one it replaces.
+SYNTHETIC_ACCEPTANCE_REASON: Final = (
+    "Synthetic test fixture loaded by the test and CI bootstrap; not a map of anywhere."
+)
+
+
 async def load_synthetic_dataset(
     session: AsyncSession, *, activate: bool = True
 ) -> IngestionResult:
     """Seed the synthetic region and ingest the fixture as a dataset version.
 
-    Runs the same create → validate → checksum → activate path as a real import,
-    which is the point: if the lifecycle breaks, the fixture loader breaks with
-    it rather than quietly taking a shortcut past the gate.
+    With ``activate``, the candidate goes through exactly the path a real one
+    does — seal, route regression, acceptance where one is required, a gated
+    switch — which is the point: if the lifecycle breaks, the fixture loader
+    breaks with it rather than quietly taking a shortcut past the gate. The
+    acceptance it records says what this is.
     """
     region = await seed_region(session, WATERLOO_SYNTHETIC)
     payload = build_synthetic_network()
 
-    return await ingest_network(
+    result = await ingest_network(
         session,
         region=region,
         payload=payload,
@@ -233,5 +242,14 @@ async def load_synthetic_dataset(
             "warning": "Invented data for testing. Not a survey of Waterloo.",
         },
         declared_bounds=WATERLOO_SYNTHETIC.bounds,
-        activate=activate,
+        # The fixture carries its gradients as tags and has no terrain model.
+        elevation_required=False,
     )
+    if activate:
+        # Imported here: activation routes on the fixture, and routing imports
+        # this module for its coordinates.
+        from pathable_api.routing.activation import promote
+
+        await promote(session, result.dataset_id, acceptance_reason=SYNTHETIC_ACCEPTANCE_REASON)
+        result.status = DatasetStatus.ACTIVE
+    return result

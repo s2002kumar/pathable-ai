@@ -1,9 +1,20 @@
 """The ``pathable`` command line.
 
-Operational tasks that are not HTTP requests: seeding regions, importing a
-network, and inspecting what is currently live. Argparse rather than a CLI
-framework — the surface is small, and a dependency that only saves a few lines of
-argument wiring is not worth carrying.
+Operational tasks that are not HTTP requests: seeding regions, building a
+candidate network, enriching and sealing it, judging it against the live one,
+activating it, rolling back, and inspecting what is live and why. Argparse rather
+than a CLI framework — the surface is small, and a dependency that only saves a
+few lines of argument wiring is not worth carrying.
+
+The lifecycle, as commands::
+
+    pathable ingest pbf --region waterloo --file ...     # a draft candidate
+    pathable elevation apply --region waterloo           # enrich the candidate
+    pathable datasets seal <candidate>                   # validate, hash, freeze
+    pathable datasets evaluate <candidate>               # route regression vs live
+    pathable datasets accept <run> --reason "..."        # only if routes changed
+    pathable datasets activate <candidate>               # the short switch
+    pathable datasets rollback --region waterloo --reason "..."
 """
 
 from __future__ import annotations
@@ -20,8 +31,10 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import String, cast, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from pathable_api import __version__
 from pathable_api.core.config import ConfigurationError, get_settings
 from pathable_api.core.event_loop import selector_loop_factory
 from pathable_api.core.logging import configure_logging, get_logger
@@ -36,10 +49,23 @@ from pathable_api.geo.datasets import (
     require_region,
 )
 from pathable_api.geo.elevation import build_provider
-from pathable_api.geo.elevation_apply import apply_elevation, summarise
+from pathable_api.geo.elevation_apply import summarise
 from pathable_api.geo.enums import SourceType
 from pathable_api.geo.fixtures import load_synthetic_dataset
-from pathable_api.geo.models import DatasetVersion, PilotRegion
+from pathable_api.geo.lifecycle import (
+    SealRefusedError,
+    enrich_with_elevation,
+    record_content_checksum,
+    resolve_candidate,
+    seal_candidate,
+    verify_content_checksum,
+)
+from pathable_api.geo.models import (
+    DatasetVersion,
+    PilotRegion,
+    RouteRegressionAcceptance,
+    RouteRegressionRun,
+)
 from pathable_api.geo.osm import OverpassUnreachableError, import_walk_network
 from pathable_api.geo.overture.catalog import (
     LATEST,
@@ -66,6 +92,16 @@ from pathable_api.geo.overture.pathable import PathAbleSideError, load_identitie
 from pathable_api.geo.pbf import import_from_pbf
 from pathable_api.geo.regions import PILOT_REGIONS, region_definition, seed_pilot_regions
 from pathable_api.routing.ablation import run_ablation, summarise_ablation
+from pathable_api.routing.activation import (
+    IDENTICAL,
+    accept_regression,
+    activate_candidate,
+    activation_history,
+    evaluate_candidate,
+    rollback,
+    rollback_target,
+    verify_rollback_target,
+)
 from pathable_api.routing.benchmark import build_measurement_grid, measure
 from pathable_api.routing.evaluation import as_records, compare_algorithms, evaluate
 from pathable_api.routing.graph import GraphRepository, NoActiveDatasetError, graph_from_payload
@@ -84,6 +120,9 @@ logger = get_logger(__name__)
 EXIT_OK = 0
 EXIT_FAILED = 1
 EXIT_MISCONFIGURED = 2
+#: A route regression that found differences, or had nothing to compare with:
+#: not a failure, but not something to activate without a person deciding.
+EXIT_REVIEW_REQUIRED = 3
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -109,9 +148,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Pilot region to import.",
     )
     osm.add_argument(
-        "--no-activate",
+        "--no-elevation-required",
         action="store_true",
-        help="Validate and store the dataset without making it the live network.",
+        help="Record that this candidate may be sealed without elevation (default: required).",
     )
     osm.add_argument(
         "--no-simplify",
@@ -159,12 +198,22 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="When the extract was produced (ISO 8601), from the provider's own listing.",
     )
-    pbf.add_argument("--no-activate", action="store_true")
+    pbf.add_argument(
+        "--no-elevation-required",
+        action="store_true",
+        help="Record that this candidate may be sealed without elevation (default: required).",
+    )
 
     synthetic = sources.add_parser(
-        "synthetic", help="Load the deterministic test fixture (not real data)."
+        "synthetic",
+        help=(
+            "Load the deterministic test fixture (not real data) and take it through the "
+            "same seal, regression and activation gates as a real candidate."
+        ),
     )
-    synthetic.add_argument("--no-activate", action="store_true")
+    synthetic.add_argument(
+        "--no-activate", action="store_true", help="Stop at the candidate; activate nothing."
+    )
 
     benchmark = subcommands.add_parser(
         "benchmark", help="Measure routing performance. Every number is a real timing."
@@ -222,7 +271,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     elevation_actions = elevation.add_subparsers(dest="elevation_command", required=True)
     apply_command = elevation_actions.add_parser(
-        "apply", help="Sample elevation for the active dataset of a region."
+        "apply",
+        help="Sample elevation into a draft candidate of a region, before it is sealed.",
     )
     apply_command.add_argument(
         "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
@@ -235,7 +285,10 @@ def build_parser() -> argparse.ArgumentParser:
     apply_command.add_argument(
         "--dataset",
         default=None,
-        help="Dataset id. Defaults to the region's active dataset.",
+        help=(
+            "Candidate id (or a unique prefix of at least 8 characters). Defaults to the "
+            "region's only draft candidate; never the live dataset."
+        ),
     )
     apply_command.add_argument("--batch-size", type=int, default=2000)
 
@@ -274,6 +327,63 @@ def build_parser() -> argparse.ArgumentParser:
     listing = dataset_actions.add_parser("list", help="List dataset versions, newest first.")
     listing.add_argument("--region", default=None, help="Restrict to one region slug.")
     listing.add_argument("--limit", type=int, default=20)
+
+    reference_help = "Dataset id, or a unique prefix of at least 8 characters."
+    seal = dataset_actions.add_parser(
+        "seal", help="Validate a candidate's stored content, hash it, and freeze it."
+    )
+    seal.add_argument("dataset", help=reference_help)
+
+    checksum = dataset_actions.add_parser(
+        "checksum",
+        help="Recompute a dataset's content checksum from its rows and compare it.",
+    )
+    checksum.add_argument("dataset", help=reference_help)
+    checksum.add_argument(
+        "--record",
+        action="store_true",
+        help="Record it for a dataset sealed before content checksums existed.",
+    )
+
+    evaluate_dataset = dataset_actions.add_parser(
+        "evaluate",
+        help="Route the regression corpus on a sealed candidate and on the live dataset.",
+    )
+    evaluate_dataset.add_argument("dataset", help=reference_help)
+    evaluate_dataset.add_argument("--json", type=Path, default=None, help="Write the run here.")
+
+    accept = dataset_actions.add_parser(
+        "accept", help="Record why a regression run's differences are intended."
+    )
+    accept.add_argument("run", help="Regression run id, or a unique prefix of 8+ characters.")
+    accept.add_argument("--reason", required=True, help="A sentence somebody can read later.")
+
+    activate = dataset_actions.add_parser(
+        "activate", help="Make a sealed, judged candidate the live network."
+    )
+    activate.add_argument("dataset", help=reference_help)
+    activate.add_argument(
+        "--run", default=None, help="The regression run to rest on (default: the latest)."
+    )
+
+    rollback_command = dataset_actions.add_parser(
+        "rollback",
+        help="Reactivate the previously live dataset, or a named retired one, as it was.",
+    )
+    rollback_command.add_argument(
+        "--region", required=True, choices=[definition.slug for definition in PILOT_REGIONS]
+    )
+    rollback_command.add_argument(
+        "--to", default=None, help="Retired dataset to reactivate (default: the previous one)."
+    )
+    rollback_command.add_argument("--reason", required=True, help="Why, in a sentence.")
+
+    history = dataset_actions.add_parser(
+        "history", help="Every activation and rollback recorded for a region."
+    )
+    history.add_argument(
+        "--region", required=True, choices=[definition.slug for definition in PILOT_REGIONS]
+    )
 
     overture = subcommands.add_parser(
         "overture",
@@ -390,6 +500,20 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _benchmark(database, args)
             case "overture":
                 return await _overture_link(database, args)
+            case "datasets" if args.dataset_command == "seal":
+                return await _seal(database, args)
+            case "datasets" if args.dataset_command == "checksum":
+                return await _checksum(database, args)
+            case "datasets" if args.dataset_command == "evaluate":
+                return await _evaluate_candidate(database, args)
+            case "datasets" if args.dataset_command == "accept":
+                return await _accept(database, args)
+            case "datasets" if args.dataset_command == "activate":
+                return await _activate(database, args)
+            case "datasets" if args.dataset_command == "rollback":
+                return await _rollback(database, args)
+            case "datasets" if args.dataset_command == "history":
+                return await _history(database, args)
             case _:
                 return await _list_datasets(database, args)
     finally:
@@ -457,7 +581,7 @@ async def _ingest_osm(database: Database, args: argparse.Namespace) -> int:
                 ingestion_configuration=result.configuration,
                 source_timestamp=result.retrieved_at,
                 declared_bounds=definition.bounds,
-                activate=not args.no_activate,
+                elevation_required=not args.no_elevation_required,
             )
         except DatasetValidationError as error:
             await session.rollback()
@@ -520,7 +644,7 @@ async def _ingest_pbf(database: Database, args: argparse.Namespace) -> int:
                 },
                 source_timestamp=source_timestamp or result.retrieved_at,
                 declared_bounds=definition.bounds,
-                activate=not args.no_activate,
+                elevation_required=not args.no_elevation_required,
             )
         except DatasetValidationError as error:
             await session.rollback()
@@ -533,6 +657,12 @@ async def _ingest_pbf(database: Database, args: argparse.Namespace) -> int:
     _report(ingestion, definition.display_name)
     print(f"  source     {result.configuration['file_name']}")
     print(f"  sha256     {result.file_sha256}")
+    provenance = result.configuration["osm_provenance"]
+    print(
+        f"  osm edits  {provenance['nodes_with_version']}/{provenance['nodes']} nodes, "
+        f"{provenance['edges_with_way_version']}/{provenance['edges']} segments with a way "
+        f"version, {provenance['edges_with_way_latest_edit']} with a latest member edit"
+    )
     return EXIT_OK
 
 
@@ -555,27 +685,24 @@ async def _apply_elevation(database: Database, args: argparse.Namespace) -> int:
         except DatasetLifecycleError as error:
             print(f"error: {error}", file=sys.stderr)
             return EXIT_FAILED
-        if args.dataset:
-            dataset = await session.get(DatasetVersion, uuid.UUID(args.dataset))
-        else:
-            dataset = await get_active_dataset(session, region.id)
-        if dataset is None:
-            print(f"error: no dataset found for {definition.slug}.", file=sys.stderr)
+        try:
+            wanted = (
+                None
+                if args.dataset is None
+                else (await _dataset_by_reference(session, args.dataset)).id
+            )
+            dataset = await resolve_candidate(session, region.id, wanted)
+        except DatasetLifecycleError as error:
+            print(f"error: {error}", file=sys.stderr)
             return EXIT_FAILED
 
         print(
             f"Sampling {provider.name} ({provider.dataset}) "
-            f"for {definition.display_name} dataset {dataset.id}..."
+            f"for {definition.display_name} candidate {dataset.id}..."
         )
-        run = await apply_elevation(
-            session, dataset=dataset, provider=provider, batch_size=args.batch_size
+        run = await enrich_with_elevation(
+            session, dataset_id=dataset.id, provider=provider, batch_size=args.batch_size
         )
-        # The run belongs to the dataset's record: a grade without the sampling
-        # that produced it cannot be judged or reproduced later.
-        dataset.ingestion_configuration = {
-            **(dataset.ingestion_configuration or {}),
-            "elevation": run.metadata,
-        }
         await session.commit()
 
     print(f"Sampled in {run.duration_seconds:.1f}s.")
@@ -714,11 +841,20 @@ async def _list_datasets(database: Database, args: argparse.Namespace) -> int:
         print("No datasets.")
         return EXIT_OK
 
-    print(f"{'REGION':<22}{'STATUS':<12}{'NODES':>8}{'EDGES':>8}  {'CHECKSUM':<14}SOURCE")
+    print(
+        f"{'ID':<10}{'REGION':<20}{'STATUS':<11}{'NODES':>8}{'EDGES':>8}  "
+        f"{'CHECKSUM':<14}{'CONTENT':<16}SOURCE"
+    )
     for dataset, slug in rows:
+        content = (
+            "not recorded"
+            if dataset.content_checksum is None
+            else f"{dataset.content_checksum[:12]} v{dataset.content_checksum_version}"
+        )
         print(
-            f"{slug:<22}{dataset.status:<12}{dataset.node_count:>8}{dataset.edge_count:>8}  "
-            f"{dataset.checksum[:12]:<14}{dataset.source_name}"
+            f"{str(dataset.id)[:8]:<10}{slug:<20}{dataset.status:<11}{dataset.node_count:>8}"
+            f"{dataset.edge_count:>8}  {dataset.checksum[:12]:<14}{content:<16}"
+            f"{dataset.source_name}"
         )
     return EXIT_OK
 
@@ -929,12 +1065,313 @@ def _run_measurements() -> dict[str, Any]:
 def _report(ingestion: IngestionResult, label: str) -> None:
     print(f"Dataset {ingestion.dataset_id} for {label}")
     print(f"  status     {ingestion.status}")
-    print(f"  checksum   {ingestion.checksum}")
+    print(f"  checksum   {ingestion.checksum} (as ingested, before enrichment)")
     print(f"  nodes      {ingestion.node_count}")
     print(f"  edges      {ingestion.edge_count}")
     print(f"  warnings   {len(ingestion.report.warnings)}")
-    if not ingestion.activated:
-        print("  not activated (--no-activate)")
+    if ingestion.status == "draft":
+        print(
+            "  next       enrich it if required, then `pathable datasets seal`, "
+            "`evaluate` and `activate`"
+        )
+
+
+# ---------------------------------------------------------------------------
+# The gated lifecycle
+# ---------------------------------------------------------------------------
+
+
+def _is_prefix(text: str) -> bool:
+    return len(text) >= 8 and all(character in "0123456789abcdef-" for character in text)
+
+
+async def _dataset_by_reference(session: AsyncSession, reference: str) -> DatasetVersion:
+    """A dataset by full id or by a unique prefix, as `datasets list` prints it."""
+    text = reference.strip().lower()
+    try:
+        found = await session.get(DatasetVersion, uuid.UUID(text))
+    except ValueError:
+        found = None
+        if not _is_prefix(text):
+            msg = f"{reference!r} is not a dataset id or a prefix of at least 8 characters."
+            raise DatasetLifecycleError(msg) from None
+        matches = (
+            (
+                await session.execute(
+                    select(DatasetVersion)
+                    .where(cast(DatasetVersion.id, String).like(f"{text}%"))
+                    .limit(2)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if len(matches) == 1:
+            found = matches[0]
+        elif len(matches) > 1:
+            msg = f"{reference!r} matches more than one dataset; give more of the id."
+            raise DatasetLifecycleError(msg) from None
+    if found is None:
+        msg = f"No dataset matches {reference!r}."
+        raise DatasetLifecycleError(msg)
+    return found
+
+
+async def _run_by_reference(session: AsyncSession, reference: str) -> RouteRegressionRun:
+    text = reference.strip().lower()
+    try:
+        found = await session.get(RouteRegressionRun, uuid.UUID(text))
+    except ValueError:
+        found = None
+        if _is_prefix(text):
+            matches = (
+                (
+                    await session.execute(
+                        select(RouteRegressionRun)
+                        .where(cast(RouteRegressionRun.id, String).like(f"{text}%"))
+                        .limit(2)
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            found = matches[0] if len(matches) == 1 else None
+    if found is None:
+        msg = f"No single regression run matches {reference!r}."
+        raise DatasetLifecycleError(msg)
+    return found
+
+
+async def _seal(database: Database, args: argparse.Namespace) -> int:
+    async with database.session() as session:
+        try:
+            dataset = await _dataset_by_reference(session, args.dataset)
+            result = await seal_candidate(session, dataset.id)
+        except SealRefusedError as error:
+            await session.rollback()
+            print(f"error: {error}", file=sys.stderr)
+            for finding in error.report.errors[:10]:
+                print(f"  {finding.code}: {finding.message}", file=sys.stderr)
+            return EXIT_FAILED
+        except DatasetLifecycleError as error:
+            await session.rollback()
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+        await session.commit()
+
+    print(f"Sealed {result.dataset_id}")
+    print(f"  content    {result.checksum.value} (v{result.checksum.version})")
+    print(f"  hashed     {result.checksum.node_count} nodes, {result.checksum.edge_count} edges")
+    print(f"             in {result.checksum.seconds:.2f}s")
+    print("  next       `pathable datasets evaluate` against the live dataset")
+    return EXIT_OK
+
+
+async def _checksum(database: Database, args: argparse.Namespace) -> int:
+    async with database.session() as session:
+        try:
+            dataset = await _dataset_by_reference(session, args.dataset)
+            if args.record:
+                computed = await record_content_checksum(session, dataset.id)
+                await session.commit()
+                print(f"Recorded {computed.value} (v{computed.version}) for {dataset.id}")
+                print(f"  hashed {computed.node_count} nodes, {computed.edge_count} edges")
+                print(f"  in {computed.seconds:.2f}s")
+                return EXIT_OK
+            verification = await verify_content_checksum(session, dataset.id)
+        except DatasetLifecycleError as error:
+            await session.rollback()
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+
+    computed = verification.computed
+    print(f"Dataset {dataset.id}")
+    print(f"  recorded   {verification.recorded or 'none'}")
+    print(f"  rows hash  {computed.value} (v{computed.version}, {computed.seconds:.2f}s)")
+    if verification.recorded is None:
+        print("  no content checksum is recorded; `--record` records this one")
+        return EXIT_FAILED
+    print(f"  {'matches' if verification.matches else 'DOES NOT MATCH'}")
+    return EXIT_OK if verification.matches else EXIT_FAILED
+
+
+async def _evaluate_candidate(database: Database, args: argparse.Namespace) -> int:
+    async with database.session() as session:
+        try:
+            dataset = await _dataset_by_reference(session, args.dataset)
+            run = await evaluate_candidate(session, dataset.id, app_version=__version__)
+        except DatasetLifecycleError as error:
+            await session.rollback()
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+        await session.commit()
+
+    print(f"Regression run {run.id}")
+    print(f"  candidate  {run.candidate_dataset_id} ({run.candidate_content_checksum[:12]})")
+    baseline = (
+        "none — no dataset is live"
+        if run.baseline_dataset_id is None
+        else f"{run.baseline_dataset_id} ({(run.baseline_content_checksum or '')[:12]})"
+    )
+    print(f"  baseline   {baseline}")
+    journeys = run.comparison_count // max(len(run.profiles), 1)
+    print(
+        f"  corpus     {run.corpus_key}: {journeys} journeys x {len(run.profiles)} profiles "
+        f"= {run.comparison_count} comparisons, routing policy v{run.routing_policy_version}"
+    )
+    print(f"  took       {run.duration_seconds:.1f}s")
+    print(f"  outcome    {run.outcome} ({run.difference_count} differences)")
+    for difference in run.differences[:40]:
+        print(
+            f"    {difference['case']:<34}{difference['profile']:<18}{difference['field']:<22}"
+            f"{difference['baseline']!s:>14} -> {difference['candidate']!s}"
+        )
+    if run.difference_count > 40:
+        print(f"    ... and {run.difference_count - 40} more (see --json)")
+    if args.json is not None:
+        write_json(
+            args.json,
+            {
+                "run_id": str(run.id),
+                "candidate_dataset_id": str(run.candidate_dataset_id),
+                "candidate_content_checksum": run.candidate_content_checksum,
+                "baseline_dataset_id": None
+                if run.baseline_dataset_id is None
+                else str(run.baseline_dataset_id),
+                "baseline_content_checksum": run.baseline_content_checksum,
+                "corpus_key": run.corpus_key,
+                "corpus_fingerprint": run.corpus_fingerprint,
+                "profiles": run.profiles,
+                "routing_policy_version": run.routing_policy_version,
+                "app_version": run.app_version,
+                "outcome": run.outcome,
+                "comparison_count": run.comparison_count,
+                "difference_count": run.difference_count,
+                "duration_seconds": run.duration_seconds,
+                "started_at": run.started_at.isoformat(),
+                "differences": run.differences,
+                "results": run.results,
+            },
+        )
+        print(f"\nWrote {args.json}")
+    if run.outcome == IDENTICAL:
+        print("  next       `pathable datasets activate`")
+        return EXIT_OK
+    print("  next       review; if intended, `pathable datasets accept` with a reason")
+    return EXIT_REVIEW_REQUIRED
+
+
+async def _accept(database: Database, args: argparse.Namespace) -> int:
+    async with database.session() as session:
+        try:
+            run = await _run_by_reference(session, args.run)
+            acceptance = await accept_regression(session, run.id, reason=args.reason)
+        except DatasetLifecycleError as error:
+            await session.rollback()
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+        await session.commit()
+    print(f"Accepted run {run.id} ({run.outcome}, {run.difference_count} differences)")
+    print(f"  reason     {acceptance.reason}")
+    return EXIT_OK
+
+
+async def _activate(database: Database, args: argparse.Namespace) -> int:
+    started = time.perf_counter()
+    async with database.session() as session:
+        try:
+            dataset = await _dataset_by_reference(session, args.dataset)
+            run_id = None if args.run is None else (await _run_by_reference(session, args.run)).id
+            switch = await activate_candidate(session, dataset.id, regression_run_id=run_id)
+        except DatasetLifecycleError as error:
+            await session.rollback()
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+        await session.commit()
+    elapsed = time.perf_counter() - started
+    event = switch.event
+    print(f"Activated {event.to_dataset_id} ({event.to_content_checksum[:12]})")
+    print(f"  retired    {switch.previous_id or 'nothing — no dataset was live'}")
+    print(f"  on run     {event.regression_run_id}")
+    if event.acceptance_id is not None:
+        print(f"  accepted   {event.acceptance_id}")
+    print(f"  switch     {switch.seconds * 1000:.1f} ms; with commit {elapsed * 1000:.1f} ms")
+    return EXIT_OK
+
+
+async def _rollback(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    async with database.session() as session:
+        try:
+            region = await require_region(session, definition.slug)
+            wanted = None if args.to is None else (await _dataset_by_reference(session, args.to)).id
+            target = await rollback_target(session, region.id, wanted)
+            print(f"Verifying {target.id} against its recorded content checksum...")
+            verified = await verify_rollback_target(session, target)
+        except DatasetLifecycleError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+    print(f"  verified   {verified.value[:12]} from its rows in {verified.seconds:.2f}s")
+
+    started = time.perf_counter()
+    async with database.session() as session:
+        try:
+            switch = await rollback(
+                session,
+                region_id=region.id,
+                target_id=target.id,
+                verified_checksum=verified.value,
+                reason=args.reason,
+            )
+        except DatasetLifecycleError as error:
+            await session.rollback()
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+        await session.commit()
+    elapsed = time.perf_counter() - started
+    print(f"Rolled back {definition.slug}: {switch.previous_id} -> {target.id}")
+    print(f"  switch     {switch.seconds * 1000:.1f} ms; with commit {elapsed * 1000:.1f} ms")
+    return EXIT_OK
+
+
+async def _history(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    async with database.session() as session:
+        try:
+            region = await require_region(session, definition.slug)
+        except DatasetLifecycleError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+        events = await activation_history(session, region.id)
+        acceptances = {
+            acceptance.id: acceptance
+            for acceptance in (
+                await session.execute(
+                    select(RouteRegressionAcceptance).where(
+                        RouteRegressionAcceptance.id.in_(
+                            [event.acceptance_id for event in events if event.acceptance_id]
+                        )
+                    )
+                )
+            ).scalars()
+        }
+    if not events:
+        print("No recorded activations. Datasets activated before PA-GEO-02 have none.")
+        return EXIT_OK
+    for event in events:
+        source = "nothing" if event.from_dataset_id is None else str(event.from_dataset_id)[:8]
+        print(
+            f"{event.occurred_at:%Y-%m-%d %H:%M:%S}Z  {event.action:<9}"
+            f"{source} -> {str(event.to_dataset_id)[:8]} ({event.to_content_checksum[:12]})"
+        )
+        if event.regression_run_id is not None:
+            print(f"    run {event.regression_run_id}")
+        accepted = acceptances.get(event.acceptance_id) if event.acceptance_id else None
+        if accepted is not None:
+            print(f"    accepted: {accepted.reason}")
+        if event.reason:
+            print(f"    reason: {event.reason}")
+    return EXIT_OK
 
 
 if __name__ == "__main__":

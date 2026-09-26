@@ -23,18 +23,30 @@
 # true, the order is stated here and handed to `pg_restore --use-list`, the
 # documented way to control it.
 #
-#     pilot_regions        no foreign keys
-#     dataset_versions     -> pilot_regions
-#     ingestion_runs       -> dataset_versions
-#     graph_nodes          -> dataset_versions
-#     graph_edges          -> dataset_versions, graph_nodes (from and to)
+#     pilot_regions                  no foreign keys
+#     dataset_versions               -> pilot_regions
+#     ingestion_runs                 -> dataset_versions
+#     graph_nodes                    -> dataset_versions
+#     graph_edges                    -> dataset_versions, graph_nodes (from and to)
+#   and, when the archive carries them (optional, from migration 0006):
+#     route_regression_runs          -> pilot_regions, dataset_versions
+#     route_regression_acceptances   -> route_regression_runs
+#     dataset_activation_events      -> the three above
+#
+# Migration 0006 freezes a sealed dataset: its rows cannot be written, and a
+# dataset cannot be *created* active. A restore has to do exactly that, so it
+# sets the session option the triggers honour for moving data between databases,
+# `pathable.allow_sealed_writes`, through PGOPTIONS. It is a custom setting any
+# role may set for its own session — still no superuser — and it lives only for
+# the restore's connection. Foreign keys and check constraints stay enforced.
 #
 # The whole load runs in one transaction, so a failure leaves an empty database
 # rather than half a network, and the verification at the end refuses to report
 # success on a partial restore.
 #
 # Requires: the dump was produced by `pg_dump --data-only --no-owner
-# --no-privileges --format=custom` over exactly these five tables.
+# --no-privileges --format=custom` over the five map tables, optionally with the
+# three evidence tables.
 
 set -eu
 
@@ -75,6 +87,10 @@ done
 # Dependency order. Changing this is changing the contract with the schema's
 # foreign keys, so it is one list in one place.
 TABLE_ORDER="pilot_regions dataset_versions ingestion_runs graph_nodes graph_edges"
+# Restored after the map when present; an archive made before 0006 has none.
+OPTIONAL_ORDER="route_regression_runs route_regression_acceptances dataset_activation_events"
+# Lets this one connection write sealed rows; see the header.
+RESTORE_OPTIONS="-c pathable.allow_sealed_writes=on"
 
 log() { printf '%s restore-dataset: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1"; }
 
@@ -84,6 +100,7 @@ if [ -n "$CONTAINER" ]; then
     REMOTE_DUMP="/tmp/pathable-restore-$$.dump"
     REMOTE_LIST="/tmp/pathable-restore-$$.list"
     in_db() { docker exec -i "$CONTAINER" "$@"; }
+    restore_db() { docker exec -i -e PGOPTIONS="$RESTORE_OPTIONS" "$CONTAINER" "$@"; }
     cleanup() { docker exec "$CONTAINER" rm -f "$REMOTE_DUMP" "$REMOTE_LIST" >/dev/null 2>&1 || true; }
     trap cleanup EXIT INT TERM
     # Streamed rather than `docker cp`d: on Git Bash the destination path in a
@@ -93,6 +110,7 @@ if [ -n "$CONTAINER" ]; then
     LIST="$REMOTE_LIST"
 else
     in_db() { "$@"; }
+    restore_db() { PGOPTIONS="$RESTORE_OPTIONS" "$@"; }
     ARCHIVE="$DUMP"
     LIST="$(mktemp)"
     cleanup() { rm -f "$LIST"; }
@@ -111,7 +129,7 @@ UNEXPECTED="$(printf '%s\n' "$TOC" \
     | grep -E '^[0-9]+; [0-9]+ [0-9]+ TABLE DATA ' \
     | sed -E 's/.*TABLE DATA [^ ]+ ([^ ]+) .*/\1/' \
     | while read -r table; do
-        case " $TABLE_ORDER " in
+        case " $TABLE_ORDER $OPTIONAL_ORDER " in
             *" $table "*) ;;
             *) echo "$table" ;;
         esac
@@ -119,7 +137,7 @@ UNEXPECTED="$(printf '%s\n' "$TOC" \
 if [ -n "$UNEXPECTED" ]; then
     log "refusing: the archive carries tables this bootstrap does not support:"
     printf '  %s\n' $UNEXPECTED >&2
-    log "the supported set is: $TABLE_ORDER"
+    log "the supported set is: $TABLE_ORDER $OPTIONAL_ORDER"
     exit 1
 fi
 
@@ -175,6 +193,15 @@ for table in $TABLE_ORDER; do
             exit 1
         }
 done
+RESTORED_TABLES="$TABLE_ORDER"
+for table in $OPTIONAL_ORDER; do
+    ENTRY="$(printf '%s\n' "$TOC" | grep -E "^[0-9]+; [0-9]+ [0-9]+ TABLE DATA [^ ]+ ${table} " || true)"
+    if [ -n "$ENTRY" ]; then
+        printf '%s\n' "$ENTRY" >> "${LIST}.local"
+        RESTORED_TABLES="$RESTORED_TABLES $table"
+    fi
+done
+log "restoring tables: $RESTORED_TABLES"
 if [ -n "$CONTAINER" ]; then
     docker exec -i "$CONTAINER" sh -c "cat > $LIST" < "${LIST}.local"
     rm -f "${LIST}.local"
@@ -184,7 +211,7 @@ fi
 
 log "restoring (single transaction, no superuser, no --disable-triggers)"
 STARTED="$(date +%s)"
-in_db pg_restore \
+restore_db pg_restore \
     --username "$DB_USER" \
     --dbname "$DB_NAME" \
     --data-only \
@@ -200,7 +227,7 @@ log "analyzing"
 # Named rather than a bare ANALYZE: an ordinary role may not analyze the shared
 # catalogs, and a screenful of permission warnings in a bootstrap teaches people
 # to ignore its output.
-psql_q "analyze $(echo "$TABLE_ORDER" | tr ' ' ',')" >/dev/null
+psql_q "analyze $(echo "$RESTORED_TABLES" | tr ' ' ',')" >/dev/null
 
 # ---------------------------------------------------------------------------
 # 4. Prove it landed. A bootstrap that cannot fail loudly is not a bootstrap.
@@ -228,6 +255,14 @@ if [ -z "$ACTIVE" ]; then
     exit 1
 fi
 log "  active dataset ${ACTIVE}"
+CONTENT="$(psql_q "select coalesce(content_checksum, '') from dataset_versions where id='${ACTIVE}'")"
+if [ -n "$CONTENT" ]; then
+    log "  content checksum ${CONTENT} (recompute: pathable datasets checksum ${ACTIVE})"
+else
+    log "  no content checksum recorded (an archive from before migration 0006); record one"
+    log "  from the rows before anything is compared against it:"
+    log "    pathable datasets checksum --record ${ACTIVE}"
+fi
 
 check "nodes"    "$(psql_q "select count(*) from graph_nodes where dataset_version_id='${ACTIVE}'")" \
                  "$(psql_q "select node_count from dataset_versions where id='${ACTIVE}'")"
@@ -246,6 +281,8 @@ check "non-linestring geometries" \
 
 check "incline_direction check constraint"       "$(psql_q "select count(*) from pg_constraint where conrelid='graph_edges'::regclass and contype='c' and conname='ck_graph_edges_edge_incline_direction'")" "1"
 check "rows violating the incline_direction check"       "$(psql_q "select count(*) from graph_edges where incline_direction not in ('up','down','unknown')")" "0"
+check "sealed-dataset triggers present" \
+      "$(psql_q "select count(*) from pg_trigger where tgname in ('graph_nodes_immutable_once_sealed','graph_edges_immutable_once_sealed','dataset_versions_lifecycle')")" "3"
 
 log "  foreign keys on graph_edges: $(psql_q "select count(*) from pg_constraint where conrelid='graph_edges'::regclass and contype='f'")"
 log "  check constraints on graph_edges: $(psql_q "select count(*) from pg_constraint where conrelid='graph_edges'::regclass and contype='c'")"

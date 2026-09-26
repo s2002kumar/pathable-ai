@@ -1,10 +1,12 @@
 """Versioned pedestrian-network schema.
 
-The organising idea is that a *network dataset is immutable once activated*.
-Ingestion never edits the live network; it writes a new version, validates it,
-and swaps activation in one transaction. That gives reproducibility (every route
-can name the dataset it came from), safe rollback, and a failed import that
-cannot damage the data people are currently routing on.
+The organising idea is that a *network dataset is immutable once sealed*.
+Ingestion writes a new candidate version; enrichment such as elevation is applied
+to that candidate; sealing records a content checksum over everything that was
+stored and freezes it; activation swaps versions in one short transaction after a
+route regression has been judged. The database enforces the freeze (migration
+0006), so a cached graph keyed by dataset id can never describe rows that have
+since changed, and a retired version can be reactivated exactly as it was.
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -127,8 +130,19 @@ class DatasetVersion(TimestampMixin, Base):
     source_timestamp: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     acquired_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    #: Deterministic over the network content — same input, same checksum.
+    #: The network as ingested, before enrichment — same input, same checksum.
+    #: Published by the API as the dataset's checksum. It cannot see elevation
+    #: or derived grade, which are added later; `content_checksum` can.
     checksum: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: Everything stored that routing reads, elevation evidence included, hashed
+    #: at seal time under a versioned contract (`geo/content_checksum.py`). NULL
+    #: for a dataset sealed before content checksums existed, until one is
+    #: computed from its rows.
+    content_checksum: Mapped[str | None] = mapped_column(String(64))
+    content_checksum_version: Mapped[int | None] = mapped_column(SmallInteger)
+    #: The content checksum the seal-time validation was performed on. Approval
+    #: belongs to content, not to an id.
+    validated_content_checksum: Mapped[str | None] = mapped_column(String(64))
     #: Exactly what was requested, so an import can be reproduced.
     ingestion_configuration: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
@@ -162,6 +176,10 @@ class DatasetVersion(TimestampMixin, Base):
         _enum_check("status", DatasetStatus, "dataset_status"),
         _enum_check("source_type", SourceType, "dataset_source_type"),
         CheckConstraint("node_count >= 0 AND edge_count >= 0", name="dataset_counts_non_negative"),
+        CheckConstraint(
+            "(content_checksum IS NULL) = (content_checksum_version IS NULL)",
+            name="dataset_content_checksum_versioned",
+        ),
         # The single-active-dataset rule, enforced by the database rather than by
         # application discipline. A partial unique index is the cheapest way to
         # make "two active networks" unrepresentable.
@@ -238,12 +256,19 @@ class GraphNode(TimestampMixin, Base):
     elevation_resolution_m: Mapped[float | None] = mapped_column(Float)
     elevation_acquired_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
+    #: The OSM version and edit time the ingest read, where the source carried
+    #: them (a PBF extract does; Overpass through OSMnx does not). NULL means
+    #: unknown, never "unchanged".
+    osm_version: Mapped[int | None] = mapped_column(Integer)
+    osm_edited_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+
     raw_tags: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
     dataset: Mapped[DatasetVersion] = relationship(back_populates="nodes")
 
     __table_args__ = (
         UniqueConstraint("dataset_version_id", "source_node_id", name="uq_node_identity"),
+        CheckConstraint("osm_version IS NULL OR osm_version > 0", name="node_osm_version_positive"),
         Index("ix_graph_nodes_geometry", "geometry", postgresql_using="gist"),
         Index("ix_graph_nodes_dataset", "dataset_version_id"),
     )
@@ -267,6 +292,14 @@ class GraphEdge(TimestampMixin, Base):
 
     # --- Upstream identity ------------------------------------------------
     source_way_id: Mapped[str | None] = mapped_column(String(64))
+    #: The source way's version and edit time as ingested. A way's version does
+    #: not change when one of its nodes moves, so `osm_way_latest_edit_at` is the
+    #: latest edit across the way *and every node it references* — the value
+    #: that tells a same-version way that has since changed shape apart from one
+    #: that has not. NULL when any of those could not be read.
+    osm_way_version: Mapped[int | None] = mapped_column(Integer)
+    osm_way_edited_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    osm_way_latest_edit_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     source_u: Mapped[str] = mapped_column(String(64), nullable=False)
     source_v: Mapped[str] = mapped_column(String(64), nullable=False)
     #: Distinguishes parallel edges between the same pair of nodes.
@@ -370,6 +403,10 @@ class GraphEdge(TimestampMixin, Base):
             "step_count IS NULL OR step_count >= 0", name="edge_step_count_non_negative"
         ),
         CheckConstraint("width_m IS NULL OR width_m > 0", name="edge_width_positive"),
+        CheckConstraint(
+            "osm_way_version IS NULL OR osm_way_version > 0",
+            name="edge_osm_way_version_positive",
+        ),
         _enum_check("steps", TriState, "edge_steps"),
         _enum_check("foot_access", AccessValue, "edge_foot_access"),
         _enum_check("general_access", AccessValue, "edge_general_access"),
@@ -385,4 +422,130 @@ class GraphEdge(TimestampMixin, Base):
         Index("ix_graph_edges_dataset", "dataset_version_id"),
         Index("ix_graph_edges_from_node", "from_node_id"),
         Index("ix_graph_edges_to_node", "to_node_id"),
+    )
+
+
+#: A reason is a sentence somebody can read later, not a keystroke.
+REASON_MIN_CHARACTERS = 15
+_REASON_CHECK = f"char_length(btrim(reason)) >= {REASON_MIN_CHARACTERS}"
+
+
+class RouteRegressionRun(Base):
+    """The fixed journey corpus routed on a candidate and on the live dataset.
+
+    Tied to both datasets' *content checksums*, not just their ids: an approval
+    that outlived a change to what it approved would approve something else.
+    Append-only in the database.
+    """
+
+    __tablename__ = "route_regression_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    pilot_region_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("pilot_regions.id", ondelete="RESTRICT"), nullable=False
+    )
+    candidate_dataset_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    candidate_content_checksum: Mapped[str] = mapped_column(String(64), nullable=False)
+    baseline_dataset_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="RESTRICT")
+    )
+    baseline_content_checksum: Mapped[str | None] = mapped_column(String(64))
+    corpus_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: Hash of the journeys, the profiles and the routing policy version: a run
+    #: judged under one corpus says nothing about another.
+    corpus_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    profiles: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    routing_policy_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    app_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)
+    comparison_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    difference_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    results: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False)
+    differences: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False)
+    started_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    duration_seconds: Mapped[float] = mapped_column(Float, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "outcome IN ('identical', 'differences', 'no_baseline')",
+            name="regression_outcome",
+        ),
+        CheckConstraint(
+            "(outcome = 'no_baseline') = (baseline_dataset_id IS NULL)",
+            name="regression_baseline_matches_outcome",
+        ),
+        CheckConstraint(
+            "(baseline_dataset_id IS NULL) = (baseline_content_checksum IS NULL)",
+            name="regression_baseline_identified",
+        ),
+        CheckConstraint(
+            "(outcome = 'identical') = (difference_count = 0 AND baseline_dataset_id IS NOT NULL)",
+            name="regression_identical_means_no_differences",
+        ),
+        Index("ix_route_regression_runs_candidate", "candidate_dataset_id", "completed_at"),
+    )
+
+
+class RouteRegressionAcceptance(Base):
+    """A person's recorded decision that a run's differences are intended."""
+
+    __tablename__ = "route_regression_acceptances"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    regression_run_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("route_regression_runs.id", ondelete="RESTRICT"), nullable=False, unique=True
+    )
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    accepted_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+
+    __table_args__ = (CheckConstraint(_REASON_CHECK, name="acceptance_reason_is_a_sentence"),)
+
+
+class DatasetActivationEvent(Base):
+    """One change of the live dataset for a region: an activation or a rollback."""
+
+    __tablename__ = "dataset_activation_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    pilot_region_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("pilot_regions.id", ondelete="RESTRICT"), nullable=False
+    )
+    action: Mapped[str] = mapped_column(String(16), nullable=False)
+    from_dataset_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="RESTRICT")
+    )
+    to_dataset_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    to_content_checksum: Mapped[str] = mapped_column(String(64), nullable=False)
+    regression_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("route_regression_runs.id", ondelete="RESTRICT")
+    )
+    acceptance_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("route_regression_acceptances.id", ondelete="RESTRICT")
+    )
+    reason: Mapped[str | None] = mapped_column(Text)
+    occurred_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+
+    __table_args__ = (
+        CheckConstraint("action IN ('activate', 'rollback')", name="activation_action"),
+        CheckConstraint(
+            "action <> 'activate' OR regression_run_id IS NOT NULL",
+            name="activation_rests_on_a_regression_run",
+        ),
+        CheckConstraint(
+            f"action <> 'rollback' OR (reason IS NOT NULL AND {_REASON_CHECK})",
+            name="rollback_has_a_reason",
+        ),
+        CheckConstraint(
+            f"reason IS NULL OR {_REASON_CHECK}", name="activation_reason_is_a_sentence"
+        ),
+        Index("ix_dataset_activation_events_region", "pilot_region_id", "occurred_at"),
     )

@@ -1,11 +1,14 @@
 """Apply elevation to a stored dataset, and derive grade from it.
 
-A separate pass rather than part of ingestion, for two reasons. Terrain changes
-on a scale of decades while OpenStreetMap changes hourly, so tying the two
-together would mean re-sampling a DEM every time somebody fixes a tag. And when
-a better elevation model becomes available — a newer LiDAR survey, or one that
-covers a region HRDEM does not — it can be applied to the network already in the
-database instead of forcing a re-ingest.
+A separate pass rather than part of reading the source, because terrain and the
+map change on different clocks and a better elevation model can arrive without
+the map changing. But it is a pass over a **candidate**: it runs on a draft
+dataset before that dataset is sealed, and it is refused on anything sealed —
+validated, active or retired. It once wrote into the live Waterloo dataset seven
+minutes after activation, while a running API kept serving the graph it had
+cached for that id (KI-10). Applying a better model now means building a new
+candidate and activating it, which is what makes the change visible, judged and
+reversible.
 
 What this pass writes:
 
@@ -30,6 +33,7 @@ from geoalchemy2.functions import ST_X, ST_Y
 from sqlalchemy import Table, bindparam, inspect, select, update
 
 from pathable_api.core.logging import get_logger
+from pathable_api.geo.datasets import DatasetLifecycleError
 from pathable_api.geo.elevation import (
     ELEVATION_POLICY_VERSION,
     DerivedGrade,
@@ -37,6 +41,7 @@ from pathable_api.geo.elevation import (
     acquisition_metadata,
     derive_grade,
 )
+from pathable_api.geo.enums import DatasetStatus
 from pathable_api.geo.models import DatasetVersion, GraphEdge, GraphNode
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -90,6 +95,10 @@ class ElevationRun:
         return self.edges_with_grade / self.edges_total if self.edges_total else 0.0
 
 
+class ElevationTargetError(DatasetLifecycleError):
+    """Elevation was asked for on a dataset that can no longer change."""
+
+
 #: How far an OSM-reported incline and a terrain-derived grade may differ before
 #: it is worth telling somebody. Below this the two are agreeing within the
 #: model's own error; above it, one of them is describing something the other
@@ -104,7 +113,17 @@ async def apply_elevation(
     provider: ElevationProvider,
     batch_size: int = _BATCH_SIZE,
 ) -> ElevationRun:
-    """Sample elevation for a dataset's nodes and derive grade for its edges."""
+    """Sample elevation for a candidate's nodes and derive grade for its edges.
+
+    Refuses a dataset that is not a draft. The database refuses it too, but the
+    check here fails before any sampling work is done.
+    """
+    if dataset.status != DatasetStatus.DRAFT:
+        msg = (
+            f"Dataset {dataset.id} is {dataset.status}; elevation is applied to a draft "
+            "candidate before it is sealed, never to a sealed or live dataset."
+        )
+        raise ElevationTargetError(msg)
     started = dt.datetime.now(tz=dt.UTC)
     run = ElevationRun(
         provider=provider.name,

@@ -166,11 +166,14 @@ class TestCommand:
         )
         before = _dataset_rows(migrated_database_url)
         report_path = tmp_path / "linkage.json"
+        # Ingestion now stops at a candidate, so the linkage names it; reading a
+        # candidate must leave it exactly as untouched as reading a live one.
+        (candidate_id,) = {str(row[0]) for row in before}
 
         code = cli(
             [
                 "overture", "link", "--region", "waterloo", "--extract", str(folder),
-                "--osm-pbf", str(pbf), "--json", str(report_path),
+                "--osm-pbf", str(pbf), "--json", str(report_path), "--dataset", candidate_id,
             ]
         )  # fmt: skip
 

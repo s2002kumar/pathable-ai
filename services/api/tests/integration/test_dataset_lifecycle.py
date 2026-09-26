@@ -16,7 +16,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.geo.datasets import (
     DatasetValidationError,
-    activate_dataset,
     get_active_dataset,
     ingest_network,
 )
@@ -26,6 +25,7 @@ from pathable_api.geo.fixtures import build_synthetic_network, load_synthetic_da
 from pathable_api.geo.models import DatasetVersion, GraphEdge, GraphNode, IngestionRun, PilotRegion
 from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload
 from pathable_api.geo.regions import WATERLOO, WATERLOO_SYNTHETIC, seed_pilot_regions, seed_region
+from pathable_api.routing.activation import ActivationRefusedError, activate_candidate
 
 pytestmark = pytest.mark.integration
 
@@ -85,7 +85,6 @@ class TestIngestion:
 
         payload = build_synthetic_network()
         assert result.status is DatasetStatus.ACTIVE
-        assert result.activated is True
         assert result.checksum == payload.checksum()
         assert await _count(db_session, GraphNode) == payload.node_count
         assert await _count(db_session, GraphEdge) == payload.edge_count
@@ -206,11 +205,11 @@ class TestActivation:
 
         dataset = await db_session.get(DatasetVersion, result.dataset_id)
         assert dataset is not None
-        assert dataset.status == DatasetStatus.VALIDATED
+        # Ingestion writes a candidate and stops there.
+        assert dataset.status == DatasetStatus.DRAFT
 
-        dataset.status = DatasetStatus.DRAFT
-        with pytest.raises(Exception, match="only a validated"):
-            await activate_dataset(db_session, dataset)
+        with pytest.raises(ActivationRefusedError, match="only a sealed candidate"):
+            await activate_candidate(db_session, dataset.id)
 
     async def test_ingesting_without_activating_leaves_no_active_dataset(
         self, db_session: AsyncSession
@@ -273,6 +272,7 @@ class TestFailedIngestion:
                 source_type=SourceType.SYNTHETIC,
                 source_name="broken-import",
                 ingestion_configuration={},
+                elevation_required=False,
             )
         await db_session.rollback()
 
@@ -298,6 +298,7 @@ class TestFailedIngestion:
                 source_type=SourceType.SYNTHETIC,
                 source_name="zero-length-edge",
                 ingestion_configuration={},
+                elevation_required=False,
             )
 
         # Still inside the failed transaction: nothing was written even before
@@ -320,6 +321,7 @@ class TestFailedIngestion:
                 source_type=SourceType.SYNTHETIC,
                 source_name="empty-import",
                 ingestion_configuration={},
+                elevation_required=False,
             )
 
         assert "no_nodes" in str(failure.value)
@@ -337,6 +339,7 @@ class TestFailedIngestion:
                 source_type=SourceType.SYNTHETIC,
                 source_name="wrong-place",
                 ingestion_configuration={},
+                elevation_required=False,
                 # Toronto, not Waterloo.
                 declared_bounds=(-79.5, 43.6, -79.3, 43.8),
             )
