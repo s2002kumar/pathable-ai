@@ -657,6 +657,10 @@ def attribute_comparisons(
 ) -> dict[str, Any]:
     """What OSM says about each high-value Kitchener attribute of one record."""
     kitchener = record["kitchener"]
+    if kitchener.get("restricted_lineage"):
+        # A record the City sourced from street-level imagery: its assertions
+        # are not evidence, so nothing is compared.
+        return {"restricted": str(kitchener["restricted_lineage"])}
     ways = [o for o in (label.osm if label else ()) if o.startswith("way/")]
     corresponded = label is not None and label.correspondence in (
         Correspondence.OBVIOUS,
@@ -1097,7 +1101,9 @@ def population_context(inputs: StudyInputs) -> dict[str, Any] | None:
         rows = connection.execute(
             "SELECT activetransportid, curbcut, state_curbcut, feature_type, geometry, "
             "geometry_native FROM read_parquet(?) WHERE geometry IS NOT NULL AND "
-            "((curbcut = 'Y' AND state_curbcut = 'non_default') OR feature_type = 'STAIRS')",
+            "((curbcut = 'Y' AND state_curbcut = 'non_default') OR feature_type = 'STAIRS') "
+            # Street-level-imagery-sourced records are never evidence.
+            "AND source_class <> 'street_level_imagery'",
             [inputs.parquet.as_posix()],
         ).fetchall()
     finally:

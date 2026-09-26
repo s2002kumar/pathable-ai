@@ -22,6 +22,7 @@ from pathable_api.geo.kitchener.study import (
     SampleFeature,
     StudyError,
     StudyInputs,
+    attribute_comparisons,
     compare_surface,
     completeness,
     history_document,
@@ -289,6 +290,20 @@ class TestAttributeResults:
         assert results["condition"]["comparison"] == {"both_present": 1}
         # Sidewalk 1001's CONCRETE is a template default: OSM's surface is OSM's alone.
         assert 1001 in results["osm_only"]["surface"]["examples"]
+
+    def test_a_record_sourced_from_street_level_imagery_is_never_compared(
+        self, inputs: StudyInputs
+    ) -> None:
+        document = run_study(inputs, labels=osm_fixture.labels())
+        record = dict(_record(document, 1002))
+        record["kitchener"] = {
+            **record["kitchener"],
+            "restricted_lineage": "restricted_or_unresolved_lineage",
+        }
+
+        compared = attribute_comparisons(record, None, document["osm_elements"], None)
+
+        assert compared == {"restricted": "restricted_or_unresolved_lineage"}
 
     def test_population_context_is_proximity_over_every_record(self, inputs: StudyInputs) -> None:
         context = run_study(inputs, labels=osm_fixture.labels())["population_context"]
