@@ -13,6 +13,13 @@ decision is made by :mod:`pathable_api.geo.features`,
 exactly as it is for an Overpass import. A parity test routes the same area from
 both sources and requires identical normalised attributes.
 
+**Provenance.** An extract carries every element's version and the time that
+version was saved, and they are recorded with the dataset: for each node, its
+own; for each segment, its way's, plus the latest edit across the way and every
+node it references. A way keeps its version when one of its nodes moves, so
+"same way, same version" does not mean "same shape" — the latest member edit is
+what tells the two apart. An Overpass import has neither and records neither.
+
 Reader choice: ``osmium`` (pyosmium). It is BSD-2, ships Python 3.13 wheels for
 Windows and Linux, depends on neither numpy nor pandas — so it cannot conflict
 with the geospatial stack — and exposes node tags, which most alternatives do
@@ -24,6 +31,7 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError, version
 from itertools import pairwise
@@ -36,7 +44,7 @@ from shapely.geometry import LineString, Point
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.directionality import normalise_foot_direction
 from pathable_api.geo.features import normalise_edge
-from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload
+from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload, OsmEdit
 from pathable_api.geo.node_evidence import apply_to_crossing, read_node_evidence
 
 logger = get_logger(__name__)
@@ -120,6 +128,32 @@ class _Collected:
     node_coordinates: dict[int, tuple[float, float]] = field(default_factory=dict)
     node_tags: dict[int, dict[str, str]] = field(default_factory=dict)
     ways: list[tuple[int, dict[str, str], list[int]]] = field(default_factory=list)
+    #: (version, edit time as UNIX seconds or None) per node read. Integers
+    #: rather than datetimes: this holds every node near the region until the
+    #: unreferenced ones are dropped.
+    node_edits: dict[int, tuple[int, int | None]] = field(default_factory=dict)
+    way_edits: dict[int, tuple[int, int | None]] = field(default_factory=dict)
+
+
+def _epoch(timestamp: dt.datetime | None) -> int | None:
+    """An edit time as UNIX seconds, or None where the file carries none.
+
+    Extracts written without metadata report the epoch itself; that is an
+    absence, not a date.
+    """
+    if timestamp is None:
+        return None
+    seconds = int(timestamp.timestamp())
+    return seconds if seconds > 0 else None
+
+
+def _instant(seconds: int | None) -> dt.datetime | None:
+    return None if seconds is None else dt.datetime.fromtimestamp(seconds, tz=dt.UTC)
+
+
+def _positive(version: int) -> int | None:
+    # Version 0 is what osmium reports when the file carries no versions.
+    return version if version > 0 else None
 
 
 def _osmium_version() -> str:
@@ -192,6 +226,9 @@ def read_pbf(
 
         node_id = int(node.id)
         collected.node_coordinates[node_id] = (longitude, latitude)
+        version = _positive(int(node.version))  # type: ignore[union-attr]
+        if version is not None:
+            collected.node_edits[node_id] = (version, _epoch(node.timestamp))  # type: ignore[union-attr]
         tags = {tag.k: tag.v for tag in node.tags}
         if tags and INFORMATIVE_NODE_TAGS.intersection(tags):
             collected.node_tags[node_id] = tags
@@ -225,6 +262,9 @@ def read_pbf(
         if not any(ref in inside for ref in refs):
             continue
         collected.ways.append((int(way.id), tags, refs))
+        version = _positive(int(way.version))  # type: ignore[union-attr]
+        if version is not None:
+            collected.way_edits[int(way.id)] = (version, _epoch(way.timestamp))  # type: ignore[union-attr]
 
     # Drop coordinates nothing referenced, so the payload does not carry the
     # whole margin as isolated nodes.
@@ -237,6 +277,9 @@ def read_pbf(
     collected.node_tags = {
         node_id: tags for node_id, tags in collected.node_tags.items() if node_id in referenced
     }
+    collected.node_edits = {
+        node_id: edit for node_id, edit in collected.node_edits.items() if node_id in referenced
+    }
 
     logger.info(
         "Read walkable ways from extract",
@@ -247,6 +290,35 @@ def read_pbf(
         },
     )
     return collected
+
+
+def _osm_edit(edit: tuple[int, int | None] | None) -> OsmEdit | None:
+    if edit is None:
+        return None
+    version, seconds = edit
+    return OsmEdit(version=version, edited_at=_instant(seconds))
+
+
+def latest_member_edit(
+    way_edit: tuple[int, int | None] | None,
+    refs: list[int],
+    node_edits: Mapping[int, tuple[int, int | None]],
+) -> dt.datetime | None:
+    """The latest edit across a way and every node it references.
+
+    Unknown — None — as soon as any one of them is: a node outside the area that
+    was read, or an element whose edit time the file does not carry. A maximum
+    over the ones that could be read would look like evidence and be a guess.
+    """
+    if way_edit is None or way_edit[1] is None:
+        return None
+    latest = way_edit[1]
+    for ref in refs:
+        node_edit = node_edits.get(ref)
+        if node_edit is None or node_edit[1] is None:
+            return None
+        latest = max(latest, node_edit[1])
+    return _instant(latest)
 
 
 def _is_walkable(tags: dict[str, str]) -> bool:
@@ -297,6 +369,9 @@ def collected_to_payload(
     for way_id, tags, refs in collected.ways:
         features_base = normalise_edge(dict(tags))
         direction = normalise_foot_direction(dict(tags))
+        way_edit = collected.way_edits.get(way_id)
+        way_osm = _osm_edit(way_edit)
+        way_latest = latest_member_edit(way_edit, refs, collected.node_edits)
 
         for index, (start_ref, end_ref) in enumerate(pairwise(refs)):
             if start_ref == end_ref:
@@ -327,6 +402,8 @@ def collected_to_payload(
                     features=features,
                     source_way_id=str(way_id),
                     direction=direction,
+                    osm_way=way_osm,
+                    osm_way_latest_edit_at=way_latest,
                 )
             )
 
@@ -335,6 +412,7 @@ def collected_to_payload(
             source_node_id=str(node_id),
             geometry=Point(*collected.node_coordinates[node_id]),
             raw_tags=dict(collected.node_tags.get(node_id, {})),
+            osm=_osm_edit(collected.node_edits.get(node_id)),
         )
         for node_id in sorted(used_nodes)
     ]
@@ -356,6 +434,7 @@ def import_from_pbf(
 
     collected = read_pbf(path, bounds)
     payload = collected_to_payload(collected, bounds)
+    provenance = describe_provenance(payload)
 
     logger.info(
         "PBF network imported",
@@ -383,8 +462,25 @@ def import_from_pbf(
             "excluded_highways": sorted(EXCLUDED_HIGHWAYS),
             "simplify": False,
             "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+            "osm_provenance": provenance,
         },
         retrieved_at=retrieved_at,
         file_sha256=digest,
         file_bytes=size,
     )
+
+
+def describe_provenance(payload: NetworkPayload) -> dict[str, Any]:
+    """How much of the dataset carries OSM edit provenance, counted."""
+    nodes_with = sum(1 for node in payload.nodes if node.osm is not None)
+    edges_with = sum(1 for edge in payload.edges if edge.osm_way is not None)
+    edges_latest = sum(1 for edge in payload.edges if edge.osm_way_latest_edit_at is not None)
+    return {
+        "captured": True,
+        "method": "element version and edit time read from the extract at ingestion",
+        "nodes": payload.node_count,
+        "nodes_with_version": nodes_with,
+        "edges": payload.edge_count,
+        "edges_with_way_version": edges_with,
+        "edges_with_way_latest_edit": edges_latest,
+    }

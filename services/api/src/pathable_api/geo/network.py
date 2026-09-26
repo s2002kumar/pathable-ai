@@ -7,6 +7,7 @@ whatever the source was.
 
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -19,10 +20,23 @@ from pathable_api.geo.geometry import geodesic_length_m
 
 
 @dataclass(frozen=True, slots=True)
+class OsmEdit:
+    """An OSM element's version and when that version was saved.
+
+    Only a source that carries them supplies one. Absent means unknown — not
+    unchanged, and not old.
+    """
+
+    version: int
+    edited_at: dt.datetime | None
+
+
+@dataclass(frozen=True, slots=True)
 class NetworkNode:
     source_node_id: str
     geometry: Point
     raw_tags: dict[str, Any] = field(default_factory=dict)
+    osm: OsmEdit | None = None
 
     @property
     def longitude(self) -> float:
@@ -45,6 +59,12 @@ class NetworkEdge:
     #: only ever comes from a foot-specific tag.
     direction: FootDirection = TWO_WAY
     length_m: float | None = None
+    #: The source way's version and edit time.
+    osm_way: OsmEdit | None = None
+    #: The latest edit across the way and every node it references; None when
+    #: any of them could not be read. A moved node changes a way's shape without
+    #: changing the way's version, and this is what shows it.
+    osm_way_latest_edit_at: dt.datetime | None = None
 
     @property
     def directed(self) -> bool:

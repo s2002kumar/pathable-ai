@@ -443,6 +443,13 @@ def import_walk_network(
             "requested_node_tags": list(ACCESSIBILITY_NODE_TAGS),
             # ODbL requires attribution wherever this data is shown.
             "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+            # Overpass through OSMnx returns elements without their `meta`
+            # block, so no version or edit time reaches this import. They are
+            # stored as unknown rather than filled from anywhere else.
+            "osm_provenance": {
+                "captured": False,
+                "reason": "Overpass via OSMnx returns no element versions or edit times",
+            },
         },
         retrieved_at=retrieved_at,
     )
