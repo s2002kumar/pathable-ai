@@ -1,11 +1,16 @@
 'use client';
 
-import type { GradientSummary, Route, RouteCompareResponse } from '@pathable/contracts';
-import type { RouteFocus } from '@/features/map/route-layers';
-import { RouteDifference } from './RouteDifference';
-import { differenceIsBelowDisplayPrecision } from './route-identity';
-import type { StairsTarget } from './types';
-import { formatDistance, formatDuration } from './types';
+import type { RouteCompareResponse } from '@pathable/contracts';
+import {
+  EvidenceCoverage,
+  ReasonGroups,
+  RouteDifference,
+  SingleRoute,
+  UncertaintySummary,
+  routeLabel,
+} from './RouteDifference';
+import { type RouteVariant, exclusionLabel, exclusionsOf, verdictOf } from './route-evidence';
+import { formatDistance } from './types';
 import styles from './RoutePlanner.module.css';
 
 /**
@@ -16,28 +21,25 @@ import styles from './RoutePlanner.module.css';
  * or deciding whether a journey is possible before leaving the house, gets the
  * whole story here without ever interpreting two coloured lines.
  *
- * Order matters: the headline and the figures first, the per-route cards and
- * cautions next, and the fuller detail — what is on the route, where the data
- * came from — behind labelled disclosures. Nothing is removed; the parts a
- * viewer opens are the parts they asked for.
+ * Order is the design: the verdict and the two routes first, the reason that
+ * decided it, and how much of the route the map is silent about — all on the
+ * first screen. Then every reason by topic, then the per-category record, and
+ * where the data came from last.
  */
 export function RouteComparisonView({
   comparison,
-  focusedRoute = null,
-  onFocusRoute = () => {},
+  selectedRoute,
+  onSelectRoute = () => {},
   onEditJourney,
-  stairsTarget = null,
-  onShowStairs = () => {},
   journeySummary,
   pendingEdits = false,
 }: {
   readonly comparison: RouteCompareResponse;
-  readonly focusedRoute?: RouteFocus;
-  readonly onFocusRoute?: (focus: RouteFocus) => void;
+  /** Which route the map brings forward; the profile's own route by default. */
+  readonly selectedRoute?: RouteVariant;
+  readonly onSelectRoute?: (variant: RouteVariant) => void;
   /** Takes the viewer to the planning controls below, keeping this result. */
   readonly onEditJourney?: () => void;
-  readonly stairsTarget?: StairsTarget;
-  readonly onShowStairs?: (target: StairsTarget) => void;
   /** The journey this answer belongs to, named. */
   readonly journeySummary?: string;
   /** True when the panel's draft has moved on from that journey. */
@@ -45,6 +47,10 @@ export function RouteComparisonView({
 }) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
   const bothRoutes = Boolean(standard && accessible);
+  // The route the detail below describes: the chosen one, or whichever exists.
+  const shown: RouteVariant =
+    bothRoutes && selectedRoute ? selectedRoute : accessible ? 'accessible' : 'standard';
+  const shownRoute = shown === 'standard' ? standard : accessible;
 
   return (
     <div className={styles.results}>
@@ -57,9 +63,6 @@ export function RouteComparisonView({
           <p className={styles.journeyLine} data-testid="journey-summary">
             <span className={styles.journeyPlaces}>{journeySummary}</span>
             <span className={styles.journeyProfile}>{comparison.profile_display_name}</span>
-            {/* Beside the journey it edits, rather than a block of its own
-                further down: it is the same thought, and on a phone the block
-                was what pushed the caution off the first screen. */}
             {onEditJourney ? (
               <button
                 type="button"
@@ -86,52 +89,27 @@ export function RouteComparisonView({
         ) : null}
 
         <RouteHeadline comparison={comparison} />
-        <RouteDifference
-          comparison={comparison}
-          focusedRoute={focusedRoute}
-          onFocusRoute={onFocusRoute}
-          stairsTarget={stairsTarget}
-          onShowStairs={onShowStairs}
-        />
+
+        {bothRoutes ? (
+          <RouteDifference
+            comparison={comparison}
+            selectedRoute={shown}
+            onSelectRoute={onSelectRoute}
+          />
+        ) : (
+          <div className={styles.options}>
+            {accessible ? <SingleRoute comparison={comparison} variant="accessible" /> : null}
+            {standard ? <SingleRoute comparison={comparison} variant="standard" /> : null}
+          </div>
+        )}
+
+        {shownRoute ? <UncertaintySummary route={shownRoute} /> : null}
       </div>
 
-      {/* Only where there is nothing to compare against. With both routes
-          present, `RouteDifference` above already carries each route's
-          distance, walking time and stairways beside the control that
-          highlights it on the map; a second pair of cards repeating those
-          figures was the longest block in the panel and said nothing new. */}
-      {bothRoutes ? null : (
-        <div className={styles.routeCards}>
-          {accessible ? (
-            <RouteCard
-              route={accessible}
-              label={comparison.profile_display_name}
-              variant="accessible"
-              emphasis
-            />
-          ) : null}
-          {standard ? (
-            <RouteCard route={standard} label="Shortest walking route" variant="standard" />
-          ) : null}
-        </div>
-      )}
+      <ReasonGroups comparison={comparison} />
 
-      {/* RouteDifference above already carries these statements, sorted by
-          where each came from. It only renders when there are two routes to
-          compare, so this stays for the single-route cases. */}
-      {comparison.explanations.length > 0 && !bothRoutes ? (
-        <section className={styles.section} aria-labelledby="route-explanations-heading">
-          <h3 className={styles.sectionHeading} id="route-explanations-heading">
-            Every statement behind this route
-          </h3>
-          <ul className={styles.reasonList}>
-            {comparison.explanations.map((explanation) => (
-              <li key={explanation.code} className={styles.reason}>
-                {explanation.summary}
-              </li>
-            ))}
-          </ul>
-        </section>
+      {shownRoute ? (
+        <EvidenceCoverage route={shownRoute} label={routeLabel(comparison, shown)} />
       ) : null}
 
       {comparison.cautions.length > 0 ? (
@@ -149,16 +127,31 @@ export function RouteComparisonView({
         </section>
       ) : null}
 
-      <details className="disclosure" data-testid="route-detail">
-        <summary>What is on this route</summary>
-        <div className={styles.disclosureBody}>
-          <ObstacleBreakdown route={accessible ?? standard ?? null} />
-        </div>
-      </details>
+      {/* The statements behind a single route, where there is no pair to group
+          them under. */}
+      {comparison.explanations.length > 0 && !bothRoutes ? (
+        <section className={styles.section} aria-labelledby="route-explanations-heading">
+          <h3 className={styles.sectionHeading} id="route-explanations-heading">
+            Every statement behind this route
+          </h3>
+          <ul className={styles.reasonList}>
+            {comparison.explanations.map((explanation) => (
+              <li key={explanation.code} className={styles.reason}>
+                {explanation.summary}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <details className="disclosure" data-testid="route-provenance">
         <summary>Where this comes from</summary>
         <div className={`${styles.disclosureBody} ${styles.provenance}`}>
+          <p>
+            “Recorded” means a mapper wrote it down in OpenStreetMap. “Estimated from elevation”
+            means PathAble derived it from a terrain model of the ground. “Not recorded” means
+            nobody has.
+          </p>
           <MapAge dataset={comparison.dataset} />
           <p className={styles.attribution}>
             {comparison.dataset.attribution} · dataset{' '}
@@ -223,233 +216,84 @@ function MapAge({ dataset }: { readonly dataset: RouteCompareResponse['dataset']
  * It states the difference the response reports, in the profile's own name,
  * and it never rounds a real difference away: a 10 m detour is "10 m longer".
  * The only time it says "the same length" is when the two distances display
- * as the same number — differences under half a metre, the display precision
- * of `formatDistance` — and then it says "to the nearest metre". A missing
- * difference is reported as missing, not as equality. Nothing here says the
- * routes are the same path; that is a question of geometry, answered by
- * `routesSharePath` from the response's own segments.
+ * as the same number — differences under half a metre — and then it says "to
+ * the nearest metre". "The same route" is said only from segment identity. A
+ * missing difference is reported as missing, not as equality.
+ *
+ * When no route meets the profile it says so calmly, says what rules the
+ * shortest route out, and says the limits were not loosened to find one:
+ * quietly relaxing them would hand back a route the traveller told us they
+ * cannot use.
  */
 function RouteHeadline({ comparison }: { readonly comparison: RouteCompareResponse }) {
   const profile = comparison.profile_display_name.toLowerCase();
+  const verdict = verdictOf(comparison);
 
-  if (comparison.accessible_route === null) {
-    return (
-      <p className={styles.headlineBad} role="status">
-        {comparison.accessible_failure ??
-          `No route meets the ${profile} profile between these points.`}
-      </p>
-    );
-  }
-
-  if (comparison.standard_route === null) {
-    return (
-      <p className={styles.headline} role="status">
-        A route was found for {profile}.
-      </p>
-    );
-  }
-
-  const extra = comparison.extra_distance_m;
-  if (typeof extra !== 'number') {
-    return (
-      <p className={styles.headline} role="status">
-        A {profile} route and the shortest walking route were both found; the response did not
-        report the difference in length.
-      </p>
-    );
-  }
-
-  if (differenceIsBelowDisplayPrecision(extra)) {
-    return (
-      <p className={styles.headlineGood} role="status">
-        The {profile} route and the shortest walking route are the same length to the nearest metre.
-      </p>
-    );
-  }
-
-  const fraction = comparison.extra_distance_fraction ?? 0;
-  return (
-    <p className={styles.headline} role="status">
-      The {profile} route is <strong className="tabular">{formatDistance(Math.abs(extra))}</strong>{' '}
-      {extra > 0 ? 'longer' : 'shorter'} than the shortest walking route
-      {Math.abs(fraction) >= 0.01 ? ` (${Math.round(Math.abs(fraction) * 100)}%)` : ''}.
-    </p>
-  );
-}
-
-function RouteCard({
-  route,
-  label,
-  variant,
-  emphasis = false,
-}: {
-  readonly route: Route;
-  readonly label: string;
-  readonly variant: 'standard' | 'accessible';
-  readonly emphasis?: boolean;
-}) {
-  return (
-    <article
-      className={emphasis ? `${styles.routeCard} ${styles.routeCardPrimary}` : styles.routeCard}
-      data-variant={variant}
-      data-testid={`route-card-${variant}`}
-    >
-      <header className={styles.routeCardHeader}>
-        {/* A swatch alone would not be a label; the text carries the meaning and
-            the swatch only helps someone match it to the map. */}
-        <span className={styles.swatch} data-variant={variant} aria-hidden="true" />
-        <h3 className={styles.routeCardTitle}>{label}</h3>
-      </header>
-      <dl className={styles.stats}>
-        <div className={styles.stat}>
-          <dt>Distance</dt>
-          <dd>{formatDistance(route.distance_m)}</dd>
+  switch (verdict.kind) {
+    case 'no_accessible_route': {
+      const blocked = exclusionsOf(comparison.standard_route);
+      return (
+        <div className={styles.noRoute} role="status" data-testid="no-accessible-route">
+          <p className={styles.noRouteTitle}>
+            No route meets the {profile} profile between these points.
+          </p>
+          {blocked.length > 0 ? (
+            <p>
+              The shortest walking route is ruled out by {blocked.map(exclusionLabel).join(', ')}.
+            </p>
+          ) : null}
+          {verdict.failure ? <p className={styles.noRouteDetail}>{verdict.failure}</p> : null}
+          <p className={styles.noRouteDetail}>
+            PathAble does not loosen your profile’s limits to find one.
+          </p>
         </div>
-        <div className={styles.stat}>
-          <dt>Estimated time</dt>
-          <dd>{formatDuration(route.estimated_duration_seconds)}</dd>
-        </div>
-        <div className={styles.stat}>
-          <dt>Stairways</dt>
-          <dd>
-            {route.stairway_count === 0
-              ? 'None'
-              : `${route.stairway_count}${route.step_count > 0 ? ` (${route.step_count} steps)` : ''}`}
-          </dd>
-        </div>
-      </dl>
-    </article>
-  );
-}
-
-/** How each missing category reads in a sentence, singular to the user's concern. */
-const GAP_LABELS: Readonly<Record<string, string>> = {
-  surface: 'Surface data is missing',
-  smoothness: 'Surface condition is missing',
-  gradient: 'Gradient data is missing',
-  width: 'Path width is missing',
-  kerb: 'Kerb information is missing',
-};
-
-/** Below this, naming the gap is noise rather than information. */
-const GAP_THRESHOLD = 0.05;
-
-/**
- * What the map does not say about this route, one category at a time.
- *
- * "Surface data is missing for 38% of this route" tells somebody what to expect
- * and what to check. A single combined uncertainty figure does not: a route
- * missing every surface tag and one missing every gradient produce the same
- * number and are completely different journeys.
- */
-function EvidenceGaps({ route }: { readonly route: Route | null }) {
-  if (route === null) return null;
-
-  const gaps = Object.entries(route.evidence_coverage ?? {})
-    .filter(([category, share]) => share >= GAP_THRESHOLD && category in GAP_LABELS)
-    .sort(([, a], [, b]) => b - a);
-
-  if (gaps.length === 0) return null;
-
-  return (
-    <section className={styles.section} aria-labelledby="route-gaps-heading">
-      <h3 className={styles.sectionHeading} id="route-gaps-heading">
-        What the map does not say
-      </h3>
-      <ul className={styles.cautionList}>
-        {gaps.map(([category, share]) => (
-          <li className={styles.caution} key={category}>
-            {GAP_LABELS[category]} for {Math.round(share * 100)}% of this route
-            {category === 'kerb' ? "'s crossings" : ''}.
-          </li>
-        ))}
-      </ul>
-      <p className={styles.hint}>
-        Missing information is not a sign that a path is clear. It means nobody has recorded it.
-      </p>
-    </section>
-  );
-}
-
-/** A share of the route, as a sentence states it. */
-function sharePhrase(share: number): string {
-  const percent = Math.round(share * 100);
-  if (percent === 0) return 'under 1%';
-  if (percent === 100 && share < 1) return 'over 99%';
-  return `${percent}%`;
-}
-
-/**
- * Where this route's gradients came from, share by share.
- *
- * Read from the gradient summary, which keeps recorded and estimated apart. It
- * used to hinge on OpenStreetMap's steepest figure and stay silent whenever a
- * route's gradients were all estimated — which, with incline recorded on 46 of
- * 180,554 Waterloo segments, is almost every route.
- */
-function GradientProvenance({ route }: { readonly route: Route | null }) {
-  if (route === null) return null;
-  const { recorded_fraction, estimated_fraction, unknown_fraction } = route.gradient;
-
-  const parts: string[] = [];
-  if (recorded_fraction > 0) {
-    parts.push(`recorded in OpenStreetMap for ${sharePhrase(recorded_fraction)} of it`);
+      );
+    }
+    case 'no_shortest_route':
+      return (
+        <p className={styles.headline} role="status">
+          A route was found for {profile}.
+        </p>
+      );
+    case 'difference_not_reported':
+      return (
+        <p className={styles.headline} role="status">
+          A {profile} route and the shortest walking route were both found; the response did not
+          report the difference in length.
+        </p>
+      );
+    case 'same_route':
+      return (
+        <p className={styles.headlineGood} role="status">
+          The shortest walking route already fits the {profile} profile’s rules — both are the same
+          route.
+        </p>
+      );
+    case 'same_length':
+      return (
+        <p className={styles.headlineGood} role="status">
+          The {profile} route and the shortest walking route are the same length to the nearest
+          metre.
+        </p>
+      );
+    case 'shorter':
+      return (
+        <p className={styles.headline} role="status">
+          The {profile} route is{' '}
+          <strong className="tabular">{formatDistance(verdict.savedM)}</strong> shorter than the
+          shortest walking route.
+        </p>
+      );
+    case 'detour': {
+      const fraction = verdict.fraction ?? 0;
+      return (
+        <p className={styles.headline} role="status">
+          The {profile} route is{' '}
+          <strong className="tabular">{formatDistance(verdict.extraM)}</strong> longer than the
+          shortest walking route
+          {Math.abs(fraction) >= 0.01 ? ` (${Math.round(Math.abs(fraction) * 100)}%)` : ''}.
+        </p>
+      );
+    }
   }
-  if (estimated_fraction > 0) {
-    parts.push(
-      `estimated from an elevation model of the ground for ${sharePhrase(estimated_fraction)} — it describes the ground, not the path, so it cannot see a ramp or a step`,
-    );
-  }
-  if (unknown_fraction > 0) {
-    parts.push(`not on record for ${sharePhrase(unknown_fraction)}`);
-  }
-  if (parts.length === 0) return null;
-
-  return (
-    <p className={styles.hint} data-testid="gradient-provenance">
-      Gradient on this route: {parts.join('; ')}.
-    </p>
-  );
-}
-
-/** A steepest gradient, with the kind of evidence it rests on. */
-function gradeText(extreme: GradientSummary['steepest_uphill']): string {
-  if (extreme === null) return 'None on record';
-  const kind = extreme.source === 'osm_incline' ? 'recorded' : 'estimated';
-  return `${extreme.percent.toFixed(1)}% (${kind})`;
-}
-
-/**
- * What the route actually contains.
- *
- * Reported as counts of recorded facts, with unknowns named as unknowns. An
- * "accessibility score" would be easier to read and would be an invention.
- */
-function ObstacleBreakdown({ route }: { readonly route: Route | null }) {
-  if (route === null) return null;
-
-  return (
-    <section className={styles.section} aria-label="What is on this route">
-      <dl className={styles.stats}>
-        <div className={styles.stat}>
-          <dt>Road crossings</dt>
-          <dd>{route.crossing_count}</dd>
-        </div>
-        <div className={styles.stat}>
-          <dt>Crossings with no recorded kerb</dt>
-          <dd>{route.unknown_kerb_crossing_count}</dd>
-        </div>
-        <div className={styles.stat}>
-          <dt>Steepest climb</dt>
-          <dd data-testid="steepest-climb">{gradeText(route.gradient.steepest_uphill)}</dd>
-        </div>
-        <div className={styles.stat}>
-          <dt>Steepest descent</dt>
-          <dd data-testid="steepest-descent">{gradeText(route.gradient.steepest_downhill)}</dd>
-        </div>
-      </dl>
-      <GradientProvenance route={route} />
-      <EvidenceGaps route={route} />
-    </section>
-  );
 }

@@ -13,6 +13,8 @@ import {
   hasPendingEndpointEdits,
   journeyOf,
   nextRole,
+  parseUphillLimit,
+  profileSelectionOf,
 } from './types';
 
 vi.mock('maplibre-gl', () => ({
@@ -188,7 +190,6 @@ function renderPlanner(overrides: Partial<Parameters<typeof RoutePlanner>[0]> = 
     pendingEdits: false,
     pickTarget: null,
     submittedSummary: 'Davis Centre library to Student Life Centre',
-    stairsTarget: null,
     onRunExample: vi.fn(),
     onProfileChange: vi.fn(),
     onCompare: vi.fn(),
@@ -269,16 +270,17 @@ describe('RoutePlanner', () => {
     // is load-bearing in the second — step_count sums only the stairways
     // somebody counted, so it is a floor and never a total.
     expect(screen.getByTestId('difference-shortest')).toHaveTextContent(
-      '1 stairway (14 recorded steps)',
+      '1 stairway · 14 recorded steps',
     );
-    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('no recorded stairways');
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('No recorded stairs');
   });
 
   it('lists the evidence-backed reasons for the detour', () => {
     renderPlanner();
 
-    expect(screen.getByText(/Avoids 1 stairway \(14 steps in total\)/)).toBeInTheDocument();
-    expect(screen.getByText(/no kerb has been recorded/)).toBeInTheDocument();
+    const reasons = within(screen.getByTestId('difference-reasons'));
+    expect(reasons.getByText(/Avoids 1 stairway \(14 steps in total\)/)).toBeInTheDocument();
+    expect(reasons.getByText(/no kerb has been recorded/)).toBeInTheDocument();
   });
 
   it('shows the missing-data caution without softening it', () => {
@@ -339,9 +341,8 @@ describe('RoutePlanner', () => {
       },
     });
 
-    // Scoped to the breakdown: the difference block states gradients too, and
-    // the assertion is about the route's own figures.
-    const breakdown = screen.getByRole('region', { name: /what is on this route/i });
+    // Scoped to the breakdown of the route being described.
+    const breakdown = screen.getByTestId('evidence-coverage');
     expect(within(breakdown).getByTestId('steepest-climb')).toHaveTextContent('None on record');
     expect(within(breakdown).getByTestId('steepest-descent')).toHaveTextContent('None on record');
     expect(within(breakdown).queryByText(/0\.0%/)).not.toBeInTheDocument();
@@ -378,7 +379,7 @@ describe('RoutePlanner', () => {
     const user = userEvent.setup();
     const { props } = renderPlanner();
 
-    await user.selectOptions(screen.getByTestId('mobility-profile'), 'crutches');
+    await user.click(screen.getByRole('radio', { name: 'Crutches or cane' }));
 
     expect(props.onProfileChange).toHaveBeenCalledWith('crutches');
   });
@@ -581,15 +582,18 @@ describe('RouteWorkspace', () => {
     attribution: '© test',
   };
 
-  it('requests nothing until both endpoints are chosen', async () => {
-    const fetchImpl = vi.fn() as unknown as typeof fetch;
+  it('requests no route until both endpoints are chosen', async () => {
+    const fetchImpl = vi.fn(async (_url: string) => new Response('{}', { status: 503 }));
 
-    render(<RouteWorkspace {...config} fetchImpl={fetchImpl} />);
+    render(<RouteWorkspace {...config} fetchImpl={fetchImpl as unknown as typeof fetch} />);
 
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'idle'),
     );
-    expect(fetchImpl).not.toHaveBeenCalled();
+    // The profile rules are fetched at once; a route never is.
+    const urls = fetchImpl.mock.calls.map(([url]) => String(url));
+    expect(urls.filter((url) => url.includes('/routes/compare'))).toEqual([]);
+    expect(urls).toContain('http://api.test/api/v1/routes/profiles');
   });
 
   it('shows no map key until there are routes for it to explain', () => {
@@ -649,34 +653,40 @@ describe('evidence gaps', () => {
   it('names which fact is missing rather than reporting one combined figure', () => {
     render(<RouteComparisonView comparison={COMPARISON} />);
 
-    // "Surface data is missing for 38% of this route" is actionable; a single
+    // "Surface is missing on 38% of this route" is actionable; a single
     // uncertainty number is not — two routes missing entirely different things
     // produce the same figure.
-    expect(screen.getByText(/Surface data is missing for 38% of this route/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Surface condition is missing for 72% of this route/),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('coverage-surface')).toHaveTextContent(
+      '62% recorded · 38% not recorded',
+    );
+    expect(screen.getByTestId('coverage-smoothness')).toHaveTextContent(
+      '28% recorded · 72% not recorded',
+    );
+    // Kerbs are counted over crossings, not over the route's length.
+    expect(screen.getByTestId('coverage-kerb')).toHaveTextContent('1 of 1 crossing recorded');
   });
 
-  it('does not clutter the answer with gaps too small to act on', () => {
+  it('states a small gap as small rather than rounding it away', () => {
     render(<RouteComparisonView comparison={COMPARISON} />);
 
-    expect(screen.queryByText(/Gradient data is missing/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('coverage-gradient')).toHaveTextContent(
+      '99% estimated · 1% not recorded',
+    );
   });
 
   it('says a gradient was inferred from terrain rather than recorded on the path', () => {
     render(<RouteComparisonView comparison={COMPARISON} />);
 
     const provenance = screen.getByTestId('gradient-provenance');
-    expect(provenance).toHaveTextContent(/estimated from an elevation model/);
+    expect(provenance).toHaveTextContent(/elevation model of the ground/);
     expect(provenance).toHaveTextContent(/cannot see a ramp or a step/);
-    expect(screen.getByTestId('steepest-climb')).toHaveTextContent('4.0% (estimated)');
+    expect(screen.getByTestId('steepest-climb')).toHaveTextContent('4.0%Estimated from elevation');
   });
 
   it('does not let a missing record read as evidence the path is clear', () => {
     render(<RouteComparisonView comparison={COMPARISON} />);
 
-    expect(screen.getByText(/It means nobody has recorded it/)).toBeInTheDocument();
+    expect(screen.getByText(/it means nobody has mapped it/)).toBeInTheDocument();
   });
 });
 
@@ -694,7 +704,10 @@ describe('draft versus submitted journey', () => {
   it('is not a journey until both ends exist', () => {
     expect(journeyOf({ origin: null, destination: null }, 'wheelchair')).toBeNull();
     expect(journeyOf({ origin: ORIGIN, destination: null }, 'wheelchair')).toBeNull();
-    expect(journeyOf({ origin: ORIGIN, destination: DESTINATION }, 'wheelchair')).toEqual(journey);
+    expect(journeyOf({ origin: ORIGIN, destination: DESTINATION }, 'wheelchair')).toEqual({
+      ...journey,
+      uphillLimitPercent: null,
+    });
   });
 
   it('sees no pending edit while the draft still matches what was asked', () => {
@@ -730,24 +743,15 @@ describe('draft versus submitted journey', () => {
   });
 });
 
-describe('the recorded-stairs overlay', () => {
-  it('offers the route that has stairs, and says how many', () => {
+describe('stairs, as the route cards state them', () => {
+  it('says how many, and that the step total is a floor', () => {
     renderPlanner();
 
-    expect(screen.getByTestId('show-recorded-stairs')).toHaveTextContent(
-      /show the recorded stairs/i,
+    // "recorded" is load-bearing: step_count sums only the stairways somebody
+    // counted, so it is a floor and never a total.
+    expect(screen.getByTestId('difference-shortest')).toHaveTextContent(
+      '1 stairway · 14 recorded steps',
     );
-    expect(screen.getByTestId('recorded-stairs-note')).toHaveTextContent(
-      /1 stairway is recorded on the shortest walking route/i,
-    );
-  });
-
-  it('says what it highlighted, and that the step total is a floor', () => {
-    renderPlanner({ stairsTarget: 'standard' });
-
-    const note = screen.getByTestId('recorded-stairs-note');
-    expect(note).toHaveTextContent(/1 stairway recorded/i);
-    expect(note).toHaveTextContent(/14 recorded steps/i);
   });
 
   it('calls zero "no recorded stairs" rather than "no stairs"', () => {
@@ -761,10 +765,126 @@ describe('the recorded-stairs overlay', () => {
 
     renderPlanner({ state: { status: 'success', comparison: noStairs } });
 
-    expect(screen.getByTestId('recorded-stairs-none')).toHaveTextContent(/no recorded stairs/i);
-    expect(screen.getByTestId('recorded-stairs-none')).toHaveTextContent(
-      /has not been confirmed that there are none/i,
-    );
-    expect(screen.queryByTestId('show-recorded-stairs')).not.toBeInTheDocument();
+    for (const id of ['difference-shortest', 'difference-accessible']) {
+      expect(screen.getByTestId(id)).toHaveTextContent('No recorded stairs');
+      expect(screen.getByTestId(id)).not.toHaveTextContent(/\bno stairs\b/i);
+    }
+  });
+});
+
+/**
+ * The traveller's own uphill limit: off by default, exact when on, and a
+ * custom profile built by the API rather than a copy of its rules.
+ */
+describe('the uphill limit', () => {
+  const journey = { origin: ORIGIN, destination: DESTINATION, profileKey: 'walker' as const };
+
+  it('is off, and sends a preset, until the traveller turns it on', () => {
+    expect(parseUphillLimit({ enabled: false, text: '' })).toEqual({ ok: true, percent: null });
+    expect(profileSelectionOf(journey)).toEqual({ key: 'walker' });
+    expect(profileSelectionOf({ ...journey, uphillLimitPercent: null })).toEqual({
+      key: 'walker',
+    });
+  });
+
+  it('sends the number exactly as typed, on the chosen preset', () => {
+    expect(parseUphillLimit({ enabled: true, text: ' 4.75 ' })).toEqual({
+      ok: true,
+      percent: 4.75,
+    });
+    expect(profileSelectionOf({ ...journey, uphillLimitPercent: 4.75 })).toEqual({
+      key: 'custom',
+      custom: { base: 'walker', max_incline_percent: 4.75 },
+    });
+  });
+
+  it('refuses an empty, negative or non-numeric limit instead of guessing one', () => {
+    expect(parseUphillLimit({ enabled: true, text: '' }).ok).toBe(false);
+    expect(parseUphillLimit({ enabled: true, text: '-2' }).ok).toBe(false);
+    expect(parseUphillLimit({ enabled: true, text: 'steep' }).ok).toBe(false);
+  });
+
+  it('keeps Compare unavailable while the limit on screen cannot be sent', async () => {
+    const user = userEvent.setup();
+    const onUphillLimitChange = vi.fn();
+    renderPlanner({
+      state: { status: 'idle' },
+      uphillLimit: { enabled: true, text: '' },
+      onUphillLimitChange,
+    });
+
+    expect(screen.getByTestId('uphill-limit-input')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByTestId('uphill-limit-note')).toHaveTextContent(/steepest climb/i);
+
+    await user.type(screen.getByTestId('uphill-limit-input'), '6');
+    expect(onUphillLimitChange).toHaveBeenLastCalledWith({ enabled: true, text: '6' });
+  });
+
+  it('shows no number and no field while the limit is off', () => {
+    renderPlanner({ state: { status: 'idle' } });
+
+    expect(screen.getByTestId('uphill-limit-toggle')).not.toBeChecked();
+    expect(screen.queryByTestId('uphill-limit-input')).not.toBeInTheDocument();
+  });
+});
+
+describe('the profile rules come from the routing service', () => {
+  const WHEELCHAIR = {
+    key: 'wheelchair',
+    display_name: 'Wheelchair',
+    description: 'Avoids steps entirely.',
+    excludes_steps: true,
+    max_incline_percent: null,
+    min_width_m: null,
+    prefers_gradient_under_percent: 8,
+    prefers_width_over_m: 0.9,
+    hard_requirements: ['cannot use steps'],
+  };
+
+  it('states the hard limits apart from the preferences, as the API gives them', () => {
+    renderPlanner({
+      profiles: { status: 'ready', profiles: new Map([['wheelchair', WHEELCHAIR]]) },
+    });
+
+    const rule = screen.getByTestId('profile-rule');
+    expect(rule).toHaveTextContent('Hard limit: cannot use steps.');
+    expect(rule).toHaveTextContent('Prefers climbs under 8% and paths wider than 0.9 m.');
+    // Worded apart: "Hard limit" rules a path out, "Prefers" only costs more.
+    expect(rule.textContent).toMatch(/^Hard limit: .*\. Prefers /);
+  });
+
+  it('says a profile has no hard limits when the API lists none', () => {
+    renderPlanner({
+      profileKey: 'crutches',
+      profiles: {
+        status: 'ready',
+        profiles: new Map([
+          [
+            'crutches',
+            {
+              ...WHEELCHAIR,
+              key: 'crutches',
+              excludes_steps: false,
+              prefers_width_over_m: null,
+              prefers_gradient_under_percent: 15,
+              hard_requirements: [],
+            },
+          ],
+        ]),
+      },
+    });
+
+    expect(screen.getByTestId('profile-rule')).toHaveTextContent('No hard limits.');
+    expect(screen.getByTestId('profile-rule')).toHaveTextContent('Prefers climbs under 15%.');
+  });
+
+  it('says it is waiting, or that the rules could not be loaded — never a guess', () => {
+    const { unmount } = renderPlanner({ profiles: { status: 'loading' } });
+    expect(screen.getByTestId('profile-rule')).toHaveTextContent(/loading this profile’s rules/i);
+    unmount();
+
+    renderPlanner({ profiles: { status: 'unavailable' } });
+    expect(screen.getByTestId('profile-rule')).toHaveTextContent(/could not be loaded/i);
+    expect(screen.getByTestId('profile-rule')).not.toHaveTextContent(/steps|%/);
   });
 });
