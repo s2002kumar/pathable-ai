@@ -1214,9 +1214,10 @@ async def _evaluate_candidate(database: Database, args: argparse.Namespace) -> i
         else f"{run.baseline_dataset_id} ({(run.baseline_content_checksum or '')[:12]})"
     )
     print(f"  baseline   {baseline}")
+    journeys = run.comparison_count // max(len(run.profiles), 1)
     print(
-        f"  corpus     {run.corpus_key}: {run.comparison_count} journeys x profiles, "
-        f"routing policy v{run.routing_policy_version}"
+        f"  corpus     {run.corpus_key}: {journeys} journeys x {len(run.profiles)} profiles "
+        f"= {run.comparison_count} comparisons, routing policy v{run.routing_policy_version}"
     )
     print(f"  took       {run.duration_seconds:.1f}s")
     print(f"  outcome    {run.outcome} ({run.difference_count} differences)")
