@@ -26,6 +26,11 @@ dependencies = [
     "osmium>=4.3,<5.0",
     "rasterio>=1.5.1",
     "duckdb>=1.5.5,<2.0.0",
+    # Both already present transitively (numpy via shapely, pyproj via osmnx);
+    # declared for the same reason as requests: the geometry and Kitchener
+    # modules import them directly.
+    "numpy>=2.0,<3.0",
+    "pyproj>=3.7,<4.0",
 ]
 
 [project.scripts]

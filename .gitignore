@@ -73,3 +73,9 @@ services/api/.osm-data/
 # evidence, ODbL-licensed, and never meant to live in version control.
 .overture-data/
 services/api/.overture-data/
+
+# Frozen City of Kitchener snapshots and their normalized GeoParquet. Tens of
+# megabytes, identified by the manifests committed as evidence, and the raw
+# snapshot holds staff user names that must not be published.
+.kitchener-data/
+services/api/.kitchener-data/
