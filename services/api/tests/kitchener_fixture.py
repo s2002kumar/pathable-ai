@@ -19,9 +19,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pyproj
+import shapely
 
 from pathable_api.geo.kitchener.arcgis import ArcGISClient, HttpResponse
+from pathable_api.geo.kitchener.geography import DatasetFacts, PathAbleEdges
 from pathable_api.geo.kitchener.snapshot import SnapshotPlan, SnapshotResult, take_snapshot
 from pathable_api.geo.kitchener.source import (
     ACTIVE_TRANSPORTATION,
@@ -615,6 +618,46 @@ def snapshot(
     """A complete snapshot of the fixture, taken the way the command takes one."""
     client = ArcGISClient(server or FakeArcGIS(build_layers()), sleep=lambda _s: None)
     return take_snapshot(client, root, plan=SnapshotPlan(chunk_size=chunk_size))
+
+
+def fixture_edges(region: RegionDefinition | None = None) -> PathAbleEdges:
+    """A tiny PathAble graph placed relative to the fixture records, in native metres.
+
+    - e0, a footway 1 m beside sidewalk 1001 along its whole length;
+    - e1, a path 5 m beside trail 1005;
+    - e2, a residential street between sidewalks 1001 and 1010;
+    - e3, a crossing footway that only *touches* crosswalk 1003 at one end, so
+      its closest approach is 0 m while the crosswalk's far end is 14 m away.
+    """
+    area = region or fixture_region()
+    geometries = np.array(
+        [
+            shapely.LineString([(X0, Y0 + 1), (X0 + 100, Y0 + 1)]),
+            shapely.LineString([(X0, Y0 + 205), (X0 + 250, Y0 + 205)]),
+            shapely.LineString([(X0, Y0 + 10), (X0 + 100, Y0 + 10)]),
+            shapely.LineString([(X0 + 102, Y0), (X0 + 150, Y0)]),
+        ],
+        dtype=object,
+    )
+    return PathAbleEdges(
+        region_boundary_wkt=area.boundary().wkt,
+        facts=DatasetFacts(
+            dataset_id="00000000-0000-0000-0000-000000000001",
+            status="active",
+            checksum="f" * 64,
+            source_name="fixture",
+            source_timestamp=None,
+            edge_count=4,
+            bounds_wkt=shapely.box(*area.bounds).wkt,
+        ),
+        geometries=geometries,
+        highway=["footway", "path", "residential", "footway"],
+        is_crossing=[False, False, False, True],
+        kerb=["unknown", "unknown", "unknown", "lowered"],
+        surface_class=["paved", "unknown", "paved", "paved"],
+        width_m=[None, 3.0, None, None],
+        edge_extent=area.bounds,
+    )
 
 
 def fixture_region() -> RegionDefinition:
