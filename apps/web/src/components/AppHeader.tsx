@@ -43,7 +43,7 @@ export function AppHeader({ apiBaseUrl, pilotRegionName, statusPollIntervalMs }:
       <div className={styles.brand}>
         <BrandMark />
         <div className={styles.names}>
-          <p className={styles.productName}>PathAble AI</p>
+          <p className={styles.productName}>PathAble</p>
           <p className={styles.mission}>Accessibility-aware pedestrian routing</p>
         </div>
       </div>

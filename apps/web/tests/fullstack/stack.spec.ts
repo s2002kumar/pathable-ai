@@ -112,7 +112,7 @@ test.describe('full stack', () => {
     await page.reload();
 
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'unreachable');
-    await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
+    await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
     await expect(page.getByTestId('pilot-description')).toBeVisible();
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
   });

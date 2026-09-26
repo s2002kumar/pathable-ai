@@ -68,7 +68,7 @@ describe('HomePage', () => {
 
     render(await homePage());
 
-    expect(screen.getByText('PathAble AI')).toBeInTheDocument();
+    expect(screen.getByText('PathAble')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: /Waterloo, Ontario/, level: 1 }),
@@ -200,7 +200,7 @@ describe('HomePage', () => {
 
     expect(screen.getByTestId('configuration-error')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('NEXT_PUBLIC_PILOT_ZOOM');
-    expect(screen.queryByText('PathAble AI')).not.toBeInTheDocument();
+    expect(screen.queryByText('PathAble')).not.toBeInTheDocument();
   });
 
   it('reports every configuration problem at once', async () => {

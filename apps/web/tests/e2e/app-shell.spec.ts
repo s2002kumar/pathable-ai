@@ -5,8 +5,9 @@ test.describe('application shell', () => {
   test('loads and shows the product identity', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveTitle(/PathAble AI/);
-    await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
+    // The interface names the product PathAble, with no suffix.
+    await expect(page).toHaveTitle(/^PathAble — /);
+    await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
     await expect(page.getByTestId('pilot-region')).toContainText('Waterloo, Ontario');
   });
 

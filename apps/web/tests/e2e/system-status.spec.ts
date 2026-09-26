@@ -40,7 +40,7 @@ test.describe('backend status', () => {
 
     // Nothing on this page depends on the API in Phase 0, so an outage must
     // degrade the badge and nothing else.
-    await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
+    await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
     await expect(page.getByTestId('pilot-description')).toBeVisible();
     await expect(page.getByTestId('route-status')).toBeVisible();
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {

@@ -53,7 +53,7 @@ test.describe('map lifecycle', () => {
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'error', {
       timeout: 20_000,
     });
-    await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
+    await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
     await expect(page.getByTestId('route-status')).toBeVisible();
     await expect(page.getByTestId('attribution')).toBeVisible();
   });
