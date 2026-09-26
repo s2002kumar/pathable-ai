@@ -337,6 +337,14 @@ with no use for the number yet would be building ahead of need.
 predictions — at which point "how old is this claim" becomes a question the
 product must answer about more than one thing at once.
 
+**Update, 2026-09-25 (PA-GEO-01).** Overture is that second source, and the gap
+now has a measured cost: from its own tables PathAble cannot tell whether a way
+Overture cites is the revision it ingested. The versions and edit times are
+recoverable from the dataset's checksum-verified source extract, which is how
+the linkage evidence establishes them, and a way's latest edit has to include
+its nodes' edits — see [`OVERTURE_GERS.md`](../architecture/OVERTURE_GERS.md) §5.
+Capturing both at ingestion is a PA-GEO-02 item.
+
 ---
 
 ## KI-8 — The managed-hosting bootstrap is proven against a stand-in, not a provider
@@ -394,3 +402,36 @@ couple of minutes — the 31 MB `pg_restore` archive already used by
 obvious candidate, held as a workflow artifact or a release asset rather than
 re-ingested from the extract. Until then, do not describe this path as
 continuously verified.
+
+---
+
+## KI-10 — An activated dataset is not as immutable as the lifecycle says
+
+**Status: Open** · found 2026-09-25 during PA-GEO-01 · to be fixed in PA-GEO-02/03
+
+The dataset lifecycle promises that a network is immutable once activated, and
+the graph cache is keyed by dataset id on that promise. Reading the code and the
+live Waterloo dataset for the Overture linkage showed four places where it does
+not hold. None of them was changed by PA-GEO-01, which is read-only; they are
+recorded so that synchronization is not built on them.
+
+1. **Elevation is written into the active dataset in place.**
+   `pathable elevation apply` samples into whichever dataset it is given and
+   defaults to the active one. The Waterloo dataset was activated at
+   `2026-08-18 00:05:28Z` and its elevation was sampled at `00:12:04Z`
+   (`ingestion_configuration.elevation.acquired_at`) — after activation. A
+   running API would keep serving the pre-elevation graph for that id until it
+   restarted, because the cache assumes the rows cannot change.
+2. **The checksum cannot see elevation or derived grade.** It is computed at
+   ingestion, from node identity and position and edge attributes, before
+   elevation exists. Two datasets that differ only in grade share a checksum.
+3. **There is no rollback.** `activate_dataset` accepts only a `validated`
+   dataset, so a `retired` one cannot be reactivated, and no command exists for it.
+4. **Route regression does not gate activation.** `pathable evaluate` runs the
+   twenty-journey corpus, but nothing requires it before a dataset goes live.
+
+**Check when:** PA-GEO-02 designs the synchronization schema. Enrichment such as
+elevation should become a step in building a candidate, the checksum (or a
+second one) should cover derived evidence, reactivation should be an audited
+transition with its own command and a PostGIS test, and activation should be
+able to require a clean route regression.

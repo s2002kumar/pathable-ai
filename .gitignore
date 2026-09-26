@@ -68,3 +68,8 @@ services/api/.osm-cache/
 # ODbL data that belongs in the database with its provenance rather than in git.
 .osm-data/
 services/api/.osm-data/
+
+# Regional Overture extracts. Reproducible from the manifest committed as
+# evidence, ODbL-licensed, and never meant to live in version control.
+.overture-data/
+services/api/.overture-data/

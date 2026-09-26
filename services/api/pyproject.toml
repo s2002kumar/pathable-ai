@@ -25,6 +25,7 @@ dependencies = [
     "requests>=2.32,<3.0",
     "osmium>=4.3,<5.0",
     "rasterio>=1.5.1",
+    "duckdb>=1.5.5,<2.0.0",
 ]
 
 [project.scripts]

@@ -122,9 +122,10 @@ Solid boxes are implemented and measured. The dashed box is a costed proposal in
 [ADR 0009](docs/adr/0009-deployment-architecture.md) and nothing has been bought or provisioned.
 
 The backend's Pydantic models are the single source of truth for the HTTP contract: they generate
-`openapi.json`, which generates the frontend's TypeScript types, and CI fails if the committed output drifts. A
-dataset is immutable once activated — ingestion writes a _new_ version and swaps activation in one transaction —
-which is why a cached graph can never go stale.
+`openapi.json`, which generates the frontend's TypeScript types, and CI fails if the committed output drifts.
+Ingestion never edits an activated dataset — it writes a _new_ version and swaps activation in one transaction —
+which is what the cached graph relies on. One path does not yet honour that: elevation sampling writes into an
+existing dataset, the live one by default ([KI-10](docs/development/KNOWN_ISSUES.md)).
 
 ## Where to go next
 
@@ -217,10 +218,11 @@ The backend's Pydantic models are the single source of truth for the HTTP
 contract. They generate `openapi.json`, which generates the frontend's
 TypeScript types. CI fails if the committed output drifts.
 
-A network dataset is immutable once activated: ingestion writes a _new_ version,
+Ingestion never edits an activated network dataset: it writes a _new_ version,
 validates it, and swaps activation in one transaction. Routing loads the active
-dataset into memory once and caches it by dataset version id — which is why a
-cached graph can never go stale.
+dataset into memory once and caches it by dataset version id, which relies on
+that. Elevation sampling is the exception still to close: it writes into an
+existing dataset, the live one by default ([KI-10](docs/development/KNOWN_ISSUES.md)).
 
 More detail: [architecture overview](docs/architecture/OVERVIEW.md) ·
 [data flow](docs/architecture/DATA_FLOW.md) ·
