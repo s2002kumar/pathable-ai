@@ -176,10 +176,34 @@ class TestLabelled:
 
         review = run_study(inputs, labels=primary, repeat=repeat)["repeat_review"]
 
-        assert review["correspondence"]["records"] == 8
-        assert review["correspondence"]["agree"] == 7
-        assert review["relationship_where_both_obvious"]["records"] == 4
-        assert "not inter-rater reliability" in review["kind"]
+        as_labelled = review["as_labelled"]
+        assert as_labelled["correspondence"]["records"] == 8
+        assert as_labelled["correspondence"]["agree"] == 7
+        assert as_labelled["relationship_where_both_obvious"]["records"] == 4
+        assert "not inter-rater reliability" in as_labelled["kind"]
+        assert review["after_refinement"] is None
+
+    def test_consistency_is_measured_on_the_passes_as_labelled(self, inputs: StudyInputs) -> None:
+        # Adjudication changes the labels the results use, never the measurement
+        # of how consistent the two passes were.
+        first = osm_fixture.labels()
+        repeat = osm_fixture.labels()
+        repeat["records"][4] = osm_fixture.label(1003, "ambiguous_correspondence", ["way/503"])
+        adjudicated = osm_fixture.labels()
+        adjudicated["records"][4] = repeat["records"][4]
+
+        document = run_study(
+            inputs,
+            labels=adjudicated,
+            first_pass=first,
+            repeat=repeat,
+            repeat_refined=repeat,
+        )
+
+        review = document["repeat_review"]
+        assert review["as_labelled"]["correspondence"]["agree"] == 7
+        assert review["after_refinement"]["correspondence"]["agree"] == 8
+        assert document["summary"]["all"]["correspondence"]["ambiguous_correspondence"] == 2
 
 
 def _contribution(

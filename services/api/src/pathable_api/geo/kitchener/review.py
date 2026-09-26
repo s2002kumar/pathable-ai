@@ -91,6 +91,7 @@ def _header(document: Mapping[str, Any], *, blind: bool, count: int) -> str:
         ("PathAble dataset", f"{dataset.get('dataset_id')} ({dataset.get('source_timestamp')})"),
         ("Source extract SHA-256", dataset.get("source_file_sha256")),
         ("Frozen study extract SHA-256", inputs["osm_frozen"]["extract_sha256"]),
+        ("Label definitions", f"version {definitions.get('version', 1)}"),
     ]
     history = inputs.get("osm_history")
     if history and not blind:
@@ -107,6 +108,7 @@ def _header(document: Mapping[str, Any], *, blind: bool, count: int) -> str:
     definition_html = "".join(
         f"<details><summary>{html.escape(group)}</summary>{_definition_table(items)}</details>"
         for group, items in definitions.items()
+        if isinstance(items, Mapping)
     )
     note = (
         "<p><strong>Blind page:</strong> no labels, no lineage and no history are shown.</p>"
@@ -277,17 +279,26 @@ def _nodes_table(record: Mapping[str, Any]) -> str:
     return "<h3>Tagged OSM nodes within 8 m</h3>" + _table(["OSM", "m", "tags", "on ways"], rows)
 
 
+#: The label versions a record can carry, in the order they are shown.
+LABEL_COLUMNS = (
+    ("labels", "labels used"),
+    ("first_pass_labels", "first pass"),
+    ("repeat_labels", "repeat pass"),
+    ("repeat_labels_refined", "repeat, definitions v2"),
+)
+
+
 def _labels_block(record: Mapping[str, Any]) -> str:
     labels = record.get("labels")
     if not labels:
         return "<h3>Labels</h3><p class=muted>not labelled</p>"
-    rows = [(k, v) for k, v in labels.items() if k != "activetransportid"]
-    repeat = record.get("repeat_labels")
-    out = "<h3>Labels</h3>" + _table(["", "primary"], rows)
-    if repeat:
-        out += "<h4>Repeat review</h4>" + _table(
-            ["", "repeat"], [(k, v) for k, v in repeat.items() if k != "activetransportid"]
-        )
+    present = [(key, title) for key, title in LABEL_COLUMNS if record.get(key)]
+    fields = [k for k in labels if k != "activetransportid"]
+    rows = [
+        (field, *(_cell_value(record[key].get(field)) for key, _title in present))
+        for field in fields
+    ]
+    out = "<h3>Labels</h3>" + _table(["", *(title for _key, title in present)], rows)
     facts = record.get("topology_facts")
     if facts:
         out += (
@@ -339,6 +350,10 @@ def _lineage_block(record: Mapping[str, Any]) -> str:
         if rows:
             parts_html.append(_table(["date", "changeset", "kind", "stated source"], rows))
     return "".join(parts_html)
+
+
+def _cell_value(value: Any) -> Any:
+    return ", ".join(value) if isinstance(value, list) else value
 
 
 def _tags(tags: Mapping[str, str]) -> str:

@@ -50,7 +50,9 @@ from pathable_api.geo.kitchener.correspondence import (
     to_native,
 )
 from pathable_api.geo.kitchener.lineage import (
+    DEFINITION_REFINEMENTS,
     DEFINITIONS,
+    DEFINITIONS_VERSION,
     RESTRICTED,
     Correspondence,
     ElementHistory,
@@ -545,14 +547,21 @@ def topology_facts(
         x, y = transformer.transform(node.lon, node.lat)
         points[ref] = shapely.Point(x, y)
     record_ends = []
+    features = inputs.kitchener.features
     for end, neighbours in zip(ends(geometry), record["kitchener_end_neighbours"], strict=True):
         nearest = min(points, key=lambda ref: (points[ref].distance(end), ref))
+        others = [w for w in end_nodes[nearest] if w not in ways]
+        virtual = [n for n in neighbours if features[n].physical_class == "virtual_link"]
         record_ends.append(
             {
                 "nearest_osm_end_node": f"node/{nearest}",
                 "distance_m": round(float(points[nearest].distance(end)), 2),
-                "kitchener_records_touching": len(neighbours),
-                "osm_ways_at_node": len([w for w in end_nodes[nearest] if w not in ways]),
+                "kitchener_physical_records_touching": len(neighbours) - len(virtual),
+                "kitchener_virtual_links_touching": len(virtual),
+                "osm_ways_at_node": len(others),
+                "osm_classes_at_node": sorted(
+                    {osm_class(osm.extract.ways[w].tags) for w in others}
+                ),
             }
         )
     by_osm = _candidates_by_osm(record)
@@ -1199,8 +1208,18 @@ def run_study(
     history: History | None = None,
     labels: Mapping[str, Any] | None = None,
     repeat: Mapping[str, Any] | None = None,
+    first_pass: Mapping[str, Any] | None = None,
+    repeat_refined: Mapping[str, Any] | None = None,
     progress: Progress | None = None,
 ) -> dict[str, Any]:
+    """The study. ``labels`` are the ones the results use.
+
+    Consistency is measured between ``first_pass`` (default: ``labels``) and
+    ``repeat``, both as labelled. When definitions were refined after comparing
+    them, ``repeat_refined`` is the repeat pass re-reviewed under the refined
+    definitions, compared with ``labels``: agreement after a refinement the
+    disagreements prompted, which is not an independent measurement.
+    """
     started = time.perf_counter()
     analysis = analyse(inputs, progress=progress)
     # A label may cite the candidate ways or the tagged nodes near the record.
@@ -1211,6 +1230,8 @@ def run_study(
     }
     primary = parse_labels(labels, candidates) if labels else {}
     second = parse_labels(repeat, candidates) if repeat else {}
+    first = parse_labels(first_pass, candidates) if first_pass else primary
+    refined = parse_labels(repeat_refined, candidates) if repeat_refined else {}
     elements = analysis["osm_elements"]
     records = []
     for record in analysis["records"]:
@@ -1218,7 +1239,13 @@ def run_study(
         label = primary.get(record_id)
         item = dict(record)
         item["labels"] = label.as_dict() if label else None
+        item["first_pass_labels"] = (
+            first[record_id].as_dict() if first_pass and record_id in first else None
+        )
         item["repeat_labels"] = second[record_id].as_dict() if record_id in second else None
+        item["repeat_labels_refined"] = (
+            refined[record_id].as_dict() if record_id in refined else None
+        )
         item["topology_facts"] = topology_facts(record, label, inputs) if label else None
         item["lineage"] = record_lineage(record, label, history) if label else None
         item["attributes"] = attribute_comparisons(record, label, elements, history)
@@ -1228,6 +1255,7 @@ def run_study(
         "attribution": ATTRIBUTION,
         "inputs": {**inputs.identity, "osm_history": history.identity if history else None},
         "definitions": {
+            "version": DEFINITIONS_VERSION,
             **{k: {str(n): text for n, text in v.items()} for k, v in DEFINITIONS.items()},
             "lineage": LINEAGE_DEFINITIONS,
         },
@@ -1255,8 +1283,13 @@ def run_study(
         document["attribute_results"] = attribute_summary(records)
         document["matcher_signals"] = matcher_signals(records, elements)
         document["population_context"] = population_context(inputs)
-    if primary and second:
-        document["repeat_review"] = repeat_review(primary, second)
+    if first and second:
+        document["repeat_review"] = {
+            "as_labelled": repeat_review(first, second),
+            "after_refinement": repeat_review(primary, refined) if refined else None,
+            "definition_refinements": list(DEFINITION_REFINEMENTS),
+            "revisions": list((labels or {}).get("revisions", [])),
+        }
     document["measurement"] = {"seconds": round(time.perf_counter() - started, 2)}
     document["content_sha256"] = content_sha256(document)
     return document

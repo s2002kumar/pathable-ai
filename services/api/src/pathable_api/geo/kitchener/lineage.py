@@ -108,19 +108,27 @@ DEFINITIONS: dict[str, dict[str, str]] = {
     "relationship": {
         Relationship.ONE_TO_ONE: (
             "The record and one OSM way cover substantially the same extent, and that way "
-            "corresponds to no other Kitchener record."
+            "carries no other physical City record of the same facility. City virtual links, "
+            "and connector stubs of a few metres at a junction, are not counted: they are the "
+            "junction, not the facility."
         ),
-        Relationship.ONE_TO_MANY: "The record corresponds to several OSM ways; OSM splits it.",
+        Relationship.ONE_TO_MANY: (
+            "The record corresponds to several OSM ways; OSM splits it. A record that runs "
+            "about a junction's width onto the next way is not split."
+        ),
         Relationship.MANY_TO_ONE: (
-            "The corresponding OSM way also corresponds to other Kitchener records; OSM "
-            "merges what the City splits."
+            "The corresponding OSM way also carries other physical City records of the same "
+            "facility; OSM merges what the City splits. Virtual links and junction stubs are "
+            "not counted."
         ),
         Relationship.MANY_TO_MANY: "Several records and several ways, with no clean nesting.",
     },
     "geometry": {
         GeometryRelation.CLOSELY_ALIGNED: (
-            "Same extent and the shapes run together, within what digitising two sources "
-            "would produce."
+            "Same extent, give or take about a junction's width (5 m) at each end, and the "
+            "shapes run together within what digitising two sources would produce. An OSM way "
+            "that runs on to a road centreline where the City's network stops at the kerb is "
+            "not a difference in extent."
         ),
         GeometryRelation.OFFSET: (
             "Same extent and shape, displaced sideways by a consistent distance beyond close "
@@ -135,8 +143,9 @@ DEFINITIONS: dict[str, dict[str, str]] = {
             "many-to-one case)."
         ),
         GeometryRelation.PARTIAL_OVERLAP: (
-            "They share only part of their extent; one runs notably beyond the other and "
-            "no other record or way accounts for the difference."
+            "They share only part of their extent: one runs beyond the other by more than a "
+            "junction's width, and no other record or way of the same facility accounts for "
+            "the difference."
         ),
         GeometryRelation.MATERIALLY_DIFFERENT: (
             "The facility corresponds but its shape does not: a different alignment, a "
@@ -151,13 +160,17 @@ DEFINITIONS: dict[str, dict[str, str]] = {
     },
     "topology": {
         Topology.AGREEMENT: (
-            "The corresponding OSM ways connect where the record's ends connect, lie beside "
-            "the same road on the same side, and cross the same road at the same place where "
-            "the record crosses one."
+            "Among the facilities both sources have, the record's ends join the same ones, it "
+            "lies beside the same road on the same side, and it crosses the same road at the "
+            "same place. A facility only one source models — a City virtual link, an informal "
+            "side path, a road centreline the City does not map — is a coverage difference, "
+            "named in the note; it does not decide the label. Facilities joining along the "
+            "record, rather than at its ends, are not compared."
         ),
         Topology.DISAGREEMENT: (
-            "A clear difference in how the facility connects: another side of the road, a "
-            "connection one source has and the other lacks, a different road crossed."
+            "Among facilities both sources have, the connections differ: an end joins a "
+            "different facility, one source connects two facilities the other keeps apart, "
+            "the facility lies on another side of the road, or it crosses a different road."
         ),
         Topology.AMBIGUOUS: "The connections cannot be compared with confidence.",
         Topology.NOT_ASSESSED: "No correspondence to compare, or the record is not comparable.",
@@ -168,7 +181,46 @@ DEFINITIONS: dict[str, dict[str, str]] = {
         Representation.NODE: "OSM records it only as a node (a crossing point, say).",
         Representation.NONE: "OSM does not record it.",
     },
+    "citation": {
+        "corner_piece": (
+            "For a City piece of a metre or two that OSM collapses into a junction, cite the "
+            "kerb node OSM has there, or else every way that meets at that junction."
+        ),
+    },
 }
+
+#: The version of the definitions above. Version 1 is what both labelling passes
+#: used; version 2 settles what their disagreements showed was ambiguous.
+DEFINITIONS_VERSION = 2
+DEFINITION_REFINEMENTS: tuple[dict[str, str], ...] = (
+    {
+        "version": "2",
+        "prompted_by": "the repeat review's topology disagreements (30 of 40 agreed)",
+        "change": (
+            "Topology compares only facilities both sources have, at the record's ends. A City "
+            "virtual link, an informal side path or a road centreline only one source models "
+            "is a coverage difference, noted but not deciding the label; facilities joining "
+            "along the record are not compared."
+        ),
+    },
+    {
+        "version": "2",
+        "prompted_by": "the relationship and geometry disagreements on 88440, 392049 and 307104",
+        "change": (
+            "Virtual links and junction stubs of a few metres are not counted in a "
+            "relationship; about a junction's width (5 m) of end slop is not a difference in "
+            "extent; an OSM way running on to a road centreline is not either."
+        ),
+    },
+    {
+        "version": "2",
+        "prompted_by": "the different elements cited for the corner pieces 321269 and 321409",
+        "change": (
+            "A corner piece OSM collapses into a junction cites the kerb node there, or else "
+            "every way that meets at the junction."
+        ),
+    },
+)
 
 
 @dataclass(frozen=True, slots=True)

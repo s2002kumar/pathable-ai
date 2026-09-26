@@ -574,9 +574,23 @@ def build_parser() -> argparse.ArgumentParser:
     lineage_study.add_argument(
         "--history", type=Path, default=None, help="From the lineage-history command."
     )
-    lineage_study.add_argument("--labels", type=Path, default=None, help="Primary labels.")
     lineage_study.add_argument(
-        "--repeat-labels", type=Path, default=None, help="Repeat-review labels."
+        "--labels", type=Path, default=None, help="The labels the results use."
+    )
+    lineage_study.add_argument(
+        "--first-pass-labels",
+        type=Path,
+        default=None,
+        help="The first labelling pass as labelled, for consistency (default: --labels).",
+    )
+    lineage_study.add_argument(
+        "--repeat-labels", type=Path, default=None, help="The repeat pass as labelled."
+    )
+    lineage_study.add_argument(
+        "--repeat-refined-labels",
+        type=Path,
+        default=None,
+        help="The repeat pass re-reviewed under refined definitions.",
     )
     lineage_study.add_argument(
         "--json", type=Path, required=True, help="Write the evidence document here."
@@ -1360,9 +1374,19 @@ def _kitchener_lineage_study(args: argparse.Namespace) -> int:
             progress=print,
         )
         history = load_history(args.history) if args.history else None
-        labels = json.loads(args.labels.read_text("utf-8")) if args.labels else None
-        repeat = json.loads(args.repeat_labels.read_text("utf-8")) if args.repeat_labels else None
-        document = run_study(inputs, history=history, labels=labels, repeat=repeat, progress=print)
+
+        def read(path: Path | None) -> Any:
+            return json.loads(path.read_text("utf-8")) if path else None
+
+        document = run_study(
+            inputs,
+            history=history,
+            labels=read(args.labels),
+            repeat=read(args.repeat_labels),
+            first_pass=read(args.first_pass_labels),
+            repeat_refined=read(args.repeat_refined_labels),
+            progress=print,
+        )
     except (StudyError, NormalizationError, ExtractSourceError, LabelError) as error:
         print(f"error: {error}", file=sys.stderr)
         return EXIT_FAILED
