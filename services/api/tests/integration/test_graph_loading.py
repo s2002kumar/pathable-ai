@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.geo.datasets import get_active_dataset
 from pathable_api.geo.fixtures import SYNTHETIC_REGION_SLUG, load_synthetic_dataset
-from pathable_api.geo.models import GraphEdge, PilotRegion
+from pathable_api.geo.models import DatasetVersion, GraphEdge, PilotRegion
 from pathable_api.routing.graph import load_graph
 
 pytestmark = pytest.mark.integration
@@ -39,7 +39,9 @@ async def _set_name(session: AsyncSession, edge: GraphEdge, value: object) -> No
 
 class TestNameFromTheDatabase:
     async def test_names_survive_and_non_text_names_do_not(self, db_session: AsyncSession) -> None:
-        await load_synthetic_dataset(db_session)
+        # The names are written into a candidate: a live dataset's rows can no
+        # longer be changed, and this test once did exactly that.
+        result = await load_synthetic_dataset(db_session, activate=False)
         await db_session.commit()
         edges = await _edges(db_session)
         assert len(edges) >= 4
@@ -50,12 +52,7 @@ class TestNameFromTheDatabase:
         # edges[3] keeps whatever the fixture stored: no name at all.
         await db_session.commit()
 
-        region = (
-            await db_session.execute(
-                select(PilotRegion).where(PilotRegion.slug == SYNTHETIC_REGION_SLUG)
-            )
-        ).scalar_one()
-        dataset = await get_active_dataset(db_session, region.id)
+        dataset = await db_session.get(DatasetVersion, result.dataset_id)
         assert dataset is not None
         graph = await load_graph(db_session, dataset, SYNTHETIC_REGION_SLUG)
         by_identity = {segment.identity: segment for segment in graph.segments}

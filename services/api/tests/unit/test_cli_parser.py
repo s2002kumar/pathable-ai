@@ -52,14 +52,41 @@ class TestIngest:
         assert args.provider == "geofabrik"
         assert args.source_timestamp == "2026-08-16T23:08:23+00:00"
 
-    def test_a_dataset_can_be_stored_without_going_live(self) -> None:
-        args = parse("ingest", "pbf", "--region", "waterloo", "--file", "x", "--no-activate")
-
-        assert args.no_activate is True
+    def test_a_real_import_has_no_way_to_go_live(self) -> None:
+        # Ingestion writes a candidate and stops. Activation is its own command,
+        # behind the seal and the route regression, and an import flag that
+        # skipped them would be the bypass KI-10 was about.
+        with pytest.raises(SystemExit):
+            parse("ingest", "pbf", "--region", "waterloo", "--file", "x", "--no-activate")
+        with pytest.raises(SystemExit):
+            parse("ingest", "pbf", "--region", "waterloo", "--file", "x", "--activate")
 
     def test_the_synthetic_fixture_is_a_separate_source(self) -> None:
         # It must never be reachable by accident from a real-import command.
         assert parse("ingest", "synthetic").source == "synthetic"
+
+
+class TestDatasetLifecycle:
+    def test_accepting_a_regression_needs_a_reason(self) -> None:
+        with pytest.raises(SystemExit):
+            parse("datasets", "accept", "0123abcd")
+
+        args = parse("datasets", "accept", "0123abcd", "--reason", "Sidewalk added on King St.")
+        assert args.reason == "Sidewalk added on King St."
+
+    def test_a_rollback_needs_a_region_and_a_reason_but_not_a_target(self) -> None:
+        with pytest.raises(SystemExit):
+            parse("datasets", "rollback", "--region", "waterloo")
+
+        args = parse("datasets", "rollback", "--region", "waterloo", "--reason", "Bad import.")
+        assert args.to is None
+
+    def test_activation_has_no_force(self) -> None:
+        # The only way past a differing regression run is a recorded acceptance.
+        with pytest.raises(SystemExit):
+            parse("datasets", "activate", "0123abcd", "--force")
+
+        assert parse("datasets", "activate", "0123abcd").run is None
 
 
 class TestElevation:

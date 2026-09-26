@@ -1,9 +1,4 @@
-"""PathAble AI backend service.
-
-Phase 0 scope: configuration, structured logging, request correlation, health and
-readiness endpoints, and the PostGIS migration baseline. No routing, no graph
-ingestion and no machine learning exists in this package yet.
-"""
+"""PathAble backend service: dataset lifecycle, routing and the HTTP API."""
 
 __all__ = ["__version__"]
 

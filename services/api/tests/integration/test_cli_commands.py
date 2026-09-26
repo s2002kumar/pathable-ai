@@ -11,11 +11,17 @@ work".
 
 from __future__ import annotations
 
+import datetime as dt
+import json
 from collections.abc import Callable, Iterator
+from pathlib import Path
 
+import osmium
 import pytest
+from sqlalchemy import create_engine, text
+from sqlalchemy.pool import NullPool
 
-from pathable_api.cli import main
+from pathable_api.cli import EXIT_REVIEW_REQUIRED, main
 from pathable_api.core.config import get_settings
 
 #: What the `cli` fixture hands back: argv in, exit code out.
@@ -123,3 +129,99 @@ class TestBenchmarkCommand:
 
     def test_asking_for_neither_a_region_nor_a_grid_is_refused(self, cli: Cli) -> None:
         assert cli(["benchmark", "route"]) == EXIT_MISCONFIGURED
+
+
+def _waterloo_extract(path: Path) -> Path:
+    """Two footways in the Waterloo pilot box: one with edit metadata, one without."""
+    stamp = dt.datetime(2024, 3, 1, 12, 0, tzinfo=dt.UTC)
+    writer = osmium.SimpleWriter(str(path))
+    try:
+        for node_id, longitude in ((1, -80.5400), (2, -80.5390), (3, -80.5380)):
+            writer.add_node(
+                osmium.osm.mutable.Node(
+                    id=node_id, location=(longitude, 43.4700), version=2, timestamp=stamp
+                )
+            )
+        writer.add_node(osmium.osm.mutable.Node(id=4, location=(-80.5370, 43.4700)))
+        writer.add_way(
+            osmium.osm.mutable.Way(
+                id=100, nodes=[1, 2], tags={"highway": "footway"}, version=5, timestamp=stamp
+            )
+        )
+        writer.add_way(osmium.osm.mutable.Way(id=200, nodes=[3, 4], tags={"highway": "footway"}))
+    finally:
+        writer.close()
+    return path
+
+
+def _scalar(database_url: str, query: str) -> object:
+    engine = create_engine(database_url.replace("+psycopg_async", "+psycopg"), poolclass=NullPool)
+    try:
+        with engine.connect() as connection:
+            return connection.execute(text(query)).scalar_one()
+    finally:
+        engine.dispose()
+
+
+class TestLifecycleCommands:
+    def test_an_operator_takes_a_candidate_live_and_back_on_the_waterloo_corpus(
+        self,
+        cli: Cli,
+        migrated_database_url: str,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # The whole operator path through the real 20-journey Waterloo corpus,
+        # on a network too small to route it — which is itself an outcome the
+        # regression records, and one a person has to accept.
+        extract = _waterloo_extract(tmp_path / "waterloo.osm.pbf")
+        newest = (
+            "SELECT id::text FROM dataset_versions WHERE status = 'draft' "
+            "ORDER BY created_at DESC LIMIT 1"
+        )
+        ingest = ["ingest", "pbf", "--region", "waterloo", "--file", str(extract)]
+
+        assert cli(["regions", "seed"]) == EXIT_OK
+        assert cli([*ingest, "--no-elevation-required"]) == EXIT_OK
+        first = str(_scalar(migrated_database_url, newest))
+        assert _scalar(migrated_database_url, "SELECT count(osm_version) FROM graph_nodes") == 3
+        assert _scalar(migrated_database_url, "SELECT count(osm_way_version) FROM graph_edges") == 1
+
+        assert cli(["datasets", "activate", first[:8]]) == EXIT_FAILED  # not sealed
+        assert cli(["datasets", "seal", first[:8]]) == EXIT_OK
+        report = tmp_path / "run.json"
+        assert cli(["datasets", "evaluate", first, "--json", str(report)]) == EXIT_REVIEW_REQUIRED
+        run = json.loads(report.read_text(encoding="utf-8"))
+        assert run["outcome"] == "no_baseline"
+        assert run["comparison_count"] == 20 * 6
+        assert cli(["datasets", "activate", first]) == EXIT_FAILED  # not accepted
+        reason = "First Waterloo network in this database; nothing to compare against."
+        assert cli(["datasets", "accept", run["run_id"][:8], "--reason", reason]) == EXIT_OK
+        assert cli(["datasets", "activate", first]) == EXIT_OK
+
+        # An import that requires elevation cannot be sealed without it.
+        assert cli(ingest) == EXIT_OK
+        unelevated = str(_scalar(migrated_database_url, newest))
+        assert cli(["datasets", "seal", unelevated]) == EXIT_FAILED
+
+        assert cli([*ingest, "--no-elevation-required"]) == EXIT_OK
+        second = str(_scalar(migrated_database_url, newest))
+        assert cli(["datasets", "seal", second]) == EXIT_OK
+        assert cli(["datasets", "evaluate", second]) == EXIT_OK  # identical routes
+        assert cli(["datasets", "activate", second]) == EXIT_OK
+
+        rollback_reason = "Rehearsing the rollback path before trusting it with real data."
+        assert (
+            cli(["datasets", "rollback", "--region", "waterloo", "--reason", rollback_reason])
+            == EXIT_OK
+        )
+        live = "SELECT id::text FROM dataset_versions WHERE status = 'active'"
+        assert _scalar(migrated_database_url, live) == first
+        assert cli(["datasets", "checksum", first]) == EXIT_OK
+
+        capsys.readouterr()
+        assert cli(["datasets", "history", "--region", "waterloo"]) == EXIT_OK
+        history = capsys.readouterr().out
+        assert history.count("activate ") == 2
+        assert f"accepted: {reason}" in history
+        assert f"reason: {rollback_reason}" in history

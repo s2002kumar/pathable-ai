@@ -5,10 +5,13 @@ That is the right trade at pilot scale — the Waterloo walk network is tens of
 thousands of edges, which is a few tens of megabytes — and it avoids a database
 round trip per expanded node, which is what makes naive SQL-backed routing slow.
 
-The cache is keyed by **dataset version id**, not by region. A dataset is
-immutable once activated, so a cached graph can never go stale: activating a new
-dataset produces a new id and therefore a new cache entry. That is the whole
-reason activation swaps versions instead of mutating rows.
+The cache is keyed by **dataset version id**, not by region. A dataset's rows
+cannot change once it is sealed — the database refuses the write (migration
+0006) — so a cached graph can never go stale: activating another dataset, or
+rolling back to a retired one, selects a different id and therefore a different
+cache entry, and the entry for an id always describes that id's rows. That is
+the whole reason activation swaps versions instead of mutating rows. (Before
+PA-GEO-02 it was a promise the elevation pass broke; see KI-10.)
 """
 
 from __future__ import annotations
@@ -24,10 +27,11 @@ from typing import Any
 from networkx import MultiDiGraph
 from shapely import wkb as shapely_wkb
 from shapely.geometry import LineString, Point
-from sqlalchemy import case, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.core.logging import get_logger
+from pathable_api.geo.content_checksum import edge_name_expression
 from pathable_api.geo.datasets import get_active_dataset
 from pathable_api.geo.directionality import Conveying
 from pathable_api.geo.enums import (
@@ -208,8 +212,9 @@ class GraphRepository:
         dataset = await get_active_dataset(session, region.id)
         if dataset is None:
             msg = (
-                f"Region {region_slug!r} has no active network dataset. "
-                f"Run `pathable ingest osm --region {region_slug}`."
+                f"Region {region_slug!r} has no active network dataset. Ingest a candidate "
+                f"(`pathable ingest pbf --region {region_slug}`), then seal, evaluate and "
+                "activate it with `pathable datasets`."
             )
             raise NoActiveDatasetError(msg)
 
@@ -313,16 +318,9 @@ async def load_graph(
     edge_rows = await session.execute(
         select(
             *_EDGE_COLUMNS,
-            # Only a JSON string is a name. `->>` would happily render a number
-            # or an OSMnx-merged list of names as text, and the Python loader
-            # this replaced dropped those; the SQL side has to agree with it.
-            case(
-                (
-                    func.jsonb_typeof(GraphEdge.raw_tags["name"]) == "string",
-                    GraphEdge.raw_tags["name"].astext,
-                ),
-                else_=None,
-            ).label("name"),
+            # Only a JSON string is a name; shared with the content checksum so
+            # the hash covers exactly the name a route reports.
+            edge_name_expression().label("name"),
             func.ST_AsBinary(GraphEdge.geometry).label("geometry_wkb"),
         ).where(GraphEdge.dataset_version_id == dataset.id)
     )

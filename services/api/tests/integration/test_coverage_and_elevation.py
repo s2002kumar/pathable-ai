@@ -171,7 +171,8 @@ class TestCoverageReport:
 
 class TestApplyingElevation:
     async def test_it_writes_a_height_and_its_provenance(self, db_session: AsyncSession) -> None:
-        result = await load_synthetic_dataset(db_session, activate=True)
+        # Elevation is applied to a candidate, before it is sealed.
+        result = await load_synthetic_dataset(db_session, activate=False)
         run = await apply_elevation(
             db_session, dataset=await _dataset(db_session, result), provider=FlatEarth()
         )
@@ -188,7 +189,8 @@ class TestApplyingElevation:
         # The failure this guards: zero-filling would turn "nobody measured
         # this" into "flat", which is the exact error the product exists to
         # avoid.
-        result = await load_synthetic_dataset(db_session, activate=True)
+        # Elevation is applied to a candidate, before it is sealed.
+        result = await load_synthetic_dataset(db_session, activate=False)
         run = await apply_elevation(
             db_session, dataset=await _dataset(db_session, result), provider=NoCoverage()
         )
@@ -199,7 +201,8 @@ class TestApplyingElevation:
     async def test_a_slope_produces_a_grade_on_the_segments_long_enough_for_it(
         self, db_session: AsyncSession
     ) -> None:
-        result = await load_synthetic_dataset(db_session, activate=True)
+        # Elevation is applied to a candidate, before it is sealed.
+        result = await load_synthetic_dataset(db_session, activate=False)
         run = await apply_elevation(
             db_session, dataset=await _dataset(db_session, result), provider=Hillside()
         )
@@ -210,7 +213,8 @@ class TestApplyingElevation:
     async def test_a_segment_shorter_than_the_model_can_resolve_gets_no_grade(
         self, db_session: AsyncSession
     ) -> None:
-        result = await load_synthetic_dataset(db_session, activate=True)
+        # Elevation is applied to a candidate, before it is sealed.
+        result = await load_synthetic_dataset(db_session, activate=False)
         run = await apply_elevation(
             db_session, dataset=await _dataset(db_session, result), provider=Hillside()
         )
@@ -221,7 +225,8 @@ class TestApplyingElevation:
         assert "edges_too_short" in run.metadata
 
     async def test_the_run_is_summarised_with_its_caveats(self, db_session: AsyncSession) -> None:
-        result = await load_synthetic_dataset(db_session, activate=True)
+        # Elevation is applied to a candidate, before it is sealed.
+        result = await load_synthetic_dataset(db_session, activate=False)
         run = await apply_elevation(
             db_session, dataset=await _dataset(db_session, result), provider=Hillside()
         )
@@ -236,7 +241,8 @@ class TestApplyingElevation:
     ) -> None:
         # A node that was asked about and had no coverage is a different state
         # from one that was never asked. Only the first should survive a run.
-        result = await load_synthetic_dataset(db_session, activate=True)
+        # Elevation is applied to a candidate, before it is sealed.
+        result = await load_synthetic_dataset(db_session, activate=False)
         await apply_elevation(
             db_session, dataset=await _dataset(db_session, result), provider=FlatEarth()
         )

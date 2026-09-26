@@ -36,9 +36,14 @@ class TestParser:
             args = parser.parse_args(["ingest", "osm", "--region", definition.slug])
             assert args.region == definition.slug
 
-    def test_activation_can_be_withheld(self) -> None:
-        args = build_parser().parse_args(["ingest", "osm", "--region", "waterloo", "--no-activate"])
-        assert args.no_activate is True
+    def test_a_real_import_requires_elevation_unless_told_otherwise(self) -> None:
+        parser = build_parser()
+        default = parser.parse_args(["ingest", "osm", "--region", "waterloo"])
+        waived = parser.parse_args(
+            ["ingest", "osm", "--region", "waterloo", "--no-elevation-required"]
+        )
+        assert default.no_elevation_required is False
+        assert waived.no_elevation_required is True
 
     def test_the_overpass_endpoint_can_be_overridden(self) -> None:
         args = build_parser().parse_args(
