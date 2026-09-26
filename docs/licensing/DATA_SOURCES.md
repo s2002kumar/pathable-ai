@@ -2,7 +2,9 @@
 
 Status: Gate A+B. The application now ingests **OpenStreetMap data** (from a
 published extract) and **NRCan HRDEM elevation**, and serves map tiles from a
-public style. Imagery and user-contributed reports remain unstarted and gated.
+public style. Since PA-GEO-01 it also **reads Overture Maps transportation data**
+for identity linkage only — see §10. Imagery and user-contributed reports remain
+unstarted and gated.
 
 > This document records engineering understanding of the licences involved. It is
 > **not legal advice**. Before any public deployment, and before any imagery is
@@ -416,3 +418,27 @@ question.
 - [ ] Personal data implications assessed
 - [ ] Terms allow the volume and frequency intended
 - [ ] Founder approval obtained where cost, credentials or ambiguity are involved
+
+---
+
+## 10. Overture Maps transportation — read for linkage, not routed on
+
+**Status:** read-only, since PA-GEO-01 (2026-09-25). A bounded regional extract of
+the `transportation` theme is read to measure how PathAble's OSM identities link
+to GERS. Nothing from Overture enters the pedestrian graph, and nothing is
+routed on it.
+
+| Checklist item                 | Finding                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Licence                        | **ODbL 1.0** — the `license` of both the `segment` and `connector` collections in Overture's STAC catalog, the `license` on every source row read, and the theme licence on [Overture's attribution page](https://docs.overturemaps.org/attribution/). Checked 2026-09-25.                                                               |
+| ODbL compatibility             | Same licence as the OSM data PathAble already uses, and the theme is itself largely OSM-derived. No new licence class enters the project.                                                                                                                                                                                                |
+| Attribution                    | Overture requires, for the transportation theme: "© OpenStreetMap contributors. Available under the Open Database License." and "Data from TomTom." plus the general citation "Overture Maps Foundation, overturemaps.org". Carried on the evidence files that contain Overture-derived data ([evidence index](../evidence/README.md)). |
+| Redistribution and share-alike | The regional extracts stay out of git (`.overture-data/` is ignored). The committed evidence holds counts and a handful of example GERS ids and OSM record ids — derived data under ODbL, like the rest of `docs/evidence/`.                                                                                                             |
+| Personal data                  | None read. Source rows carry dataset, record id, element version and edit time; no contributor names or ids.                                                                                                                                                                                                                             |
+| Volume and frequency           | Anonymous reads from Overture's public S3 bucket: 570.8 MB and 561.9 MB received in the two regional runs measured, 85–86% of it the bridge-file sample (per artifact in the extract manifests). No volume terms were found on the attribution page.                                                                                     |
+| Founder approval               | Not required: no cost, no credentials, no licence ambiguity. Would be needed before Overture data is routed on or served publicly.                                                                                                                                                                                                       |
+
+**TomTom-sourced features.** 325 Waterloo segments in `2026-09-23.0` come only from
+TomTom (`provider=tomtom`, `resource=orbis`), each labelled `ODbL-1.0`. They carry
+no OSM identity and are reported as unresolved; if Overture data is ever routed
+on, the TomTom credit above becomes a user-visible obligation too.

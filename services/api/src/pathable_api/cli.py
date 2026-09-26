@@ -15,9 +15,10 @@ import json
 import sys
 import time
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import select
 
@@ -40,14 +41,41 @@ from pathable_api.geo.enums import SourceType
 from pathable_api.geo.fixtures import load_synthetic_dataset
 from pathable_api.geo.models import DatasetVersion, PilotRegion
 from pathable_api.geo.osm import OverpassUnreachableError, import_walk_network
+from pathable_api.geo.overture.catalog import (
+    LATEST,
+    ReleaseError,
+    http_json_fetcher,
+    resolve_release,
+)
+from pathable_api.geo.overture.contract import IncompatibleSchemaError
+from pathable_api.geo.overture.evidence import write_json
+from pathable_api.geo.overture.extract import (
+    EXTRACT_MANIFEST,
+    ExtractionError,
+    ExtractionPlan,
+    run_extraction,
+)
+from pathable_api.geo.overture.identity import parse_pathable_osm_id
+from pathable_api.geo.overture.linkage import (
+    ExtractMismatchError,
+    build_report,
+    load_overture_side,
+)
+from pathable_api.geo.overture.osm_versions import VersionEvidenceError, read_versions
+from pathable_api.geo.overture.pathable import PathAbleSideError, load_identities
 from pathable_api.geo.pbf import import_from_pbf
 from pathable_api.geo.regions import PILOT_REGIONS, region_definition, seed_pilot_regions
 from pathable_api.routing.ablation import run_ablation, summarise_ablation
 from pathable_api.routing.benchmark import build_measurement_grid, measure
 from pathable_api.routing.evaluation import as_records, compare_algorithms, evaluate
 from pathable_api.routing.graph import GraphRepository, NoActiveDatasetError, graph_from_payload
+from pathable_api.routing.load_benchmark import (
+    describe_environment,
+    machine_memory,
+    process_memory,
+    run_load_benchmark,
+)
 from pathable_api.routing.load_benchmark import render as render_load_benchmark
-from pathable_api.routing.load_benchmark import run_load_benchmark
 from pathable_api.routing.profiles import get_profile
 from pathable_api.routing.waterloo_cases import WATERLOO_CASES
 
@@ -247,6 +275,63 @@ def build_parser() -> argparse.ArgumentParser:
     listing.add_argument("--region", default=None, help="Restrict to one region slug.")
     listing.add_argument("--limit", type=int, default=20)
 
+    overture = subcommands.add_parser(
+        "overture",
+        help="Inspect an Overture Maps release against a region. Never writes to the database.",
+    )
+    overture_actions = overture.add_subparsers(dest="overture_command", required=True)
+    overture_actions.add_parser(
+        "releases", help="Show the releases and schema versions Overture's catalog publishes now."
+    )
+    extract = overture_actions.add_parser(
+        "extract",
+        help="Read one release's transportation features for a region into local files.",
+    )
+    extract.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    extract.add_argument(
+        "--release",
+        default="latest",
+        help="Overture release, e.g. 2026-09-23.0. 'latest' is resolved and recorded.",
+    )
+    extract.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".overture-data"),
+        help="Root folder; output goes to <out>/<release>/<region>. Keep it out of git.",
+    )
+    extract.add_argument(
+        "--bridge-sample-files",
+        type=int,
+        default=2,
+        help="Bridge files to read for cross-checking (each ~240 MB; 0 skips the check).",
+    )
+    extract.add_argument("--no-changelog", action="store_true")
+
+    link = overture_actions.add_parser(
+        "link",
+        help=(
+            "Measure how a dataset's OSM identities appear in an extract. Reads the "
+            "database in a read-only transaction."
+        ),
+    )
+    link.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    link.add_argument("--extract", type=Path, required=True, help="An extract folder.")
+    link.add_argument("--dataset", default=None, help="Defaults to the active dataset.")
+    link.add_argument(
+        "--osm-pbf",
+        type=Path,
+        default=None,
+        help=(
+            "The dataset's own source extract, to recover OSM versions. Refused unless its "
+            "SHA-256 matches the one recorded when the dataset was built."
+        ),
+    )
+    link.add_argument("--json", type=Path, default=None, help="Write the report here.")
+
     return parser
 
 
@@ -263,6 +348,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         version=settings.app_version,
         environment=settings.environment,
     )
+
+    # Reading an Overture release needs the network but not the database.
+    if args.command == "overture" and args.overture_command != "link":
+        return _overture_offline(args)
 
     try:
         settings.require_database_url()
@@ -299,6 +388,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _benchmark_load(database, args)
             case "benchmark":
                 return await _benchmark(database, args)
+            case "overture":
+                return await _overture_link(database, args)
             case _:
                 return await _list_datasets(database, args)
     finally:
@@ -690,6 +781,149 @@ async def _benchmark_load(database: Database, args: argparse.Namespace) -> int:
         )
         print(f"\nWrote {args.json}")
     return EXIT_OK
+
+
+def _overture_offline(args: argparse.Namespace) -> int:
+    fetch_json = http_json_fetcher()
+    if args.overture_command == "releases":
+        try:
+            latest = resolve_release(LATEST, fetch_json)
+            details = [
+                resolve_release(release, fetch_json) for release in latest.available_releases
+            ]
+        except ReleaseError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+        for detail in details:
+            marker = "  (latest)" if detail.observed == latest.latest_at_resolution else ""
+            print(f"{detail.observed}\tschema {detail.schema_version}{marker}")
+        return EXIT_OK
+
+    if args.bridge_sample_files < 0:
+        print("error: --bridge-sample-files cannot be negative.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+    definition = region_definition(args.region)
+    plan = ExtractionPlan(
+        region_slug=definition.slug,
+        bounds=definition.bounds,
+        bounds_source=f"pathable_api.geo.regions: {definition.slug}",
+        release=args.release,
+        bridge_sample_files=args.bridge_sample_files,
+        include_changelog=not args.no_changelog,
+    )
+    try:
+        result = run_extraction(
+            plan,
+            args.out,
+            fetch_json=fetch_json,
+            progress=print,
+            measure_memory=_run_measurements,
+        )
+    except (ReleaseError, IncompatibleSchemaError, ExtractionError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+
+    print(f"\nOverture {result.release.observed} (schema {result.release.schema_version})")
+    for name, artifact in sorted(result.artifacts.items()):
+        received = (
+            f"{artifact.http.bytes_received / 1_000_000:.1f} MB received"
+            if artifact.http is not None
+            else "local"
+        )
+        print(
+            f"  {name:<14}{artifact.rows:>8} rows  {artifact.files_opened}/"
+            f"{artifact.files_available} files  {artifact.seconds:6.1f}s  {received}"
+        )
+    for warning in result.warnings:
+        print(f"  warning: {warning}")
+    print(f"Wrote {result.out_dir / EXTRACT_MANIFEST}")
+    return EXIT_OK
+
+
+async def _overture_link(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    try:
+        overture = load_overture_side(args.extract)
+    except ExtractMismatchError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    if overture.manifest["region"]["slug"] != definition.slug:
+        print(
+            f"error: {args.extract} was extracted for {overture.manifest['region']['slug']}, "
+            f"not {definition.slug}.",
+            file=sys.stderr,
+        )
+        return EXIT_MISCONFIGURED
+    try:
+        dataset_id = uuid.UUID(args.dataset) if args.dataset else None
+    except ValueError:
+        print("error: --dataset must be a UUID.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+
+    started = time.perf_counter()
+    async with database.session() as session:
+        try:
+            identities = await load_identities(
+                session, region_slug=definition.slug, dataset_id=dataset_id
+            )
+        except (PathAbleSideError, DatasetLifecycleError) as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+
+    evidence = None
+    if args.osm_pbf is not None:
+        print(f"Reading OSM versions from {args.osm_pbf.name}...")
+        try:
+            evidence = read_versions(
+                args.osm_pbf,
+                expected_sha256=identities.facts.source_file_sha256,
+                way_ids=_osm_ids(identities.way_edges),
+                node_ids=_osm_ids(identities.node_ids),
+            )
+        except VersionEvidenceError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+
+    run: dict[str, object] = {
+        "generated_at": dt.datetime.now(tz=dt.UTC).isoformat(timespec="seconds"),
+        "seconds": round(time.perf_counter() - started, 2),
+        "version_evidence_seconds": round(evidence.seconds, 2) if evidence else None,
+        **_run_measurements(),
+    }
+    report = build_report(identities, overture, evidence, run=run)
+
+    ways = report["ways"]
+    print(f"PathAble dataset {identities.facts.dataset_id} ({identities.facts.checksum[:12]})")
+    print(f"Overture {overture.release}: {len(overture.segments)} segments in the extract")
+    print(f"  PathAble ways          {ways['pathable_ways']}")
+    for match, count in ways["by_match"].items():
+        print(f"    {match:<32}{count:>8}")
+    print("  linked ways by version status")
+    for status, count in ways["by_version_status"].items():
+        print(f"    {status:<40}{count:>8}")
+    print("  linked ways by cardinality")
+    for cardinality, count in ways["by_cardinality"].items():
+        print(f"    {cardinality:<32}{count:>8}")
+    if args.json is not None:
+        write_json(args.json, report)
+        print(f"\nWrote {args.json}")
+    return EXIT_OK
+
+
+def _osm_ids(raw_ids: Iterable[str]) -> set[int]:
+    return {osm_id for osm_id in map(parse_pathable_osm_id, raw_ids) if osm_id is not None}
+
+
+def _run_measurements() -> dict[str, Any]:
+    """Where and on what a run happened. Recorded, never hashed."""
+    memory = process_memory()
+    machine = machine_memory()
+    return {
+        "environment": describe_environment(),
+        "machine_memory_mb": machine.total_mb,
+        "peak_process_memory_mb": memory.peak_rss_mb,
+        "process_memory_method": memory.method,
+    }
 
 
 def _report(ingestion: IngestionResult, label: str) -> None:
