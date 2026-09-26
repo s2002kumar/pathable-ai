@@ -175,5 +175,26 @@
       "refusal": "ERROR:  a dataset is created as a draft, not as retired",
       "rows_left": 0
     }
+  },
+  "provenance_read_overhead": {
+    "method": "read_pbf + collected_to_payload on the same extract and bounds, main's reader (origin/main 8fc5791, loaded from its source) then this branch's, back to back in one process, nothing else running from this card; one run each",
+    "runs": [
+      {
+        "reader": "main",
+        "read_seconds": 768.33,
+        "read_and_interpret_seconds": 775.18,
+        "nodes": 155714,
+        "edges": 180554
+      },
+      {
+        "reader": "branch",
+        "read_seconds": 756.47,
+        "read_and_interpret_seconds": 764.74,
+        "nodes": 155714,
+        "edges": 180554
+      }
+    ],
+    "branch_minus_main_read_seconds": -11.86,
+    "reading": "No overhead detectable at one run each; the branch ran second, so page cache may favour it. The candidate ingest's 2150.6 s read ran under other load on the same machine and is not explained by this measurement. Memory was not measured."
   }
 }
