@@ -31,10 +31,10 @@ def _pbf(path: Path) -> Path:
             1: (10.05, 10.05, {}),
             2: (10.06, 10.05, {}),
             3: (10.07, 10.05, {"kerb": "lowered", "barrier": "kerb"}),
-            # Just outside the box but inside the read margin: resolves a way that
-            # leaves the box and comes back.
+            # Just outside the box: the end of a way that leaves it.
             4: (10.102, 10.05, {}),
-            # Far outside: only an outside way uses it.
+            # Far outside: an outside way uses it, and so does a way that starts
+            # inside the box and runs a long way out.
             5: (11.0, 11.0, {}),
             6: (11.1, 11.0, {}),
             # A kerb node outside the box is not kept on its own.
@@ -53,6 +53,7 @@ def _pbf(path: Path) -> Path:
             (101, [3, 4], {"highway": "residential", "name": "Fixture Street"}),
             (102, [5, 6], {"highway": "footway"}),
             (103, [1, 2], {"building": "yes"}),
+            (104, [2, 5], {"highway": "path"}),
         ):
             writer.add_way(
                 osmium.osm.mutable.Way(id=way_id, version=3, timestamp=STAMP, nodes=refs, tags=tags)
@@ -71,12 +72,21 @@ class TestRead:
     def test_highway_ways_touching_the_box_are_kept_whole(self, pbf: Path) -> None:
         extract, facts = read_study_extract(pbf, expected_sha256=file_sha256(pbf), bounds=BOX)
 
-        assert sorted(extract.ways) == [100, 101]
+        assert sorted(extract.ways) == [100, 101, 104]
         assert extract.ways[101].refs == (3, 4)  # leaves the box, kept whole
         assert extract.ways[100].tags == {"highway": "footway", "footway": "sidewalk"}
         assert extract.ways[100].version == 3
         assert extract.ways[100].timestamp == "2020-05-01T00:00:00Z"
-        assert facts["ways"] == 2
+        assert facts["ways"] == 3
+
+    def test_a_way_running_far_beyond_the_box_is_not_dropped(self, pbf: Path) -> None:
+        # Regression: the first version resolved nodes only within 0.005 degrees
+        # of the box, and silently dropped the 22 long ways of PathAble's graph
+        # that crossed its edge and ran further.
+        extract, _facts = read_study_extract(pbf, expected_sha256=file_sha256(pbf), bounds=BOX)
+
+        assert extract.ways[104].refs == (2, 5)
+        assert (extract.nodes[5].lon, extract.nodes[5].lat) == (11.0, 11.0)
 
     def test_fact_nodes_inside_the_box_keep_their_tags_and_version(self, pbf: Path) -> None:
         extract, _facts = read_study_extract(pbf, expected_sha256=file_sha256(pbf), bounds=BOX)

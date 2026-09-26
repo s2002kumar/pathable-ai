@@ -11,10 +11,13 @@ the study reads that same file — refused unless the hash matches — and keeps
   OSM version and edit time.
 
 Nothing is simplified or clipped: a way is kept whole, exactly as mapped at the
-extract's timestamp. Output is one gzipped JSON-lines file, sorted by type and
-id, written with a fixed gzip timestamp, so the same source always produces the
-same bytes and the file's hash identifies the frozen OSM side of every
-comparison. Live OSM data is never substituted for it.
+extract's timestamp, however far it runs beyond the box — osmium's node location
+index resolves every node it uses. (An earlier version resolved nodes only near
+the box and silently dropped long ways that crossed its edge.) Output is one
+gzipped JSON-lines file, sorted by type and id, written with a fixed gzip
+timestamp, so the same source always produces the same bytes and the file's
+hash identifies the frozen OSM side of every comparison. Live OSM data is never
+substituted for it.
 """
 
 from __future__ import annotations
@@ -48,9 +51,6 @@ NODE_FACT_KEYS = frozenset(
         "railway",
     }
 )
-
-#: Degrees of margin read around the box, so ways that dip out and back resolve.
-READ_MARGIN_DEGREES = 0.005
 
 Progress = Callable[[str], None]
 Bounds = tuple[float, float, float, float]
@@ -90,13 +90,13 @@ def read_study_extract(
     *,
     expected_sha256: str,
     bounds: Bounds,
-    margin_degrees: float = READ_MARGIN_DEGREES,
     progress: Progress | None = None,
 ) -> tuple[StudyExtract, dict[str, Any]]:
     """Read the pilot box out of the verified source extract. Two passes.
 
-    Nodes first, then ways, for the reason :func:`pathable_api.geo.pbf.read_pbf`
-    gives: reading ways first holds every node reference in the province.
+    The first reads only nodes that carry a fact key, filtered in C++. The
+    second reads every way with a ``highway`` tag, with node locations filled
+    in by osmium's location index, and keeps those with a node inside the box.
     """
     say = progress or (lambda _message: None)
     started = time.perf_counter()
@@ -108,63 +108,66 @@ def read_study_extract(
         )
         raise ExtractSourceError(msg)
 
-    min_lon, min_lat, max_lon, max_lat = bounds
-    say(f"nodes: reading {pbf.name}...")
-    coordinates: dict[int, tuple[float, float]] = {}
+    def inside(lon: float, lat: float) -> bool:
+        return bounds[0] <= lon <= bounds[2] and bounds[1] <= lat <= bounds[3]
+
+    say(f"nodes: reading tagged nodes from {pbf.name}...")
     fact_nodes: dict[int, OsmNode] = {}
-    for node in osmium.FileProcessor(str(pbf)).with_filter(
-        osmium.filter.EntityFilter(osmium.osm.NODE)
+    for node in (
+        osmium.FileProcessor(str(pbf), osmium.osm.NODE)
+        .with_filter(osmium.filter.EntityFilter(osmium.osm.NODE))
+        .with_filter(osmium.filter.KeyFilter(*sorted(NODE_FACT_KEYS)))
     ):
         location = node.location  # type: ignore[union-attr]
-        lon = float(location.lon)
-        lat = float(location.lat)
-        if not (min_lon - margin_degrees <= lon <= max_lon + margin_degrees):
-            continue
-        if not (min_lat - margin_degrees <= lat <= max_lat + margin_degrees):
+        lon, lat = float(location.lon), float(location.lat)
+        if not inside(lon, lat):
             continue
         node_id = int(node.id)
-        coordinates[node_id] = (lon, lat)
-        if not (min_lon <= lon <= max_lon and min_lat <= lat <= max_lat):
-            continue
-        tags = {tag.k: tag.v for tag in node.tags}
-        if NODE_FACT_KEYS.intersection(tags):
-            fact_nodes[node_id] = OsmNode(
-                node_id,
-                lon,
-                lat,
-                _version(node.version),  # type: ignore[union-attr]
-                _timestamp(node.timestamp),  # type: ignore[union-attr]
-                tags,
-            )
-    inside = {
-        node_id
-        for node_id, (lon, lat) in coordinates.items()
-        if min_lon <= lon <= max_lon and min_lat <= lat <= max_lat
-    }
-    say(f"nodes: {len(coordinates)} near the box, {len(fact_nodes)} carrying facts.")
+        fact_nodes[node_id] = OsmNode(
+            node_id,
+            lon,
+            lat,
+            _version(node.version),  # type: ignore[union-attr]
+            _timestamp(node.timestamp),  # type: ignore[union-attr]
+            {tag.k: tag.v for tag in node.tags},
+        )
+    say(f"nodes: {len(fact_nodes)} carrying facts inside the box.")
 
-    say("ways: reading highway ways...")
+    say("ways: reading highway ways with node locations...")
     extract = StudyExtract()
+    coordinates: dict[int, tuple[float, float]] = {}
+    unresolved = 0
     for way in (
         osmium.FileProcessor(str(pbf))
+        .with_locations()
         .with_filter(osmium.filter.EntityFilter(osmium.osm.WAY))
         .with_filter(osmium.filter.KeyFilter("highway"))
     ):
-        refs = tuple(int(node.ref) for node in way.nodes)  # type: ignore[union-attr]
-        if len(refs) < 2 or not any(ref in inside for ref in refs):
+        refs: list[int] = []
+        points: list[tuple[float, float]] = []
+        complete = True
+        for ref in way.nodes:  # type: ignore[union-attr]
+            location = ref.location
+            if not location.valid():
+                complete = False
+                break
+            refs.append(int(ref.ref))
+            points.append((float(location.lon), float(location.lat)))
+        if len(points) < 2 or not any(inside(lon, lat) for lon, lat in points):
             continue
-        if not all(ref in coordinates for ref in refs):
+        if not complete:
+            unresolved += 1
             continue
         extract.ways[int(way.id)] = OsmWay(
             int(way.id),
             _version(way.version),  # type: ignore[union-attr]
             _timestamp(way.timestamp),  # type: ignore[union-attr]
             {tag.k: tag.v for tag in way.tags},
-            refs,
+            tuple(refs),
         )
+        coordinates.update(zip(refs, points, strict=True))
 
-    referenced = {ref for way in extract.ways.values() for ref in way.refs}
-    for node_id in sorted(referenced | set(fact_nodes)):
+    for node_id in sorted(set(coordinates) | set(fact_nodes)):
         known = fact_nodes.get(node_id)
         if known is not None:
             extract.nodes[node_id] = known
@@ -176,10 +179,9 @@ def read_study_extract(
         "source_file": pbf.name,
         "source_sha256": actual,
         "bounds": list(bounds),
-        "read_margin_degrees": margin_degrees,
-        "nodes_near_box": len(coordinates),
         "fact_nodes": len(fact_nodes),
         "ways": len(extract.ways),
+        "ways_with_unresolved_nodes": unresolved,
         "nodes": len(extract.nodes),
         "seconds": round(time.perf_counter() - started, 2),
     }
