@@ -47,17 +47,17 @@ routed over. Delivered together with Phase 1 rather than as a separate release.
 
 **Delivered**
 
-| Area       | What exists                                                                       |
-| ---------- | --------------------------------------------------------------------------------- |
-| Schema     | Pilot regions, dataset versions, ingestion runs, graph nodes and edges            |
-| Versioning | A dataset is immutable once activated; ingestion writes a new version and swaps   |
-| Ingestion  | `pathable ingest osm` (Overpass) and `pathable ingest pbf` (local extract)        |
-| Real data  | 155,714 nodes · 180,554 segments · 3,363.7 km, live since 2026-08-17              |
-| Elevation  | NRCan HRDEM 1 m LiDAR, sampled per node with full provenance                      |
-| Normalise  | OSM tags → deterministic attributes, with `unknown` as the default everywhere     |
-| Validation | Structured findings; errors block activation, warnings do not                     |
-| Checksums  | Deterministic over network content, so "has this actually changed?" is answerable |
-| Fixture    | A deterministic synthetic network in its own region, for tests and development    |
+| Area       | What exists                                                                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema     | Pilot regions, dataset versions, ingestion runs, graph nodes and edges                                                                    |
+| Versioning | Ingestion writes a new version and swaps activation atomically; enrichment is not yet immutable ([KI-10](../development/KNOWN_ISSUES.md)) |
+| Ingestion  | `pathable ingest osm` (Overpass) and `pathable ingest pbf` (local extract)                                                                |
+| Real data  | 155,714 nodes · 180,554 segments · 3,363.7 km, live since 2026-08-17                                                                      |
+| Elevation  | NRCan HRDEM 1 m LiDAR, sampled per node with full provenance                                                                              |
+| Normalise  | OSM tags → deterministic attributes, with `unknown` as the default everywhere                                                             |
+| Validation | Structured findings; errors block activation, warnings do not                                                                             |
+| Checksums  | Deterministic over network content, so "has this actually changed?" is answerable                                                         |
+| Fixture    | A deterministic synthetic network in its own region, for tests and development                                                            |
 
 **Still does not exist.**
 
@@ -179,6 +179,44 @@ ML-driven. See
 Additional regions, ingestion at scale, seasonal effects (snow clearance),
 community validation workflows, and — only after evaluation with disabled users —
 a public launch.
+
+---
+
+## Geospatial data lane (PA-GEO)
+
+A research lane: can PathAble combine pedestrian datasets from more than one
+source, keep provenance and uncertainty, and show with numbers whether the result
+carries better accessibility information than OpenStreetMap alone? It moves no
+phase gate and changes no route until a card says otherwise.
+
+### PA-GEO-01 — Overture release intake and OSM/GERS identity evidence _(draft PR #66)_
+
+**Delivered**
+
+| Area            | What exists                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| Release intake  | `pathable overture extract`: release and schema from Overture's STAC catalog, column contract, bounded reads |
+| Reproducibility | A manifest per run: files, ETags, S3 expiry, query and parameters, bytes received, output SHA-256            |
+| Linkage         | `pathable overture link`: identity, cardinality with linear ranges, version and edit-time status             |
+| Independence    | Which accessibility attributes, if any, Overture carries from a source other than OSM                        |
+| Safety          | Reads PathAble in a `READ ONLY` transaction; writes nothing, activates nothing                               |
+
+**What it measured** — see [`OVERTURE_GERS.md`](../architecture/OVERTURE_GERS.md)
+and the `waterloo-overture-*` files in [`docs/evidence/`](../evidence/README.md):
+Overture cites 37,604 of PathAble's 37,976 Waterloo ways; the relationship is
+many-to-many; version status needs evidence PathAble does not store; and in
+Waterloo, Overture adds **no** accessibility evidence independent of OSM for the
+attributes examined.
+
+**Still does not exist.**
+
+- Any synchronization with Overture, or any Overture data in the routing graph.
+- OSM element versions or edit times in PathAble's own tables (KI-7).
+- A lifecycle that keeps enrichment out of an active dataset, covers derived
+  evidence in its checksum, or can reactivate a retired dataset (KI-10). That is
+  PA-GEO-02, the next card.
+- A second, independent pedestrian source, a source-independent evidence model,
+  conflation, or any coverage improvement.
 
 ---
 

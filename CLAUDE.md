@@ -116,7 +116,9 @@ Protect behaviour, not coverage percentages.
 - Draft PR early; mark ready only when required checks are green.
 - Never fabricate history, contributors, reviews or activity.
 - Never force-push published work without explicit justification.
-- The repository stays private until the founder decides otherwise.
+- The repository has been public since 2026-09-14 (source-visible, all rights
+  reserved — never "open source"). Any further publication decision, including
+  a public deployment, is the founder's.
 - **No `Co-Authored-By: Claude` trailers and no "Generated with Claude Code"
   footers** in commits, PRs or issues unless the founder asks for them. This is
   the founder's work history, not a promotional surface.
@@ -157,7 +159,10 @@ from a previous commit.
 
 **Gate A and Gate B are passed**, merged and tagged `v0.2.0-gate-ab`. PathAble
 routes over a real 180,554-segment Waterloo network with 1 m LiDAR elevation.
+The repository went public at `v0.3.0-public-release`.
 
-Gate C work is on `feature/c01-ml-production-readiness`, alongside the Gate D
-production track. See `docs/product/PHASES.md` for what exists and — more
+Gate C has not started on `main`. `feature/c01-ml-production-readiness` (PR #22)
+is frozen legacy work: do not merge it or use its `0006_perception` migration as
+a baseline. The Gate D deployment architecture is proposed in ADR 0009, with
+nothing deployed. See `docs/product/PHASES.md` for what exists and — more
 importantly — what deliberately does not.

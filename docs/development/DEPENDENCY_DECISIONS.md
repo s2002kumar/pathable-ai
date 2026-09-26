@@ -79,3 +79,70 @@ major, covered by `pip-audit` on every PR and weekly, and tracked by Dependabot.
 
 **Review trigger:** if `httpx2` stops receiving releases for two quarters, or if
 Starlette changes its recommendation, revisit and consider option 2.
+
+---
+
+## 2026-09-25 — `duckdb` (bounded reads of Overture GeoParquet)
+
+**Status:** Accepted · runtime dependency of the `pathable` CLI · verified 2026-09-25
+
+### Problem
+
+PA-GEO-01 reads one region's share of an Overture Maps release: about 29,000
+segments and 54,000 connectors for Waterloo, out of roughly 97 GB of global
+transportation GeoParquet on a public S3 bucket. That needs Parquet reading
+with nested structs (`sources[]`, `connectors[]`), predicate pushdown on the
+per-feature `bbox` struct so row groups that cannot contain the region are
+skipped, and HTTP range reads so only those row groups cross the network.
+Nothing in the existing dependency set does that: there is no `pyarrow`, and
+`geopandas` reads GeoParquet through it.
+
+### Verification performed
+
+| Question         | Finding                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| Who publishes it | PyPI author and maintainer **DuckDB Foundation**; source `github.com/duckdb/duckdb-python`     |
+| Licence          | MIT, © 2018-2026 Stichting DuckDB Foundation (wheel `licenses/LICENSE`)                       |
+| Version pinned   | `>=1.5.5,<2.0.0`; `uv.lock` resolves 1.5.5, uploaded 2026-07-22                                |
+| Required deps    | None — `pandas`, `pyarrow`, `numpy` and friends are only in the optional `all` extra           |
+| Wheels           | CPython 3.13 wheels for Windows, manylinux x86-64/aarch64 and macOS; nothing builds on install |
+| Size             | 36 MB native module on Windows (measured in this venv)                                         |
+| Typing           | Ships `py.typed` and stubs; passes `mypy --strict` with no override                            |
+
+### What it does at runtime that a reviewer should know
+
+Reading `https://`/`s3://` needs DuckDB's `httpfs` extension, which is not in the
+wheel. On a live run the extract command executes `INSTALL httpfs; LOAD httpfs`,
+downloading it once from DuckDB's own extension repository; DuckDB verifies
+extension signatures by default and nothing here relaxes that. The installed
+extension version is recorded in every extract manifest (`tools.httpfs`).
+
+Local runs — every test — set `autoinstall_known_extensions` and
+`autoload_known_extensions` to false, so a test that tried to touch the network
+would fail instead of quietly downloading an extension. The GeoParquet
+`GEOMETRY` type is in DuckDB's core since 1.5; the `spatial` extension is not
+used.
+
+### Options considered
+
+1. **`pyarrow` + `fsspec`/`s3fs`.** Also reads Parquet with row-group
+   statistics, but it is two to three new packages rather than one, and the
+   nested-struct unnesting the linkage needs would be hand-written Python.
+2. **Download whole files and filter locally.** The one segment file that
+   covers Waterloo is 583 MB; the region needed 18.9 MB of it (measured).
+3. **Sedona/Spark.** Distributed processing for a single-region read is the
+   premature infrastructure `CLAUDE.md` rules out.
+
+### Decision
+
+Add `duckdb` as a runtime dependency, imported only by the `pathable overture`
+modules. It is a runtime rather than a dev dependency because the CLI ships in
+the API image and a subcommand that fails with `ImportError` there would be a
+trap; the API server itself never imports it.
+
+**Not claimed:** that DuckDB is faster than PostGIS or anything else. It was
+chosen for bounded remote Parquet reads, and PostGIS remains the store.
+
+**Review trigger:** if `pip-audit` flags it, if a 2.x release changes the
+`httpfs` or GEOMETRY behaviour this relies on, or if PA-GEO-02 moves this data
+into PostGIS and nothing reads Parquet any more.
