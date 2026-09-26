@@ -579,6 +579,215 @@ One final visual review of the finished candidate. The founder approved the
 interaction direction, not the finish; technical completion does not
 self-award the rest.
 
+## The Stitch route planner (PA-UX-03B)
+
+The founder's test for this revision: _a recruiter should understand within
+seconds why the accessibility-aware route differs from the shortest route, while
+a technical reviewer can drill into the exact evidence afterward._ Visual first,
+evidence second, detail on demand; map first throughout. It is built on the
+PA-UX-03A contract and changes no routing: no file under `services/` or
+`packages/` differs from the 03A head.
+
+### The first screen
+
+In order, everything a person needs before deciding anything:
+
+1. **The verdict** — "The wheelchair route is 67 m longer than the shortest
+   walking route (23%)." It says "the same route" only when the two routes'
+   segments are identical _and_ the reported difference agrees; identical
+   segments beside a reported 40 m is a response contradicting itself, and the
+   figure is what gets reported.
+2. **The two routes**, as rows a person chooses between: name, distance, time,
+   stairways, detour. They are one radio group — one tab stop, the arrow keys
+   move between them — and the chosen route is drawn in front on the map, the
+   other faded to half, never removed. The profile's own route is chosen first.
+3. **What rules the shortest route out**, on the shortest route's row: "Ruled
+   out: 4 stairways · 16 recorded steps". Read from each segment's `excluded_by_profile`, never from
+   the stairway count — crutches allow stairs, and a stairway is then a cost,
+   not a wall.
+4. **No time for a route the profile cannot use.** That row reads "Time
+   unavailable for this profile" instead of a number. "5 min" beside a flight of
+   stairs reads as a trip a wheelchair user could take, and that is the one
+   error this product must not make.
+5. **The reason that decided it** — the engine's own sentence, ranked first:
+   a limit the profile cannot relax before any penalty, then the penalty that
+   cost the shortest route most (`cost_difference_effective_m`). It carries its
+   topic and what it rests on.
+6. **How much the map is silent about** — "Incomplete data. 100% of this route
+   is missing at least one record — largest gap: surface condition, 100%.
+   Unrecorded is not the same as clear."
+
+### Evidence, labelled by what it rests on
+
+Every statement carries one of four labels, read from the API's `basis` and
+never from its code: **Recorded** (a mapper wrote it down in OpenStreetMap),
+**Estimated from elevation** (PathAble derived it from the terrain model),
+**Not recorded** (nobody has), and **Your profile rule** (a consequence of the
+profile, not a fact about the path). "Recorded and estimated" marks the few
+statements that rest on both. There is no confidence figure, probabilistic or
+otherwise.
+
+Below the first screen, **why the routes differ**, every statement grouped by
+topic — stairs, crossings and kerbs, gradient, surface, width, access, missing
+information, then the profile's rules — groups in the order of their strongest
+statement, and "Hard limit" on a group only when the profile cannot use what it
+names. A statement resting on an absence is filed under missing information
+whatever it is about: "avoids a crossing with no recorded kerb" is a statement
+about an absence, and filing it under kerbs would read as a fact about a kerb.
+
+Then **what the map records on the chosen route**, one bar per category with the
+sentence that states it: gradient split three ways (recorded, estimated, not
+recorded), steps summed from the segments, surface, surface condition and width
+as shares of length, and kerbs counted per crossing — "1 of 1 crossing
+recorded", or "No crossings on this route" where the API's 0.0 would otherwise
+draw as "every kerb recorded" about kerbs that do not exist. There is no total:
+one "% known" would add a surface to a width. Recorded is solid, estimated is
+striped and not recorded is an amber hatch, so the three survive greyscale. The
+steepest climb and descent sit under the bars with their own labels.
+
+### A 03A defect this found
+
+The uncertainty line counted what `unknown_data_fraction` counts — surface,
+surface condition, gradient, steps and kerb — and then named the largest gap
+from `evidence_coverage`, which also carries width. A route missing width
+everywhere and surface condition on 42% of its length read "unrecorded on 42% of
+this route; largest gap: path width, 100%": a gap larger than the figure it was
+part of. The gap is now chosen only from the categories the figure counts, width
+is reported beside its own denominator in the breakdown, and a regression test
+names the bug.
+
+### On the map
+
+- **Recorded stairways are always drawn**, on both routes, whenever there is an
+  answer. They are the commonest reason the two routes differ; a map that hides
+  them until asked hides the reason.
+- **What the profile rules out, and the steepest climb, are pinned to the map as
+  text** — "Ruled out: 4 stairways" at the first such segment, "Steepest climb
+  3.4% · estimated" on the chosen route. Ordinary DOM positioned by the map's
+  projection, not a symbol layer: canvas text needs the basemap's glyph server
+  and cannot be read or selected. Hidden from assistive technology because each
+  repeats a statement the panel makes beside its evidence. A less important
+  label that would cover a more important one is hidden, measured from the
+  pills' real widths.
+- **Fit routes** re-frames the answer after panning, without a new request.
+- Nothing is taken from the basemap: a footway the tile style draws is not
+  evidence of anything.
+
+### The profile and the uphill limit
+
+The five profiles are real radio buttons drawn as chips — Wheelchair, Walker,
+Stroller, Crutches or cane, Reduced mobility — short enough to sit on two lines
+in the narrowest panel. What each rules out and prefers is read from
+`/routes/profiles`, the definitions that choose the route, rather than written a
+second time in the browser; while it loads the line says so, and if it cannot be
+loaded it says that, never a guess.
+
+The uphill limit is off until the traveller turns it on. On, it takes the number
+exactly as typed ("4.75" is sent as 4.75), is applied on Enter or on leaving the
+field — so a half-typed "1" on the way to "12" is never routed — and is sent as a
+`custom` profile on the chosen preset, which the API builds. Presets express
+gradient as a preference; only a limit somebody states about themselves may rule
+a path out.
+
+### States
+
+Before anything is chosen · one end set ("Start set. Now choose a destination.")
+· loading · two routes · the same route (identity from segments, with the note
+that the lines overlap) · only one route · **no route for the profile**, said
+calmly as a result rather than an error: what rules the shortest route out, the
+API's own reason, and "PathAble does not loosen your profile's limits to find
+one" · API or network error, with the API's message and a retry · incomplete
+evidence.
+
+### Name
+
+The interface says PathAble — header, page title, metadata, the configuration
+error — with no suffix. A repository-wide rename was deliberately left out.
+
+### What was not adopted from the Stitch design
+
+The dark theme: the existing light token system is kept, with dark mode
+following the system setting as before. A dark basemap belongs with the
+production tile-provider decision (ADR 0005). The design's "Standard" and
+"Gentle" profiles, per the founder's decision. Probabilistic confidence of any
+kind.
+
+### Measured
+
+**Room left below the uncertainty line** — the last of the answer — with the
+example journey on screen, in the Playwright Linux image with DejaVu Sans
+installed, which is what the CI runner resolves `system-ui` to. Stubbed API,
+production build. The layout gate requires at least 24 px.
+
+| Viewport | PR #65 (before) | PA-UX-03B |
+| -------- | --------------: | --------: |
+| 1440×900 |             336 |       334 |
+| 1366×768 |             204 |       189 |
+| 1000×700 |              79 |        52 |
+| 412×915  |              73 |        71 |
+| 390×844  |              51 |        32 |
+
+The answer now holds more — the deciding reason with its evidence label and
+the hard-limit badge — so it uses more of the first screen. It got there only
+after a Linux pass: under Windows fonts the first version cleared 1000×700 by
+67 px, and under DejaVu the same build overflowed it by 13 px and a 390 px phone
+by 41 px. The fixes were a one-line panel title, a smaller distance figure so a
+route's name stays on one line, a compact journey line and verdict below 800 px
+of height, and folding the stairs line into the "Ruled out" badge when every
+stairway is the ruled-out one.
+
+**The empty planner at 1000×700**, same conditions: Compare ends 75 px above
+the fold (100 px before); the one-press example's button ends 8 px below it,
+its label on screen (17 px above before). The five profile chips and the uphill
+control cost that space, and the example is the one thing this revision made
+harder to find on a small laptop. At 390×844 Compare is 3 px clear (45 px
+before) and the example was already below the fold (16 px before, 58 px now).
+
+**Over real Waterloo** — dataset `51e75f78`, this branch's API against the
+production-smoke database (read only), the OpenFreeMap basemap, Windows fonts —
+at 1440×900, 1366×768, 1000×700, 412×915 and 390×844, both routes, the detour,
+the deciding reason and the uncertainty line were all on the first screen. The
+campus example answered "354 m, Est. 6 min, +67 m longer" against "287 m, Time
+unavailable for this profile, Ruled out: 4 stairways · 16 recorded steps", with
+"Steepest climb 3.4% · estimated" on the map. Press to answer took 0.9–3.1 s
+across the five runs on a warm API and a software renderer; that is a local
+observation, not a latency figure. With the traveller's uphill limit at 2.5%
+the route became 367 m, and the shortest route gained "1 segment above your
+gradient limit", filed under Gradient as a hard limit labelled _Estimated from
+elevation_ — the recorded/estimated distinction reaching a limit the traveller
+set. The images, the answers each state gave and a 1280×800 recording are in
+[`screenshots/ux-03b/`](screenshots/ux-03b/), captured on `07aee5b`.
+
+### Verified, at this revision
+
+On `07aee5b`, observed rather than inferred.
+
+| Gate                                                | Result                                                                           |
+| --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `tsc --noEmit`, ESLint, Prettier (repository)       | clean                                                                            |
+| Frontend unit (Vitest, coverage)                    | 382 passed, 22 files; statements 92.46%, branches 86.77% (floor 80%)             |
+| Stubbed browser suite, Linux image with DejaVu Sans | 124 passed, desktop and Pixel 7, axe included                                    |
+| Full-stack against real Waterloo (`51e75f78`)       | 16 passed — this branch's API and a production build, nothing stubbed            |
+| Contract drift                                      | generated contracts match the backend schemas; no file under `services/` changed |
+| CI on the pushed head                               | recorded on the pull request, not here                                           |
+
+Automated axe passing is a floor, not a claim of accessibility. Checked by hand
+in the captures: keyboard reach and arrow-key movement in both radio groups,
+visible focus, the chosen route named in the map key in words, attribution
+uncovered, and no sideways overflow at 320 px.
+
+### Limitations
+
+- Nobody outside the repository, and no user of a mobility aid, has reviewed
+  this interface. The founder's review of the finish is still to come.
+- The dark Stitch theme is not built, and neither is a production geocoder or
+  tile provider: place search is unchanged from PA-UX-02B, behind its provider
+  boundary, and the basemap is still OpenFreeMap's development service.
+- The example is 8 px below the fold of an empty 1000×700 window under Linux
+  fonts; it was on screen before this revision.
+- The map labels can hide each other when zoomed out; the less important one
+  is the one hidden, and its statement is always in the panel.
+
 ## States
 
 Initial · selecting (start set, end awaited: the row is outlined and the status

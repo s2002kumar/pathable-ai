@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { compareRoutes } from './compare-routes';
-import type { CustomProfileOptions, Journey, RouteRequestState } from './types';
+import { type Journey, type RouteRequestState, profileSelectionOf } from './types';
 
 export type UseRouteComparisonOptions = {
   readonly apiBaseUrl: string;
@@ -14,8 +14,6 @@ export type UseRouteComparisonOptions = {
    * viewer commits one, not while they are still assembling it.
    */
   readonly journey: Journey | null;
-  /** Custom profile options, when a caller supplies them. No UI sets these today. */
-  readonly custom?: CustomProfileOptions;
   readonly fetchImpl?: typeof fetch;
 };
 
@@ -49,7 +47,6 @@ export function useRouteComparison({
   apiBaseUrl,
   region,
   journey,
-  custom,
   fetchImpl,
 }: UseRouteComparisonOptions): UseRouteComparisonResult {
   const [settled, setSettled] = useState<Settled | null>(null);
@@ -57,11 +54,11 @@ export function useRouteComparison({
 
   const origin = journey?.origin.position ?? null;
   const destination = journey?.destination.position ?? null;
-  const profileKey = journey?.profileKey ?? null;
-  const customSignature = custom ? JSON.stringify(custom) : '';
+  const profile = journey === null ? null : profileSelectionOf(journey);
+  const profileSignature = profile === null ? null : JSON.stringify(profile);
 
   const requestKey =
-    journey === null || origin === null || destination === null || profileKey === null
+    journey === null || origin === null || destination === null || profileSignature === null
       ? null
       : [
           apiBaseUrl,
@@ -70,13 +67,12 @@ export function useRouteComparison({
           origin.latitude,
           destination.longitude,
           destination.latitude,
-          profileKey,
-          customSignature,
+          profileSignature,
           attempt,
         ].join('|');
 
   useEffect(() => {
-    if (requestKey === null || origin === null || destination === null || profileKey === null) {
+    if (requestKey === null || origin === null || destination === null || profile === null) {
       return;
     }
 
@@ -87,7 +83,7 @@ export function useRouteComparison({
       region,
       origin,
       destination,
-      profile: { key: profileKey, ...(customSignature && custom ? { custom } : {}) },
+      profile,
       signal: controller.signal,
       ...(fetchImpl ? { fetchImpl } : {}),
     }).then((result) => {

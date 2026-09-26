@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HomePage from './page';
 
@@ -68,7 +68,7 @@ describe('HomePage', () => {
 
     render(await homePage());
 
-    expect(screen.getByText('PathAble AI')).toBeInTheDocument();
+    expect(screen.getByText('PathAble')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: /Waterloo, Ontario/, level: 1 }),
@@ -115,26 +115,25 @@ describe('HomePage', () => {
     );
   });
 
-  it('offers all five mobility profiles from one labelled control', async () => {
-    // A native select, not a custom widget: every profile stays offered and
-    // the keyboard and screen-reader behaviour is the platform's. As chips
-    // this wrapped to five rows in the panel and pushed Compare off the first
-    // screen.
+  it('offers all five mobility profiles as one labelled group of radio buttons', async () => {
+    // Real radio buttons, drawn as chips: every profile on show at once, one
+    // tab stop for the group and the arrow keys within it, as the platform
+    // does it. The wheelchair profile is chosen first.
     setEnv(VALID_ENV);
 
     render(await homePage());
 
-    const profile = screen.getByLabelText(/how do you travel/i) as HTMLSelectElement;
-    expect(profile.tagName).toBe('SELECT');
-    expect(profile.options).toHaveLength(5);
-    expect(profile.value).toBe('wheelchair');
-    expect([...profile.options].map((o) => o.textContent)).toEqual([
-      'Wheelchair',
-      'Walker or rollator',
-      'Crutches or cane',
-      'Stroller or pram',
-      'Reduced mobility',
+    const group = screen.getByRole('group', { name: /how do you travel/i });
+    const radios = within(group).getAllByRole('radio');
+    expect(radios.map((radio) => radio.getAttribute('value'))).toEqual([
+      'wheelchair',
+      'walker',
+      'stroller',
+      'crutches',
+      'reduced_mobility',
     ]);
+    expect(within(group).getByRole('radio', { name: 'Wheelchair' })).toBeChecked();
+    expect(radios.filter((radio) => (radio as HTMLInputElement).checked)).toHaveLength(1);
   });
 
   it('explains how to begin before any point is chosen', async () => {
@@ -200,7 +199,7 @@ describe('HomePage', () => {
 
     expect(screen.getByTestId('configuration-error')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('NEXT_PUBLIC_PILOT_ZOOM');
-    expect(screen.queryByText('PathAble AI')).not.toBeInTheDocument();
+    expect(screen.queryByText('PathAble')).not.toBeInTheDocument();
   });
 
   it('reports every configuration problem at once', async () => {

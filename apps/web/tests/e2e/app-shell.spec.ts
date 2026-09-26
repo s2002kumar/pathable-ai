@@ -5,8 +5,9 @@ test.describe('application shell', () => {
   test('loads and shows the product identity', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveTitle(/PathAble AI/);
-    await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
+    // The interface names the product PathAble, with no suffix.
+    await expect(page).toHaveTitle(/^PathAble — /);
+    await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
     await expect(page.getByTestId('pilot-region')).toContainText('Waterloo, Ontario');
   });
 
@@ -126,17 +127,21 @@ test.describe('application shell', () => {
     expect(container.width).toBeGreaterThanOrEqual(frame.width - 4);
   });
 
-  test('offers every mobility profile from one labelled control', async ({ page }) => {
+  test('offers every mobility profile as one group of radio buttons', async ({ page }) => {
     await page.goto('/');
 
-    // One labelled control rather than five chips: as chips this wrapped to
-    // five rows in the panel and pushed Compare off the first screen. Every
-    // profile is still offered, and a native select's keyboard and
-    // screen-reader behaviour is the platform's own.
-    const profile = page.getByLabel(/how do you travel/i);
-    await expect(profile).toBeVisible();
-    await expect(profile.locator('option')).toHaveCount(5);
-    await expect(profile).toHaveValue('wheelchair');
+    // Native radio buttons drawn as chips: all five on show, one tab stop,
+    // and the arrow keys move the choice — the platform's own behaviour.
+    const group = page.getByRole('group', { name: /how do you travel/i });
+    await expect(group).toBeVisible();
+    await expect(group.getByRole('radio')).toHaveCount(5);
+    const wheelchair = group.getByRole('radio', { name: 'Wheelchair' });
+    await expect(wheelchair).toBeChecked();
+
+    await wheelchair.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(group.getByRole('radio', { name: 'Walker' })).toBeChecked();
+    await expect(group.getByRole('radio', { name: 'Walker' })).toBeFocused();
   });
 
   test('explains how to start before any point is chosen', async ({ page }) => {

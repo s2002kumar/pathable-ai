@@ -200,11 +200,17 @@ function clampAxis(start: number, end: number, size: number): [number, number] {
   return [start * scale, end * scale];
 }
 
-/** Which route, if any, the viewer has asked to see on its own. */
+/** Which route, if any, the map brings forward. */
 export type RouteFocus = 'standard' | 'accessible' | null;
 
-/** How far the unfocused route fades. Never to nothing: the comparison stays. */
-export const UNFOCUSED_OPACITY = 0.28;
+/**
+ * How far the route not chosen fades. Never to nothing: the comparison stays.
+ *
+ * Half, not a quarter. One route is now always chosen — the profile's own by
+ * default — so the other is faded on the first screen anybody sees, and the
+ * shortest route is the half of the comparison that explains the other.
+ */
+export const UNFOCUSED_OPACITY = 0.5;
 
 export type LineFeatureCollection = {
   type: 'FeatureCollection';
@@ -324,6 +330,24 @@ export function recordedStairs(route: Route | null | undefined): RecordedStairs 
       (segment) => segment.step_count === null || segment.step_count === undefined,
     ).length,
     unknownSegments: (route.segments ?? []).filter((segment) => segment.steps === 'unknown').length,
+  };
+}
+
+/**
+ * The recorded stairways on both routes together, for drawing.
+ *
+ * Both, because the map shows both routes: a crutches route may use a stairway
+ * the shortest route also uses, or one of its own, and either is a fact about
+ * the line it sits on.
+ */
+export function stairsOnRoutes(...routes: Array<Route | null | undefined>): RecordedStairs {
+  const all = routes.map(recordedStairs);
+  return {
+    segments: all.flatMap((stairs) => stairs.segments),
+    stairways: all.reduce((total, stairs) => total + stairs.stairways, 0),
+    recordedSteps: all.reduce((total, stairs) => total + stairs.recordedSteps, 0),
+    unknownStepCount: all.reduce((total, stairs) => total + stairs.unknownStepCount, 0),
+    unknownSegments: all.reduce((total, stairs) => total + stairs.unknownSegments, 0),
   };
 }
 

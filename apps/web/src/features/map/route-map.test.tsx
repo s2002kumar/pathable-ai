@@ -19,6 +19,7 @@ import {
   POINTS_SOURCE_ID,
   POINTS_HALO_LAYER_ID,
   POINTS_LAYER_ID,
+  STAIRS_SOURCE_ID,
   STANDARD_CASING_LAYER_ID,
   STANDARD_LAYER_ID,
   STANDARD_SOURCE_ID,
@@ -110,6 +111,11 @@ class FakeMap {
     this.fitted.push(bounds);
   }
 
+  /** A flat projection is enough to place a label; nothing here measures it. */
+  project([lng, lat]: [number, number]) {
+    return { x: (lng + 81) * 1000, y: (44 - lat) * 1000 };
+  }
+
   dataOf(id: string): { features: unknown[] } {
     return this.sources.get(id)?.data as { features: unknown[] };
   }
@@ -146,9 +152,45 @@ const COMPARISON = {
     pace_profile: 'wheelchair',
     coordinates: [
       [-80.54, 43.47],
+      [-80.538, 43.47],
       [-80.536, 43.47],
     ],
-    segments: [],
+    segments: [
+      {
+        edge_identity: 'way/1:0-1',
+        coordinates: [
+          [-80.54, 43.47],
+          [-80.538, 43.47],
+        ],
+        length_m: 470,
+        effective_metres: 470,
+        cost_components: [],
+        is_crossing: false,
+        kerb: 'unknown',
+        steps: 'no',
+        surface_class: 'paved',
+        smoothness_class: 'unknown',
+        unknown_attributes: ['smoothness'],
+      },
+      {
+        edge_identity: 'way/2:0-1',
+        coordinates: [
+          [-80.538, 43.47],
+          [-80.536, 43.47],
+        ],
+        length_m: 13,
+        effective_metres: 13,
+        cost_components: [],
+        is_crossing: false,
+        kerb: 'unknown',
+        steps: 'yes',
+        step_count: 14,
+        surface_class: 'unknown',
+        smoothness_class: 'unknown',
+        excluded_by_profile: 'steps',
+        unknown_attributes: ['surface', 'smoothness'],
+      },
+    ],
     origin: { longitude: -80.54, latitude: 43.47, distance_m: 1 },
     destination: { longitude: -80.536, latitude: 43.47, distance_m: 1 },
     stairway_count: 1,
@@ -226,6 +268,13 @@ const CONFIG = {
   regionName: 'Waterloo, Ontario',
   attribution: '© test',
 };
+
+/** The route comparisons a mocked fetch received, leaving the profile list aside. */
+function compareCalls(fetchImpl: typeof fetch) {
+  return (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) =>
+    String(url).endsWith('/api/v1/routes/compare'),
+  ) as Array<[string, RequestInit]>;
+}
 
 function respondWithComparison() {
   return vi.fn(
@@ -350,7 +399,7 @@ describe('route layers', () => {
     expect(layerIds.indexOf(POINTS_LAYER_ID)).toBe(layerIds.indexOf(POINTS_HALO_LAYER_ID) + 1);
   });
 
-  it('highlights a route by paint alone, without moving the camera', async () => {
+  it('brings the chosen route forward by paint alone, without moving the camera', async () => {
     const user = userEvent.setup();
     render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
     await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
@@ -362,21 +411,88 @@ describe('route layers', () => {
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
+    // The profile's own route is in front from the start, and the shortest
+    // route faded but never removed.
+    await waitFor(() => {
+      const current = Object.fromEntries(map.paint.map(({ layer, value }) => [layer, value]));
+      expect(current[ACCESSIBLE_LAYER_ID]).toBe(1);
+      expect(current[STANDARD_LAYER_ID]).toBeLessThan(1);
+    });
     const fitsBefore = map.fitted.length;
     const paintsBefore = map.paint.length;
 
-    await user.click(screen.getByTestId('focus-accessible'));
+    await user.click(screen.getByTestId('difference-shortest'));
 
     await waitFor(() => expect(map.paint.length).toBeGreaterThan(paintsBefore));
     const latest = Object.fromEntries(
       map.paint.slice(paintsBefore).map(({ layer, value }) => [layer, value]),
     );
-    expect(latest[ACCESSIBLE_LAYER_ID]).toBe(1);
-    expect(latest[STANDARD_LAYER_ID]).toBeLessThan(1);
-    expect(latest[STANDARD_LAYER_ID]).toBeGreaterThan(0);
-    // No refit and no new map: a highlight must not undo the viewer's pan.
+    expect(latest[STANDARD_LAYER_ID]).toBe(1);
+    expect(latest[ACCESSIBLE_LAYER_ID]).toBeLessThan(1);
+    expect(latest[ACCESSIBLE_LAYER_ID]).toBeGreaterThan(0);
+    // No refit and no new map: a choice must not undo the viewer's pan.
     expect(map.fitted.length).toBe(fitsBefore);
     expect(FakeMap.instances).toHaveLength(1);
+  });
+
+  it('draws every recorded stairway once there is an answer, with nothing to press', async () => {
+    render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    expect(map.dataOf(STAIRS_SOURCE_ID).features).toHaveLength(0);
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+
+    // Read from the segments the response marks as steps, never from a count.
+    await waitFor(() => expect(map.dataOf(STAIRS_SOURCE_ID).features).toHaveLength(1));
+    expect(screen.getByTestId('legend-stairs')).toHaveTextContent(
+      'Stairway recorded in OpenStreetMap',
+    );
+  });
+
+  it('pins what the profile rules out to the map, as text a person can read', async () => {
+    render(<RouteWorkspace {...CONFIG} fetchImpl={respondWithComparison()} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+
+    const barrier = await screen.findByTestId('map-marker-barrier-steps');
+    expect(barrier).toHaveTextContent('Ruled out: 1 stairway');
+    // Placed at the stairway's own segment, not somewhere on the route.
+    const anchor = barrier.parentElement as HTMLElement;
+    expect(anchor.style.transform).toBe('translate(463px, 530px)');
+    expect(anchor).toHaveStyle({ visibility: 'visible' });
+    // A repeat of what the panel says, so assistive technology hears it once.
+    expect(screen.getByTestId('map-evidence')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('re-frames the routes on request, without asking for them again', async () => {
+    const user = userEvent.setup();
+    const fetchImpl = respondWithComparison();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    // Nothing to frame, nothing offered.
+    expect(screen.queryByTestId('fit-routes')).not.toBeInTheDocument();
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+    const fitsBefore = map.fitted.length;
+
+    await user.click(screen.getByTestId('fit-routes'));
+
+    await waitFor(() => expect(map.fitted.length).toBe(fitsBefore + 1));
+    expect(compareCalls(fetchImpl)).toHaveLength(1);
   });
 
   it('keeps one map instance across form and result updates', async () => {
@@ -394,7 +510,7 @@ describe('route layers', () => {
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
 
-    await user.selectOptions(screen.getByTestId('mobility-profile'), 'crutches');
+    await user.click(screen.getByRole('radio', { name: 'Crutches or cane' }));
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
@@ -435,13 +551,13 @@ describe('choosing points on the map', () => {
 
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
-    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(compareCalls(fetchImpl)).toHaveLength(0);
 
     await clickMap(map, -80.536, 43.47);
-    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(compareCalls(fetchImpl)).toHaveLength(0);
 
     await compare();
-    await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(1));
   });
 
   it('sends exactly one request for one Compare press', async () => {
@@ -454,8 +570,11 @@ describe('choosing points on the map', () => {
     await clickMap(map, -80.536, 43.47);
     await compare();
 
-    await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(1));
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+    expect(compareCalls(fetchImpl)).toHaveLength(1);
   });
 
   it('shows the comparison the API returned', async () => {
@@ -495,20 +614,50 @@ describe('choosing points on the map', () => {
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
     await compare();
-    await waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(1));
 
-    const profile = screen.getByTestId('mobility-profile') as HTMLSelectElement;
     await act(async () => {
-      profile.value = 'crutches';
-      profile.dispatchEvent(new Event('change', { bubbles: true }));
+      screen.getByRole('radio', { name: 'Crutches or cane' }).click();
     });
 
-    await waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(2));
-    const [, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1] as [
-      string,
-      RequestInit,
-    ];
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(2));
+    const [, init] = compareCalls(fetchImpl)[1]!;
     expect(JSON.parse(String(init.body)).profile).toBe('crutches');
+  });
+
+  it('re-runs with the traveller’s own uphill limit, exactly as typed', async () => {
+    const user = userEvent.setup();
+    const fetchImpl = respondWithComparison();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(1));
+    // Off by default: the first request is the preset, with no limit at all.
+    expect(JSON.parse(String(compareCalls(fetchImpl)[0]![1].body))).not.toHaveProperty('custom');
+
+    // Turning it on with no number yet asks for nothing.
+    await user.click(screen.getByTestId('uphill-limit-toggle'));
+    expect(compareCalls(fetchImpl)).toHaveLength(1);
+    expect(screen.getByTestId('compare-routes')).toBeDisabled();
+
+    // Typing waits for the number to be finished: Enter or leaving the field.
+    await user.type(screen.getByTestId('uphill-limit-input'), '6.25');
+    expect(compareCalls(fetchImpl)).toHaveLength(1);
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(2));
+    const body = JSON.parse(String(compareCalls(fetchImpl)[1]![1].body));
+    expect(body.profile).toBe('custom');
+    expect(body.custom).toEqual({ base: 'wheelchair', max_incline_percent: 6.25 });
+
+    // And off again is the preset again.
+    await user.click(screen.getByTestId('uphill-limit-toggle'));
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(3));
+    expect(JSON.parse(String(compareCalls(fetchImpl)[2]![1].body)).profile).toBe('wheelchair');
   });
 
   it('clears both points and the drawn routes', async () => {

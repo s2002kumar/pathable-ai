@@ -52,7 +52,46 @@ export type Journey = {
   readonly origin: Endpoint;
   readonly destination: Endpoint;
   readonly profileKey: ProfileKey;
+  /**
+   * The traveller's own uphill limit, in percent, or absent for none. Set only
+   * by the traveller: presets express gradient as a preference, and the only
+   * gradient that may rule a path out is one somebody states about themselves.
+   */
+  readonly uphillLimitPercent?: number | null;
 };
+
+/**
+ * The optional uphill limit as the panel holds it: off by default, and the
+ * number exactly as typed, so "4.5" is sent as 4.5 and never rounded.
+ */
+export type UphillLimit = {
+  readonly enabled: boolean;
+  readonly text: string;
+};
+
+export const NO_UPHILL_LIMIT: UphillLimit = { enabled: false, text: '' };
+
+export type ParsedUphillLimit =
+  | { readonly ok: true; readonly percent: number | null }
+  | { readonly ok: false; readonly message: string };
+
+/**
+ * Read the limit the traveller typed.
+ *
+ * Only the obvious is checked here — a number, not negative. The upper bound
+ * belongs to the API contract and is enforced there, with its own message,
+ * rather than copied into the browser where it could drift.
+ */
+export function parseUphillLimit(limit: UphillLimit): ParsedUphillLimit {
+  if (!limit.enabled) return { ok: true, percent: null };
+  const text = limit.text.trim();
+  if (text === '') return { ok: false, message: 'Enter the steepest climb you can manage, in %.' };
+  const percent = Number(text);
+  if (!Number.isFinite(percent) || percent < 0) {
+    return { ok: false, message: 'Enter a number of percent, such as 5 or 4.5.' };
+  }
+  return { ok: true, percent };
+}
 
 /**
  * Which route's recorded stairways are highlighted on the map, if any.
@@ -106,9 +145,31 @@ export function isRoutable(points: PlannerPoints): points is {
 }
 
 /** The journey these endpoints and this profile describe, or null if incomplete. */
-export function journeyOf(points: PlannerPoints, profileKey: ProfileKey): Journey | null {
+export function journeyOf(
+  points: PlannerPoints,
+  profileKey: ProfileKey,
+  uphillLimitPercent: number | null = null,
+): Journey | null {
   if (!isRoutable(points)) return null;
-  return { origin: points.origin, destination: points.destination, profileKey };
+  return { origin: points.origin, destination: points.destination, profileKey, uphillLimitPercent };
+}
+
+/**
+ * The profile a journey is compared under.
+ *
+ * With an uphill limit, the chosen preset becomes the base of a custom profile
+ * that adds that one hard limit and changes nothing else — the API builds it,
+ * so the preset's own rules are never restated here.
+ */
+export function profileSelectionOf(journey: Journey): ProfileSelection {
+  const limit = journey.uphillLimitPercent;
+  if (limit === null || limit === undefined || journey.profileKey === 'custom') {
+    return { key: journey.profileKey };
+  }
+  return {
+    key: 'custom',
+    custom: { base: journey.profileKey, max_incline_percent: limit },
+  };
 }
 
 /**

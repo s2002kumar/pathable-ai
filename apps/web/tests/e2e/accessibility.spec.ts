@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { breakMapStyle, stubHealthyApi } from './fixtures';
+import { breakMapStyle, stubHealthyApi, stubRouteComparison } from './fixtures';
 
 /**
  * Automated accessibility checks.
@@ -52,6 +52,27 @@ test.describe('accessibility', () => {
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
       timeout: 20_000,
     });
+
+    expect(await blockingViolations(page)).toEqual([]);
+  });
+
+  test('a comparison, with its evidence and the uphill field open, has none either', async ({
+    page,
+  }) => {
+    // The result is where the new structure lives — the route radio group,
+    // the evidence labels, the coverage bars, the labels pinned to the map —
+    // so it gets the same scan as the empty shell.
+    await stubHealthyApi(page);
+    await stubRouteComparison(page);
+    await page.goto('/');
+    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
+      timeout: 20_000,
+    });
+    await page.getByTestId('run-verified-example').click();
+    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+    await expect(page.getByTestId('map-marker-barrier-steps')).toBeVisible();
+    await page.getByTestId('uphill-limit-toggle').check();
+    await expect(page.getByTestId('uphill-limit-input')).toBeVisible();
 
     expect(await blockingViolations(page)).toEqual([]);
   });

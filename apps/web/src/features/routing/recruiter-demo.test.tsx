@@ -11,6 +11,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { RouteCompareResponse } from '@pathable/contracts';
+import { RouteComparisonView } from './RouteComparisonView';
 import { RouteDifference } from './RouteDifference';
 import { RouteWorkspace } from './RouteWorkspace';
 import { CAMPUS_EXAMPLE, exampleFromSearch } from './verified-example';
@@ -143,6 +144,11 @@ function jsonResponse(body: unknown) {
   } as unknown as Response;
 }
 
+/** The comparison requests a mocked fetch received, leaving the profile list aside. */
+function compareCalls(fetchImpl: ReturnType<typeof vi.fn>) {
+  return fetchImpl.mock.calls.filter(([url]) => String(url).endsWith('/api/v1/routes/compare'));
+}
+
 function renderWorkspace(fetchImpl: typeof fetch) {
   return render(
     <RouteWorkspace
@@ -168,12 +174,14 @@ describe('the verified example', () => {
 
     await user.click(screen.getByTestId('run-verified-example'));
 
-    await waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(1));
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(1));
+    const [, init] = compareCalls(fetchImpl)[0] as [string, RequestInit];
     const sent = JSON.parse(String(init.body)) as Record<string, unknown>;
 
     expect(sent.region).toBe('waterloo');
     expect(sent.profile).toBe('wheelchair');
+    // The verified case is the preset as verified: no limit of the viewer's own.
+    expect(sent).not.toHaveProperty('custom');
     expect(sent.origin).toEqual({
       longitude: CAMPUS_EXAMPLE.origin.longitude,
       latitude: CAMPUS_EXAMPLE.origin.latitude,
@@ -265,44 +273,46 @@ describe('why the routes differ', () => {
       // "recorded" is load-bearing: step_count sums only the stairways
       // somebody counted, and two of these four have no recorded count.
       within(screen.getByTestId('difference-shortest')).getByText(
-        '4 stairways (16 recorded steps)',
+        '4 stairways · 16 recorded steps',
       ),
     ).toBeInTheDocument();
     expect(
       within(screen.getByTestId('difference-accessible')).getByText('354 m'),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByTestId('difference-accessible')).getByText('no recorded stairways'),
+      within(screen.getByTestId('difference-accessible')).getByText('No recorded stairs'),
     ).toBeInTheDocument();
 
     const extra = screen.getByTestId('difference-extra');
-    expect(within(extra).getByText('+67 m')).toBeInTheDocument();
+    expect(extra).toHaveTextContent('+67 m longer');
     // The figure alone: why it is longer is the list of reasons below, not a
     // single cause named beside the number (D7).
     expect(extra).not.toHaveTextContent(/to avoid|because|stairway/i);
   });
 
   it('labels each statement with the kind of claim it is', () => {
-    render(<RouteDifference comparison={CAMPUS_RESPONSE} />);
+    render(<RouteComparisonView comparison={CAMPUS_RESPONSE} />);
 
     // An observed fact, a consequence of the profile, an estimate and an
     // absence are four different things, and the UI says which is which.
-    expect(screen.getByText('Recorded in OpenStreetMap')).toBeInTheDocument();
-    expect(screen.getByText(/Avoids 4 stairways/)).toBeInTheDocument();
-    expect(screen.getAllByText('Your profile’s rules').length).toBeGreaterThan(0);
-    expect(screen.getByText('Derived from an elevation model')).toBeInTheDocument();
-    expect(screen.getByText('Not recorded')).toBeInTheDocument();
+    const reasons = within(screen.getByTestId('difference-reasons'));
+    expect(reasons.getByText(/Avoids 4 stairways/).closest('li')).toHaveTextContent('Recorded');
+    expect(reasons.getAllByText('Your profile rule').length).toBeGreaterThan(0);
+    expect(
+      within(screen.getByTestId('steepest-climb')).getByText('Estimated from elevation'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('coverage-smoothness')).toHaveTextContent('100% not recorded');
   });
 
   it('says the data is incomplete before a viewer has scrolled anywhere', () => {
     // The distances are the flattering half of the answer. This is the other
     // half, in the same glance — the detailed per-category version is further
     // down the panel and below the fold on both demo viewports.
-    render(<RouteDifference comparison={CAMPUS_RESPONSE} />);
+    render(<RouteComparisonView comparison={CAMPUS_RESPONSE} />);
 
     const summary = screen.getByTestId('uncertainty-summary');
     expect(summary).toHaveAttribute('data-complete', 'false');
-    expect(summary).toHaveTextContent('Accessibility data is incomplete');
+    expect(summary).toHaveTextContent('Incomplete data');
     expect(summary).toHaveTextContent('100% of this route');
     expect(summary).toHaveTextContent(/unrecorded is not the same as clear/i);
     expect(summary).not.toHaveTextContent(/\b(safe|verified|confident|guaranteed)\b/i);
@@ -318,7 +328,7 @@ describe('why the routes differ', () => {
       },
     } as unknown as RouteCompareResponse;
 
-    render(<RouteDifference comparison={partly} />);
+    render(<RouteComparisonView comparison={partly} />);
 
     const summary = screen.getByTestId('uncertainty-summary');
     expect(summary).toHaveTextContent(/surface condition/i);
@@ -335,23 +345,26 @@ describe('why the routes differ', () => {
       },
     } as unknown as RouteCompareResponse;
 
-    render(<RouteDifference comparison={complete} />);
+    render(<RouteComparisonView comparison={complete} />);
 
     const summary = screen.getByTestId('uncertainty-summary');
     expect(summary).toHaveAttribute('data-complete', 'true');
     // PA-UX-01F: a statement about the record, not "everything was recorded".
-    expect(summary).toHaveTextContent(/no gaps reported in the assessed categories/i);
+    expect(summary).toHaveTextContent(
+      /no gaps reported in surface, surface condition, gradient, steps or kerb/i,
+    );
     expect(summary).not.toHaveTextContent(/every accessibility category/i);
     expect(summary).not.toHaveTextContent(/\b(safe|accessible route|verified|guaranteed)\b/i);
   });
 
   it('never presents missing data as a clear path', () => {
-    render(<RouteDifference comparison={CAMPUS_RESPONSE} />);
+    render(<RouteComparisonView comparison={CAMPUS_RESPONSE} />);
 
-    const unknown = screen.getByTestId('difference-unknown');
-    expect(unknown).toHaveTextContent('100%');
-    expect(unknown).toHaveTextContent(/missing information, not a clear path/i);
-    expect(unknown).not.toHaveTextContent(/accessible|safe|verified|confiden/i);
+    const coverage = screen.getByTestId('evidence-coverage');
+    // Width and surface condition are wholly unrecorded, and say so.
+    expect(screen.getByTestId('coverage-width')).toHaveTextContent('100% not recorded');
+    expect(coverage).toHaveTextContent(/not recorded is not the same as clear/i);
+    expect(coverage).not.toHaveTextContent(/\b(safe|verified|confiden\w*|accessible route)\b/i);
   });
 
   it('says nothing when there is only one route to talk about', () => {

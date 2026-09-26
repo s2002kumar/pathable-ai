@@ -1,24 +1,29 @@
 'use client';
 
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
-import type { ProfileKey } from '@pathable/contracts';
+import type { ProfileKey, RouteCompareResponse } from '@pathable/contracts';
+import type { MapMarker } from '@/features/map/MapMarkers';
 import { MapPanel } from '@/features/map/MapPanel';
-import { type RouteFocus, prefersReducedMotion, recordedStairs } from '@/features/map/route-layers';
+import { type RouteFocus, prefersReducedMotion, stairsOnRoutes } from '@/features/map/route-layers';
 import { usePanelFit } from '@/features/map/usePanelFit';
 import { MAP_POINT_LABEL } from './EndpointField';
 import { RoutePlanner } from './RoutePlanner';
+import { useMobilityProfiles } from './mobility-profiles';
+import { type RouteVariant, evidenceMarkers } from './route-evidence';
 import { useRouteComparison } from './useRouteComparison';
 import {
   type Endpoint,
   type Journey,
   type LngLat,
+  NO_UPHILL_LIMIT,
   type PlannerPoints,
   type PointRole,
   type RouteRequestState,
-  type StairsTarget,
+  type UphillLimit,
   formatDistance,
   hasPendingEndpointEdits,
   journeyOf,
+  parseUphillLimit,
 } from './types';
 import { CAMPUS_EXAMPLE, type VerifiedExample } from './verified-example';
 import styles from './RouteWorkspace.module.css';
@@ -72,6 +77,37 @@ function exampleEndpoints(example: VerifiedExample): {
 }
 
 /**
+ * Which route the map brings forward and the panel describes.
+ *
+ * The profile's own route unless the viewer chose the other, and whichever
+ * exists when only one does. Derived rather than stored, so a new answer can
+ * never inherit a choice made about the previous one.
+ */
+function effectiveSelection(
+  comparison: RouteCompareResponse | null,
+  chosen: RouteVariant | null,
+): RouteVariant | null {
+  if (comparison === null) return null;
+  const { standard_route: standard, accessible_route: accessible } = comparison;
+  if (standard && accessible) return chosen ?? 'accessible';
+  if (accessible) return 'accessible';
+  return standard ? 'standard' : null;
+}
+
+/** What each pinned label says, from the evidence it marks. */
+function toMapMarkers(comparison: RouteCompareResponse, selected: RouteVariant): MapMarker[] {
+  return evidenceMarkers(comparison, selected).map((marker) => ({
+    id: marker.id,
+    position: marker.position,
+    tone: marker.kind,
+    label:
+      marker.kind === 'barrier'
+        ? `Ruled out: ${marker.label}`
+        : `${marker.label} · ${marker.basis === 'recorded' ? 'recorded' : 'estimated'}`,
+  }));
+}
+
+/**
  * Owns the planning state shared by the map and the panel.
  *
  * The routes have to be drawn *and* described, so neither the map nor the panel
@@ -116,10 +152,11 @@ export function RouteWorkspace({
       : null,
   );
   const [profileKey, setProfileKey] = useState<ProfileKey>('wheelchair');
+  const [uphillLimit, setUphillLimit] = useState<UphillLimit>(NO_UPHILL_LIMIT);
   const [activeExampleId, setActiveExampleId] = useState<string | null>(initialExample?.id ?? null);
-  const [focusedRoute, setFocusedRoute] = useState<RouteFocus>(null);
-  const [stairsTarget, setStairsTarget] = useState<StairsTarget>(null);
+  const [chosenRoute, setChosenRoute] = useState<RouteVariant | null>(null);
   const [pickTarget, setPickTarget] = useState<PointRole | null>(null);
+  const [fitRequest, setFitRequest] = useState(0);
   // Only meaningful where the panel is a bottom sheet; the side layout ignores
   // it in CSS. Open by default, because the answer is the reason to be here.
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -135,12 +172,12 @@ export function RouteWorkspace({
     journey: submitted,
     ...(fetchImpl ? { fetchImpl } : {}),
   });
+  const profiles = useMobilityProfiles({ apiBaseUrl, ...(fetchImpl ? { fetchImpl } : {}) });
 
   /** Commit a journey, and drop anything that described the previous one. */
   const commit = useCallback((journey: Journey) => {
     setSubmitted(journey);
-    setFocusedRoute(null);
-    setStairsTarget(null);
+    setChosenRoute(null);
     setPickTarget(null);
     setSheetOpen(true);
 
@@ -165,10 +202,13 @@ export function RouteWorkspace({
     (example: VerifiedExample) => {
       // One press: the endpoints, the profile and the request all land in the
       // same interaction. The journey is built here rather than read back from
-      // state, because these setStates have not been applied yet.
+      // state, because these setStates have not been applied yet. The example
+      // is the corpus case as verified — the wheelchair preset with no limit
+      // of the viewer's own — so an uphill limit is switched off for it.
       const endpoints = exampleEndpoints(example);
       setPoints(endpoints);
       setProfileKey('wheelchair');
+      setUphillLimit(NO_UPHILL_LIMIT);
       setActiveExampleId(example.id);
       commit({ ...endpoints, profileKey: 'wheelchair' });
     },
@@ -232,8 +272,7 @@ export function RouteWorkspace({
     setPoints(EMPTY_POINTS);
     setSubmitted(null);
     setActiveExampleId(null);
-    setFocusedRoute(null);
-    setStairsTarget(null);
+    setChosenRoute(null);
     setPickTarget(null);
   }, []);
 
@@ -244,46 +283,79 @@ export function RouteWorkspace({
   }, []);
 
   const pendingEdits = hasPendingEndpointEdits(points, submitted);
+  const parsedLimit = parseUphillLimit(uphillLimit);
 
-  const handleProfileChange = useCallback(
-    (key: ProfileKey) => {
-      setProfileKey(key);
-      setFocusedRoute(null);
-      setStairsTarget(null);
-      // Re-run for the journey already on screen, but only while the endpoints
-      // still match it. With an endpoint half-edited, re-running would answer a
-      // question that is a mixture of two — so that case waits for Compare.
-      if (submitted !== null && !hasPendingEndpointEdits(points, submitted)) {
-        setSubmitted({ ...submitted, profileKey: key });
-      }
+  /**
+   * Re-run the journey on screen with a changed profile or limit.
+   *
+   * Only while its endpoints still match the draft. With an endpoint
+   * half-edited, re-running would answer a question that is a mixture of two
+   * — so that case waits for Compare.
+   */
+  const rerun = useCallback(
+    (changes: Partial<Pick<Journey, 'profileKey' | 'uphillLimitPercent'>>) => {
+      if (submitted === null || hasPendingEndpointEdits(points, submitted)) return;
+      setChosenRoute(null);
+      setSubmitted({ ...submitted, ...changes });
     },
     [points, submitted],
   );
 
+  const handleProfileChange = useCallback(
+    (key: ProfileKey) => {
+      setProfileKey(key);
+      rerun({ profileKey: key });
+    },
+    [rerun],
+  );
+
+  const handleUphillChange = useCallback(
+    (next: UphillLimit) => {
+      setUphillLimit(next);
+      // Turning the limit on or off is a decision and applies at once; typing
+      // a number waits for Enter or for leaving the field, so a half-typed
+      // "1" on the way to "12" is never routed.
+      if (next.enabled === uphillLimit.enabled) return;
+      const parsed = parseUphillLimit(next);
+      if (parsed.ok) rerun({ uphillLimitPercent: parsed.percent });
+    },
+    [rerun, uphillLimit.enabled],
+  );
+
+  const handleUphillCommit = useCallback(() => {
+    if (!parsedLimit.ok || submitted === null) return;
+    if ((submitted.uphillLimitPercent ?? null) === parsedLimit.percent) return;
+    rerun({ uphillLimitPercent: parsedLimit.percent });
+  }, [parsedLimit, submitted, rerun]);
+
   const handleCompare = useCallback(() => {
-    const journey = journeyOf(points, profileKey);
+    if (!parsedLimit.ok) return;
+    const journey = journeyOf(points, profileKey, parsedLimit.percent);
     if (journey === null) return;
     commit(journey);
-  }, [points, profileKey, commit]);
+  }, [points, profileKey, parsedLimit, commit]);
 
   const comparison = state.status === 'success' ? state.comparison : null;
+  const selected = effectiveSelection(comparison, chosenRoute);
+  const bothRoutes = Boolean(comparison?.standard_route && comparison?.accessible_route);
+  // With one route there is nothing to bring forward over the other.
+  const mapFocus: RouteFocus = bothRoutes ? selected : null;
 
-  // A focus only means something while the route it names is on the map. The
-  // stored value is left alone — it is reset by every action that changes the
-  // request — but what the map and the legend are told is the effective one.
-  const effectiveFocus: RouteFocus =
-    focusedRoute === 'standard' && comparison?.standard_route
-      ? 'standard'
-      : focusedRoute === 'accessible' && comparison?.accessible_route
-        ? 'accessible'
-        : null;
+  // Every recorded stairway on either route, whenever there is an answer: the
+  // stairs are the most common reason the two routes differ, and a map that
+  // hides them until asked is a map that hides the reason.
+  const stairs = useMemo(
+    () =>
+      comparison === null
+        ? null
+        : stairsOnRoutes(comparison.standard_route, comparison.accessible_route),
+    [comparison],
+  );
 
-  const stairs = useMemo(() => {
-    if (comparison === null || stairsTarget === null) return null;
-    const route =
-      stairsTarget === 'standard' ? comparison.standard_route : comparison.accessible_route;
-    return recordedStairs(route);
-  }, [comparison, stairsTarget]);
+  const markers = useMemo(
+    () => (comparison === null || selected === null ? [] : toMapMarkers(comparison, selected)),
+    [comparison, selected],
+  );
 
   // CSS places the map key and MapLibre's own credit clear of the panel from
   // the first paint; this replaces that estimate with the measurement. Only the
@@ -301,6 +373,8 @@ export function RouteWorkspace({
 
   const submittedSummary =
     submitted === null ? null : `${submitted.origin.label} to ${submitted.destination.label}`;
+  const hasSomethingToFit =
+    comparison !== null || points.origin !== null || points.destination !== null;
 
   return (
     <div className={styles.workspace} style={insetStyle} data-testid="route-workspace">
@@ -317,16 +391,29 @@ export function RouteWorkspace({
           accessibleRoute={comparison?.accessible_route ?? null}
           origin={points.origin?.position ?? null}
           destination={points.destination?.position ?? null}
-          focusedRoute={effectiveFocus}
+          focusedRoute={mapFocus}
           fitPadding={fit.padding}
           stairs={stairs}
+          markers={markers}
+          fitRequest={fitRequest}
           onSelectPoint={handleSelectPoint}
         />
       </div>
 
+      {hasSomethingToFit ? (
+        <button
+          type="button"
+          className={styles.fitButton}
+          onClick={() => setFitRequest((count) => count + 1)}
+          data-testid="fit-routes"
+        >
+          {comparison !== null ? 'Fit routes' : 'Fit points'}
+        </button>
+      ) : null}
+
       <MapLegend
-        focus={effectiveFocus}
-        stairs={stairsTarget !== null}
+        selected={mapFocus}
+        stairs={(stairs?.stairways ?? 0) > 0}
         hasRoutes={comparison !== null}
       />
 
@@ -366,14 +453,16 @@ export function RouteWorkspace({
             region={region}
             example={CAMPUS_EXAMPLE}
             exampleActive={activeExampleId === CAMPUS_EXAMPLE.id}
-            canCompare={points.origin !== null && points.destination !== null}
+            canCompare={points.origin !== null && points.destination !== null && parsedLimit.ok}
             pendingEdits={pendingEdits}
             pickTarget={pickTarget}
             submittedSummary={submittedSummary}
-            stairsTarget={stairsTarget}
-            focusedRoute={effectiveFocus}
-            onFocusRoute={setFocusedRoute}
-            onShowStairs={setStairsTarget}
+            {...(selected ? { selectedRoute: selected } : {})}
+            onSelectRoute={setChosenRoute}
+            profiles={profiles}
+            uphillLimit={uphillLimit}
+            onUphillLimitChange={handleUphillChange}
+            onUphillLimitCommit={handleUphillCommit}
             onRunExample={handleRunExample}
             onProfileChange={handleProfileChange}
             onCompare={handleCompare}
@@ -423,19 +512,19 @@ function sheetSummary(state: RouteRequestState): string {
  *
  * Outside the canvas so it is real text: a legend painted into WebGL is
  * invisible to a screen reader and unselectable, and this one carries the only
- * explanation of what the lines mean. When one route is brought forward it says
- * so in words, because a faded line is not a label.
+ * explanation of what the lines mean. Which route is drawn in front is said in
+ * words, because a faded line is not a label.
  *
  * Hidden until there is something on the map to explain. A key to two routes
  * that do not exist yet is furniture, and on a phone it is furniture sitting on
  * the map.
  */
 function MapLegend({
-  focus,
+  selected,
   stairs,
   hasRoutes,
 }: {
-  readonly focus: RouteFocus;
+  readonly selected: RouteFocus;
   readonly stairs: boolean;
   readonly hasRoutes: boolean;
 }) {
@@ -447,27 +536,27 @@ function MapLegend({
       <ul className={styles.legendList}>
         <li
           className={styles.legendItem}
-          data-dimmed={focus !== null && focus !== 'accessible'}
+          data-dimmed={selected !== null && selected !== 'accessible'}
           data-testid="legend-accessible"
         >
           <span className={styles.legendSwatch} data-variant="accessible" aria-hidden="true" />
           <span>
             Route for your profile
-            {focus === 'accessible' ? (
-              <span className={styles.legendNote}> · highlighted</span>
+            {selected === 'accessible' ? (
+              <span className={styles.legendNote}> · in front</span>
             ) : null}
           </span>
         </li>
         <li
           className={styles.legendItem}
-          data-dimmed={focus !== null && focus !== 'standard'}
+          data-dimmed={selected !== null && selected !== 'standard'}
           data-testid="legend-standard"
         >
           <span className={styles.legendSwatch} data-variant="standard" aria-hidden="true" />
           <span>
             Shortest walking route
-            {focus === 'standard' ? (
-              <span className={styles.legendNote}> · highlighted</span>
+            {selected === 'standard' ? (
+              <span className={styles.legendNote}> · in front</span>
             ) : null}
           </span>
         </li>
@@ -478,6 +567,9 @@ function MapLegend({
           </li>
         ) : null}
       </ul>
+      <p className={styles.legendFootnote} data-testid="focus-note">
+        Neither route is certified passable.
+      </p>
     </div>
   );
 }

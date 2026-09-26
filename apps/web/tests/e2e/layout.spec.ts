@@ -142,14 +142,15 @@ test.describe('layout', () => {
     await waitForMapReady(page);
     await runExample(page);
 
-    // Both figures, the extra distance and the uncertainty line, together.
+    // Both routes, the extra distance, the reason that decided it and the
+    // uncertainty line, together.
     expect(await fullyInViewport(page, 'difference-accessible')).toBe(true);
     expect(await fullyInViewport(page, 'difference-shortest')).toBe(true);
     expect(await fullyInViewport(page, 'difference-extra')).toBe(true);
+    expect(await fullyInViewport(page, 'main-difference')).toBe(true);
     expect(await fullyInViewport(page, 'uncertainty-summary')).toBe(true);
 
     // And nothing had to be opened to see them.
-    await expect(page.getByTestId('route-detail')).not.toHaveAttribute('open');
     await expect(page.getByTestId('route-provenance')).not.toHaveAttribute('open');
   });
 
@@ -175,26 +176,32 @@ test.describe('layout', () => {
     expect(disjoint(legend, zoomIn)).toBe(true);
   });
 
-  test('highlighting a route is keyboard-operable and never erases the comparison', async ({
+  test('choosing a route is keyboard-operable and never erases the comparison', async ({
     page,
   }) => {
     await page.goto('/');
     await waitForMapReady(page);
     await runExample(page);
 
-    const highlight = page.getByTestId('focus-accessible');
-    await highlight.focus();
-    await expect(highlight).toBeFocused();
-    await page.keyboard.press('Enter');
+    // The profile's own route is chosen first; the group is one tab stop.
+    const accessible = page.getByTestId('difference-accessible');
+    const shortest = page.getByTestId('difference-shortest');
+    await expect(accessible).toHaveAttribute('aria-checked', 'true');
+    await accessible.focus();
+    await expect(accessible).toBeFocused();
 
-    await expect(highlight).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByTestId('legend-accessible')).toContainText(/highlighted/);
-    await expect(page.getByTestId('legend-standard')).toBeVisible();
-    await expect(page.getByTestId('difference-shortest')).toBeVisible();
-    await expect(page.getByTestId('focus-note')).toContainText(/neither is certified/i);
+    await page.keyboard.press('ArrowDown');
+    await expect(shortest).toHaveAttribute('aria-checked', 'true');
+    await expect(shortest).toBeFocused();
+    await expect(page.getByTestId('legend-standard')).toContainText(/in front/);
+    // The other route stays on the map and in the key, and neither is cleared.
+    await expect(page.getByTestId('legend-accessible')).toBeVisible();
+    await expect(accessible).toBeVisible();
+    await expect(page.getByTestId('focus-note')).toContainText(/neither route is certified/i);
 
-    await page.keyboard.press('Enter');
-    await expect(highlight).toHaveAttribute('aria-pressed', 'false');
+    await page.keyboard.press('ArrowUp');
+    await expect(accessible).toHaveAttribute('aria-checked', 'true');
+    await expect(accessible).toBeFocused();
   });
 
   test('"Edit journey or profile" reaches the controls without touching the result', async ({
@@ -235,7 +242,7 @@ test.describe('layout', () => {
 
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
     await expect(page.getByTestId('route-difference')).toBeAttached();
-    await expect(page.getByLabel(/how do you travel/i)).toHaveValue('wheelchair');
+    await expect(page.getByRole('radio', { name: 'Wheelchair', exact: true })).toBeChecked();
     expect(requests.length).toBe(requestsAfterExample);
     expect(
       await page.evaluate(() => (window as unknown as { __mapStates: string[] }).__mapStates),
@@ -258,7 +265,7 @@ test.describe('layout', () => {
     });
 
     await runExample(page);
-    await page.getByLabel(/how do you travel/i).selectOption('stroller');
+    await page.getByRole('radio', { name: 'Stroller' }).check();
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
     await page.getByTestId('swap-points').click();
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');

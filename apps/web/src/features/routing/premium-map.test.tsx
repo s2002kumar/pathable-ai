@@ -157,53 +157,39 @@ function coincident(): RouteCompareResponse {
   } as unknown as RouteCompareResponse;
 }
 
-describe('bringing one route forward', () => {
-  it('offers a keyboard-operable control for each route', () => {
+describe('choosing which route is drawn in front', () => {
+  it('offers the two routes as radio buttons, named by route and distance', () => {
     render(<RouteDifference comparison={CAMPUS_COMPARISON} />);
 
-    const accessible = screen.getByRole('button', { name: /highlight the wheelchair route/i });
-    const standard = screen.getByRole('button', {
-      name: /highlight the shortest walking route/i,
-    });
-    expect(accessible).toHaveAttribute('aria-pressed', 'false');
-    expect(standard).toHaveAttribute('aria-pressed', 'false');
+    const accessible = screen.getByRole('radio', { name: 'Wheelchair route 354 m' });
+    const standard = screen.getByRole('radio', { name: 'Shortest walking route 287 m' });
+    expect(accessible).toHaveAttribute('aria-checked', 'true');
+    expect(standard).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('reports the chosen route to the workspace and toggles back off', async () => {
+  it('reports the chosen route to the workspace', async () => {
     const user = userEvent.setup();
-    const onFocusRoute = vi.fn();
-    render(<RouteDifference comparison={CAMPUS_COMPARISON} onFocusRoute={onFocusRoute} />);
+    const onSelectRoute = vi.fn();
+    const { rerender } = render(
+      <RouteDifference comparison={CAMPUS_COMPARISON} onSelectRoute={onSelectRoute} />,
+    );
 
-    await user.click(screen.getByTestId('focus-standard'));
-    expect(onFocusRoute).toHaveBeenLastCalledWith('standard');
+    await user.click(screen.getByTestId('difference-shortest'));
+    expect(onSelectRoute).toHaveBeenLastCalledWith('standard');
 
-    // Pressed state is the workspace's to render; re-render as it would.
-    render(
+    // The checked state is the workspace's to render; re-render as it would.
+    rerender(
       <RouteDifference
         comparison={CAMPUS_COMPARISON}
-        focusedRoute="standard"
-        onFocusRoute={onFocusRoute}
+        selectedRoute="standard"
+        onSelectRoute={onSelectRoute}
       />,
     );
-    const pressed = screen.getAllByTestId('focus-standard').at(-1)!;
-    expect(pressed).toHaveAttribute('aria-pressed', 'true');
-    expect(pressed).toHaveTextContent(/highlighted/i);
-
-    await user.click(pressed);
-    expect(onFocusRoute).toHaveBeenLastCalledWith(null);
+    expect(screen.getByTestId('difference-shortest')).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('difference-accessible')).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('never lets a highlighted route read as a cleared one', () => {
-    render(<RouteDifference comparison={CAMPUS_COMPARISON} focusedRoute="accessible" />);
-
-    const note = screen.getByTestId('focus-note');
-    expect(note).toHaveTextContent(/the other stays drawn/i);
-    expect(note).toHaveTextContent(/neither is certified/i);
-    expect(screen.getByTestId('difference-shortest')).toHaveAttribute('data-dimmed', 'true');
-    expect(screen.getByTestId('difference-accessible')).toHaveAttribute('data-focused', 'true');
-  });
-
-  it('names the highlighted route in the map key, in words', async () => {
+  it('names the route in front in the map key, and never calls either one cleared', async () => {
     const user = userEvent.setup();
     const fetchImpl = vi.fn(
       async () =>
@@ -231,52 +217,78 @@ describe('bringing one route forward', () => {
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
-    expect(screen.getByTestId('legend-accessible')).not.toHaveTextContent(/highlighted/);
-
-    await user.click(screen.getByTestId('focus-accessible'));
-
-    expect(screen.getByTestId('legend-accessible')).toHaveTextContent(/highlighted/);
+    // The profile's own route is in front until the viewer chooses otherwise.
+    expect(screen.getByTestId('legend-accessible')).toHaveTextContent(/in front/);
     expect(screen.getByTestId('legend-standard')).toHaveAttribute('data-dimmed', 'true');
-
-    // A new request means a new comparison; a stale highlight must not carry over.
-    await user.selectOptions(screen.getByTestId('mobility-profile'), 'crutches');
-    await waitFor(() =>
-      expect(screen.getByTestId('legend-accessible')).not.toHaveTextContent(/highlighted/),
+    expect(screen.getByTestId('focus-note')).toHaveTextContent(
+      'Neither route is certified passable.',
     );
+
+    await user.click(screen.getByTestId('difference-shortest'));
+    expect(screen.getByTestId('legend-standard')).toHaveTextContent(/in front/);
+    expect(screen.getByTestId('legend-accessible')).toHaveAttribute('data-dimmed', 'true');
+
+    // A new request means a new comparison; a stale choice must not carry over.
+    await user.click(screen.getByRole('radio', { name: 'Crutches or cane' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('legend-accessible')).toHaveTextContent(/in front/),
+    );
+    expect(screen.getByTestId('legend-standard')).not.toHaveTextContent(/in front/);
   });
 });
 
 describe('what "unrecorded" means', () => {
-  it('says at least one attribute is missing, not that nothing is known', () => {
+  it('says at least one record is missing, not that nothing is known', () => {
     // The verified journey: four recorded stairways on a route whose every
     // segment is missing some other attribute. "No accessibility detail for
     // 100%" would contradict the stairway count on the same screen.
-    render(<RouteDifference comparison={CAMPUS_COMPARISON} />);
+    render(<RouteComparisonView comparison={CAMPUS_COMPARISON} />);
 
     const summary = screen.getByTestId('uncertainty-summary');
-    expect(summary).toHaveTextContent('Accessibility data is incomplete');
-    expect(summary).toHaveTextContent(/at least one accessibility attribute/i);
-    expect(summary).toHaveTextContent('100% of this route');
+    expect(summary).toHaveTextContent('Incomplete data');
+    expect(summary).toHaveTextContent('100% of this route is missing at least one record');
     expect(summary).not.toHaveTextContent(/no accessibility detail/i);
     expect(summary).toHaveTextContent(/unrecorded is not the same as clear/i);
   });
 
   it('names the largest single gap from the per-category figures', () => {
-    render(<RouteDifference comparison={CAMPUS_COMPARISON} />);
+    render(<RouteComparisonView comparison={CAMPUS_COMPARISON} />);
 
-    // smoothness and width are both 100%; the sort is stable, so the first
-    // 100% entry in contract order (smoothness) wins.
     expect(screen.getByTestId('uncertainty-summary')).toHaveTextContent(
       /largest gap: surface condition, 100%/i,
     );
   });
 
-  it('lists the attributes the figure counts, in the fuller line', () => {
-    render(<RouteDifference comparison={CAMPUS_COMPARISON} />);
+  it('never names width as the largest gap of a figure that does not count width', () => {
+    // PA-UX-03B regression. `unknown_data_fraction` counts surface, surface
+    // condition, gradient, steps and kerb. The line read "unrecorded on 42% of
+    // this route; largest gap: path width, 100%" — a gap larger than the
+    // figure it was a part of, because width was never in that figure.
+    const widthless = {
+      ...CAMPUS_COMPARISON,
+      accessible_route: buildRoute({
+        unknown_data_fraction: 0.3,
+        evidence_coverage: { surface: 0.2, smoothness: 0.3, gradient: 0, width: 1, kerb: 0 },
+      }),
+    } as unknown as RouteCompareResponse;
+    render(<RouteComparisonView comparison={widthless} />);
 
-    const unknown = screen.getByTestId('difference-unknown');
-    expect(unknown).toHaveTextContent(/surface, surface condition, gradient, steps or kerb/);
-    expect(unknown).toHaveTextContent(/missing information, not a clear path/i);
+    const summary = screen.getByTestId('uncertainty-summary');
+    expect(summary).toHaveTextContent('largest gap: surface condition, 30%');
+    expect(summary).not.toHaveTextContent(/width/i);
+    // Width is still reported — beside its own denominator.
+    expect(screen.getByTestId('coverage-width')).toHaveTextContent('100% not recorded');
+  });
+
+  it('says which attributes the figure counts, where the categories are broken down', () => {
+    render(<RouteComparisonView comparison={CAMPUS_COMPARISON} />);
+
+    expect(screen.getByTestId('evidence-coverage')).toHaveTextContent(
+      /counts surface, surface condition, gradient, steps and kerb — not width/,
+    );
+    expect(screen.getByTestId('evidence-coverage')).toHaveTextContent(
+      /Not recorded is not the same as clear/,
+    );
   });
 });
 
@@ -300,39 +312,39 @@ describe('nearly equal routes', () => {
 });
 
 describe('the answer as one block', () => {
-  it('keeps the figures, the extra distance and the uncertainty line together', () => {
+  it('keeps the figures, the extra distance, the reason and the uncertainty line together', () => {
     render(<RouteComparisonView comparison={CAMPUS_COMPARISON} />);
 
     const difference = screen.getByTestId('route-difference');
+    const answer = difference.parentElement as HTMLElement;
     expect(within(difference).getByTestId('difference-accessible')).toHaveTextContent('354 m');
     expect(within(difference).getByTestId('difference-shortest')).toHaveTextContent('4 stairways');
-    // The figure, and not a single cause beside it (D7): the stairs are one
-    // of the reasons listed in the same block.
+    // The figure, and not a single cause beside it (D7): the stairs are the
+    // reason stated separately, with their own evidence label.
     const extra = within(difference).getByTestId('difference-extra');
-    expect(extra).toHaveTextContent('+67 m');
+    expect(extra).toHaveTextContent('+67 m longer');
     expect(extra).not.toHaveTextContent(/to avoid/);
-    expect(within(difference).getByTestId('difference-reasons')).toHaveTextContent(
+    expect(within(difference).getByTestId('main-difference')).toHaveTextContent(
       'Avoids 4 stairways',
     );
-    expect(within(difference).getByTestId('uncertainty-summary')).toBeInTheDocument();
+    expect(within(answer).getByTestId('uncertainty-summary')).toBeInTheDocument();
   });
 
-  it('keeps the detail behind labelled disclosures rather than dropping it', async () => {
+  it('puts the per-category record on the page and the provenance behind a disclosure', async () => {
     const user = userEvent.setup();
     render(<RouteComparisonView comparison={CAMPUS_COMPARISON} />);
 
-    const detail = screen.getByTestId('route-detail');
+    // The breakdown is evidence a reviewer drills into, so it is on the page;
+    // only where the data came from waits behind a control.
+    expect(screen.getByTestId('evidence-coverage').closest('details')).toBeNull();
+    expect(screen.getByTestId('coverage-kerb')).toHaveTextContent('No crossings on this route');
+
     const provenance = screen.getByTestId('route-provenance');
-    expect(detail).not.toHaveAttribute('open');
     expect(provenance).not.toHaveAttribute('open');
-
-    await user.click(within(detail).getByText('What is on this route'));
-    expect(within(detail).getByText('Road crossings')).toBeVisible();
-    expect(within(detail).getByText(/what the map does not say/i)).toBeVisible();
-
     await user.click(within(provenance).getByText('Where this comes from'));
     expect(within(provenance).getByText(/Map data published 34 days ago/)).toBeVisible();
     expect(within(provenance).getByText(/51e75f78/)).toBeVisible();
+    expect(within(provenance).getByText(/“Recorded” means a mapper wrote it down/)).toBeVisible();
   });
 
   it('keeps the no-model statement outside any disclosure', () => {
@@ -372,7 +384,6 @@ describe('planner guidance', () => {
         pendingEdits={false}
         pickTarget={null}
         submittedSummary="Davis Centre library to Student Life Centre"
-        stairsTarget={null}
         onRunExample={() => {}}
         onProfileChange={() => {}}
         onCompare={() => {}}
@@ -389,6 +400,9 @@ describe('planner guidance', () => {
     // is its own field, so the answer is which field is empty. The status line
     // stays idle because nothing has been asked for yet.
     expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'idle');
+    expect(screen.getByTestId('route-status')).toHaveTextContent(
+      'Start set. Now choose a destination.',
+    );
     expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent('Davis Centre library');
     expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
     expect(screen.getByTestId('compare-routes')).toBeDisabled();

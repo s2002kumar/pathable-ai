@@ -94,7 +94,9 @@ test.describe('full stack', () => {
 
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'ready');
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
-    await expect(page.getByLabel(/how do you travel/i)).toBeVisible();
+    await expect(page.getByRole('group', { name: /how do you travel/i })).toBeVisible();
+    // The profile's rules are the live API's, not a copy in the browser.
+    await expect(page.getByTestId('profile-rule')).toContainText('Hard limit: cannot use steps.');
     // The map key arrives with the routes it explains, so before a comparison
     // there is nothing for it to say.
     await expect(page.getByTestId('map-legend')).toHaveCount(0);
@@ -112,7 +114,7 @@ test.describe('full stack', () => {
     await page.reload();
 
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'unreachable');
-    await expect(page.getByText('PathAble AI', { exact: true })).toBeVisible();
+    await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
     await expect(page.getByTestId('pilot-description')).toBeVisible();
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
   });

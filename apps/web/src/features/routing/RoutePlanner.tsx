@@ -1,34 +1,45 @@
 'use client';
 
-import { type ReactNode, useCallback, useRef } from 'react';
+import { type ReactNode, useCallback, useId, useRef } from 'react';
 import type { ProfileKey } from '@pathable/contracts';
-import { type RouteFocus, prefersReducedMotion } from '@/features/map/route-layers';
+import { prefersReducedMotion } from '@/features/map/route-layers';
 import { EndpointField } from './EndpointField';
 import { RouteComparisonView } from './RouteComparisonView';
 import { VerifiedExampleCard } from './VerifiedExample';
+import { type ProfilesState, profileRuleLines } from './mobility-profiles';
+import type { RouteVariant } from './route-evidence';
 import type { VerifiedExample } from './verified-example';
-import type { LngLat, PlannerPoints, PointRole, RouteRequestState, StairsTarget } from './types';
+import {
+  type LngLat,
+  NO_UPHILL_LIMIT,
+  type PlannerPoints,
+  type PointRole,
+  type RouteRequestState,
+  type UphillLimit,
+  parseUphillLimit,
+} from './types';
 import styles from './RoutePlanner.module.css';
 
 /**
- * The profiles offered in the UI.
+ * The five profiles, by key and chip label.
  *
- * Held here rather than fetched from `/routes/profiles` so the panel renders
- * immediately and stays usable when the backend is down — the profile list is
- * part of the contract, and a network round trip to learn five stable labels
- * would trade a real cost for no benefit. The API still validates the key.
+ * Labels only. What each profile rules out and prefers is routing policy, and
+ * it is read from `/routes/profiles` — the same definitions that choose the
+ * route — rather than restated here. The labels are held locally so the
+ * control renders at once and stays usable while the service is waking up;
+ * the API still validates the key, and the answer is headed with the API's
+ * own full name for the profile.
  *
- * The hints are deliberately client-side: the API's `description` is a full
- * sentence rather than a one-line rule summary, and there is no short-hint
- * field to read. They describe what the profile does to the route, and they
- * are engineering judgement rather than a measurement of how anybody travels.
+ * Short, and in this order, so the five chips sit on two lines in the
+ * narrowest panel: "Walker or rollator" alone pushed them onto a third, and
+ * with it Compare and the one-press example below a 700 px window.
  */
-const PROFILE_OPTIONS: ReadonlyArray<{ key: ProfileKey; label: string; hint: string }> = [
-  { key: 'wheelchair', label: 'Wheelchair', hint: 'No steps, paved surfaces, gentle grades' },
-  { key: 'walker', label: 'Walker or rollator', hint: 'No steps, even surfaces' },
-  { key: 'crutches', label: 'Crutches or cane', hint: 'Steps allowed but avoided where possible' },
-  { key: 'stroller', label: 'Stroller or pram', hint: 'No steps, dropped kerbs preferred' },
-  { key: 'reduced_mobility', label: 'Reduced mobility', hint: 'Shorter, flatter, smoother' },
+const PROFILE_OPTIONS: ReadonlyArray<{ key: Exclude<ProfileKey, 'custom'>; label: string }> = [
+  { key: 'wheelchair', label: 'Wheelchair' },
+  { key: 'walker', label: 'Walker' },
+  { key: 'stroller', label: 'Stroller' },
+  { key: 'crutches', label: 'Crutches or cane' },
+  { key: 'reduced_mobility', label: 'Reduced mobility' },
 ];
 
 /**
@@ -53,12 +64,16 @@ export type RoutePlannerProps = {
   readonly pickTarget: PointRole | null;
   /** The journey the result on screen belongs to, for labelling it. */
   readonly submittedSummary: string | null;
-  /** Which route's recorded stairs are highlighted, if any. */
-  readonly stairsTarget: StairsTarget;
-  /** Which route is brought forward on the map; optional for callers without a map. */
-  readonly focusedRoute?: RouteFocus;
-  readonly onFocusRoute?: (focus: RouteFocus) => void;
-  readonly onShowStairs?: (target: StairsTarget) => void;
+  /** Which route the map brings forward; optional for callers without a map. */
+  readonly selectedRoute?: RouteVariant;
+  readonly onSelectRoute?: (variant: RouteVariant) => void;
+  /** The profiles' rules, as the routing service states them. */
+  readonly profiles?: ProfilesState;
+  /** The traveller's own uphill limit; off unless they turn it on. */
+  readonly uphillLimit?: UphillLimit;
+  readonly onUphillLimitChange?: (limit: UphillLimit) => void;
+  /** Apply the typed limit to the journey on screen. */
+  readonly onUphillLimitCommit?: () => void;
   readonly onRunExample: (example: VerifiedExample) => void;
   readonly onProfileChange: (key: ProfileKey) => void;
   readonly onCompare: () => void;
@@ -73,6 +88,16 @@ export type RoutePlannerProps = {
   readonly intro?: ReactNode;
 };
 
+/** What the status line says before there is an answer to show. */
+function idleHint(points: PlannerPoints): string {
+  if (points.origin !== null && points.destination !== null) {
+    return 'Both ends are set — compare the routes.';
+  }
+  if (points.origin !== null) return 'Start set. Now choose a destination.';
+  if (points.destination !== null) return 'Destination set. Now choose a start.';
+  return 'Name both ends to begin, or click the map.';
+}
+
 export function RoutePlanner({
   points,
   profileKey,
@@ -85,10 +110,12 @@ export function RoutePlanner({
   pendingEdits,
   pickTarget,
   submittedSummary,
-  stairsTarget,
-  focusedRoute = null,
-  onFocusRoute = () => {},
-  onShowStairs = () => {},
+  selectedRoute,
+  onSelectRoute = () => {},
+  profiles = { status: 'loading' },
+  uphillLimit = NO_UPHILL_LIMIT,
+  onUphillLimitChange = () => {},
+  onUphillLimitCommit = () => {},
   onRunExample,
   onProfileChange,
   onCompare,
@@ -134,11 +161,7 @@ export function RoutePlanner({
         data-route-state={state.status}
         data-testid="route-status"
       >
-        {state.status === 'idle' ? (
-          <p className={styles.hint}>
-            {canCompare ? 'Both ends are set — compare the routes.' : 'Name both ends to begin.'}
-          </p>
-        ) : null}
+        {state.status === 'idle' ? <p className={styles.hint}>{idleHint(points)}</p> : null}
 
         {state.status === 'loading' ? (
           <p className={styles.hint}>
@@ -159,11 +182,9 @@ export function RoutePlanner({
         {state.status === 'success' ? (
           <RouteComparisonView
             comparison={state.comparison}
-            focusedRoute={focusedRoute}
-            onFocusRoute={onFocusRoute}
+            {...(selectedRoute ? { selectedRoute } : {})}
+            onSelectRoute={onSelectRoute}
             onEditJourney={handleEditJourney}
-            stairsTarget={stairsTarget}
-            onShowStairs={onShowStairs}
             {...(submittedSummary ? { journeySummary: submittedSummary } : {})}
             pendingEdits={pendingEdits}
           />
@@ -197,15 +218,19 @@ export function RoutePlanner({
           {...(fetchImpl ? { fetchImpl } : {})}
         />
 
+        {/* In the gutter between A and B, where map apps put it, rather than
+            on a row of its own: the row cost 44 px of the first screen. */}
         <div className={styles.swapRow}>
           <button
             type="button"
-            className={styles.quietButton}
+            className={styles.swapButton}
             onClick={onSwapPoints}
             disabled={points.origin === null && points.destination === null}
+            aria-label="Swap ends"
+            title="Swap ends"
             data-testid="swap-points"
           >
-            Swap ends
+            <span aria-hidden="true">⇅</span>
           </button>
         </div>
 
@@ -221,7 +246,14 @@ export function RoutePlanner({
           {...(fetchImpl ? { fetchImpl } : {})}
         />
 
-        <ProfileChooser selected={profileKey} onChange={onProfileChange} />
+        <ProfileChooser
+          selected={profileKey}
+          onChange={onProfileChange}
+          profiles={profiles}
+          uphillLimit={uphillLimit}
+          onUphillLimitChange={onUphillLimitChange}
+          onUphillLimitCommit={onUphillLimitCommit}
+        />
 
         <div className={styles.submitRow}>
           <button
@@ -259,50 +291,141 @@ export function RoutePlanner({
 }
 
 /**
- * The five profiles, as one labelled control and one line of rules.
+ * The five profiles as one row of chips, with the chosen one's rules beneath.
  *
- * A native `select`, not a custom widget. Every profile stays offered, and the
- * keyboard and screen-reader behaviour is the platform's own rather than an
- * imitation of it. As a row of chips this wrapped to five lines in a 20 rem
- * panel — 168 px, measured — which is what pushed Compare and the example off
- * the first screen at 1000 x 700.
- *
- * The rule line is not hidden behind anything. Which constraints are applied
- * is the difference between the two routes, and they are engineering judgement
- * rather than measurements of how people with these aids travel — so they have
- * to be inspectable.
+ * Native radio buttons styled as chips: the arrow keys, the group's single tab
+ * stop and the announcement are the platform's own. The rule lines are never
+ * hidden — which limits are in force is the whole difference between the two
+ * routes — and they come from the routing service, so they cannot disagree
+ * with the rules that actually chose the route.
  */
 function ProfileChooser({
   selected,
   onChange,
+  profiles,
+  uphillLimit,
+  onUphillLimitChange,
+  onUphillLimitCommit,
 }: {
   readonly selected: ProfileKey;
   readonly onChange: (key: ProfileKey) => void;
+  readonly profiles: ProfilesState;
+  readonly uphillLimit: UphillLimit;
+  readonly onUphillLimitChange: (limit: UphillLimit) => void;
+  readonly onUphillLimitCommit: () => void;
 }) {
-  const chosen = PROFILE_OPTIONS.find((option) => option.key === selected);
+  const profile = profiles.status === 'ready' ? profiles.profiles.get(selected) : undefined;
+  const rules = profile ? profileRuleLines(profile) : null;
 
   return (
-    <div className={styles.fieldset}>
-      <label className={styles.legend} htmlFor="mobility-profile">
-        How do you travel?
-      </label>
-      <select
-        id="mobility-profile"
-        className={styles.profileSelect}
-        value={selected}
-        onChange={(event) => onChange(event.target.value as ProfileKey)}
-        data-testid="mobility-profile"
-      >
+    <fieldset className={styles.fieldset} data-testid="mobility-profile">
+      <legend className={styles.legend}>How do you travel?</legend>
+      <div className={styles.profiles}>
         {PROFILE_OPTIONS.map((option) => (
-          <option key={option.key} value={option.key}>
-            {option.label}
-          </option>
+          <label
+            key={option.key}
+            className={styles.profileOption}
+            data-selected={option.key === selected}
+          >
+            <input
+              type="radio"
+              name="mobility-profile"
+              value={option.key}
+              className={styles.chipInput}
+              checked={option.key === selected}
+              onChange={() => onChange(option.key)}
+            />
+            <span className={styles.profileLabel}>{option.label}</span>
+          </label>
         ))}
-      </select>
-      {chosen ? (
-        <p className={styles.profileRule} data-testid="profile-rule">
-          {chosen.hint}
-        </p>
+      </div>
+      <div className={styles.profileRule} data-testid="profile-rule">
+        {rules ? (
+          <p>
+            {rules.hard}
+            {rules.preferences ? ` ${rules.preferences}` : ''}
+          </p>
+        ) : profiles.status === 'unavailable' ? (
+          <p>This profile’s rules could not be loaded. The routing service still applies them.</p>
+        ) : (
+          <p>Loading this profile’s rules…</p>
+        )}
+      </div>
+      <UphillLimitControl
+        limit={uphillLimit}
+        onChange={onUphillLimitChange}
+        onCommit={onUphillLimitCommit}
+      />
+    </fieldset>
+  );
+}
+
+/**
+ * "The steepest climb I can manage", off until the traveller turns it on.
+ *
+ * Off is not a default number: with no limit set, no gradient rules a path out
+ * and the profile's preference only makes steep climbs cost more. On, the
+ * number is sent exactly as typed and becomes a hard limit — applied to the
+ * gradient OpenStreetMap records where it has one and to the elevation
+ * estimate otherwise — and the answer says which of the two each exclusion
+ * rested on.
+ */
+function UphillLimitControl({
+  limit,
+  onChange,
+  onCommit,
+}: {
+  readonly limit: UphillLimit;
+  readonly onChange: (limit: UphillLimit) => void;
+  readonly onCommit: () => void;
+}) {
+  const inputId = useId();
+  const messageId = useId();
+  const parsed = parseUphillLimit(limit);
+
+  return (
+    <div className={styles.uphill} data-testid="uphill-limit">
+      <label className={styles.uphillToggle}>
+        <input
+          type="checkbox"
+          className={styles.profileInput}
+          checked={limit.enabled}
+          onChange={(event) => onChange({ ...limit, enabled: event.target.checked })}
+          data-testid="uphill-limit-toggle"
+        />
+        <span>Set my own uphill limit</span>
+      </label>
+      {limit.enabled ? (
+        <div className={styles.uphillField}>
+          <label htmlFor={inputId} className={styles.uphillLabel}>
+            Steepest climb I can manage (%)
+          </label>
+          <input
+            id={inputId}
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            className={styles.uphillInput}
+            value={limit.text}
+            onChange={(event) => onChange({ ...limit, text: event.target.value })}
+            onBlur={onCommit}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') onCommit();
+            }}
+            aria-invalid={!parsed.ok}
+            aria-describedby={messageId}
+            data-testid="uphill-limit-input"
+          />
+          <p
+            className={parsed.ok ? styles.uphillNote : styles.uphillError}
+            id={messageId}
+            data-testid="uphill-limit-note"
+          >
+            {parsed.ok
+              ? `Climbs steeper than ${limit.text.trim()}% are ruled out, whether recorded or estimated.`
+              : parsed.message}
+          </p>
+        </div>
       ) : null}
     </div>
   );

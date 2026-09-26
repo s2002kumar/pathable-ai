@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'PathAble AI — accessibility-aware pedestrian routing',
+  title: 'PathAble — accessibility-aware pedestrian routing',
   description:
     'PathAble compares the shortest walking route with one that suits how you ' +
     'travel, and explains the difference using what OpenStreetMap actually records. ' +
     'A local engineering build for Waterloo, Ontario: it advises, it does not certify.',
-  applicationName: 'PathAble AI',
+  applicationName: 'PathAble',
   // Not deployed and not certified. An early build being surfaced by a search
   // engine as a working accessibility tool would be actively harmful.
   robots: { index: false, follow: false },
