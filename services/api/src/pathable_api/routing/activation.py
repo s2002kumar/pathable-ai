@@ -104,7 +104,7 @@ class ActivationRefusedError(DatasetLifecycleError):
 
 @dataclass(frozen=True, slots=True)
 class Corpus:
-    key: str
+    name: str
     cases: tuple[RouteCase, ...]
 
 
@@ -138,8 +138,8 @@ SYNTHETIC_CASES: Final = (
 )
 
 CORPORA: Final[dict[str, Corpus]] = {
-    WATERLOO_SLUG: Corpus(key="waterloo-journeys-v1", cases=WATERLOO_CASES),
-    SYNTHETIC_REGION_SLUG: Corpus(key="synthetic-fixture-journeys-v1", cases=SYNTHETIC_CASES),
+    WATERLOO_SLUG: Corpus(name="waterloo-journeys-v1", cases=WATERLOO_CASES),
+    SYNTHETIC_REGION_SLUG: Corpus(name="synthetic-fixture-journeys-v1", cases=SYNTHETIC_CASES),
 }
 
 
@@ -161,7 +161,7 @@ def corpus_fingerprint(corpus: Corpus, profiles: tuple[str, ...] = REGRESSION_PR
     refuses a run whose fingerprint is not today's.
     """
     body = {
-        "corpus": corpus.key,
+        "corpus": corpus.name,
         "cases": [[case.key, list(case.origin), list(case.destination)] for case in corpus.cases],
         "profiles": list(profiles),
         "routing_policy_version": ROUTING_POLICY_VERSION,
@@ -315,7 +315,7 @@ async def evaluate_candidate(
         candidate_content_checksum=candidate.content_checksum,
         baseline_dataset_id=None if baseline is None else baseline.id,
         baseline_content_checksum=None if baseline is None else baseline.content_checksum,
-        corpus_key=corpus.key,
+        corpus_key=corpus.name,
         corpus_fingerprint=corpus_fingerprint(corpus),
         profiles=list(REGRESSION_PROFILES),
         routing_policy_version=ROUTING_POLICY_VERSION,

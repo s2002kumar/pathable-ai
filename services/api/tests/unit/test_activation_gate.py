@@ -61,7 +61,7 @@ class TestFingerprint:
         corpus = CORPORA[WATERLOO_SLUG]
         first = corpus.cases[0]
         moved = dataclasses.replace(first, origin=(first.origin[0] + 1e-6, first.origin[1]))
-        changed = Corpus(key=corpus.key, cases=(moved, *corpus.cases[1:]))
+        changed = Corpus(name=corpus.name, cases=(moved, *corpus.cases[1:]))
 
         assert corpus_fingerprint(changed) != corpus_fingerprint(corpus)
 
