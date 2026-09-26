@@ -123,9 +123,9 @@ Solid boxes are implemented and measured. The dashed box is a costed proposal in
 
 The backend's Pydantic models are the single source of truth for the HTTP contract: they generate
 `openapi.json`, which generates the frontend's TypeScript types, and CI fails if the committed output drifts.
-Ingestion never edits an activated dataset — it writes a _new_ version and swaps activation in one transaction —
-which is what the cached graph relies on. One path does not yet honour that: elevation sampling writes into an
-existing dataset, the live one by default ([KI-10](docs/development/KNOWN_ISSUES.md)).
+A dataset is built as a candidate, enriched, sealed, and routed against the live network on the twenty-journey
+corpus before it can go live; from the moment it is sealed PostgreSQL refuses any change to its rows, which is what
+the cached graph relies on ([ADR 0010](docs/adr/0010-dataset-lifecycle.md)).
 
 ## Where to go next
 
@@ -218,11 +218,12 @@ The backend's Pydantic models are the single source of truth for the HTTP
 contract. They generate `openapi.json`, which generates the frontend's
 TypeScript types. CI fails if the committed output drifts.
 
-Ingestion never edits an activated network dataset: it writes a _new_ version,
-validates it, and swaps activation in one transaction. Routing loads the active
-dataset into memory once and caches it by dataset version id, which relies on
-that. Elevation sampling is the exception still to close: it writes into an
-existing dataset, the live one by default ([KI-10](docs/development/KNOWN_ISSUES.md)).
+A network dataset is built as a draft candidate, enriched with elevation,
+sealed under a content checksum, and judged against the live dataset on a fixed
+journey corpus before a short, locked switch makes it live. Once sealed, the
+database refuses any change to its rows. Routing loads the active dataset into
+memory once and caches it by dataset version id, which relies on exactly that
+([ADR 0010](docs/adr/0010-dataset-lifecycle.md)).
 
 More detail: [architecture overview](docs/architecture/OVERVIEW.md) ·
 [data flow](docs/architecture/DATA_FLOW.md) ·
@@ -334,16 +335,35 @@ uv run pathable regions seed
 # the path used for the live dataset: no rate limits, no dependency on a donated
 # service, and re-readable as often as you like. Download an extract first, e.g.
 # https://download.geofabrik.de/north-america/canada/ontario-latest.osm.pbf
+# This writes a draft candidate, with each element's OSM version and edit time.
+# Nothing goes live.
 uv run pathable ingest pbf --region waterloo --file .osm-data/ontario-latest.osm.pbf   --provider geofabrik --source-timestamp 2026-08-16T23:08:23+00:00
 
 # Or import over Overpass. Convenient, but it is a donated service with strict
 # rate limits and a city-wide unsimplified query is impractically slow.
 uv run pathable ingest osm --region waterloo
 
-# Sample elevation and derive a grade for every segment long enough to have one.
-# NRCan HRDEM is 1 m LiDAR under the Open Government Licence - Canada; the 898 GB
-# mosaic is read in place by byte range, never downloaded.
+# Sample elevation into the candidate and derive a grade for every segment long
+# enough to have one. NRCan HRDEM is 1 m LiDAR under the Open Government Licence -
+# Canada; the 898 GB mosaic is read in place by byte range, never downloaded.
+# It is refused on anything but a draft: the live network is never enriched.
 uv run pathable elevation apply --region waterloo --provider hrdem
+
+# Validate what was stored, hash it, and freeze it.
+uv run pathable datasets seal <candidate-id>
+
+# Route the twenty-journey corpus under every profile on the candidate and on
+# the live dataset, and store both. Exit code 3 means routes changed, or nothing
+# is live yet: a person has to accept that, with a reason, before it can go live.
+uv run pathable datasets evaluate <candidate-id>
+uv run pathable datasets accept <run-id> --reason "What changed and why that is intended."
+
+# The switch itself: a short, locked transaction that re-checks the evidence.
+uv run pathable datasets activate <candidate-id>
+
+# Put the previous network back, as it was — re-hashed first, never rebuilt.
+uv run pathable datasets rollback --region waterloo --reason "Why, in a sentence."
+uv run pathable datasets history --region waterloo
 
 # Or load the deterministic test fixture instead — a nine-node network built
 # around one stairway-versus-ramp comparison. Useful for development and for
@@ -355,10 +375,12 @@ uv run pathable ingest synthetic
 uv run pathable datasets list
 ```
 
-Ingestion never edits the live network. It writes a new dataset version,
-validates it, and swaps activation in one transaction — so a failed import
-cannot degrade what people are currently routing on, and rolling back is
-re-activating the previous version.
+Nothing in this sequence edits the live network, and the database would refuse
+if it tried. A failed import, a missing enrichment or an unexplained route
+change stops before the switch, and rolling back reactivates the previous
+version exactly as it was. A dataset that went live before this lifecycle
+existed has no content checksum; `pathable datasets checksum --record <id>`
+computes one from its rows before anything is compared against it.
 
 Overpass is a donated public service with strict rate limits. PathAble checks
 that an endpoint is reachable before it starts, so an unreachable one fails in

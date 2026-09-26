@@ -71,7 +71,8 @@ dataset is populated by one of two supported paths:
 
 **Path A — ingest from the published extract (the canonical path).** Documented
 in the README: `pathable regions seed`, `pathable ingest pbf`, `pathable
-elevation apply --provider hrdem`. It downloads the Geofabrik Ontario extract
+elevation apply --provider hrdem`, then `pathable datasets seal`, `evaluate`,
+`accept` where required, and `activate`. It downloads the Geofabrik Ontario extract
 (~970 MB) and samples NRCan HRDEM over S3; it takes hours on a laptop and is
 the path a real deployment should use once, then keep the result.
 
@@ -129,6 +130,18 @@ The script refuses an archive carrying tables it does not know, refuses one
 carrying schema objects, refuses a database that is not migrated, refuses a
 database that already has rows, and verifies counts, foreign keys, the
 `incline_direction` check and geometry validity before reporting success.
+
+**Since migration 0006** a sealed dataset's rows cannot be written and no
+dataset can be created active — which is exactly what a data-only restore does.
+The script sets `pathable.allow_sealed_writes=on` through `PGOPTIONS` for the
+`pg_restore` connection only; it is a custom session setting any role may set,
+so the restore still needs no superuser, and foreign keys and checks stay
+enforced. It also restores the three evidence tables when the archive carries
+them, and reports whether the live dataset has a content checksum. Measured as
+a role with `superuser=f`: a pre-0006 Waterloo archive and an archive with the
+evidence tables both restored and verified, and the same restore without the
+setting was refused
+([`waterloo-dataset-lifecycle.json`](../evidence/waterloo-dataset-lifecycle.json)).
 
 ### Approximating a managed database locally
 

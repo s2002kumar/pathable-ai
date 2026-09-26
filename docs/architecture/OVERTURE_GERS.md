@@ -205,10 +205,12 @@ Overture in other regions, where other providers may contribute.
 
 Recorded so the schema follows the data rather than the other way round.
 
-- **Dataset lifecycle (next).** The gaps this work surfaced
-  ([KI-10](../development/KNOWN_ISSUES.md)), and capturing OSM element versions
-  and edit times — including each way's latest member edit — at ingestion, so
-  version evidence stops depending on a retained file.
+- **Dataset lifecycle (done in PA-GEO-02).** The gaps this work surfaced
+  ([KI-10](../development/KNOWN_ISSUES.md), closed), and capturing OSM element
+  versions and edit times — including each way's latest member edit — at
+  ingestion ([ADR 0010](../adr/0010-dataset-lifecycle.md)). Version evidence no
+  longer depends on a retained file for datasets ingested from now on; the live
+  Waterloo dataset predates it.
 - **Canonical evidence model.** How an external reference is keyed: source,
   source record id and version, GERS id where there is one, and both linear
   ranges, with cardinality as data rather than a column on `graph_edges`. It is

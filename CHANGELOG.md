@@ -12,6 +12,27 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Fixed
 
+- **A live dataset could change, and nothing proved a new one before it went
+  live (KI-10).** Elevation had been sampled into the live Waterloo dataset
+  seven minutes after activation; the checksum could not see elevation or
+  grade; a retired dataset could not come back; and no route regression was
+  required. Datasets are now built as draft candidates, enriched, then sealed
+  under a versioned content checksum computed from the stored rows, and
+  migration 0006 has PostgreSQL refuse any change to a sealed dataset's rows.
+  Activation rests on a stored twenty-journey, six-profile route regression
+  against the live dataset, with a recorded reason when routes differ, and
+  `pathable datasets rollback` re-hashes and reactivates the previous dataset
+  without rebuilding it. On the real network a rebuilt candidate reproduced the
+  live dataset's content checksum and routed all 120 comparisons identically
+  ([ADR 0010](docs/adr/0010-dataset-lifecycle.md),
+  [evidence](docs/evidence/waterloo-dataset-lifecycle.json)).
+
+- **A route could be labelled with a dataset it was not computed on.** The
+  compare endpoint read "the active dataset" once for the graph and again for
+  the provenance; a switch between the two reads mislabelled the route. The
+  provenance now comes from the graph's own dataset, with a regression test that
+  lands a switch in that gap.
+
 - **The demo link was a dead end for anyone reading it on GitHub.** Verified
   anonymously after publication: GitHub's blob view answers a 2.23 MB WebM with
   "we can't show files that are this big right now", its raw URL sends
@@ -41,6 +62,13 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
   checked them.
 
 ### Added
+
+- **OSM edit provenance at ingestion (KI-7, partly).** PBF imports store each
+  node's and way's OSM version and edit time, and the latest edit across a way's
+  nodes; unknown stays unknown, and Overpass imports record none because the
+  service returns none. New commands: `pathable datasets seal`, `checksum`,
+  `evaluate`, `accept`, `activate`, `rollback` and `history`. `ingest osm` and
+  `ingest pbf` no longer activate anything.
 
 - **A recruiter-facing evidence package, and a ledger that governs it.** The
   README now opens with what PathAble does, a 67-second recording of the real

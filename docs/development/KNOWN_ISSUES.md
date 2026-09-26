@@ -317,7 +317,7 @@ region is added.
 
 ## KI-7 — Evidence freshness is a dataset-level fact
 
-**Status: Open** · 2026-08-17
+**Status: Partly addressed** · 2026-08-17 · element provenance captured 2026-09-26 (PA-GEO-02)
 
 Every routing-relevant fact carries where it came from and when — but "when" is
 the timestamp of the whole extract, not of the individual element. The product
@@ -344,6 +344,20 @@ recoverable from the dataset's checksum-verified source extract, which is how
 the linkage evidence establishes them, and a way's latest edit has to include
 its nodes' edits — see [`OVERTURE_GERS.md`](../architecture/OVERTURE_GERS.md) §5.
 Capturing both at ingestion is a PA-GEO-02 item.
+
+**Update, 2026-09-26 (PA-GEO-02).** The PBF path now stores each node's OSM
+version and edit time, each way's version and edit time on its segments, and the
+latest edit across a way and every node it references — unknown if any one of
+them is. A Waterloo candidate rebuilt from the same extract carries a version on
+155,714 of 155,714 nodes and 180,554 of 180,554 segments, and a latest member
+edit on 180,547; the other seven reference a node outside the area read
+([`waterloo-dataset-lifecycle.json`](../evidence/waterloo-dataset-lifecycle.json)).
+Overpass imports record none, because OSMnx's `out;` query returns none.
+
+What is **still open**: the live Waterloo dataset predates this and carries no
+element provenance; nothing in routing, the coverage report or the UI uses the
+per-element times yet; and a freshness policy — how old is too old for a kerb —
+does not exist. Storing the evidence was the prerequisite, not the fix.
 
 ---
 
@@ -407,7 +421,8 @@ continuously verified.
 
 ## KI-10 — An activated dataset is not as immutable as the lifecycle says
 
-**Status: Open** · found 2026-09-25 during PA-GEO-01 · to be fixed in PA-GEO-02/03
+**Status: Closed** · found 2026-09-25 during PA-GEO-01 · fixed 2026-09-26 in
+PA-GEO-02 ([ADR 0010](../adr/0010-dataset-lifecycle.md))
 
 The dataset lifecycle promises that a network is immutable once activated, and
 the graph cache is keyed by dataset id on that promise. Reading the code and the
@@ -430,8 +445,34 @@ recorded so that synchronization is not built on them.
 4. **Route regression does not gate activation.** `pathable evaluate` runs the
    twenty-journey corpus, but nothing requires it before a dataset goes live.
 
-**Check when:** PA-GEO-02 designs the synchronization schema. Enrichment such as
-elevation should become a step in building a candidate, the checksum (or a
-second one) should cover derived evidence, reactivation should be an audited
-transition with its own command and a PostGIS test, and activation should be
-able to require a clean route regression.
+**Resolution (PA-GEO-02).** Each of the four, and how it is proven:
+
+1. Ingestion writes a draft candidate and stops; elevation is applied only to a
+   draft, and the CLI never falls back to the live dataset. Migration 0006 makes
+   the database refuse any insert, update or delete of a sealed dataset's rows.
+   Tested against PostGIS, and refused on the real Waterloo rows: an update of
+   the live dataset and a delete from a retired one were both rejected by the
+   triggers.
+2. A versioned **content checksum** is computed from the stored rows after
+   enrichment — elevation and derived grade included — when a candidate is
+   sealed. A unit test fails if a graph column is added without being placed in
+   or out of it.
+3. `pathable datasets rollback` reactivates a retired, once-live dataset after
+   re-hashing its rows, in a short locked transaction with a recorded reason.
+   Proven A → B → A on Waterloo; nothing was rebuilt.
+4. Activation needs a stored route-regression run of the twenty-journey corpus
+   under all six profiles against the live dataset, for this content and this
+   corpus fingerprint, and an acceptance with a reason when routes differ.
+
+On real data: a candidate rebuilt from the same extract and the same HRDEM
+mosaic reproduced the live dataset's content checksum exactly (`4a179dc0…`) and
+routed all 120 comparisons identically; it went live in a 33.8 ms switch and was
+rolled back in 31.7 ms after an 11.56 s re-hash
+([`waterloo-dataset-lifecycle.json`](../evidence/waterloo-dataset-lifecycle.json)).
+
+**What remains true of the live dataset.** Its elevation was still sampled after
+it went live on 2026-08-18; that history does not change. Its content checksum
+was recorded from its rows afterwards and it is not claimed to have been
+validated under the sealing rules — `validated_content_checksum` stays null.
+The triggers protect against the application and accidents, not against a
+database owner, who can drop them.

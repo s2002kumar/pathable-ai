@@ -47,17 +47,17 @@ routed over. Delivered together with Phase 1 rather than as a separate release.
 
 **Delivered**
 
-| Area       | What exists                                                                                                                               |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Schema     | Pilot regions, dataset versions, ingestion runs, graph nodes and edges                                                                    |
-| Versioning | Ingestion writes a new version and swaps activation atomically; enrichment is not yet immutable ([KI-10](../development/KNOWN_ISSUES.md)) |
-| Ingestion  | `pathable ingest osm` (Overpass) and `pathable ingest pbf` (local extract)                                                                |
-| Real data  | 155,714 nodes · 180,554 segments · 3,363.7 km, live since 2026-08-17                                                                      |
-| Elevation  | NRCan HRDEM 1 m LiDAR, sampled per node with full provenance                                                                              |
-| Normalise  | OSM tags → deterministic attributes, with `unknown` as the default everywhere                                                             |
-| Validation | Structured findings; errors block activation, warnings do not                                                                             |
-| Checksums  | Deterministic over network content, so "has this actually changed?" is answerable                                                         |
-| Fixture    | A deterministic synthetic network in its own region, for tests and development                                                            |
+| Area       | What exists                                                                                                                                                                            |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema     | Pilot regions, dataset versions, ingestion runs, graph nodes and edges                                                                                                                 |
+| Versioning | Candidates are enriched, sealed and judged by route regression before a locked switch; sealed rows are frozen by the database; rollback ([ADR 0010](../adr/0010-dataset-lifecycle.md)) |
+| Ingestion  | `pathable ingest osm` (Overpass) and `pathable ingest pbf` (local extract)                                                                                                             |
+| Real data  | 155,714 nodes · 180,554 segments · 3,363.7 km, live since 2026-08-17                                                                                                                   |
+| Elevation  | NRCan HRDEM 1 m LiDAR, sampled per node with full provenance                                                                                                                           |
+| Normalise  | OSM tags → deterministic attributes, with `unknown` as the default everywhere                                                                                                          |
+| Validation | Structured findings; errors block activation, warnings do not                                                                                                                          |
+| Checksums  | Deterministic over network content, so "has this actually changed?" is answerable                                                                                                      |
+| Fixture    | A deterministic synthetic network in its own region, for tests and development                                                                                                         |
 
 **Still does not exist.**
 
@@ -189,7 +189,7 @@ source, keep provenance and uncertainty, and show with numbers whether the resul
 carries better accessibility information than OpenStreetMap alone? It moves no
 phase gate and changes no route until a card says otherwise.
 
-### PA-GEO-01 — Overture release intake and OSM/GERS identity evidence _(draft PR #66)_
+### PA-GEO-01 — Overture release intake and OSM/GERS identity evidence _(merged, PR #66)_
 
 **Delivered**
 
@@ -211,12 +211,37 @@ attributes examined.
 **Still does not exist.**
 
 - Any synchronization with Overture, or any Overture data in the routing graph.
-- OSM element versions or edit times in PathAble's own tables (KI-7).
-- A lifecycle that keeps enrichment out of an active dataset, covers derived
-  evidence in its checksum, or can reactivate a retired dataset (KI-10). That is
-  PA-GEO-02, the next card.
 - A second, independent pedestrian source, a source-independent evidence model,
   conflation, or any coverage improvement.
+
+### PA-GEO-02 — Dataset lifecycle integrity and OSM version provenance _(draft PR #68)_
+
+**Delivered** — [ADR 0010](../adr/0010-dataset-lifecycle.md)
+
+| Area            | What exists                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| Candidates      | Ingestion writes a draft; elevation goes only into a draft; sealing validates the stored rows                |
+| Immutability    | Migration 0006 triggers: a sealed dataset's rows and defining columns cannot change; evidence is append-only |
+| Content hash    | Content checksum v2 over the stored, enriched rows; lifecycle state and provenance excluded                  |
+| Activation gate | Stored route regression (20 journeys × 6 profiles) against the live dataset; a reason when routes differ     |
+| Rollback        | `datasets rollback` re-hashes and reactivates a retired dataset; never rebuilds                              |
+| History         | `datasets history`: every activation and rollback, with its run, acceptance or reason                        |
+| OSM provenance  | Node and way version and edit time, and each way's latest member edit, from PBF extracts                     |
+
+**What it measured** — see
+[`waterloo-dataset-lifecycle.json`](../evidence/waterloo-dataset-lifecycle.json):
+a Waterloo candidate rebuilt from the same extract and HRDEM mosaic reproduced
+the live dataset's content checksum exactly and routed all 120 comparisons
+identically; activation switched in 33.8 ms and rollback in 31.7 ms after an
+11.56 s re-hash.
+
+**Still does not exist.**
+
+- Any use of per-element edit times in routing, the coverage report or the UI.
+- Synchronization, incremental graph updates, multi-source conflation, or
+  external-source enrichment.
+- Zero-downtime deployment. The switch is short and measured; a running API
+  picks up a new dataset on its next request, which has not been load-tested.
 
 ---
 

@@ -78,9 +78,12 @@ the error exceeds the signal — and read from an 898 GB COG by byte range, neve
 in its own column, never overwriting a mapper's. (_[DATA_SOURCES.md §5](licensing/DATA_SOURCES.md)_)
 
 **3 · Versioning, and why the cache is safe (1 min)**
-Immutable dataset versions, activation swapped in one transaction, one-active-per-region enforced by a database
-constraint. Graph cached by version id, so a cached graph can't go stale — a new dataset is a new key.
-(_`geo/datasets.py`_)
+Candidates are built, enriched and sealed; once sealed, database triggers refuse any change to their rows.
+Activation needs a stored route regression against the live dataset — and a written reason if routes changed —
+then one short locked switch; rollback re-hashes and reactivates, never rebuilds. Graph cached by version id, and
+the content under an id cannot change, so a cached graph can't go stale. The honest part: the first version of
+this only promised immutability, and elevation was written into the live dataset anyway (KI-10).
+(_`geo/lifecycle.py`, `routing/activation.py`, [ADR 0010](adr/0010-dataset-lifecycle.md)_)
 
 **4 · Graph and search (1.5 min)**
 180,554 physical segments → 361,108 directed edges; why both counts exist. MultiDiGraph because two nodes can be
