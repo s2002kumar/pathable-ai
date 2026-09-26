@@ -3338,7 +3338,7 @@
         ],
         "disposition": "matching/conflation input only",
         "scope": "all records",
-        "rationale": "Centrelines digitised from orthoimagery. In the study area most pedestrian records run within 2 m of an OSM pedestrian way along their whole length, which is consistent with shared lineage: the geometry is input to matching and a lineage question, not independent evidence of where a path is.",
+        "rationale": "Centrelines digitised from orthoimagery. In the study area most pedestrian records run within 2 m of an OSM pedestrian way along their whole length, and the City permits its data in OSM. That does not establish independent geometry: until record-level history is inspected the geometry is treated as potentially shared-lineage — input to matching and a lineage question, not independent evidence of where a path is.",
         "basis": {
           "geometry_issues": {
             "valid": 34052
@@ -3902,18 +3902,18 @@
     }
   },
   "measurement": {
-    "profile_seconds": 1.97,
-    "geography_seconds": 24.02,
-    "total_seconds": 73.02,
+    "profile_seconds": 2.57,
+    "geography_seconds": 31.23,
+    "total_seconds": 38.34,
     "environment": {
       "python": "3.13.2",
       "platform": "Windows-11-10.0.26200-SP0",
       "machine": "AMD64",
-      "git_commit": "8cf068df49b8ffe4cea8403f8a9b6d652221f4af"
+      "git_commit": "4a68d4fe91b872d2d3d7d6d2e593e544b9dd6374"
     },
     "machine_memory_mb": 16498.0,
-    "peak_process_memory_mb": 644.2,
+    "peak_process_memory_mb": 641.8,
     "process_memory_method": "windows:GetProcessMemoryInfo working set"
   },
-  "content_sha256": "54595abdfd1b3baee85e95978679e06e58be2113cd7bb940b3bdd8800d754487"
+  "content_sha256": "2f00f84125acd5fff23f181f95a54654fc985d36b17dab0d9834933d35eecbc8"
 }

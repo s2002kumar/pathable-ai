@@ -120,9 +120,13 @@ is still at 0005 and was not migrated.
 **Which run produced what.**
 
 - The snapshot and normalized manifests come from clean commit `65ba0d4`.
-- The profile and sample come from clean commit `8cf068d`.
-- Between the two commits only a printed message and the adoption rationales
-  changed. The snapshot and normalization code is identical.
+- The profile and sample come from clean commit `4a68d4f`.
+- Between the two commits only a printed message and the wording of adoption
+  rationales changed. The snapshot and normalization code is identical.
+- The profile was last regenerated to carry the corrected geometry rationale.
+  Compared with the previous run, only that rationale and the content hash
+  covering it changed; every measured figure is identical, and the sample is
+  byte-identical.
 
 **Reproduced.**
 
