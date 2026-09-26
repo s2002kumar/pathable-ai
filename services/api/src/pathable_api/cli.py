@@ -60,8 +60,18 @@ from pathable_api.geo.kitchener.arcgis import (
 )
 from pathable_api.geo.kitchener.audit import AuditError, run_audit
 from pathable_api.geo.kitchener.audit import write_outputs as write_kitchener_outputs
-from pathable_api.geo.kitchener.geography import PathAbleReadError, read_pathable_edges
+from pathable_api.geo.kitchener.geography import (
+    PathAbleReadError,
+    read_dataset_source,
+    read_pathable_edges,
+)
 from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
+from pathable_api.geo.kitchener.osm_extract import (
+    EXTRACT_FORMAT_VERSION,
+    ExtractSourceError,
+    read_study_extract,
+    write_study_extract,
+)
 from pathable_api.geo.kitchener.snapshot import SnapshotError, SnapshotPlan, take_snapshot
 from pathable_api.geo.lifecycle import (
     SealRefusedError,
@@ -85,7 +95,7 @@ from pathable_api.geo.overture.catalog import (
     resolve_release,
 )
 from pathable_api.geo.overture.contract import IncompatibleSchemaError
-from pathable_api.geo.overture.evidence import write_json
+from pathable_api.geo.overture.evidence import content_sha256, write_json
 from pathable_api.geo.overture.extract import (
     EXTRACT_MANIFEST,
     ExtractionError,
@@ -501,6 +511,25 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--json", type=Path, required=True, help="Write the profile here.")
     audit.add_argument("--sample", type=Path, required=True, help="Write the GeoJSON sample here.")
 
+    lineage_extract = kitchener_actions.add_parser(
+        "lineage-extract",
+        help=(
+            "Freeze the OSM side of the PA-GEO-04 lineage study from the dataset's own source "
+            "extract, refused unless its SHA-256 matches. Reads PathAble read-only."
+        ),
+    )
+    lineage_extract.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    lineage_extract.add_argument("--dataset", default=None, help="Defaults to the active dataset.")
+    lineage_extract.add_argument("--pbf", type=Path, required=True, help="The source extract.")
+    lineage_extract.add_argument(
+        "--out", type=Path, required=True, help="Write the study extract (.jsonl.gz) here."
+    )
+    lineage_extract.add_argument(
+        "--json", type=Path, required=True, help="Write its manifest here."
+    )
+
     return parser
 
 
@@ -522,7 +551,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "overture" and args.overture_command != "link":
         return _overture_offline(args)
     # Freezing and normalizing a Kitchener snapshot need no database either.
-    if args.command == "kitchener" and args.kitchener_command != "audit":
+    if args.command == "kitchener" and args.kitchener_command in _KITCHENER_OFFLINE:
         return _kitchener_offline(args)
 
     try:
@@ -562,6 +591,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _benchmark(database, args)
             case "overture":
                 return await _overture_link(database, args)
+            case "kitchener" if args.kitchener_command == "lineage-extract":
+                return await _kitchener_lineage_extract(database, args)
             case "kitchener":
                 return await _kitchener_audit(database, args)
             case "datasets" if args.dataset_command == "seal":
@@ -1207,6 +1238,62 @@ async def _kitchener_audit(database: Database, args: argparse.Namespace) -> int:
     print(f"  sample                      {profile['sample']['records']:>8}")
     print(f"Wrote {args.json}")
     print(f"Wrote {args.sample}")
+    return EXIT_OK
+
+
+#: `pathable kitchener` commands that need no database.
+_KITCHENER_OFFLINE = frozenset({"snapshot", "normalize"})
+
+
+async def _kitchener_lineage_extract(database: Database, args: argparse.Namespace) -> int:
+    try:
+        dataset_id = uuid.UUID(args.dataset) if args.dataset else None
+    except ValueError:
+        print("error: --dataset must be a UUID.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+    async with database.session() as session:
+        try:
+            source = await read_dataset_source(
+                session, region_slug=args.region, dataset_id=dataset_id
+            )
+        except PathAbleReadError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+    if source.file_sha256 is None or source.bbox is None:
+        print(
+            "error: the dataset records no source-extract SHA-256 or bounding box; "
+            "its OSM side cannot be frozen from a file.",
+            file=sys.stderr,
+        )
+        return EXIT_FAILED
+    started = time.perf_counter()
+    try:
+        extract, facts = read_study_extract(
+            args.pbf, expected_sha256=source.file_sha256, bounds=source.bbox, progress=print
+        )
+    except ExtractSourceError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    sha256 = write_study_extract(extract, args.out)
+    manifest: dict[str, Any] = {
+        "kitchener_osm_extract_version": EXTRACT_FORMAT_VERSION,
+        "dataset": source.as_dict(),
+        "selection": (
+            "every way with a highway tag that touches the dataset's recorded bounding box, "
+            "whole; the nodes they use; and tagged nodes inside the box carrying kerb, "
+            "crossing, barrier or highway facts"
+        ),
+        "source": {k: facts[k] for k in ("source_file", "source_sha256", "bounds")},
+        "counts": {k: facts[k] for k in ("nodes_near_box", "fact_nodes", "ways", "nodes")},
+        "output": {"file": args.out.name, "bytes": args.out.stat().st_size, "sha256": sha256},
+        "run": {"seconds": round(time.perf_counter() - started, 2), **_run_measurements()},
+    }
+    manifest["content_sha256"] = content_sha256(manifest)
+    write_json(args.json, manifest)
+    print(f"\nFrozen OSM study extract: {facts['ways']} ways, {facts['nodes']} nodes")
+    print(f"  source {source.file_name} sha256 {source.file_sha256[:12]} (verified)")
+    print(f"  wrote {args.out} sha256 {sha256[:12]}")
+    print(f"Wrote {args.json}")
     return EXIT_OK
 
 

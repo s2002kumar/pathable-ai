@@ -121,6 +121,95 @@ _EXTENT = text(
 )
 
 
+_SOURCE = text("SELECT ingestion_configuration FROM dataset_versions WHERE id = :dataset")
+
+
+async def _resolve_dataset(
+    session: AsyncSession, region_slug: str, dataset_id: uuid.UUID | None
+) -> tuple[uuid.UUID, str, DatasetFacts]:
+    """The dataset to read, its region boundary and its identifying facts."""
+    region = (await session.execute(_REGION, {"slug": region_slug})).first()
+    if region is None:
+        msg = f"Region {region_slug} does not exist in this database."
+        raise PathAbleReadError(msg)
+    region_id, boundary_wkt = region
+    if dataset_id is None:
+        active = (await session.execute(_ACTIVE, {"region": region_id})).all()
+        if len(active) != 1:
+            msg = f"Region {region_slug} has {len(active)} active datasets, expected one."
+            raise PathAbleReadError(msg)
+        dataset_id = uuid.UUID(str(active[0][0]))
+    row = (await session.execute(_DATASET, {"dataset": dataset_id, "region": region_id})).first()
+    if row is None:
+        msg = f"Dataset {dataset_id} does not exist in region {region_slug}."
+        raise PathAbleReadError(msg)
+    facts = DatasetFacts(
+        dataset_id=str(row[0]),
+        status=str(row[1]),
+        checksum=str(row[2]),
+        source_name=str(row[3]),
+        source_timestamp=row[4].isoformat() if row[4] is not None else None,
+        edge_count=int(row[5]),
+        bounds_wkt=row[6],
+    )
+    return dataset_id, str(boundary_wkt), facts
+
+
+@dataclass(frozen=True, slots=True)
+class DatasetSource:
+    """Which extract a dataset was built from, as the dataset itself recorded it."""
+
+    facts: DatasetFacts
+    file_name: str | None
+    file_sha256: str | None
+    file_bytes: int | None
+    bbox: tuple[float, float, float, float] | None
+    provider: str | None
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            **self.facts.as_dict(),
+            "source_file_name": self.file_name,
+            "source_file_sha256": self.file_sha256,
+            "source_file_bytes": self.file_bytes,
+            "source_bbox": list(self.bbox) if self.bbox is not None else None,
+            "source_provider": self.provider,
+        }
+
+
+async def read_dataset_source(
+    session: AsyncSession, *, region_slug: str, dataset_id: uuid.UUID | None = None
+) -> DatasetSource:
+    """The dataset's identity and recorded source extract, read without writing."""
+    if session.in_transaction():
+        msg = "read_dataset_source needs a session with no open transaction."
+        raise PathAbleReadError(msg)
+    async with session.begin():
+        await session.execute(text("SET TRANSACTION READ ONLY"))
+        resolved, _boundary, facts = await _resolve_dataset(session, region_slug, dataset_id)
+        configuration = (await session.execute(_SOURCE, {"dataset": resolved})).scalar_one()
+    recorded = configuration if isinstance(configuration, dict) else {}
+    bbox = recorded.get("bbox")
+    return DatasetSource(
+        facts=facts,
+        file_name=_text(recorded.get("file_name")),
+        file_sha256=_text(recorded.get("file_sha256")),
+        file_bytes=int(recorded["file_bytes"])
+        if isinstance(recorded.get("file_bytes"), int)
+        else None,
+        bbox=(
+            (float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3]))
+            if isinstance(bbox, list) and len(bbox) == 4
+            else None
+        ),
+        provider=_text(recorded.get("provider")),
+    )
+
+
+def _text(value: object) -> str | None:
+    return value if isinstance(value, str) and value else None
+
+
 async def read_pathable_edges(
     session: AsyncSession, *, region_slug: str, dataset_id: uuid.UUID | None = None
 ) -> PathAbleEdges:
@@ -131,32 +220,7 @@ async def read_pathable_edges(
     async with session.begin():
         # Must be the first statement of the transaction to take effect.
         await session.execute(text("SET TRANSACTION READ ONLY"))
-        region = (await session.execute(_REGION, {"slug": region_slug})).first()
-        if region is None:
-            msg = f"Region {region_slug} does not exist in this database."
-            raise PathAbleReadError(msg)
-        region_id, boundary_wkt = region
-        if dataset_id is None:
-            active = (await session.execute(_ACTIVE, {"region": region_id})).all()
-            if len(active) != 1:
-                msg = f"Region {region_slug} has {len(active)} active datasets, expected one."
-                raise PathAbleReadError(msg)
-            dataset_id = uuid.UUID(str(active[0][0]))
-        row = (
-            await session.execute(_DATASET, {"dataset": dataset_id, "region": region_id})
-        ).first()
-        if row is None:
-            msg = f"Dataset {dataset_id} does not exist in region {region_slug}."
-            raise PathAbleReadError(msg)
-        facts = DatasetFacts(
-            dataset_id=str(row[0]),
-            status=str(row[1]),
-            checksum=str(row[2]),
-            source_name=str(row[3]),
-            source_timestamp=row[4].isoformat() if row[4] is not None else None,
-            edge_count=int(row[5]),
-            bounds_wkt=row[6],
-        )
+        dataset_id, boundary_wkt, facts = await _resolve_dataset(session, region_slug, dataset_id)
         edges = (await session.execute(_EDGES, {"dataset": dataset_id})).all()
         extent = (await session.execute(_EXTENT, {"dataset": dataset_id})).first()
 
