@@ -122,17 +122,13 @@ test.describe('PA-UX-02B candidate', () => {
       await page.waitForTimeout(8_000);
       await page.screenshot({ path: `${OUT}/${viewport.name}-result.png` });
 
-      // And the evidence overlay: the recorded stairways drawn on the route
-      // that carries them. Captured because the claim it makes — "four
-      // stairways, sixteen recorded steps, two of them uncounted" — is a
-      // statement about the data that somebody should be able to check.
-      const stairs = page.getByTestId('show-recorded-stairs');
-      if ((await stairs.count()) > 0) {
-        await stairs.click();
-        await page.waitForTimeout(2_500);
-        await page.screenshot({ path: `${OUT}/${viewport.name}-stairs.png` });
-        await stairs.click();
-      }
+      // And the evidence below the answer: every reason by topic and the
+      // per-category record. The recorded stairways are drawn on the map in
+      // the result capture itself, since they are no longer behind a control.
+      await page.getByTestId('evidence-coverage').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/${viewport.name}-evidence.png` });
+      await page.getByTestId('route-difference').scrollIntoViewIfNeeded();
 
       const layout = await page.evaluate(() => {
         const rect = (selector: string) => {
@@ -169,6 +165,7 @@ test.describe('PA-UX-02B candidate', () => {
             accessible: whollyVisible('[data-testid="difference-accessible"]'),
             shortest: whollyVisible('[data-testid="difference-shortest"]'),
             detour: whollyVisible('[data-testid="difference-extra"]'),
+            reason: whollyVisible('[data-testid="main-difference"]'),
             uncertainty: whollyVisible('[data-testid="uncertainty-summary"]'),
             mapKey: whollyVisible('[data-testid="map-legend"]'),
           },
@@ -192,6 +189,7 @@ test.describe('PA-UX-02B candidate', () => {
         accessible: true,
         shortest: true,
         detour: true,
+        reason: true,
         uncertainty: true,
         mapKey: true,
       });
