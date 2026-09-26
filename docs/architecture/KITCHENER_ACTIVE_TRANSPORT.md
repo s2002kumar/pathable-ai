@@ -70,8 +70,24 @@ joined on the City's permanent id, `ACTIVETRANSPORTID`:
 use; copy, modify, publish, adapt and distribute; attribution optional, with a
 stated credit line; personal information excluded; version 1.0. The snapshot
 command checks those sentences on every run and stops normalization if any is
-missing. This is an engineering reading of the text, not legal advice. Details:
-[`DATA_SOURCES.md` §11](../licensing/DATA_SOURCES.md).
+missing.
+
+Three licensing facts are kept apart:
+
+- The City's licence permits PathAble's present read-only research use.
+- The City has separately given explicit permission for its data to be
+  incorporated into OpenStreetMap.
+- Formal OSMF Licensing Working Group approval of the Kitchener licence has
+  **not been confirmed**. The OSMF's list of approved Canadian OGL variants
+  names the Region of Waterloo, the City of Waterloo and the City of Cambridge,
+  not Kitchener, and a review request of 2026-08-18 reported on the OSM forum
+  had not been acknowledged.
+
+This does not block this research. But licence compatibility must be reviewed
+again, as a founder licensing decision, before any Kitchener-derived assertion
+is incorporated into or redistributed with the production OSM-derived routing
+database. This is an engineering reading, not legal advice. Details and the
+gate: [`DATA_SOURCES.md` §11](../licensing/DATA_SOURCES.md).
 
 **Independence.** The City has given explicit permission for its data to be used
 in OpenStreetMap: the OSM wiki page _Waterloo region/Kitchener authorization_,
@@ -256,9 +272,11 @@ coincident.
 
 That is consistent with OSM's pedestrian network sharing lineage with the City's
 inventory, through import or through tracing the same imagery. It is not proof,
-and it is measured across a datum shift of stated 4 m accuracy. It means
-**Kitchener adds no independent geometry here.** It also means that where OSM
-already carries an attribute, agreement may be the same fact twice.
+and it is measured across a datum shift of stated 4 m accuracy. **This does not
+establish independent geometry.** The high agreement, together with the City's
+documented permission for OSM use, means PathAble must treat the geometry as
+potentially shared-lineage until record-level history is inspected. Likewise,
+where OSM already carries an attribute, agreement may be the same fact twice.
 
 **OSM baseline on the same ground.** On the 55,530 edges near the inventory:
 
@@ -407,9 +425,13 @@ Nothing else goes forward:
 PA-GEO-04's first question is **lineage**, before any attribute work. The
 geometry's closeness to OSM, and the City's permission to use its data there,
 mean a Kitchener value may already be in OSM. That is plausible where 54.8% of
-nearby crossing edges already carry kerb values. Such a value adds nothing
-independent. Kitchener's contribution is what OSM lacks, and that can only be
-counted once lineage is known. The 80-record sample exists for that inspection.
+nearby crossing edges already carry kerb values. Where a value in OSM came from
+the City, agreement with it adds nothing independent. Kitchener's contribution is
+what OSM lacks, and that can only be counted once lineage is known. The 80-record
+sample exists for that inspection.
+
+Before any later card writes a Kitchener-derived value where routing can read it,
+the licensing gate in §2 applies.
 
 ## 14. Unresolved
 

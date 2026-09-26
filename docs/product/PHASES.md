@@ -289,7 +289,7 @@ identically; activation switched in 33.8 ms and rollback in 31.7 ms after an
 - Zero-downtime deployment. The switch is short and measured; a running API
   picks up a new dataset on its next request, which has not been load-tested.
 
-### PA-GEO-03 — Kitchener secondary-source freeze and empirical audit _(draft, PR #69)_
+### PA-GEO-03 — Kitchener secondary-source freeze and empirical audit _(PR #69)_
 
 **Delivered** — [`KITCHENER_ACTIVE_TRANSPORT.md`](../architecture/KITCHENER_ACTIVE_TRANSPORT.md)
 
@@ -309,8 +309,10 @@ identically; activation switched in 33.8 ms and rollback in 31.7 ms after an
 - The City publishes one internal layer through two incomplete services: only
   active records, and the network links in only one of them.
 - 11,835 active pedestrian records (686.0 km) intersect the pilot.
-- 87.7% of them run within 2 m of an OSM pedestrian way along their whole length;
-  the City permits its data in OSM.
+- 87.7% of them run within 2 m of an OSM pedestrian way along their whole length,
+  and the City permits its data in OSM. Shared lineage is plausible and not
+  established, so the geometry is treated as potentially shared-lineage until
+  record-level history is inspected.
 - 96.1% of sidewalks carry the template 1.5 m width and 98.5% the template
   CONCRETE.
 - What is genuinely non-default is located: 6,888 curb-cut segments, 77 stairs
@@ -319,6 +321,13 @@ identically; activation switched in 33.8 ms and rollback in 31.7 ms after an
 **Decision: LIMITED GO** to PA-GEO-04, for curb cuts, stairs and structures,
 non-default surfaces, dated trail condition and the network links' topology —
 with OSM lineage settled first.
+
+**Licensing gate.** The City's licence covers this research, and the City
+separately permits its data in OpenStreetMap. OSMF LWG approval of the Kitchener
+licence is not confirmed. Compatibility is reviewed again, as a founder decision,
+before any Kitchener-derived value is incorporated into or redistributed with the
+production OSM-derived routing database
+([`DATA_SOURCES.md` §11](../licensing/DATA_SOURCES.md)).
 
 **Still does not exist.**
 

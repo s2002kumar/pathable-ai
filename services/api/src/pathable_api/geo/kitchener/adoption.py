@@ -367,9 +367,11 @@ ADOPTIONS: tuple[Adoption, ...] = (
         Disposition.MATCHING_INPUT,
         "all records",
         "Centrelines digitised from orthoimagery. In the study area most pedestrian records "
-        "run within 2 m of an OSM pedestrian way along their whole length, which is "
-        "consistent with shared lineage: the geometry is input to matching and a lineage "
-        "question, not independent evidence of where a path is.",
+        "run within 2 m of an OSM pedestrian way along their whole length, and the City "
+        "permits its data in OSM. That does not establish independent geometry: until "
+        "record-level history is inspected the geometry is treated as potentially "
+        "shared-lineage — input to matching and a lineage question, not independent "
+        "evidence of where a path is.",
         _geometry,
     ),
     Adoption(

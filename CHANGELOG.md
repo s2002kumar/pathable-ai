@@ -26,7 +26,9 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
     pilot run within 2 m of OpenStreetMap along their whole length, and the City
     permits its data in OSM, so agreement is not independent confirmation.
   - Decision: LIMITED GO.
-  - Nothing routes on it.
+  - Nothing routes on it. The City's licence covers this research and the City
+    permits its data in OSM, but OSMF LWG approval of the Kitchener licence is
+    not confirmed, so production use waits on a founder licensing review.
   - See [`KITCHENER_ACTIVE_TRANSPORT.md`](docs/architecture/KITCHENER_ACTIVE_TRANSPORT.md).
 - **Gradients reach the API, recorded and estimated kept apart (PA-UX-03A).**
   Elevation already shaped route cost on 53.8% of Waterloo's segments, but no

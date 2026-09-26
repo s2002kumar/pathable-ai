@@ -256,8 +256,10 @@ while the thing on the screen is wrong.
 **A municipal inventory is not independent evidence just because it is
 municipal.** In the pilot area, 87.7% of the City of Kitchener's pedestrian
 records run within 2 m of an OpenStreetMap pedestrian way along their whole
-length. The City has also given permission for its data to be used in OSM. Its
-most attractive fields are template defaults: 96.1% of sidewalks carry the
-default 1.5 m width, and 98.5% the default CONCRETE. What it adds beyond doubt is
-located — 6,888 curb-cut segments, 77 stairs, 133 railings. Whether even those are
-new to OSM is PA-GEO-04's question.
+length, and the City has given permission for its data to be used in OSM. That
+does not establish independent geometry: until record-level history is
+inspected, the geometry is treated as potentially shared-lineage. Its most
+attractive fields are template defaults: 96.1% of sidewalks carry the default
+1.5 m width, and 98.5% the default CONCRETE. What it records beyond its defaults
+is located — 6,888 curb-cut segments, 77 stairs, 133 railings. Whether even those
+are new to OSM is PA-GEO-04's question.
