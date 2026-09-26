@@ -6,7 +6,9 @@ and the network is replaced by the in-memory City service.
 
 from __future__ import annotations
 
+import io
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -101,6 +103,31 @@ class TestSnapshotAndNormalize:
         )
 
         assert code == EXIT_FAILED
+
+
+class TestConsoleEncoding:
+    def test_the_commands_survive_a_cp1252_console(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # Regression: `normalize` printed "→", which a Windows console piped to
+        # a file (cp1252) cannot encode. The command failed after writing its
+        # output but before the --json copy, and the evidence copy was missing.
+        _serve(monkeypatch, FakeArcGIS(build_layers()))
+        console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+        monkeypatch.setattr(sys, "stdout", console)
+        manifest_copy = tmp_path / "normalized.json"
+
+        assert cli.main(["kitchener", "snapshot", "--out", str(tmp_path / "snaps")]) == EXIT_OK
+        folder = _snapshot_folder(tmp_path / "snaps")
+        code = cli.main(
+            [
+                "kitchener", "normalize", "--snapshot", str(folder),
+                "--out", str(tmp_path / "norm"), "--json", str(manifest_copy),
+            ]
+        )  # fmt: skip
+
+        assert code == EXIT_OK
+        assert manifest_copy.is_file()
 
 
 class TestAuditArguments:

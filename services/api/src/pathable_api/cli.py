@@ -1156,8 +1156,10 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         print(f"error: {error}", file=sys.stderr)
         return EXIT_FAILED
     output = normalized.manifest["output"]
+    # ASCII only: a Windows console piped to a file is cp1252, and a character it
+    # cannot encode would fail the command after the work was done.
     print(
-        f"\nNormalized {output['rows']} records → {normalized.folder / output['file']} "
+        f"\nNormalized {output['rows']} records into {normalized.folder / output['file']} "
         f"({output['bytes']} bytes, sha256 {output['sha256'][:12]})"
     )
     if args.json is not None:
