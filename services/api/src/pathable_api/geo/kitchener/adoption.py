@@ -570,17 +570,20 @@ def exit_gate(document: Document) -> dict[str, Any]:
             "km_in_study_area": geography["physical_active_pedestrian_km_intersecting"],
         },
         "q3_populated_beyond_template_defaults": {
-            "FEATURE_TYPE_structures": non_default("FEATURE_TYPE"),
-            "SURFACE_MATERIAL_non_default": non_default("SURFACE_MATERIAL"),
-            "WIDTH_M_non_default_non_zero": width["non_default_non_zero"],
-            "CURBCUT_Y": non_default("CURBCUT"),
-            "RAILING_Y": non_default("RAILING"),
-            "SURFACE_CONDITION_fair_poor_unusable": non_default("SURFACE_CONDITION"),
-            "SURFACE_CONDITION_unknown": _states(document, "SURFACE_CONDITION")["unknown"],
-            "GRADE_known": non_default("GRADE"),
-            "records_with_every_accessibility_field_at_default": document["defaults"][
-                "template_signature"
-            ]["records_by_fields_at_default"].get("6", 0),
+            "on_active_physical_pedestrian_records": geography["evidence_on_pedestrian_records"],
+            "all_records": {
+                "FEATURE_TYPE_structures": non_default("FEATURE_TYPE"),
+                "SURFACE_MATERIAL_non_default": non_default("SURFACE_MATERIAL"),
+                "WIDTH_M_non_default_non_zero": width["non_default_non_zero"],
+                "CURBCUT_Y": non_default("CURBCUT"),
+                "RAILING_Y": non_default("RAILING"),
+                "SURFACE_CONDITION_fair_poor_unusable": non_default("SURFACE_CONDITION"),
+                "SURFACE_CONDITION_unknown": _states(document, "SURFACE_CONDITION")["unknown"],
+                "GRADE_known": non_default("GRADE"),
+                "records_with_every_accessibility_field_at_default": document["defaults"][
+                    "template_signature"
+                ]["records_by_fields_at_default"].get("6", 0),
+            },
         },
         "q4_provenance_and_freshness": {
             "records_with_source_date": _states(document, "SOURCE_DATE")["non_default"],

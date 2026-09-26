@@ -158,8 +158,10 @@ def take_snapshot(
                 "read_attempts_allowed": chosen.read_attempts,
                 "native_crs": f"EPSG:{NATIVE_WKID}",
                 "hub_download_not_used": (
-                    "The Hub's cached downloads are regenerated on the portal's schedule and "
-                    "cannot be verified feature by feature; the service itself can."
+                    "The Hub's export (the service's replica file cache) is generated "
+                    "asynchronously on request, rewrites date fields as text, covers one "
+                    "publication per file and can be checked only as a whole; this read is "
+                    "checked request by request and keeps the service's own values."
                 ),
             },
             "warnings": sorted(warnings),
@@ -167,6 +169,9 @@ def take_snapshot(
             "run": {
                 "seconds": round(time.perf_counter() - started, 2),
                 "requests": client.log.as_dict(),
+                # Everything written except this manifest: raw pages, canonical
+                # features, archived metadata and documents.
+                "stored_bytes": sum(p.stat().st_size for p in staging.rglob("*") if p.is_file()),
                 **(measure() if measure is not None else {}),
             },
         }

@@ -66,6 +66,7 @@ SELECT activetransportid, identity_state, physical_class, network_role, lifecycl
     subcategory, feature_type, structure, surface_material, width_m, railing, curbcut,
     surface_condition, source_class, source_year, length_m, part_count, roadsegmentid,
     roadsegment_side, in_active_transportation, in_walkability, geometry_issue,
+    state_surface_material, state_width_m, state_curbcut, state_railing, state_surface_condition,
     geometry, geometry_native
 FROM read_parquet(?)
 """
@@ -100,6 +101,11 @@ class KitchenerRecord:
     in_active_transportation: bool
     in_walkability: bool
     geometry_issue: str | None
+    state_surface_material: str
+    state_width_m: str
+    state_curbcut: str
+    state_railing: str
+    state_surface_condition: str
     primary: BaseGeometry | None
     native: BaseGeometry | None
 
@@ -218,8 +224,9 @@ def load_records(parquet: Path) -> list[KitchenerRecord]:
         rows = connection.execute(_RECORDS_QUERY, [parquet.as_posix()]).fetchall()
     finally:
         connection.close()
-    primary = shapely.from_wkb([bytes(row[23]) if row[23] is not None else None for row in rows])
-    native = shapely.from_wkb([bytes(row[24]) if row[24] is not None else None for row in rows])
+    # The two geometry columns come last in the query, as in the dataclass.
+    primary = shapely.from_wkb([bytes(row[-2]) if row[-2] is not None else None for row in rows])
+    native = shapely.from_wkb([bytes(row[-1]) if row[-1] is not None else None for row in rows])
     names = [item.name for item in fields(KitchenerRecord)][:-2]
     return [
         KitchenerRecord(**dict(zip(names, row[:-2], strict=True)), primary=p, native=n)
@@ -296,12 +303,7 @@ def _overlap(
     edges: PathAbleEdges,
 ) -> dict[str, Any]:
     inside = [(r, g) for r, g in zip(records, geography, strict=True) if g.intersects_study_area]
-    pedestrian = [
-        (r, g)
-        for r, g in inside
-        if r.physical_class == "physical_active"
-        and r.network_role in ("pedestrian_way", "pedestrian_crossing")
-    ]
+    pedestrian = [(r, g) for r, g in inside if _is_physical_pedestrian(r)]
 
     def km(items: Sequence[tuple[KitchenerRecord, RecordGeography]]) -> float:
         return round(sum(r.length_m or 0.0 for r, _g in items) / 1000, 3)
@@ -313,9 +315,7 @@ def _overlap(
         return {label: found.get(label, 0) for label in band_order()}
 
     corridor_mask = [
-        g.intersects_study_area
-        and r.physical_class == "physical_active"
-        and r.network_role in ("pedestrian_way", "pedestrian_crossing")
+        g.intersects_study_area and _is_physical_pedestrian(r)
         for r, g in zip(records, geography, strict=True)
     ]
     return {
@@ -344,6 +344,14 @@ def _overlap(
         "intersecting_curbcut_y": sum(1 for r, _g in inside if r.curbcut == "Y"),
         "physical_active_pedestrian_intersecting": len(pedestrian),
         "physical_active_pedestrian_km_intersecting": km(pedestrian),
+        "evidence_on_pedestrian_records": {
+            "scope": (
+                "active physical pedestrian ways and crossings; a value counts only when it "
+                "departs from the template default (a width of 0 is not counted)"
+            ),
+            "all": evidence_counts([r for r in records if _is_physical_pedestrian(r)]),
+            "in_study_area": evidence_counts([r for r, _g in pedestrian]),
+        },
         "proximity_label": (
             "Distance from each intersecting record to the nearest PathAble edge, in the "
             "source's native metres. Descriptive; the transformation between the two datums "
@@ -381,6 +389,45 @@ def _overlap(
             [r.native for r in records], corridor_mask, edges
         ),
     }
+
+
+def _is_physical_pedestrian(record: KitchenerRecord) -> bool:
+    return record.physical_class == "physical_active" and record.network_role in (
+        "pedestrian_way",
+        "pedestrian_crossing",
+    )
+
+
+def evidence_counts(records: Sequence[KitchenerRecord]) -> dict[str, int]:
+    """How many records carry each kind of non-default accessibility value.
+
+    Template defaults, unknown codes and nulls are not evidence and are never
+    counted here; neither is a 0 m width, which the City uses for crossings.
+    """
+
+    def count(predicate: Callable[[KitchenerRecord], bool]) -> int:
+        return sum(1 for record in records if predicate(record))
+
+    facts: dict[str, Callable[[KitchenerRecord], bool]] = {
+        "stairs": lambda r: r.structure == "STAIRS",
+        "other_structure": lambda r: r.structure is not None and r.structure != "STAIRS",
+        "surface_non_default": lambda r: r.state_surface_material == "non_default",
+        "width_non_default_non_zero": lambda r: (
+            r.state_width_m == "non_default" and (r.width_m or 0) != 0
+        ),
+        "curbcut_y": lambda r: r.curbcut == "Y",
+        "railing_y": lambda r: r.railing == "Y",
+        "condition_fair_poor_unusable": lambda r: r.state_surface_condition == "non_default",
+    }
+    result = {"records": len(records)}
+    result.update({name: count(test) for name, test in facts.items()})
+    result["with_any_of_these"] = count(lambda r: any(test(r) for test in facts.values()))
+    result["surface_template_default"] = count(
+        lambda r: r.state_surface_material == "template_default"
+    )
+    result["width_template_default"] = count(lambda r: r.state_width_m == "template_default")
+    result["condition_unknown"] = count(lambda r: r.state_surface_condition == "unknown")
+    return result
 
 
 def _count(values: Any) -> dict[str, int]:

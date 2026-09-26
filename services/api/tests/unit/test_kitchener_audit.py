@@ -170,7 +170,28 @@ class TestAdoptionAndGate:
         assert gate["q5_stairs_crossings_curb"]["stairs"] == 1
         assert gate["q5_stairs_crossings_curb"]["curbcut_y"] == 1
         assert gate["q6_virtual_or_non_physical"]["virtual_link"] == 1
-        assert gate["q3_populated_beyond_template_defaults"]["GRADE_known"] == 0
+        assert gate["q3_populated_beyond_template_defaults"]["all_records"]["GRADE_known"] == 0
+
+    def test_evidence_counts_only_departures_from_the_template(self, result: AuditResult) -> None:
+        # The eight active physical pedestrian records are 1001-1006, 1009 and
+        # 1010. The crosswalk's 0 m width and every default are not evidence.
+        evidence = result.profile["geography"]["evidence_on_pedestrian_records"]
+
+        assert evidence["all"] == evidence["in_study_area"]
+        assert evidence["all"] == {
+            "records": 8,
+            "stairs": 1,
+            "other_structure": 0,
+            "surface_non_default": 2,
+            "width_non_default_non_zero": 2,
+            "curbcut_y": 1,
+            "railing_y": 1,
+            "condition_fair_poor_unusable": 1,
+            "with_any_of_these": 5,
+            "surface_template_default": 4,
+            "width_template_default": 4,
+            "condition_unknown": 5,
+        }
 
 
 class TestReproducibility:
