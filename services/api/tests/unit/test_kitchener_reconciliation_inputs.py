@@ -11,12 +11,13 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import duckdb
 import pytest
 
-from pathable_api.geo.kitchener import conflation
+from pathable_api.geo.kitchener import conflation, reconciliation_run
 from pathable_api.geo.kitchener.canonical import _MATCH_COLUMNS, write_table
 from pathable_api.geo.kitchener.reconciliation_run import (
     ReconciliationError,
@@ -74,6 +75,11 @@ def _artifact(folder: Path, *, version: str = MATCHER, row_version: str = MATCHE
         "policy": {"version": version},
         "files": {"matches": entry},
         "decisions_sha256": "d" * 64,
+        "inputs": {
+            "kitchener": {"normalized_sha256": "k" * 64},
+            "osm_frozen": {"extract_sha256": "o" * 64},
+        },
+        "run": {"environment": {}},
     }
     (folder / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     return folder
@@ -170,3 +176,34 @@ def test_every_kitchener_query_that_formats_a_date_formats_it_in_utc() -> None:
     )
 
     assert unset == []
+
+
+def _loaded(normalized: str, extract: str, records: list[int]) -> SimpleNamespace:
+    """What conflation.load_inputs would return, reduced to what the binding reads."""
+    return SimpleNamespace(
+        identity={
+            "kitchener": {"normalized_sha256": normalized, "snapshot_id": "s"},
+            "osm_frozen": {"extract_sha256": extract},
+        },
+        population=SimpleNamespace(records=[SimpleNamespace(activetransportid=i) for i in records]),
+    )
+
+
+@pytest.mark.parametrize(
+    ("loaded", "message"),
+    [
+        (_loaded("x" * 64, "o" * 64, [7, 8]), "kitchener input"),
+        (_loaded("k" * 64, "x" * 64, [7, 8]), "osm_frozen input"),
+        (_loaded("k" * 64, "o" * 64, [7, 8, 9]), "cover exactly"),
+    ],
+)
+def test_inputs_other_than_those_pa_geo_05_used_are_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, loaded: SimpleNamespace, message: str
+) -> None:
+    folder = _artifact(tmp_path)
+    monkeypatch.setattr(reconciliation_run, "load_inputs", lambda *_a, **_k: loaded)
+
+    with pytest.raises(ReconciliationError, match=message):
+        reconciliation_run.load_run_inputs(
+            tmp_path / "n", tmp_path / "e", tmp_path / "m", folder, tmp_path / "s"
+        )
