@@ -88,7 +88,7 @@ SELECT activetransportid, network_role, physical_class, category, subcategory, f
     state_railing, surface_condition, state_surface_condition, street, source_class,
     strftime(source_date, '%Y-%m-%d'), last_inspection_year, length_m, part_count,
     origin_curbcut, origin_surface_material, origin_feature_type, origin_railing,
-    origin_surface_condition, geometry_native
+    origin_surface_condition, in_active_transportation, in_walkability, geometry_native
 FROM read_parquet(?) WHERE activetransportid IS NOT NULL AND geometry_native IS NOT NULL
 ORDER BY activetransportid
 """
@@ -188,6 +188,8 @@ def load_population(parquet: Path, area: BaseGeometry) -> Population:
             origin_feature_type,
             origin_railing,
             origin_condition,
+            in_active_transportation,
+            in_walkability,
             _wkb,
         ) = row
         if physical_class != "virtual_link" and not geometry.is_empty:
@@ -240,6 +242,14 @@ def load_population(parquet: Path, area: BaseGeometry) -> Population:
                     "source_date": source_date,
                     "last_inspection_year": inspection_year,
                     "part_count": part_count,
+                    "publications": [
+                        name
+                        for name, present in (
+                            ("Active_Transportation", in_active_transportation),
+                            ("Walkability", in_walkability),
+                        )
+                        if present
+                    ],
                 },
             )
         )
