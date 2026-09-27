@@ -60,11 +60,13 @@ from pathable_api.geo.kitchener.arcgis import (
 )
 from pathable_api.geo.kitchener.audit import AuditError, run_audit
 from pathable_api.geo.kitchener.audit import write_outputs as write_kitchener_outputs
+from pathable_api.geo.kitchener.conflation import load_inputs as load_conflation_inputs
 from pathable_api.geo.kitchener.geography import (
     PathAbleReadError,
     read_dataset_source,
     read_pathable_edges,
 )
+from pathable_api.geo.kitchener.holdout import HoldoutError, build_holdout
 from pathable_api.geo.kitchener.imagery import ImageryError, survey_imagery
 from pathable_api.geo.kitchener.lineage import ESRI_MUNICIPAL_SINCE, LabelError
 from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
@@ -117,7 +119,7 @@ from pathable_api.geo.overture.catalog import (
     resolve_release,
 )
 from pathable_api.geo.overture.contract import IncompatibleSchemaError
-from pathable_api.geo.overture.evidence import content_sha256, write_json
+from pathable_api.geo.overture.evidence import content_sha256, file_sha256, write_json
 from pathable_api.geo.overture.extract import (
     EXTRACT_MANIFEST,
     ExtractionError,
@@ -655,6 +657,28 @@ def build_parser() -> argparse.ArgumentParser:
     imagery_metadata.add_argument(
         "--json", type=Path, required=True, help="Write the metadata evidence here."
     )
+
+    def frozen_inputs(command: argparse.ArgumentParser) -> None:
+        command.add_argument("--normalized", type=Path, required=True)
+        command.add_argument("--extract", type=Path, required=True)
+        command.add_argument("--extract-manifest", type=Path, required=True)
+
+    holdout = kitchener_actions.add_parser(
+        "holdout",
+        help=(
+            "Draw PA-GEO-05's held-out benchmark sample: eligible records minus PA-GEO-04's "
+            "development set, stratified, in seeded hash order."
+        ),
+    )
+    frozen_inputs(holdout)
+    holdout.add_argument(
+        "--development-sample",
+        type=Path,
+        required=True,
+        help="PA-GEO-04's sample file: its records are the development set.",
+    )
+    holdout.add_argument("--development-sample-sha256", default=None)
+    holdout.add_argument("--out", type=Path, required=True, help="Write the sample GeoJSON here.")
 
     return parser
 
@@ -1276,6 +1300,8 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         return _kitchener_lineage_study(args)
     if args.kitchener_command == "imagery-metadata":
         return _kitchener_imagery_metadata(args)
+    if args.kitchener_command == "holdout":
+        return _kitchener_holdout(args)
     if args.kitchener_command == "lineage-history":
         return _kitchener_lineage_history(args)
     if args.kitchener_command == "snapshot":
@@ -1375,8 +1401,43 @@ async def _kitchener_audit(database: Database, args: argparse.Namespace) -> int:
 
 #: `pathable kitchener` commands that need no database.
 _KITCHENER_OFFLINE = frozenset(
-    {"snapshot", "normalize", "lineage-study", "lineage-history", "imagery-metadata"}
+    {
+        "snapshot",
+        "normalize",
+        "lineage-study",
+        "lineage-history",
+        "imagery-metadata",
+        "holdout",
+    }
 )
+
+
+def _kitchener_holdout(args: argparse.Namespace) -> int:
+    try:
+        inputs = load_conflation_inputs(
+            args.normalized, args.extract, args.extract_manifest, progress=print
+        )
+        document = build_holdout(
+            inputs,
+            args.development_sample,
+            expected_development_sha256=args.development_sample_sha256,
+            progress=print,
+        )
+    except (HoldoutError, ExtractSourceError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(
+        json.dumps(document, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
+    metadata = document["metadata"]
+    print(
+        f"\nHeld-out sample: {len(document['features'])} records from a pool of {metadata['pool']}"
+    )
+    for name, stratum in metadata["strata"].items():
+        print(f"  {name:<28}{stratum['sampled']:>4} of {stratum['population']:>6}")
+    print(f"Wrote {args.out} (sha256 {file_sha256(args.out)})")
+    return EXIT_OK
 
 
 def _kitchener_imagery_metadata(args: argparse.Namespace) -> int:
