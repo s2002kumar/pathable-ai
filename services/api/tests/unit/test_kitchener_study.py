@@ -405,6 +405,12 @@ class TestAttributeResults:
         assert context["curb_cut"] == {"lowered_or_flush": 1}
         assert context["stairs"] == {"osm_steps_within_3m": 1}
         assert "not correspondence" in context["what_this_is"]
+        # The other way round: OSM's kerb beside curb cut 1002 is the City's too;
+        # the one beside sidewalk 1001, where the City records none, is OSM's alone.
+        assert context["osm_lowered_or_flush_kerbs"] == {
+            "city_curb_cut_within_3m": 1,
+            "no_city_curb_cut_within_3m": 1,
+        }
 
     def test_the_evidence_keeps_far_candidates_as_identity_and_distance(
         self, inputs: StudyInputs

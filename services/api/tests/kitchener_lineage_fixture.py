@@ -14,7 +14,8 @@ Every placement is deliberate:
 - way 504, steps with a handrail beside stairs 1004;
 - way 505, a gravel path in bad smoothness beside the stonedust trail 1005;
 - way 506, a crossing along the City's virtual link 2001;
-- node 9001, a lowered kerb 0.5 m from curb cut 1002.
+- node 9001, a lowered kerb 0.5 m from curb cut 1002;
+- node 9002, a lowered kerb beside sidewalk 1001, 50 m from any City curb cut.
 """
 
 from __future__ import annotations
@@ -52,7 +53,10 @@ NODES: dict[int, tuple[float, float]] = {
     11: (110.5, 0.0),
     12: (110.5, 15.0),
     9001: (101.5, 0.5),
+    9002: (50.0, 0.5),
 }
+#: The tagged nodes: two lowered kerbs.
+KERBS = frozenset({9001, 9002})
 WAYS: dict[int, tuple[tuple[int, ...], dict[str, str]]] = {
     501: ((1, 2), {"highway": "footway", "footway": "sidewalk", "surface": "concrete"}),
     502: ((3, 4), {"highway": "residential", "name": "Fixture Street"}),
@@ -84,7 +88,7 @@ def extract() -> StudyExtract:
     nodes = {}
     for node_id, (x, y) in NODES.items():
         lon, lat = lonlat(x, y)
-        tags = {"barrier": "kerb", "kerb": "lowered"} if node_id == 9001 else {}
+        tags = {"barrier": "kerb", "kerb": "lowered"} if node_id in KERBS else {}
         version, stamp = (3, STAMP) if tags else (None, None)
         nodes[node_id] = OsmNode(node_id, lon, lat, version, stamp, tags)
     ways = {

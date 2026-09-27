@@ -1112,13 +1112,21 @@ def _attribute_findings(block: Mapping[str, Any]) -> list[str]:
     return findings
 
 
+#: An OSM kerb node this near some City record lies where the City maps its
+#: network, so a curb cut the City does not record there is OSM's alone.
+CITY_COVERAGE_M = 10.0
+
+
 def population_context(inputs: StudyInputs) -> dict[str, Any] | None:
     """Proximity, not correspondence: OSM kerb and steps near every in-area City record.
 
     Over every CURBCUT = Y record and every STAIRS record intersecting the
     study box — not the sample — how many have an OSM kerb node, or OSM steps,
-    within :data:`KERB_ASSOCIATION_M`. Nothing here is a match; it says how much
-    of the City's evidence has OSM information of the same kind beside it.
+    within :data:`KERB_ASSOCIATION_M`. The other way round, over every lowered
+    or flush OSM kerb node in the box where the City maps its network (some
+    City record within :data:`CITY_COVERAGE_M`): how many have a City curb cut
+    within :data:`KERB_ASSOCIATION_M`. Nothing here is a match; it says how
+    much of each side's evidence has the other's of the same kind beside it.
     """
     if inputs.parquet is None or inputs.bounds is None:
         return None
@@ -1128,8 +1136,7 @@ def population_context(inputs: StudyInputs) -> dict[str, Any] | None:
         connection.execute("SET autoload_known_extensions = false")
         rows = connection.execute(
             "SELECT activetransportid, curbcut, state_curbcut, feature_type, geometry, "
-            "geometry_native FROM read_parquet(?) WHERE geometry IS NOT NULL AND "
-            "((curbcut = 'Y' AND state_curbcut = 'non_default') OR feature_type = 'STAIRS') "
+            "geometry_native FROM read_parquet(?) WHERE geometry IS NOT NULL "
             # Street-level-imagery-sourced records are never evidence.
             "AND source_class <> 'street_level_imagery'",
             [inputs.parquet.as_posix()],
@@ -1142,11 +1149,17 @@ def population_context(inputs: StudyInputs) -> dict[str, Any] | None:
     steps_tree = shapely.STRtree([osm.lines[w] for w in steps]) if steps else None
     curb: Counter[str] = Counter()
     stairs: Counter[str] = Counter()
-    for _record_id, curbcut, _state, feature_type, geometry, native in rows:
+    city_lines = []
+    city_curb_cuts = []
+    for _record_id, curbcut, state, feature_type, geometry, native in rows:
         if not shapely.from_wkb(bytes(geometry)).intersects(box):
             continue
         line = shapely.from_wkb(bytes(native))
-        if curbcut == "Y":
+        city_lines.append(line)
+        curb_cut = curbcut == "Y" and state == "non_default"
+        if curb_cut:
+            city_curb_cuts.append(line)
+        if curb_cut:
             hits = osm.fact_tree.query(line, predicate="dwithin", distance=KERB_ASSOCIATION_M)
             values = {
                 osm.extract.nodes[osm.fact_ids[int(h)]].tags["kerb"]
@@ -1171,13 +1184,49 @@ def population_context(inputs: StudyInputs) -> dict[str, Any] | None:
     return {
         "what_this_is": (
             "Proximity over every in-area record, not correspondence: an OSM kerb node or steps "
-            "within 3 m. A nearby value may belong to a different corner or stair."
+            "within 3 m of a City record, and a City curb cut within 3 m of an OSM lowered or "
+            "flush kerb where some City record lies within 10 m. A nearby value may belong to "
+            "a different corner or stair."
         ),
         "curb_cut_records": sum(curb.values()),
         "curb_cut": dict(sorted(curb.items())),
         "stairs_records": sum(stairs.values()),
         "stairs": dict(sorted(stairs.items())),
+        "osm_lowered_or_flush_kerbs": _osm_kerbs_against_city(
+            inputs, box, city_lines, city_curb_cuts
+        ),
     }
+
+
+def _osm_kerbs_against_city(
+    inputs: StudyInputs,
+    box: shapely.Polygon,
+    city_lines: Sequence[shapely.Geometry],
+    city_curb_cuts: Sequence[shapely.Geometry],
+) -> dict[str, int]:
+    """OSM's lowered and flush kerbs in the box, and whether the City records a curb cut there."""
+    osm = inputs.osm
+    coverage = shapely.STRtree(list(city_lines)) if city_lines else None
+    curb_cuts = shapely.STRtree(list(city_curb_cuts)) if city_curb_cuts else None
+    found: Counter[str] = Counter()
+    for node_id in osm.fact_ids:
+        node = osm.extract.nodes[node_id]
+        if node.tags.get("kerb") not in KERB_CONSISTENT:
+            continue
+        if not box.contains(shapely.Point(node.lon, node.lat)):
+            continue
+        point = osm.fact_points[node_id]
+        covered = coverage is not None and len(
+            coverage.query(point, predicate="dwithin", distance=CITY_COVERAGE_M)
+        )
+        if not covered:
+            found["outside_the_citys_network"] += 1
+            continue
+        city = curb_cuts is not None and len(
+            curb_cuts.query(point, predicate="dwithin", distance=KERB_ASSOCIATION_M)
+        )
+        found["city_curb_cut_within_3m" if city else "no_city_curb_cut_within_3m"] += 1
+    return dict(sorted(found.items()))
 
 
 #: Candidates this near a record, or cited by a label, keep every metric in the
