@@ -16,7 +16,7 @@
       "The precision, recall or accuracy of any matcher: none exists, and no weight or threshold was set.",
       "Inter-rater reliability: both passes were made by instances of one AI model (Claude Opus 5.5), the second blind to the first.",
       "Ground truth: nothing was checked in the field, and no imagery was inspected.",
-      "Proven independence: apparently_independent rests on what OSM contributions state about their sources, and each finding records whether a mapper declared that source or an editor recorded it.",
+      "Proven independence: apparently_independent rests on what OSM contributions state about their sources, and each finding records whether a mapper declared that source or an editor recorded it. It does not establish that the upstream imagery itself had no shared municipal lineage.",
       "Anything PathAble routes on: no City value reaches routing, costs or explanations."
     ]
   },
@@ -308,7 +308,7 @@
     "lineage": {
       "known_kitchener_derived": "A contribution that shaped the geometry (or set the attribute) states City of Kitchener data as its source: in the changeset's source, imagery or comment, or in the element's own source tags written by that contribution. A place name alone is not a source.",
       "possible_shared_lineage": "No statement of Kitchener data, but a statement of public orthoimagery the City's own records may also have been traced from (Region of Waterloo, Ontario or City photos, and Esri World Imagery from 2016-02-23, since when its finest layer over Kitchener has been the City's and then the Region's own photography), of other government data or of an unnamed import; or the OSM vertices coincide with the City's under one common displacement.",
-      "apparently_independent": "Positive evidence only: every contribution that shaped it states survey, street-level imagery or unrelated imagery (an editor's own imagery record counts for geometry and for attributes visible from above, not for kerb heights), or it was last shaped before the City's record can have existed — the earlier of the record's creation and source dates, which cannot show City data older than the record itself; and the history reaches the frozen state.",
+      "apparently_independent": "Positive evidence only: every contribution that shaped it states survey, street-level imagery or unrelated imagery (an editor's own imagery record counts for geometry and for attributes visible from above, not for kerb heights), or it was last shaped before the City's record can have existed — the earlier of the record's creation and source dates, which cannot show City data older than the record itself; and the history reaches the frozen state. It describes what OSM contribution metadata positively states about a non-municipal source. It does not establish that the upstream imagery itself had no shared municipal lineage, and it is not ground truth.",
       "unknown_lineage": "Anything else, including contributions that state no source at all: absence of a municipal source tag is not evidence of independence.",
       "not_assessed": "No geometry lineage traced: the record has no obvious correspondence with an OSM way (none, an ambiguous one, or only an OSM node), so no OSM shape is agreed to be the City's facility.",
       "restricted_or_unresolved_lineage": "A Kitchener record whose own SOURCE names street-level imagery. Its assertions are not used as evidence."
@@ -67697,18 +67697,18 @@
     ]
   },
   "measurement": {
-    "seconds": 18.85
+    "seconds": 8.99
   },
-  "content_sha256": "2b093d5240da7cbbaa01a801247531824d413d4e7343383e995f771811551fd0",
+  "content_sha256": "b216e21ee43f8f0934aff0a32a41e93da08b002203b8d82b772e73d90ee16bdf",
   "run": {
     "environment": {
       "python": "3.13.2",
       "platform": "Windows-11-10.0.26200-SP0",
       "machine": "AMD64",
-      "git_commit": "f3ab6dd3edd8ea915a8a7407c5a1c17e7e4c5888"
+      "git_commit": "cbe8caee16a8d889f8bd958d101c7877d09efb5b-dirty"
     },
     "machine_memory_mb": 16498.0,
-    "peak_process_memory_mb": 397.2,
+    "peak_process_memory_mb": 397.1,
     "process_memory_method": "windows:GetProcessMemoryInfo working set"
   }
 }

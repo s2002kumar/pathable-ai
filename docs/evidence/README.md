@@ -193,11 +193,13 @@ The history file holds changeset comments and stays out of git. So do the
 extract, the dump and its stream index.
 
 **Which run produced what.** The committed lineage evidence and review page came
-from the code at commit `f3ab6dd`, with the label files committed beside them.
-Two runs gave the same content hash (`2b093d52…`) and byte-identical review
-pages. The Esri metadata was read at `dc9fca3`; the later commits changed the
-lineage rules and the population context, not the metadata command. Two study
-extracts from the source PBF were byte-identical.
+from the code at commit `8544a85`, with the label files committed beside them.
+Two runs gave the same content hash (`b216e21e…`) and byte-identical review
+pages. That commit changed only the wording of the lineage definition and the
+scope statement: every measured figure is identical to the run at `f3ab6dd`
+(`2b093d52…`). The Esri metadata was read at `dc9fca3`; the later commits did
+not change the metadata command. Two study extracts from the source PBF were
+byte-identical.
 
 **Scope.** What the study shows, and does not, is stated inside the evidence
 file (`scope`), on the review page, and in
