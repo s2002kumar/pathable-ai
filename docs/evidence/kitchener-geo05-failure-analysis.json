@@ -1,0 +1,191 @@
+{
+  "kitchener_geo05_failure_analysis_version": 1,
+  "decisions_sha256": "0145279bfe6902f0d8aa322b4c58082b93fee9eed08e601ecf0e7e6d3415ba49",
+  "method": "Every held-out record whose outcome was not exact, correctly unmatched or correctly abstained was inspected after the single holdout evaluation: its label and note, the decision's rule and signals, the OSM tags of every element involved, and the same record's decision under each declared ablation. Each is given the one cause that explains it. Nothing here changed the matcher, the policy or a label.",
+  "categories": {
+    "curb_cut_onto_crossing": "Matcher defect. A curb-cut piece lies along the end of the sidewalk and the start of the crossing way, or only the crossing. Class compatibility rates a crossing way 'different' from a sidewalk-family record, so the crossing is never claimed and the set is incomplete or wrong. The kerb node, where there is one, is still matched correctly.",
+    "curb_cut_short_piece_carrier": "Definition boundary. For a curb-cut piece of about a metre, whether it lies along a way is decided by two or three 1 m samples and the 45 degree alignment limit. The labeller cited only the kerb node, or a different stub, or was unsure whether the sidewalk belongs.",
+    "diagonal_piece_at_untagged_junction": "Matcher over-commits. A short piece lies diagonally (37-45 degrees) across an untagged junction of sidewalks and crossings with no kerb node within 2 m. The nearest sidewalk passes the 45 degree alignment limit and crossing ways are a different class, so nothing competes and the matcher names one sidewalk where the labeller could name none.",
+    "corner_piece_between_chained_ways": "Matcher over-commits. A corner piece lies between two ways that meet at the corner node. The topology rule treats ways sharing a node as one continuing facility, not competitors, so the matcher names the way claiming most of the piece where the labeller could not choose. With the topology rule off, all five abstain.",
+    "stair_on_untagged_footway": "Definition gap. OSM draws the walkway through the City's stair as a plain footway, not highway=steps. The labeller called the correspondence ambiguous because the stair is not tagged; the matcher matched the footway and leaves the missing steps tag to the attribute comparison, which reports the structure as Kitchener-only. The guide does not settle which reading is right, and one labeller took the matcher's reading on record 391945.",
+    "structure_spans_more_than_osm_structure": "Matcher defect. The City's structure record runs past the OSM structure onto its approaches, or across several short OSM pieces. The structure rule keeps only ways tagged as the structure, and the 5 m end slop drops structure pieces shorter than that, so the set is incomplete.",
+    "end_slop_boundary": "Threshold boundary. A few metres onto the next way beyond the 5 m end slop is counted as a second carrier; the labeller treated it as the junction.",
+    "kerb_node_choice": "Threshold boundary. Two kerb nodes lie within about 2 m of a corner piece. The matcher chooses by distance with a 0.5 m margin; the labeller chose by which crossing the piece serves, or could not choose.",
+    "perpendicular_neighbour": "Conservative abstention. A spur or stair with no OSM counterpart is touched at one end by a perpendicular path whose median distance is within 5 m, so the matcher abstains where the labeller saw nothing. Safe direction: no evidence is attached.",
+    "osm_under_construction": "Neither side matches. OSM has only a highway=construction way (a demolished bridge); the matcher does not treat construction as pedestrian and says no counterpart, the labeller called it ambiguous."
+  },
+  "records": {
+    "12072": {
+      "cause": "end_slop_boundary",
+      "explanation": "About 6.5 m of the 92 m sidewalk is nearest the next sidewalk way/871786943 at the corner, just over the 5 m end slop, so it is named as a second carrier."
+    },
+    "13622": {
+      "cause": "stair_on_untagged_footway",
+      "explanation": "5.4 m stair on footway way/146313339 at 1.1 m, no highway=steps."
+    },
+    "17381": {
+      "cause": "stair_on_untagged_footway",
+      "explanation": "5.3 m stair on footway way/116233513 at 0.5 m, no highway=steps."
+    },
+    "85854": {
+      "cause": "perpendicular_neighbour",
+      "explanation": "5.6 m dead-end spur touched at its south end by a path at 87 degrees; nothing runs along it."
+    },
+    "91550": {
+      "cause": "corner_piece_between_chained_ways",
+      "explanation": "13.7 m trail connector ending in a three-way path junction; the path claiming 62% is matched, while 31% lies along the cycleway it crosses."
+    },
+    "308969": {
+      "cause": "curb_cut_short_piece_carrier",
+      "explanation": "A 1 m piece sampled at three points: two are nearest footway way/1377306795, one the 0.8 m sidewalk stub way/1377306796 the labeller cited. The kerb node is right; the carrier is decided by one sample."
+    },
+    "320714": {
+      "cause": "diagonal_piece_at_untagged_junction",
+      "explanation": "Curb cut with no kerb node within 8 m, where two sidewalks and two crossings meet; sidewalk way/1131094409 at 37 degrees is matched."
+    },
+    "320753": {
+      "cause": "diagonal_piece_at_untagged_junction",
+      "explanation": "1.4 m corner connector across the junction of sidewalk way/903270487 (39 degrees) and a crossing (50 degrees, a different class); the sidewalk is matched."
+    },
+    "321375": {
+      "cause": "curb_cut_short_piece_carrier",
+      "explanation": "0.8 m piece; the labeller cited only the kerb node, judging that no way follows it. Sidewalk way/880864035 at 0.78 m and 32 degrees passes the alignment limit and is added."
+    },
+    "321387": {
+      "cause": "curb_cut_onto_crossing",
+      "explanation": "The 2.6 m piece straddles kerb node 8192888363 along the sidewalk end and the crossing start (both about 1 degree). Crossing way/880864087 is not claimed; with class compatibility off the set is exact."
+    },
+    "321395": {
+      "cause": "curb_cut_short_piece_carrier",
+      "explanation": "1.2 m piece, kerb node 0.1 m away; the labeller saw ways meeting it at 29-79 degrees. Sidewalk way/880864060 at 29 degrees passes the alignment limit and is added."
+    },
+    "321397": {
+      "cause": "curb_cut_short_piece_carrier",
+      "explanation": "1.3 m piece at 30-40 degrees to the ways; the labeller cited only the kerb node. Sidewalk way/880864070 at 36 degrees is added."
+    },
+    "321416": {
+      "cause": "curb_cut_onto_crossing",
+      "explanation": "About 1.3 m of the piece lies on crossing way/1342305363, which is not claimed; the matcher names the kerb node and the 1 m sidewalk stub only."
+    },
+    "321452": {
+      "cause": "curb_cut_onto_crossing",
+      "explanation": "The piece follows the first half-metre of crossing way/880863983 at 0.9 degrees; the matcher names sidewalk way/880863978 at 17 degrees instead. With class compatibility off the set is exact."
+    },
+    "327197": {
+      "cause": "curb_cut_short_piece_carrier",
+      "explanation": "0.7 m piece the labeller called too short to follow any way; sidewalk way/880560486 at 0.94 m and 20 degrees is added."
+    },
+    "337164": {
+      "cause": "curb_cut_onto_crossing",
+      "explanation": "The 4.7 m piece lies along about 2 m of sidewalk and 2.7 m of crossing way/965483171; only the sidewalk is named. The kerb node is right."
+    },
+    "337358": {
+      "cause": "diagonal_piece_at_untagged_junction",
+      "explanation": "Curb cut with no kerb node at an untagged junction; sidewalk way/1119075433 at 39 degrees is matched while the other sidewalk is at 50 degrees."
+    },
+    "337901": {
+      "cause": "perpendicular_neighbour",
+      "explanation": "9.8 m stair touched at its north end by a trail at right angles; nothing runs along it."
+    },
+    "384647": {
+      "cause": "curb_cut_short_piece_carrier",
+      "explanation": "The labeller named the kerb node and was unsure whether sidewalk way/190310442 at 29 degrees belongs; the matcher includes it."
+    },
+    "384688": {
+      "cause": "corner_piece_between_chained_ways",
+      "explanation": "3.9 m piece between two sidewalks meeting at the corner node, claimed 0.6 / 0.4; the majority way is matched."
+    },
+    "387865": {
+      "cause": "curb_cut_onto_crossing",
+      "explanation": "No kerb node. The piece lies along the sidewalk end and marked crossing way/1134382325; only the sidewalk is named. With class compatibility off the set is exact."
+    },
+    "388208": {
+      "cause": "kerb_node_choice",
+      "explanation": "Two kerb nodes at 1.45 m and 1.96 m, one per crossing; the 0.51 m difference just clears the 0.5 m margin and the nearer is matched. The labeller could not choose."
+    },
+    "389863": {
+      "cause": "stair_on_untagged_footway",
+      "explanation": "3.9 m stair on footway way/146313339 at 0.3 m, no highway=steps."
+    },
+    "391945": {
+      "cause": "structure_spans_more_than_osm_structure",
+      "explanation": "The 26 m City stair runs 7 m past the foot of OSM steps way/93948462 along footway way/35927491; the structure rule keeps only the steps."
+    },
+    "392063": {
+      "cause": "structure_spans_more_than_osm_structure",
+      "explanation": "The City sidewalk over the overpass runs 6-10 m past the OSM bridge way at each end; the structure rule drops both approach ways the labeller cited."
+    },
+    "392115": {
+      "cause": "osm_under_construction",
+      "explanation": "OSM has only way/884264993, highway=construction on a demolished bridge, closed until 2026-11."
+    },
+    "395207": {
+      "cause": "stair_on_untagged_footway",
+      "explanation": "4.8 m stair on footway way/37692290 at 0.01 m, no highway=steps."
+    },
+    "402806": {
+      "cause": "diagonal_piece_at_untagged_junction",
+      "explanation": "Curb cut lying at about 45 degrees across a corner; sidewalk way/1131094399 at 44.4 degrees passes the limit, the other sidewalk at 45.9 does not."
+    },
+    "403231": {
+      "cause": "structure_spans_more_than_osm_structure",
+      "explanation": "OSM splits the bridge path into a 53 m bridge way and a 5.6 m layer=1 way; the second claims 4.9 m, under the 5 m end slop, and is dropped."
+    },
+    "403232": {
+      "cause": "structure_spans_more_than_osm_structure",
+      "explanation": "OSM splits the 15 m stair into three highway=steps ways; two claim 3.6 m and 4.5 m, under the 5 m end slop, and are dropped."
+    },
+    "403497": {
+      "cause": "corner_piece_between_chained_ways",
+      "explanation": "4.2 m piece within 2 m of two converging sidewalks sharing the corner node, claimed 0.67 / 0.33."
+    },
+    "403882": {
+      "cause": "stair_on_untagged_footway",
+      "explanation": "11.5 m stair on footway way/965483393 at 0.9 m, no highway=steps."
+    },
+    "403892": {
+      "cause": "stair_on_untagged_footway",
+      "explanation": "11.5 m stair on footway way/116233513 at 0.2 m, no highway=steps."
+    },
+    "404226": {
+      "cause": "curb_cut_onto_crossing",
+      "explanation": "No kerb node. About 1.3 m of the 3.6 m piece lies along unmarked crossing way/1119234646 at 10 degrees; only the sidewalk is named."
+    },
+    "404420": {
+      "cause": "kerb_node_choice",
+      "explanation": "Kerb nodes at 0.31 m and 1.96 m; the matcher takes the nearer, the labeller could not tell which crossing the ramp serves."
+    },
+    "405965": {
+      "cause": "corner_piece_between_chained_ways",
+      "explanation": "4.1 m piece between two converging sidewalks sharing the corner node, claimed 0.71 / 0.29."
+    },
+    "411524": {
+      "cause": "kerb_node_choice",
+      "explanation": "Kerb nodes at 0.8 m and 1.23 m (0.43 m apart, under the margin) so the matcher abstains; the labeller named the one where the crossing the piece runs onto begins."
+    },
+    "412473": {
+      "cause": "diagonal_piece_at_untagged_junction",
+      "explanation": "Curb cut whose nearest kerb node is 3.2 m away (beyond 2 m); sidewalk way/961403332 at 2.9 m claims two of three samples and is matched."
+    },
+    "414622": {
+      "cause": "corner_piece_between_chained_ways",
+      "explanation": "3.0 m piece at 31 degrees to two sidewalks joined at one untagged node, claimed 0.67 / 0.33."
+    },
+    "417608": {
+      "cause": "diagonal_piece_at_untagged_junction",
+      "explanation": "Curb cut at 38-51 degrees to every way at an untagged junction; sidewalk way/1120245129 at 38 degrees is matched."
+    },
+    "418326": {
+      "cause": "curb_cut_onto_crossing",
+      "explanation": "No kerb node. The piece lies along the sidewalk end and the collinear crossing way/1119075396 (0.13 m); only the sidewalk is named."
+    },
+    "419322": {
+      "cause": "stair_on_untagged_footway",
+      "explanation": "2 m stair on footway way/34107057 at 0.84 m; OSM tags steps 7.5-9.4 m further along the path, which may be the same stair drawn elsewhere."
+    },
+    "424425": {
+      "cause": "curb_cut_onto_crossing",
+      "explanation": "The piece lies along crossing way/1004592286 at 0.2 m; the matcher names the 1.2 m sidewalk stub way/1004592287 at 1.35 m because the crossing is not a compatible class. With class compatibility off the set is exact."
+    }
+  }
+}
