@@ -600,28 +600,64 @@ def baseline(name: str, candidates: CandidateSet) -> Decision:
 # ---------------------------------------------------------------------------
 
 
+#: Where every value of the frozen policy came from.
+POLICY_PROVENANCE: dict[str, str] = {
+    "carry_m": "tuned: the development grid (1.5, 2, 3, 4 m) under the declared selection rule",
+    "cover_min": "tuned: the development grid (0.6, 0.75, 0.9) under the declared selection rule",
+    "contest_margin_m": (
+        "not identified by the development set — every grid value (0.5, 1.0, 1.5 m) gave the "
+        "same result — so the selection rule's most conservative value"
+    ),
+    "contest_max": (
+        "not identified by the development set — every grid value (0.2, 0.3, 0.5) gave the same "
+        "result — so the selection rule's most conservative value"
+    ),
+    "align_max_deg": "fixed: a way crossing the record at more than 45° there is not running along it",
+    "end_slop_m": "fixed by the label definitions: about a junction's width (5 m) of end slop",
+    "kerb_node_m": "fixed by the label definitions: a kerb node within about 2 m of the piece",
+    "kerb_margin_m": (
+        "fixed, never exercised by the development set: two kerb nodes within half a metre of "
+        "the same distance cannot be told apart"
+    ),
+    "crossing_node_m": (
+        "fixed, never exercised by the development set: a crossing node on the City's crossing "
+        "line, allowing for the source offset"
+    ),
+    "near_m": "fixed by the label definitions: no counterpart within about 5 m",
+    "road_attribute_m": (
+        "fixed, never exercised by the development set: a road near enough to be the one a "
+        "sidewalk runs beside"
+    ),
+}
+
+
 @dataclass(frozen=True, slots=True)
 class MatcherPolicy:
-    """Every threshold the matcher uses, named. Tuned on the development set only.
+    """Every threshold the matcher uses, named, with where it came from.
 
-    ``provenance`` says, for each tuned value, how it was chosen; the switches
-    at the end exist for ablation and are all on in the policy that is evaluated.
+    The defaults are the frozen policy :data:`MATCHER_VERSION`: tuned on the
+    development set only, and fixed before any held-out record was evaluated.
+    The switches at the end exist for ablation and are all on in the policy that
+    is evaluated.
     """
 
     version: str = MATCHER_VERSION
     #: A sample is claimed by the nearest aligned compatible way within this.
-    carry_m: float = 2.0
+    carry_m: float = 3.0
     #: A way counts as aligned with the record at a sample within this angle.
     align_max_deg: float = 45.0
-    #: A way carries the record when it claims at least this share of its samples.
-    min_claim_share: float = 0.2
-    #: The carriers must claim at least this share of the samples for a match.
-    cover_min: float = 0.75
+    #: A way carries the record when it claims at least this many metres of it, or
+    #: half of a record shorter than twice this: less is the end slop of a
+    #: junction, about a junction's width, not a length of the facility.
+    end_slop_m: float = 5.0
+    #: Compatible ways must claim at least this share of the samples for a match.
+    cover_min: float = 0.6
     #: A sample is contested when another aligned compatible way, not joined to
-    #: the nearest, is within this of the nearest distance.
-    contest_margin_m: float = 1.0
+    #: the nearest and at least as good a class match, is within this of the
+    #: nearest distance.
+    contest_margin_m: float = 1.5
     #: Above this share of contested samples, the matcher abstains.
-    contest_max: float = 0.3
+    contest_max: float = 0.2
     #: Curb cuts: a kerb node within this of the piece marks its kerb, unless a
     #: second one is within ``kerb_margin_m`` of the first's distance.
     kerb_node_m: float = 2.0
@@ -638,7 +674,7 @@ class MatcherPolicy:
     use_contest: bool = True
     use_topology: bool = True
     use_nodes: bool = True
-    provenance: Mapping[str, str] = field(default_factory=dict)
+    provenance: Mapping[str, str] = field(default_factory=lambda: dict(POLICY_PROVENANCE))
 
     def as_dict(self) -> dict[str, Any]:
         values = asdict(self)
@@ -671,10 +707,25 @@ def _chained(first: int, second: int, index: OsmIndex) -> bool:
     return bool(set(index.extract.ways[first].refs) & set(index.extract.ways[second].refs))
 
 
+#: How well a way's class matches the record's: a competitor contests a claim
+#: only if it matches at least as well as the claiming way.
+_RANK = {"same": 2, "plausible": 1}
+
+
 def claims(candidates: CandidateSet, policy: MatcherPolicy, index: OsmIndex) -> _Claims:
+    """Which compatible way claims each sample, which ways carry the record, how contested.
+
+    A sample is claimed by the nearest compatible way aligned with the record
+    there, within ``carry_m``. A way *carries* the record when its claims add up
+    to ``end_slop_m`` (or half of a short record). Coverage counts every claimed
+    sample, so the metres a joining way claims at a junction do not count
+    against the match. A carried sample is *contested* when another compatible
+    way — not joined to the carrier, and at least as good a class match — lies
+    within ``contest_margin_m`` of the carrier's distance.
+    """
     ways = [w for w in candidates.ways if _compatible(w, policy)]
     n = candidates.sample_count
-    if not ways:
+    if not ways or n == 0:
         return _Claims((), (), 0.0, 0.0, {})
     distance = np.vstack([w.distances for w in ways])
     if policy.use_alignment:
@@ -684,10 +735,17 @@ def claims(candidates: CandidateSet, policy: MatcherPolicy, index: OsmIndex) -> 
     nearest = np.argmin(distance, axis=0)
     nearest_d = distance[nearest, np.arange(n)]
     claimed = nearest_d <= policy.carry_m
+    metres_per_sample = candidates.record.length_m / n
+    needed = min(policy.end_slop_m, 0.5 * candidates.record.length_m)
     shares = {ways[i].osm_id: float(((nearest == i) & claimed).sum() / n) for i in range(len(ways))}
-    carrier_rows = [i for i in range(len(ways)) if shares[ways[i].osm_id] >= policy.min_claim_share]
+    carrier_rows = [
+        i
+        for i in range(len(ways))
+        if ((nearest == i) & claimed).sum() * metres_per_sample >= needed
+        and shares[ways[i].osm_id] > 0
+    ]
+    coverage = float(claimed.mean())
     in_carrier = np.isin(nearest, carrier_rows) & claimed
-    coverage = float(in_carrier.mean()) if n else 0.0
     contested = np.zeros(n, dtype=bool)
     if policy.use_contest and len(ways) > 1:
         for sample in np.flatnonzero(in_carrier):
@@ -697,12 +755,16 @@ def claims(candidates: CandidateSet, policy: MatcherPolicy, index: OsmIndex) -> 
                     continue
                 if distance[other, sample] - nearest_d[sample] >= policy.contest_margin_m:
                     continue
+                if policy.use_class and _RANK.get(ways[other].compatibility, 0) < _RANK.get(
+                    ways[best].compatibility, 0
+                ):
+                    continue
                 if policy.use_topology and _chained(ways[best].osm_id, ways[other].osm_id, index):
                     continue
                 contested[sample] = True
                 break
-    claimed_count = int(in_carrier.sum())
-    contested_share = float(contested.sum() / claimed_count) if claimed_count else 0.0
+    carried = int(in_carrier.sum())
+    contested_share = float(contested.sum() / carried) if carried else 0.0
     carriers = tuple(ways[i] for i in carrier_rows)
     masks = tuple((nearest == i) & claimed for i in carrier_rows)
     return _Claims(carriers, masks, coverage, contested_share, shares)
@@ -725,6 +787,16 @@ def _road_tags_facility(candidates: CandidateSet, index: OsmIndex, policy: Match
     return bool(values - {"no", "none", "separate"})
 
 
+def _is_structure(structure: str, index: OsmIndex, way: WayCandidate) -> bool:
+    """Whether OSM tags the way as the structure the City records."""
+    tags = index.extract.ways[way.osm_id].tags
+    if structure == "STAIRS":
+        return tags.get("highway") == "steps"
+    if structure == "UNDERPASS":
+        return tags.get("tunnel", "no") != "no"
+    return tags.get("bridge", "no") != "no"
+
+
 def match(
     candidates: CandidateSet,
     policy: MatcherPolicy,
@@ -740,9 +812,17 @@ def match(
         "carriers": [f"way/{w.osm_id}" for w in found.carriers],
         "claim_shares": {f"way/{k}": round(v, 3) for k, v in found.shares.items() if v > 0},
     }
-    covered = found.coverage >= policy.cover_min
+    covered = found.coverage >= policy.cover_min and bool(found.carriers)
     contested = found.contested_share > policy.contest_max
-    carriers = tuple(_way_target(w, m) for w, m in zip(found.carriers, found.masks, strict=True))
+    carried = list(zip(found.carriers, found.masks, strict=True))
+    if record.structure is not None and policy.use_class:
+        # The definitions cite the ways across the structure: when a carrier is
+        # tagged as that structure, the approaches it runs onto are not the match.
+        structural = [(w, m) for w, m in carried if _is_structure(record.structure, index, w)]
+        if structural:
+            carried = structural
+            signals["structure_carriers"] = [f"way/{w.osm_id}" for w, _m in structural]
+    carriers = tuple(_way_target(w, m) for w, m in carried)
 
     def decide(state: str, rule: str, targets: tuple[Target, ...] = ()) -> Decision:
         relationship = None
