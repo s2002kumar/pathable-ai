@@ -758,12 +758,27 @@ def attribute_lineage(
     key: str,
     *,
     municipal_since: str | None,
+    frozen_value: str | None = None,
 ) -> LineageFinding | None:
-    """Where the element's current value of ``key`` came from; ``None`` when it has none."""
+    """Where the element's current value of ``key`` came from; ``None`` when it has none.
+
+    ``frozen_value`` is the value in the frozen extract. When the history does
+    not end on it — the value was set or changed after the history ends —
+    nothing in the history says where it came from, and the finding is unknown
+    rather than the lineage of an older value.
+    """
     contributions = history.contributions
-    if not contributions or key not in contributions[-1].tags:
+    last = contributions[-1].tags.get(key) if contributions else None
+    if frozen_value is not None and last != frozen_value:
+        return LineageFinding(
+            Lineage.UNKNOWN,
+            ("the frozen value is not in the element's history",),
+            (),
+            (history.completeness_note or "history ends before the frozen state",),
+        )
+    if last is None:
         return None
-    current = contributions[-1].tags[key]
+    current = last
     introduced = 0
     for position in range(len(contributions) - 1, -1, -1):
         if contributions[position].tags.get(key) != current:
@@ -838,17 +853,18 @@ def _decide(
         positive = [_positive(step.evidence, accepted) for step in steps]
         if predates or all(positive):
             reasons = []
-            basis = "dates"
             if predates:
                 reasons.append(f"last shaping edit predates the City's record ({municipal_since})")
+            declared = False
             if all(positive):
                 signals = sorted({str(e.signal) for found in positive for e in found})
                 reasons.append(
                     f"every contribution states an unrelated source: {', '.join(signals)}"
                 )
                 declared = all(any(e.signal in DECLARED for e in found) for found in positive)
-                if not predates:
-                    basis = "declared" if declared else "editor_recorded"
+            # The strongest evidence names the basis: a mapper's own statement,
+            # then the dates, then only what an editor recorded as displayed.
+            basis = "declared" if declared else "dates" if predates else "editor_recorded"
             return LineageFinding(
                 Lineage.INDEPENDENT, tuple(reasons), tuple(steps), tuple(notes), basis
             )

@@ -289,6 +289,18 @@ class TestHistory:
         assert _record(document, 1003)["lineage"] is None
         assert str(Lineage.KNOWN) not in document["summary"]["all"]["geometry_lineage"]
 
+    def test_a_value_with_no_history_is_unknown_not_dropped(self, inputs: StudyInputs) -> None:
+        # Bug: an OSM value the history could not trace left no finding at all,
+        # so the attribute summary counted only the values it could trace.
+        document = run_study(inputs, history=self._history(), labels=osm_fixture.labels())
+
+        surface = _record(document, 1005)["attributes"]["surface"]
+        assert surface["lineage"]["way/505"]["label"] == str(Lineage.UNKNOWN)
+        assert surface["lineage"]["way/505"]["reasons"] == ["no history was read for this element"]
+        assert document["attribute_results"]["surface"]["osm_value_lineage"] == {
+            str(Lineage.UNKNOWN): 1
+        }
+
     def test_a_history_file_round_trips(self, tmp_path: Path, inputs: StudyInputs) -> None:
         history = self._history()
         contributions = [c for element in history.elements.values() for c in element.contributions]

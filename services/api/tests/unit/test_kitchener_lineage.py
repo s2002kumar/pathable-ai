@@ -309,6 +309,21 @@ class TestGeometryLineage:
         assert finding.label is Lineage.INDEPENDENT
         assert "predates" in finding.reasons[0]
 
+    def test_a_declared_source_outranks_a_date_as_the_basis(self) -> None:
+        # Bug: a shape a mapper declared surveyed was reported as resting on dates,
+        # the weaker evidence, because it also predated the City's record.
+        history = _history(_contribution(1, "2009-05-01T00:00:00Z", creation=True))
+
+        finding = geometry_lineage(
+            history,
+            _changesets(c1={"source": "survey"}),
+            municipal_since="2012-03-31",
+            vertex_coincidence=False,
+        )
+
+        assert finding.label is Lineage.INDEPENDENT
+        assert finding.basis == "declared"
+
     def test_history_that_stops_short_cannot_show_independence(self) -> None:
         history = _history(_contribution(1, "2012-01-01T00:00:00Z", creation=True), complete=False)
 
@@ -389,6 +404,28 @@ class TestAttributeLineage:
         assert finding is not None
         assert finding.label is Lineage.INDEPENDENT
         assert finding.basis == "editor_recorded"
+
+    def test_a_frozen_value_the_history_never_reached_is_unknown(self) -> None:
+        # Bug: a value changed after the history ends was traced as if it were
+        # the frozen one, so the lineage described an older value.
+        history = _history(
+            _contribution(1, "2020-01-01T00:00:00Z", creation=True, tags={"kerb": "raised"}),
+            complete=False,
+        )
+        changesets = _changesets(c1={"source": "survey"})
+
+        finding = attribute_lineage(
+            history, changesets, "kerb", municipal_since=None, frozen_value="lowered"
+        )
+        traced = attribute_lineage(
+            history, changesets, "kerb", municipal_since=None, frozen_value="raised"
+        )
+
+        assert finding is not None
+        assert finding.label is Lineage.UNKNOWN
+        assert finding.reasons == ("the frozen value is not in the element's history",)
+        assert traced is not None
+        assert traced.steps
 
     def test_no_value_no_finding(self) -> None:
         history = _history(_contribution(1, "2020-01-01T00:00:00Z", creation=True))

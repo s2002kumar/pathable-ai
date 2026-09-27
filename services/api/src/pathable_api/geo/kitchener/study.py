@@ -57,6 +57,7 @@ from pathable_api.geo.kitchener.lineage import (
     Correspondence,
     ElementHistory,
     Lineage,
+    LineageFinding,
     RecordLabel,
     attribute_lineage,
     combine,
@@ -695,11 +696,17 @@ def attribute_comparisons(
     since = record["municipal_since"]
     results: dict[str, Any] = {}
 
-    def lineage_of(element: str, key: str) -> dict[str, Any] | None:
-        if history is None or element not in history.elements:
+    def lineage_of(element: str, key: str, value: str) -> dict[str, Any] | None:
+        """The lineage of a value the frozen extract holds; never silently absent."""
+        if history is None:
             return None
+        found = history.elements.get(element)
+        if found is None:
+            return LineageFinding(
+                Lineage.UNKNOWN, ("no history was read for this element",), (), ()
+            ).as_dict()
         finding = attribute_lineage(
-            history.elements[element], history.changesets, key, municipal_since=since
+            found, history.changesets, key, municipal_since=since, frozen_value=value
         )
         return finding.as_dict() if finding else None
 
@@ -738,7 +745,7 @@ def attribute_comparisons(
                     "osm": n["osm"],
                     "kerb": n["osm_tags"]["kerb"],
                     "distance_m": n["distance_m"],
-                    "lineage": lineage_of(n["osm"], "kerb"),
+                    "lineage": lineage_of(n["osm"], "kerb", n["osm_tags"]["kerb"]),
                 }
                 for n in associated
             ],
@@ -750,11 +757,13 @@ def attribute_comparisons(
     if structure in STRUCTURE_TAGS:
         key, accepted = STRUCTURE_TAGS[structure]
         found = []
-        for way in ways:
+        for way in ways if obvious else ():
             tags = elements[way]["tags"]
             value = tags.get(key)
             if value is not None and value != "no" and (accepted is None or value in accepted):
-                found.append({"osm": way, "tag": f"{key}={value}", "lineage": lineage_of(way, key)})
+                found.append(
+                    {"osm": way, "tag": f"{key}={value}", "lineage": lineage_of(way, key, value)}
+                )
         results["structure"] = {
             "kitchener": f"FEATURE_TYPE = {structure}",
             "osm_correspondence": str(label.correspondence) if label else None,
@@ -802,9 +811,9 @@ def attribute_comparisons(
             if obvious and ways
             else "not_comparable",
             "lineage": {
-                way: lineage_of(way, "surface")
+                way: lineage_of(way, "surface", value)
                 for way, value in per_way.items()
-                if value is not None
+                if value is not None and obvious
             },
         }
 
@@ -1375,7 +1384,9 @@ LINEAGE_DEFINITIONS = {
         "Positive evidence only: every contribution that shaped it states survey, street-level "
         "imagery or unrelated imagery (an editor's own imagery record counts for geometry and for "
         "attributes visible from above, not for kerb heights), or it was last shaped before the "
-        "City's record can have existed; and the history reaches the frozen state."
+        "City's record can have existed — the earlier of the record's creation and source "
+        "dates, which cannot show City data older than the record itself; and the history "
+        "reaches the frozen state."
     ),
     str(Lineage.UNKNOWN): (
         "Anything else, including contributions that state no source at all: absence of a "
