@@ -67273,7 +67273,7 @@
     ]
   },
   "population_context": {
-    "what_this_is": "Proximity over every in-area record, not correspondence: an OSM kerb node or steps within 3 m. A nearby value may belong to a different corner or stair.",
+    "what_this_is": "Proximity over every in-area record, not correspondence: an OSM kerb node or steps within 3 m of a City record, and a City curb cut within 3 m of an OSM lowered or flush kerb where some City record lies within 10 m. A nearby value may belong to a different corner or stair.",
     "curb_cut_records": 3296,
     "curb_cut": {
       "lowered_or_flush": 1871,
@@ -67285,6 +67285,11 @@
     "stairs": {
       "no_osm_steps_within_3m": 20,
       "osm_steps_within_3m": 20
+    },
+    "osm_lowered_or_flush_kerbs": {
+      "city_curb_cut_within_3m": 2127,
+      "no_city_curb_cut_within_3m": 769,
+      "outside_the_citys_network": 1827
     }
   },
   "repeat_review": {
@@ -67692,18 +67697,18 @@
     ]
   },
   "measurement": {
-    "seconds": 18.27
+    "seconds": 18.85
   },
-  "content_sha256": "7eef7d10e39e798235633bb9a9b5b7f46b633654f3da313481ab7865aedd342e",
+  "content_sha256": "2b093d5240da7cbbaa01a801247531824d413d4e7343383e995f771811551fd0",
   "run": {
     "environment": {
       "python": "3.13.2",
       "platform": "Windows-11-10.0.26200-SP0",
       "machine": "AMD64",
-      "git_commit": "ab5a1226cc467195387a5f61d4b95ab6a3676ad4-dirty"
+      "git_commit": "f3ab6dd3edd8ea915a8a7407c5a1c17e7e4c5888"
     },
     "machine_memory_mb": 16498.0,
-    "peak_process_memory_mb": 384.6,
+    "peak_process_memory_mb": 397.2,
     "process_memory_method": "windows:GetProcessMemoryInfo working set"
   }
 }
