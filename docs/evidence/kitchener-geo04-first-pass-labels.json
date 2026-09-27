@@ -1,0 +1,980 @@
+{
+  "kitchener_geo04_labels_version": 1,
+  "pass": "primary",
+  "labeller": "The AI coding agent that implemented this study (Claude), working from the static review page (the maps and tables in kitchener-geo04-review.html) and the candidate metrics. No field visit, no imagery, no OSM history consulted while labelling correspondence.",
+  "labelled_on": "2026-09-26",
+  "definition_changes": [
+    {
+      "when": "after the six virtual links, before any unofficial connection was labelled",
+      "change": "obvious_correspondence now covers, for an unofficial connection as for a virtual link, the same connection along or across the same road; the not_comparable example 'an on-road route with no facility of its own' was removed.",
+      "records_relabelled": []
+    },
+    {
+      "when": "after 20 records, before the remaining curb-cut records",
+      "change": "A label may cite a tagged OSM node near the record as well as a candidate way, so a facility OSM carries only as a node (a kerb at a corner) is recorded as such. Earlier labels were re-checked: 393902 and 388243 cite the crossing their stub leads onto; 393902's topology was revised to topology_disagreement for the crossing OSM lacks.",
+      "records_relabelled": [
+        393902,
+        388243
+      ]
+    }
+  ],
+  "records": [
+    {
+      "activetransportid": 337366,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "geometry": null,
+      "topology": "not_assessed",
+      "note": "No OSM crossing of Wexford Crescent here: footway C3 ends at the south sidewalk (C2); the City's link carries it across to the north sidewalk (C4)."
+    },
+    {
+      "activetransportid": 307871,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "geometry": null,
+      "topology": "not_assessed",
+      "note": "The link crosses Onward Avenue at Crescent Street. OSM maps crossings of both Crescent Street legs (C5 unmarked, C6 marked) but none of Onward Avenue here."
+    },
+    {
+      "activetransportid": 305259,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "geometry": null,
+      "topology": "not_assessed",
+      "note": "The link crosses Dekay Street north of the Delisle Avenue junction; OSM crosses Dekay Street only south of it (C9, 13 m away). C3 crosses Delisle Avenue."
+    },
+    {
+      "activetransportid": 310638,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880863976"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "The City splits the Wilhelm Street sidewalk at a railway crossing with an 8.7 m virtual link; OSM carries it inside sidewalk C1 (with sidewalks 11922 and 11924) and marks the rails with a railway=crossing node."
+    },
+    {
+      "activetransportid": 308464,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1119088123"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM unmarked crossing C1 spans the same crossing of Stoke Drive within 2.6 m; both join the path to the north with the sidewalks to the south. The other records along C1 are end stubs."
+    },
+    {
+      "activetransportid": 391249,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969450853"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "A 3 m virtual link where the Ottawa Street South sidewalk crosses rails; OSM carries it inside a 338 m sidewalk way with a railway=crossing node."
+    },
+    {
+      "activetransportid": 415387,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969450818"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM path C1 (source=Bing) runs within 1.1 m of this on-road connection from the trail to the Mill/Courtland/Bedford junction. OSM tags it foot=no."
+    },
+    {
+      "activetransportid": 50569,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/178418432"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "Drawn on the Falconridge Drive centreline (median 0.6 m). The OSM road also carries the City's neighbouring on-road connections 50558 and 50563; both sources also have sidewalks either side."
+    },
+    {
+      "activetransportid": 388381,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/518891488"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "offset",
+      "topology": "ambiguous_topology",
+      "note": "Drawn about 4 m right of the Lennox Lewis Way centreline, linking the City's bicycle lane 44894 to Block Line Road. Its east end touches no City record, where OSM's road joins Block Line Road."
+    },
+    {
+      "activetransportid": 304564,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/888038980"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM marked crossing C1 (lines; lowered kerbs with tactile paving) spans the same crossing of Gage Avenue within 1.5 m. OSM describes as physical what the City's codes leave unresolved."
+    },
+    {
+      "activetransportid": 393902,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/965483109"
+      ],
+      "representation": "none",
+      "relationship": null,
+      "geometry": null,
+      "topology": "topology_disagreement",
+      "note": "A 1.5 m curb-cut stub at the corner where the Ruby Street crosswalk (OSM C2) and the City's virtual link across Spadina Road East begin. OSM draws no stub (its sidewalks and C2 meet at one node) and has no kerb node and no crossing of Spadina Road East."
+    },
+    {
+      "activetransportid": 337163,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971787"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM trail crossing C1 (source=survey) lies within 0.7 m. Its crossing node has traffic_calming=hump and both kerbs are flush: OSM records the raised crossing that the City's subcategory names but its codes leave unresolved."
+    },
+    {
+      "activetransportid": 400043,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1058040238"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM steps (handrail=yes) within 0.6 m and the same 4 m length."
+    },
+    {
+      "activetransportid": 418763,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1120245059"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "partial_overlap",
+      "topology": "topology_agreement",
+      "note": "The City's stairs record is 10.7 m, OSM's steps (handrail=yes, ramp=no) 6.0 m; the rest of the City's record lies on OSM footway C2."
+    },
+    {
+      "activetransportid": 403230,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1338666154"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM steps (step_count=54, handrail=yes) within 2.1 m, 25.5 m against the City's 27.0 m."
+    },
+    {
+      "activetransportid": 392049,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1070842173"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "partial_overlap",
+      "topology": "topology_agreement",
+      "note": "OSM's bridge sidewalk (bridge=yes, layer=1) covers 93% of the City's overpass record; the City's record runs 6 m and 12 m further onto OSM's approach sidewalks C2 and C3."
+    },
+    {
+      "activetransportid": 7863,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/67661461"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM path bridge (bridge=yes, surface=wood) within 1.1 m; 31.2 m against 29.6 m."
+    },
+    {
+      "activetransportid": 6363,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/36175408"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM path bridge (bridge=yes, surface=wood) within 1.4 m; 19.9 m against 20.1 m."
+    },
+    {
+      "activetransportid": 104799,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969454676"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM traffic-island footway between the two crossings of Ottawa Street South, within 1.8 m; the City's BMUT island segment links two crossrides the same way."
+    },
+    {
+      "activetransportid": 388243,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/970244754"
+      ],
+      "representation": "none",
+      "relationship": null,
+      "geometry": null,
+      "topology": "topology_agreement",
+      "note": "A 1.1 m curb-cut stub between the corner sidewalks and the Inwood Drive crosswalk. OSM draws no stub (sidewalks C1, C2 and marked crossing C3 meet at one node) and has no kerb node."
+    },
+    {
+      "activetransportid": 335487,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/916487109"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM also models the curb cut as a 1.1 m sidewalk stub ending at a kerb=lowered node, within 0.8 m; both link the corner to the two crosswalks."
+    },
+    {
+      "activetransportid": 321409,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "node/9160884963"
+      ],
+      "representation": "node",
+      "relationship": null,
+      "geometry": null,
+      "topology": "topology_agreement",
+      "note": "A 1.1 m curb-cut stub. OSM draws no stub but has a kerb=lowered node 0.2 m away where signalised crossing C3 leaves the corner, joining the same sidewalks and crosswalk."
+    },
+    {
+      "activetransportid": 335421,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/892489648"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM models the curb cut as a 2.4 m sidewalk stub ending at a kerb=lowered node (tactile paving) before signalised crossing C1; the City's stub is 1.1 m."
+    },
+    {
+      "activetransportid": 403539,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754873"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "The City's 3.3 m curb-cut segment lies along the first 3 m of OSM's marked crossing C2, which runs corner to corner with a kerb=lowered node at the corner and also carries the City's crosswalk 307805 and two more curb stubs."
+    },
+    {
+      "activetransportid": 413633,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959992015"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_disagreement",
+      "note": "A 2 m curb-cut stub along the first metres of OSM sidewalk C1 (within 1.4 m), at the corner where the Russel Street crosswalk (OSM C2) and the City's virtual link across Spadina Road East begin. OSM has no crossing of Spadina Road East there and no kerb node."
+    },
+    {
+      "activetransportid": 337378,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961221679"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM also draws a short sidewalk stub (2.7 m) from the corner to signalised crossing C4, within 0.7 m. No kerb node."
+    },
+    {
+      "activetransportid": 307104,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/34023019"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "The City's 2.9 m curb-cut stub is the last stretch of its walkway 16507 to the road edge; OSM's footway C1 carries both and ends on the Beechmanor Crescent centreline. No kerb node."
+    },
+    {
+      "activetransportid": 397142,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/928038456"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM shared path C1 (foot and bicycle designated) runs within 3.5 m along the whole record and continues over the City's next BMUT, 397135. GEO-03 put the record in the not-along stratum only because it runs past the study area's east edge, where PathAble's graph stops."
+    },
+    {
+      "activetransportid": 6009,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/156273998"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "The Iron Horse Trail: OSM cycleway C1 (foot=designated) lies within 1 m along the whole record. GEO-03 counted it as not along an OSM pedestrian way only because its filter excluded highway=cycleway."
+    },
+    {
+      "activetransportid": 16079,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134722580"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 lies within 0.8 m median (5.7 m at the north end, where it bends to the crossing) and carries three City sidewalk records. The record lies mostly south of the study area, where PathAble's graph is clipped, which is why GEO-03 found it far from OSM."
+    },
+    {
+      "activetransportid": 19413,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "geometry": null,
+      "topology": "not_assessed",
+      "note": "A sidewalk the City records as installed in 2024 (2025 orthoimagery), with new curb-cut stubs at both ends, along the east side of Lawrence Avenue. OSM has only the road (no sidewalk tags) and the west-side sidewalk C6, 12 m away."
+    },
+    {
+      "activetransportid": 307894,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754817"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "partial_overlap",
+      "topology": "topology_agreement",
+      "note": "The same signalised crossing of Weber Street East at Cameron Street North. Both start at the north-east corner; the City's crosswalk lands 6 m further west on the south-west corner, where OSM's C1 stops at a kerb=lowered node."
+    },
+    {
+      "activetransportid": 88229,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1004152571",
+        "way/803517546"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "geometry": "differently_split",
+      "topology": "topology_agreement",
+      "note": "The Lakeside Park MUT. OSM path C1 (source=survey) carries its east 70% and continues south over the City's MUT 47693; OSM path C2 carries its west end. 90% of the record lies within 2 m of one or the other."
+    },
+    {
+      "activetransportid": 402036,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971949"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM's signalised crossing C1 spans Westmount Road West in one way; the City divides it at the centreline into 402036 (west) and 304608 (east)."
+    },
+    {
+      "activetransportid": 306773,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1070825039"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM unmarked crossing of Buttonwood Drive between two kerb=lowered nodes, 0.6 m median; the City's line runs 1 to 2.5 m further at each end."
+    },
+    {
+      "activetransportid": 396211,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880560429"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM cycleway crossing C1 (foot=designated) spans Maynard Avenue in one way within 1.1 m; the City splits the crossride at the centreline into 396211 and 309248."
+    },
+    {
+      "activetransportid": 301514,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134382377"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM unmarked crossing of West Acres Crescent, 1.2 m median. The City records asphalt; OSM has no surface tag."
+    },
+    {
+      "activetransportid": 311117,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1025420530"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM's marked, signalised crossing of both Fischer-Hallman carriageways is one way, within 0.7 m; the City splits it at the median into 311117 and 401921."
+    },
+    {
+      "activetransportid": 307585,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754901"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM marked crossing (lines, asphalt, lowered kerbs with tactile paving) within 1.4 m."
+    },
+    {
+      "activetransportid": 307529,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967116563"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM unmarked crossing (asphalt, lowered kerbs) of Brubacher Street within 1.4 m. The neighbouring OSM crossings C5 and C9 cross Samuel Street instead."
+    },
+    {
+      "activetransportid": 59794,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/40585186"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM path C1 lies within 1.3 m along the whole record; it also carries the City's MUT 44906."
+    },
+    {
+      "activetransportid": 47012,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1496310685",
+        "way/1525552032",
+        "way/1525552033"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "geometry": "differently_split",
+      "topology": "topology_agreement",
+      "note": "A BMUT the City re-digitised from 2026 imagery beside a rebuilt Ottawa Street South. OSM carries it as sidewalk C1 (which also carries BMUTs 47362 and 427464), a driveway crossing C3 and shared-use sidewalk C2."
+    },
+    {
+      "activetransportid": 88440,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/164568370"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM path C1 (foot and bicycle designated, source=Bing) within 1.4 m, 165.6 m against 155.5 m."
+    },
+    {
+      "activetransportid": 45654,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1070777565"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "One side of a small trail-junction triangle: OSM path C1 (surface=compacted, smoothness=intermediate) within 3.1 m, with the City's ends shifted about 3 m along it."
+    },
+    {
+      "activetransportid": 16892,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/176876976"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM footway C1 (source=Bing) within 2.6 m. The City's stairs 389865 at its end match OSM steps C2."
+    },
+    {
+      "activetransportid": 17843,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/195205571"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM footway C1 within 0.6 m, 61.1 m against 60.1 m."
+    },
+    {
+      "activetransportid": 403885,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/965483393"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM footway C1 (surface=concrete) within 0.9 m carries this walkway and the City's walkways 15623 and 403882. 403882 is coded STAIRS, which OSM's footway does not record."
+    },
+    {
+      "activetransportid": 419454,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1089478684"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "materially_different",
+      "topology": "topology_agreement",
+      "note": "The same named mountain-bike single track (OSM source 'Site survey (2022-Aug)'). Both run the same loop from the same ends, but along the winding trail the alignments differ by up to 14 m (median 4 m)."
+    },
+    {
+      "activetransportid": 17399,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1070825096"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.5 m along all 716 m; both sources carry the crescent's sidewalk as one piece."
+    },
+    {
+      "activetransportid": 14920,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/975534964"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.5 m along all 430 m."
+    },
+    {
+      "activetransportid": 321269,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "node/8641707012"
+      ],
+      "representation": "node",
+      "relationship": null,
+      "geometry": null,
+      "topology": "topology_agreement",
+      "note": "A 1.2 m corner piece of the City's sidewalk network where two sidewalks and two signalised crossings meet. OSM draws no piece, just the junction, with a kerb=lowered node 0.3 m away."
+    },
+    {
+      "activetransportid": 373137,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880817054"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "A 4 m corner piece between two crossings' kerbs. It lies along the end of OSM sidewalk C1 (within 1.2 m), which also carries the City's longer sidewalk."
+    },
+    {
+      "activetransportid": 384751,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/871784704"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "A 3 m piece lying along OSM sidewalk C1 (within 1.3 m) near the Ontario/Duke corner; C1 carries seven City records."
+    },
+    {
+      "activetransportid": 428209,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/965483184"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 (concrete) within 1.8 m. It carries seven City records, including this 10 m piece the City created on 2026-08-21, after the frozen OSM extract."
+    },
+    {
+      "activetransportid": 13408,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/774689766"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 runs parallel at a steady 0.43 m and carries eleven City records."
+    },
+    {
+      "activetransportid": 15565,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961403271"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.1 m, 72.7 m against 69.2 m."
+    },
+    {
+      "activetransportid": 388284,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961159332"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.0 m (median 0.14 m). The surfaces disagree: the City says BRICK (non-default), OSM says concrete."
+    },
+    {
+      "activetransportid": 16039,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134722618"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.0 m along all 240 m."
+    },
+    {
+      "activetransportid": 13517,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/886364684"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 at a steady 1 m, carrying this record and sidewalk 15764."
+    },
+    {
+      "activetransportid": 13995,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/970244747"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 at a steady 0.9 m, carrying this record and sidewalk 15730."
+    },
+    {
+      "activetransportid": 12286,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880560410"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 at a steady 0.65 m, carrying this record and sidewalk 12287."
+    },
+    {
+      "activetransportid": 17467,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1070824996"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 at a steady 0.77 m, 78.5 m against 75.1 m."
+    },
+    {
+      "activetransportid": 17347,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1120229778"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 0.7 m, carrying this record and sidewalk 396679."
+    },
+    {
+      "activetransportid": 12112,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880863972"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.0 m along all 226 m."
+    },
+    {
+      "activetransportid": 17528,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1075923996"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "One OSM way carries both of the court's sidewalks round the end: 17527 (right) and this record (left), within 1.1 m."
+    },
+    {
+      "activetransportid": 14357,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/871784723"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 at a steady 0.7 m. OSM cycleway C2, 1.7 m away, is a different facility (the City's cycle track 394778), which closeness alone would not tell apart."
+    },
+    {
+      "activetransportid": 396104,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961403342"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 (334 m) at 0.7 m, carrying four City sidewalk records."
+    },
+    {
+      "activetransportid": 12225,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880863920"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.4 m, 172 m against 169 m."
+    },
+    {
+      "activetransportid": 16341,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971824"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.0 m, carrying this record and sidewalk 16340."
+    },
+    {
+      "activetransportid": 299388,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1116491038"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 (446 m) within 0.6 m, carrying the crescent's sidewalk records. All six OSM vertices beside the record sit on City vertices with one common shift (spread 0.26 m)."
+    },
+    {
+      "activetransportid": 406491,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/936991016"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "A 7.8 m piece lying along OSM sidewalk C1 (within 1.6 m), which also carries the City's 1 m curb stub 403769 and its 3 m BMUT 406487."
+    },
+    {
+      "activetransportid": 24574,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754912"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "partial_overlap",
+      "topology": "topology_disagreement",
+      "note": "OSM sidewalk C1 lies within 1.0 m along the record but runs 21 m on past the City's dead end and turns to meet the end of the Stirling Avenue North stub; the City's sidewalk connects to nothing there."
+    },
+    {
+      "activetransportid": 13991,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/970244757"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 1.2 m, 86 m against 77 m."
+    },
+    {
+      "activetransportid": 15685,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/884960205"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 0.9 m, carrying this record and sidewalk 14270."
+    },
+    {
+      "activetransportid": 10441,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/903270392"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk C1 within 0.44 m along all 139 m."
+    },
+    {
+      "activetransportid": 301013,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/722723469"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "A 10 m piece lying along a 1.1 km OSM sidewalk C1 (within 0.8 m) that carries eight City records."
+    },
+    {
+      "activetransportid": 411348,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1025420501"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM segregated cycleway C1 (foot=designated, asphalt) within 0.5 m, carrying four City records. The City's own SOURCE for this cycle track is a staff assertion."
+    },
+    {
+      "activetransportid": 388300,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/1453492697",
+        "way/1453492698"
+      ],
+      "representation": "road_attribute",
+      "relationship": null,
+      "geometry": null,
+      "topology": "ambiguous_topology",
+      "note": "A painted bicycle lane. OSM records cycleway=lane on the Belmont Avenue West carriageways C2 and C3, not as a way; the nearest OSM way is a service road 4 m away. The City's record touches no other City record."
+    },
+    {
+      "activetransportid": 388260,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/468770505"
+      ],
+      "representation": "road_attribute",
+      "relationship": null,
+      "geometry": null,
+      "topology": "ambiguous_topology",
+      "note": "A separated bicycle lane between the Glasgow Street centreline (3.3 m) and OSM's sidewalk (2.5 m). OSM records only cycleway=lane on the road, not a separated lane."
+    },
+    {
+      "activetransportid": 412442,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/467603720"
+      ],
+      "representation": "road_attribute",
+      "relationship": null,
+      "geometry": null,
+      "topology": "ambiguous_topology",
+      "note": "A separated bicycle lane the City recorded in 2024. OSM records cycleway:both=track (cycleway:separation=bump) on Ottawa Street North, 9.3 m away. The nearest OSM way, sidewalk C1 at 1.2 m, is a different facility."
+    }
+  ],
+  "definitions_version": 1
+}

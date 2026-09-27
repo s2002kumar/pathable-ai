@@ -60,9 +60,41 @@ from pathable_api.geo.kitchener.arcgis import (
 )
 from pathable_api.geo.kitchener.audit import AuditError, run_audit
 from pathable_api.geo.kitchener.audit import write_outputs as write_kitchener_outputs
-from pathable_api.geo.kitchener.geography import PathAbleReadError, read_pathable_edges
+from pathable_api.geo.kitchener.geography import (
+    PathAbleReadError,
+    read_dataset_source,
+    read_pathable_edges,
+)
+from pathable_api.geo.kitchener.imagery import ImageryError, survey_imagery
+from pathable_api.geo.kitchener.lineage import ESRI_MUNICIPAL_SINCE, LabelError
 from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
+from pathable_api.geo.kitchener.osm_extract import (
+    EXTRACT_FORMAT_VERSION,
+    ExtractSourceError,
+    load_study_extract,
+    read_study_extract,
+    write_study_extract,
+)
+from pathable_api.geo.kitchener.osm_history import (
+    OHSOME_API,
+    ChangesetDump,
+    HistoryError,
+    dump_identity,
+    fetch_history,
+    ohsome_metadata,
+    ohsome_requests,
+)
+from pathable_api.geo.kitchener.review import render_review
 from pathable_api.geo.kitchener.snapshot import SnapshotError, SnapshotPlan, take_snapshot
+from pathable_api.geo.kitchener.study import (
+    StudyError,
+    history_document,
+    history_elements,
+    load_history,
+    load_inputs,
+    run_study,
+    slim,
+)
 from pathable_api.geo.lifecycle import (
     SealRefusedError,
     enrich_with_elevation,
@@ -85,7 +117,7 @@ from pathable_api.geo.overture.catalog import (
     resolve_release,
 )
 from pathable_api.geo.overture.contract import IncompatibleSchemaError
-from pathable_api.geo.overture.evidence import write_json
+from pathable_api.geo.overture.evidence import content_sha256, write_json
 from pathable_api.geo.overture.extract import (
     EXTRACT_MANIFEST,
     ExtractionError,
@@ -501,6 +533,129 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--json", type=Path, required=True, help="Write the profile here.")
     audit.add_argument("--sample", type=Path, required=True, help="Write the GeoJSON sample here.")
 
+    lineage_extract = kitchener_actions.add_parser(
+        "lineage-extract",
+        help=(
+            "Freeze the OSM side of the PA-GEO-04 lineage study from the dataset's own source "
+            "extract, refused unless its SHA-256 matches. Reads PathAble read-only."
+        ),
+    )
+    lineage_extract.add_argument(
+        "--region", required=True, choices=sorted(region.slug for region in PILOT_REGIONS)
+    )
+    lineage_extract.add_argument("--dataset", default=None, help="Defaults to the active dataset.")
+    lineage_extract.add_argument("--pbf", type=Path, required=True, help="The source extract.")
+    lineage_extract.add_argument(
+        "--out", type=Path, required=True, help="Write the study extract (.jsonl.gz) here."
+    )
+    lineage_extract.add_argument(
+        "--json", type=Path, required=True, help="Write its manifest here."
+    )
+
+    lineage_study = kitchener_actions.add_parser(
+        "lineage-study",
+        help=(
+            "PA-GEO-04: candidates, review page and evidence for the Kitchener sample against "
+            "the frozen OSM extract. Offline; never touches the database."
+        ),
+    )
+    lineage_study.add_argument(
+        "--sample", type=Path, required=True, help="The PA-GEO-03 sample GeoJSON."
+    )
+    lineage_study.add_argument(
+        "--sample-sha256", default=None, help="Refuse the sample unless it hashes to this."
+    )
+    lineage_study.add_argument(
+        "--normalized", type=Path, required=True, help="The normalized snapshot folder."
+    )
+    lineage_study.add_argument(
+        "--extract", type=Path, required=True, help="The frozen OSM study extract."
+    )
+    lineage_study.add_argument("--extract-manifest", type=Path, required=True)
+    lineage_study.add_argument(
+        "--history", type=Path, default=None, help="From the lineage-history command."
+    )
+    lineage_study.add_argument(
+        "--labels", type=Path, default=None, help="The labels the results use."
+    )
+    lineage_study.add_argument(
+        "--first-pass-labels",
+        type=Path,
+        default=None,
+        help="The first labelling pass as labelled, for consistency (default: --labels).",
+    )
+    lineage_study.add_argument(
+        "--repeat-labels", type=Path, default=None, help="The repeat pass as labelled."
+    )
+    lineage_study.add_argument(
+        "--repeat-refined-labels",
+        type=Path,
+        default=None,
+        help="The repeat pass re-reviewed under refined definitions.",
+    )
+    lineage_study.add_argument(
+        "--json", type=Path, required=True, help="Write the evidence document here."
+    )
+    lineage_study.add_argument(
+        "--full-json",
+        type=Path,
+        default=None,
+        help="Also write the unabridged document, every candidate's metrics included.",
+    )
+    lineage_study.add_argument("--html", type=Path, default=None, help="Write the review here.")
+    lineage_study.add_argument(
+        "--blind-html",
+        type=Path,
+        default=None,
+        help="Write a page of the repeat-review subset without labels or history here.",
+    )
+
+    lineage_history = kitchener_actions.add_parser(
+        "lineage-history",
+        help=(
+            "Read the edit history of the study's OSM candidates from the ohsome API and their "
+            "changesets from a planet changeset dump. Never uses the OSM editing API."
+        ),
+    )
+    lineage_history.add_argument(
+        "--study", type=Path, required=True, help="A document from the lineage-study command."
+    )
+    lineage_history.add_argument("--extract", type=Path, required=True)
+    lineage_history.add_argument("--extract-manifest", type=Path, required=True)
+    lineage_history.add_argument(
+        "--dump", type=Path, required=True, help="A planet changesets-*.osm.bz2 file."
+    )
+    lineage_history.add_argument(
+        "--dump-index",
+        type=Path,
+        default=None,
+        help="The dump's stream index; built beside the dump when missing.",
+    )
+    lineage_history.add_argument(
+        "--cache",
+        type=Path,
+        default=Path(".kitchener-data/osm/ohsome"),
+        help="ohsome answers, kept by request hash and reused.",
+    )
+    lineage_history.add_argument("--ohsome-url", default=OHSOME_API)
+    lineage_history.add_argument(
+        "--out",
+        type=Path,
+        required=True,
+        help="Write the history here. It holds changeset comments: keep it out of git.",
+    )
+
+    imagery_metadata = kitchener_actions.add_parser(
+        "imagery-metadata",
+        help=(
+            "Read Esri World Imagery's metadata over Kitchener: which photographs its finest "
+            "layer showed, now and in archived releases. Metadata only, never imagery."
+        ),
+    )
+    imagery_metadata.add_argument(
+        "--json", type=Path, required=True, help="Write the metadata evidence here."
+    )
+
     return parser
 
 
@@ -522,7 +677,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "overture" and args.overture_command != "link":
         return _overture_offline(args)
     # Freezing and normalizing a Kitchener snapshot need no database either.
-    if args.command == "kitchener" and args.kitchener_command != "audit":
+    if args.command == "kitchener" and args.kitchener_command in _KITCHENER_OFFLINE:
         return _kitchener_offline(args)
 
     try:
@@ -562,6 +717,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _benchmark(database, args)
             case "overture":
                 return await _overture_link(database, args)
+            case "kitchener" if args.kitchener_command == "lineage-extract":
+                return await _kitchener_lineage_extract(database, args)
             case "kitchener":
                 return await _kitchener_audit(database, args)
             case "datasets" if args.dataset_command == "seal":
@@ -1115,6 +1272,12 @@ def _osm_ids(raw_ids: Iterable[str]) -> set[int]:
 
 
 def _kitchener_offline(args: argparse.Namespace) -> int:
+    if args.kitchener_command == "lineage-study":
+        return _kitchener_lineage_study(args)
+    if args.kitchener_command == "imagery-metadata":
+        return _kitchener_imagery_metadata(args)
+    if args.kitchener_command == "lineage-history":
+        return _kitchener_lineage_history(args)
     if args.kitchener_command == "snapshot":
         if args.chunk_size < 1:
             print("error: --chunk-size must be at least 1.", file=sys.stderr)
@@ -1207,6 +1370,203 @@ async def _kitchener_audit(database: Database, args: argparse.Namespace) -> int:
     print(f"  sample                      {profile['sample']['records']:>8}")
     print(f"Wrote {args.json}")
     print(f"Wrote {args.sample}")
+    return EXIT_OK
+
+
+#: `pathable kitchener` commands that need no database.
+_KITCHENER_OFFLINE = frozenset(
+    {"snapshot", "normalize", "lineage-study", "lineage-history", "imagery-metadata"}
+)
+
+
+def _kitchener_imagery_metadata(args: argparse.Namespace) -> int:
+    try:
+        document = survey_imagery(RequestsTransport(timeout_seconds=120.0), progress=print)
+    except ImageryError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    document["run"] = _run_measurements()
+    write_json(args.json, document)
+    municipal = document["municipal_imagery"]
+    print(
+        f"\nMunicipal photography first in {municipal['first_release_showing_it']} "
+        f"(after {municipal['last_release_before_it']}); earliest source date "
+        f"{municipal['earliest_source_date']}"
+    )
+    print(f"Wrote {args.json}")
+    # The lineage rules carry this date as a constant; a different measurement
+    # means the rules no longer describe what Esri served.
+    if municipal["earliest_source_date"] != ESRI_MUNICIPAL_SINCE:
+        print(
+            f"warning: the lineage rules use {ESRI_MUNICIPAL_SINCE}; review them.",
+            file=sys.stderr,
+        )
+        return EXIT_REVIEW_REQUIRED
+    return EXIT_OK
+
+
+def _kitchener_lineage_study(args: argparse.Namespace) -> int:
+    try:
+        inputs = load_inputs(
+            args.sample,
+            args.normalized,
+            args.extract,
+            args.extract_manifest,
+            expected_sample_sha256=args.sample_sha256,
+            progress=print,
+        )
+        history = load_history(args.history) if args.history else None
+
+        def read(path: Path | None) -> Any:
+            return json.loads(path.read_text("utf-8")) if path else None
+
+        document = run_study(
+            inputs,
+            history=history,
+            labels=read(args.labels),
+            repeat=read(args.repeat_labels),
+            first_pass=read(args.first_pass_labels),
+            repeat_refined=read(args.repeat_refined_labels),
+            progress=print,
+        )
+    except (StudyError, NormalizationError, ExtractSourceError, LabelError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    document["run"] = _run_measurements()
+    evidence = slim(document)
+    evidence["content_sha256"] = content_sha256(evidence)
+    write_json(args.json, evidence)
+    if args.full_json is not None:
+        write_json(args.full_json, document)
+    print(f"\nLineage study over {len(document['records'])} records")
+    summary = document.get("summary")
+    if summary is not None:
+        for name, count in summary["all"]["correspondence"].items():
+            print(f"  {name:<28}{count:>4}")
+    print(f"Wrote {args.json}")
+    for path, blind in ((args.html, False), (args.blind_html, True)):
+        if path is None:
+            continue
+        subset = document["method"]["repeat_subset"]["records"] if blind else None
+        page = render_review(document, inputs.kitchener, inputs.osm, blind=blind, only=subset)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(page, encoding="utf-8", newline="\n")
+        print(f"Wrote {path}")
+    return EXIT_OK
+
+
+def _kitchener_lineage_history(args: argparse.Namespace) -> int:
+    study = json.loads(args.study.read_text("utf-8"))
+    manifest = json.loads(args.extract_manifest.read_text("utf-8"))
+    transport = RequestsTransport(timeout_seconds=300.0)
+    try:
+        extract = load_study_extract(args.extract, expected_sha256=manifest["output"]["sha256"])
+        metadata = ohsome_metadata(transport, base_url=args.ohsome_url)
+        elements = history_elements(study)
+        west, south, east, north = manifest["dataset"]["source_bbox"]
+        # ohsome keeps elements that intersect the box; a margin keeps candidates
+        # that lie just outside it.
+        margin = 0.01
+        requests = ohsome_requests(
+            elements,
+            bbox=(west - margin, south - margin, east + margin, north + margin),
+            time_range=(metadata["temporal_extent"]["from"], metadata["temporal_extent"]["to"]),
+        )
+        print(f"{len(elements)} elements in {len(requests)} ohsome requests")
+        fetched = fetch_history(
+            requests,
+            transport=transport,
+            cache_dir=args.cache,
+            base_url=args.ohsome_url,
+            progress=print,
+        )
+        wanted = sorted({c.changeset for c in fetched.contributions})
+        index = args.dump_index or args.dump.with_name(args.dump.name + ".streams.json")
+        dump = ChangesetDump.open(args.dump, index, workers=16, progress=print)
+        changesets = dump.lookup(wanted)
+        identity = {
+            "role": (
+                "metadata about how the frozen geometry came to be: history ends where the "
+                "ohsome extent ends, and none of it is the geometry compared"
+            ),
+            "frozen_extract_sha256": manifest["output"]["sha256"],
+            "ohsome": {**metadata, "requests": fetched.requests},
+            "changeset_dump": dump_identity(args.dump),
+            "elements_requested": len(elements),
+            "elements_with_history": len({c.element for c in fetched.contributions}),
+            "contributions": len(fetched.contributions),
+            "changesets_requested": len(wanted),
+            "changesets_found": len(changesets),
+            "privacy": (
+                "changeset user names and ids are dropped while parsing; comments stay in this "
+                "local file and reach committed evidence only as matched source phrases"
+            ),
+        }
+    except (HistoryError, ExtractSourceError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    document = history_document(fetched.contributions, changesets, extract, identity)
+    write_json(args.out, document)
+    reaching = sum(1 for item in document["elements"].values() if item["reaches_frozen_state"])
+    print(
+        f"\n{identity['elements_with_history']} elements with history, {reaching} reaching the "
+        f"frozen state; {len(changesets)} of {len(wanted)} changesets found"
+    )
+    print(f"Wrote {args.out}")
+    return EXIT_OK
+
+
+async def _kitchener_lineage_extract(database: Database, args: argparse.Namespace) -> int:
+    try:
+        dataset_id = uuid.UUID(args.dataset) if args.dataset else None
+    except ValueError:
+        print("error: --dataset must be a UUID.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+    async with database.session() as session:
+        try:
+            source = await read_dataset_source(
+                session, region_slug=args.region, dataset_id=dataset_id
+            )
+        except PathAbleReadError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_FAILED
+    if source.file_sha256 is None or source.bbox is None:
+        print(
+            "error: the dataset records no source-extract SHA-256 or bounding box; "
+            "its OSM side cannot be frozen from a file.",
+            file=sys.stderr,
+        )
+        return EXIT_FAILED
+    started = time.perf_counter()
+    try:
+        extract, facts = read_study_extract(
+            args.pbf, expected_sha256=source.file_sha256, bounds=source.bbox, progress=print
+        )
+    except ExtractSourceError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    sha256 = write_study_extract(extract, args.out)
+    manifest: dict[str, Any] = {
+        "kitchener_osm_extract_version": EXTRACT_FORMAT_VERSION,
+        "dataset": source.as_dict(),
+        "selection": (
+            "every way with a highway tag that has a node inside the dataset's recorded "
+            "bounding box, kept whole however far it runs beyond it; the nodes they use; and "
+            "tagged nodes inside the box carrying kerb, crossing, barrier or highway facts"
+        ),
+        "source": {k: facts[k] for k in ("source_file", "source_sha256", "bounds")},
+        "counts": {
+            k: facts[k] for k in ("fact_nodes", "ways", "ways_with_unresolved_nodes", "nodes")
+        },
+        "output": {"file": args.out.name, "bytes": args.out.stat().st_size, "sha256": sha256},
+        "run": {"seconds": round(time.perf_counter() - started, 2), **_run_measurements()},
+    }
+    manifest["content_sha256"] = content_sha256(manifest)
+    write_json(args.json, manifest)
+    print(f"\nFrozen OSM study extract: {facts['ways']} ways, {facts['nodes']} nodes")
+    print(f"  source {source.file_name} sha256 {source.file_sha256[:12]} (verified)")
+    print(f"  wrote {args.out} sha256 {sha256[:12]}")
+    print(f"Wrote {args.json}")
     return EXIT_OK
 
 

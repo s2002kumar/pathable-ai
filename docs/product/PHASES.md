@@ -289,7 +289,7 @@ identically; activation switched in 33.8 ms and rollback in 31.7 ms after an
 - Zero-downtime deployment. The switch is short and measured; a running API
   picks up a new dataset on its next request, which has not been load-tested.
 
-### PA-GEO-03 — Kitchener secondary-source freeze and empirical audit _(PR #69)_
+### PA-GEO-03 — Kitchener secondary-source freeze and empirical audit _(merged, PR #69)_
 
 **Delivered** — [`KITCHENER_ACTIVE_TRANSPORT.md`](../architecture/KITCHENER_ACTIVE_TRANSPORT.md)
 
@@ -335,6 +335,50 @@ production OSM-derived routing database
 - Matching, match thresholds, conflation, reconciliation, or any graph change.
 - A cross-source canonical model; §10 of the audit document lists the
   requirements the real source supports.
+
+### PA-GEO-04 — Kitchener ↔ OpenStreetMap geometry and lineage study _(PR #70)_
+
+**Delivered** — [`KITCHENER_OSM_LINEAGE.md`](../architecture/KITCHENER_OSM_LINEAGE.md)
+
+| Area          | What exists                                                                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Frozen OSM    | `pathable kitchener lineage-extract`: the routing dataset's own source PBF, SHA-checked, every way with a node in the box whole  |
+| Candidates    | Every `highway` way within 25 m of each sampled record, with descriptive signals and the reasons it was generated                |
+| Review page   | A static HTML page: an SVG map and tables per record, every label version side by side, a blind variant; nothing fetched         |
+| History       | `pathable kitchener lineage-history`: ohsome element history and the planet changeset dump, never the editing API                |
+| Imagery       | `pathable kitchener imagery-metadata`: which photographs Esri World Imagery showed over Kitchener, from Esri's archived metadata |
+| Lineage rules | Conservative geometry and attribute lineage with a basis per finding; no numeric confidence; absence of a source never counts    |
+| Labels        | 80 records labelled, 40 labelled again blind; definitions refined to version 2 and every revision recorded                       |
+
+**What it measured** — see the `kitchener-geo04-*` files in
+[`docs/evidence/`](../evidence/README.md). These are proportions of a stratified
+sample, not of the City's inventory.
+
+- **Correspondence:** 69 of 80 records have an obvious OSM counterpart, 7 an
+  ambiguous one (corner pieces OSM collapses into a junction, and lanes it
+  records as road tags), and 4 none.
+- **Esri's imagery:** since 2016, its finest layer over Kitchener has been the
+  City's and then the Region's own orthophotos.
+- **Geometry lineage:** 63 of the 69 counterparts were shaped in OSM edits that
+  recorded Esri imagery since then. Their lineage is possibly shared, and the
+  City's geometry confirms nothing independently.
+- **Attribute lineage:** OSM's kerb values at sampled curb cuts, and most of its
+  surfaces, came from StreetComplete surveys.
+- **What the City adds:** 6 of 10 sampled curb cuts and 9 of 22 comparable
+  surfaces are the City's alone.
+- **Repeat labels:** correspondence 40 of 40, topology 30 of 40 before its
+  definition was fixed.
+
+**Decision: LIMITED GO** to PA-GEO-05, for curb cuts against OSM kerb nodes,
+stairs and structures, and non-default surfaces. The City's geometry goes
+forward only as a matching input, never as evidence. The licensing gate of
+PA-GEO-03 is unchanged.
+
+**Still does not exist.**
+
+- A matcher, weights, thresholds, or any accuracy figure.
+- Any Kitchener value in routing, and any change to the graph.
+- Labels by a person: both passes are one AI model's.
 
 ---
 
