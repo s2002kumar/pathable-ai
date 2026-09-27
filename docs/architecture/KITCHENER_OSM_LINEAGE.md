@@ -348,6 +348,13 @@ The lineage labels are conservative by construction:
 - The absence of a municipal source tag is never evidence of independence.
 - There is no numeric confidence.
 
+**What `apparently_independent` does not mean.** It describes what OSM
+contribution metadata positively states about a non-municipal source. It does
+not establish that the upstream imagery itself had no shared municipal lineage.
+The study checked Esri's provenance (below) but not every provider a changeset
+names; Bing's, for one, is unchecked. It is not proven independence and not
+ground truth, and it is no benchmark truth for PA-GEO-05.
+
 | Record-level geometry lineage (69 obvious) | Records | By the City record's own source                       |
 | ------------------------------------------ | ------: | ----------------------------------------------------- |
 | Known Kitchener-derived                    |       1 | ORTHO                                                 |
@@ -385,7 +392,9 @@ ones. With no OSM shape agreed to be the facility, there is nothing to trace.
     edit with only Bing aerial and street-level layers on screen.
   - **392049** (editor-recorded): Bing aerial and street-level layers only.
 
-  All three rest on Bing or GPS, never on Esri.
+  All three rest on Bing or GPS, never on Esri. What they rest on is what the
+  changesets state; the upstream provenance of Bing's imagery over Kitchener was
+  not established.
 
 - **The 1 unknown record, 301013**: it was created in 2019 by an edit that states
   no source.
@@ -742,7 +751,11 @@ The benchmark must represent nodes and road attributes, and parts of merged ways
 
 - The City's licence permits this research.
 - The City has separately permitted its data in OSM.
-- OSMF LWG approval of the licence is not confirmed.
+- OSMF LWG approval of the licence is not confirmed, and public documentation
+  is not fully consistent. The OSM Contributors page lists Kitchener; the LWG's
+  list of approved Canadian licence variants does not. So PathAble treats
+  compatibility for production combination or redistribution as insufficiently
+  clear, not settled.
 
 PA-GEO-05 is a benchmark and stays research. Before any Kitchener-derived value
 is written where routing can read it, or redistributed with the OSM-derived
@@ -771,7 +784,8 @@ Measured on one Windows laptop under memory pressure: shapes, not service levels
   distance, not correspondence.
 - **Esri imagery.** Esri's metadata says what its finest layer showed, not what
   zoom a mapper used. Hence "possible", never "known".
-- **Bing.** Bing's provider over Kitchener is not checked.
+- **Bing.** Bing's provider over Kitchener is not checked, so no
+  `apparently_independent` finding rules out shared municipal imagery upstream.
 - **Dates.** The date rule cannot see City data older than a record, such as a
   bulk load's source.
 - **History coverage.** The history ends 2026-07-27. The 7 kerb nodes tagged in
