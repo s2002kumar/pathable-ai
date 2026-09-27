@@ -458,7 +458,7 @@ pilot. None of it is field-verified.
   agreement; it is not independence.
 - **Freshness:** the City supplies no observation date; 2,891 OSM values carry
   one, most from 2021.
-- **Run:** 10,523 reconciliations in about 24 s on one laptop; two runs were
+- **Run:** 10,523 reconciliations in under 25 s on one laptop; two runs were
   byte-identical.
 
 **Decision: LIMITED GO** to routing-evidence integration research for surfaces

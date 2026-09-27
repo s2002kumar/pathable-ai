@@ -237,6 +237,14 @@ commit attached the failure analysis. It reproduced every decision, every
 metric and all four research-artifact files byte for byte, and its content hash
 is `6b43fac3…`. The artifact itself stays in the ignored data folder.
 
+**Dates in the PA-GEO-04 and PA-GEO-05 files.** Both cards formatted the City's
+`SOURCE_DATE` and `CREATE_DATE` in the laptop's time zone (America/Toronto).
+The City stores `SOURCE_DATE` at midnight UTC, so in these files it reads one
+day early, and `CREATE_DATE` is local time. PA-GEO-06 found and fixed this
+(`fe55f20`). The files are left as produced. No match, label or metric reads
+a date; PA-GEO-04's rule that an OSM shape older than the City's record is
+independent compares against the date, and can be off by that day.
+
 **Scope.** Counts over a stratified sample scored against AI labels. They are
 not proportions of the City's inventory and not field-verified accuracy.
 Intervals are sampling uncertainty conditional on the labels.
@@ -250,9 +258,9 @@ dump; `reconcile` needs neither the network nor the database. It refuses a
 PA-GEO-05 artifact whose files do not match its manifest, and inputs other than
 those the artifact was made from.
 
-**Which run produced what.** Two runs from `75de349`, with a clean tree and the
+**Which run produced what.** Two runs from `fe55f20`, with a clean tree and the
 same history file (`9f382a3b…`), wrote byte-identical artifacts. The second
-recorded the comparison, and both have content hash `b017ee6f…`. The artifact
+recorded the comparison, and both have content hash `6bb58d6f…`. The artifact
 — City and OSM values in one table — stays in the ignored data folder.
 
 **Scope.** Every correspondence the class gates accept in the full pilot, as

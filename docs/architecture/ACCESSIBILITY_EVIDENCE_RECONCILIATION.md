@@ -152,9 +152,9 @@ No row is incomparable.
 - **Surface** agreement is mostly ASPHALT with `asphalt` (974), and painted
   asphalt with `asphalt` (627). Compatible pairs split as 100 overlapping (81
   STONEDUST with `compacted`), 59 where OSM is less specific (mostly `paved`
-  and `unpaved`) and 39 where OSM is more specific (31 NATURAL with `dirt`). By local
-  extent: 56.7 km agree, 12.2 km conflict, 26.7 km are City-only, 312.7 km
-  OSM-only and 197.6 km unknown.
+  and `unpaved`) and 39 where OSM is more specific (31 NATURAL with `dirt`).
+  By local extent: 56.7 km agree, 12.2 km conflict, 26.7 km are City-only,
+  312.7 km OSM-only and 197.6 km unknown.
 - **Curb ramps**: all 1,648 two-sided rows are a City curb cut beside
   `kerb=lowered` (1,600) or `flush` (48): compatible, different properties,
   never agreement. The 13 City-only rows are kerb nodes with no recorded height
@@ -191,10 +191,10 @@ Most OSM surface and kerb values here were entered by survey-app edits
 **Attribute and geometry lineage stay apart.** Of the 1,648 kerb nodes beside a
 City curb cut, 1,485 have geometry that may share the City's photographs, while
 their kerb value is apparently independent — for 1,472 of them, entered by an
-edit that states a survey. Lineage and semantics are
-independent too. One surface conflict sits on a way whose `surface=unpaved`
-came from an edit that names Kitchener's data, beside the City's ASPHALT: known
-shared lineage, and still a conflict.
+edit that states a survey. Lineage and semantics are independent too. One
+surface conflict sits on a way whose `surface=unpaved` came from an edit that
+names Kitchener's data, beside the City's ASPHALT: known shared lineage, and
+still a conflict.
 
 ## 7. Dates keep their meaning
 
@@ -208,14 +208,20 @@ shared lineage, and still a conflict.
 | `osm_edit_timestamp`  | The element's last edit of any kind                                                            | —                                | 6,516                          |
 | `osm_value_since`     | When OSM's current value entered OSM                                                           | —                                | 3,438 (where history was read) |
 
+Every City date is read in UTC, the zone the City stores it in. An earlier
+version formatted them in the laptop's time zone, which moved `SOURCE_DATE` —
+kept at midnight UTC, mostly on the 1st of a month — to the previous day. That
+is fixed here and in the PA-GEO-04 and PA-GEO-05 queries. Their matching and
+metrics read no date.
+
 Only an observation date is read as freshness. The City has none, so no City
 assertion is fresh or stale by this model: its dates say when the record was
 captured and when it was inspected. StreetComplete and Every Door record
 answers on the spot, so their edit dates an observation. Of the 2,891 OSM
 observation dates, 2,888 come from those edits and 3 from `check_date:surface`.
 A `source=survey` a mapper typed does not say when the survey was, and dates
-nothing. Observed OSM values here date from 2020 to 2026, most (1,546) from 2021. None is
-a current fact.
+nothing. Observed OSM values here date from 2020 to 2026, and 1,546 of them
+from 2021. None is a current fact.
 
 ## 8. Potential information gain — research view only
 
@@ -254,11 +260,10 @@ assertions, their dates and provenance, the correspondence and the lineage
 
 In 211 of the 257 conflicts, the edit that entered OSM's value states a survey
 (176 of them a survey app's), while the City's side is an administrative
-assertion with no observation date.
-That says the two sources disagree. It does not say which is wrong; either may
-be, and so may the correspondence. Painted crosswalks recorded as paving stones
-could be decorative crosswalks, but that is a hypothesis no one has checked.
-Nothing is resolved.
+assertion with no observation date. That says the two sources disagree. It does
+not say which is wrong; either may be, and so may the correspondence. Painted
+crosswalks recorded as paving stones could be decorative crosswalks, but that is
+a hypothesis no one has checked. Nothing is resolved.
 
 ## 10. Routing isolation and licensing
 
@@ -345,23 +350,23 @@ it.
 
 ## 14. Determinism, performance, reproducing
 
-Two runs from `75de349`, clean tree, same inputs: all four files
-byte-identical, evidence content hash `b017ee6f…`. Each took 24.3 s end to end
-on one laptop (Windows 11, Python 3.13, 16 GB): about 11 s loading the frozen
-inputs, 6 s reconciling with lineage, and 6–7 s writing. Peak process memory
-was 516–517 MB.
+Two runs from `fe55f20`, clean tree, same inputs: all four files
+byte-identical, evidence content hash `6bb58d6f…`. They took 24.3 s and 22.7 s
+end to end on one laptop (Windows 11, Python 3.13, 16 GB): about 10–11 s
+loading the frozen inputs, 6 s reconciling with lineage, and 6 s writing. Peak
+process memory was 513–518 MB.
 
 | File            | Rows   | Bytes     |
 | --------------- | ------ | --------- |
 | sources         | 2      | 4,075     |
-| assertions      | 15,921 | 223,285   |
+| assertions      | 15,921 | 223,037   |
 | correspondences | 11,547 | 181,684   |
-| reconciliations | 10,523 | 795,062   |
-| **Total**       |        | 1,204,106 |
+| reconciliations | 10,523 | 795,067   |
+| **Total**       |        | 1,203,863 |
 
-Every file's hash is in the evidence (`artifact`). From
-`services/api`, with PA-GEO-03's normalized snapshot, PA-GEO-04's study extract,
-PA-GEO-05's artifact and the planet changeset dump:
+Every file's hash is in the evidence (`artifact`). From `services/api`, with
+PA-GEO-03's normalized snapshot, PA-GEO-04's study extract, PA-GEO-05's artifact
+and the planet changeset dump:
 
 ```
 pathable kitchener reconcile-history --normalized <folder> --extract <…> --extract-manifest <…> \

@@ -35,6 +35,9 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
       lacks.
     - 1,449 of 1,671 surface agreements are with OSM values whose edits state an
       unrelated source.
+  - The City's dates are now read in UTC everywhere in the Kitchener research
+    code. They were formatted in the machine's time zone, which moved
+    `SOURCE_DATE` a day early on a Toronto laptop; no match or metric read them.
   - Decision: LIMITED GO to routing-evidence integration research, surfaces
     only. The licensing gate stays closed. See
     [`ACCESSIBILITY_EVIDENCE_RECONCILIATION.md`](docs/architecture/ACCESSIBILITY_EVIDENCE_RECONCILIATION.md)
