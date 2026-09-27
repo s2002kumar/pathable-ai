@@ -12,6 +12,30 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **A deterministic Kitchener–OpenStreetMap matcher, benchmarked once on a
+  blind held-out sample (PA-GEO-05).**
+  - `pathable kitchener holdout` draws 193 held-out records in 14 strata, none
+    from the development set.
+  - Five AI instances labelled them blind, and two more labelled a 60-record
+    subset again. The labels were frozen before the matcher saw a held-out
+    record.
+  - The matcher is interpretable: named thresholds tuned on the development set
+    only, matched, ambiguous or unmatched, local extents and N:M relationships.
+  - `pathable kitchener benchmark` scores it against four baselines and six
+    ablations, per class and per stratum. Each failure's cause is bound to the
+    decisions by hash, and the command writes a byte-reproducible research
+    artifact that no routing code reads.
+  - Held-out results:
+    - 135 of 154 obvious counterparts matched exactly.
+    - Pair precision 0.955 and recall 0.905, against 0.886 and 0.783 for the
+      best baseline.
+    - Non-default surfaces exact on 33 of 33; curb-cut kerb nodes 23 of 24.
+    - The matcher commits more readily than its labellers: it matched 21 of the
+      26 records they called ambiguous.
+  - Decision: LIMITED GO to PA-GEO-06 reconciliation research for surfaces,
+    curb cuts through their kerb node, and structures OSM tags as such. Nothing
+    routes on it.
+  - See [`KITCHENER_CONFLATION.md`](docs/architecture/KITCHENER_CONFLATION.md).
 - **A geometry and lineage study of Kitchener against OpenStreetMap
   (PA-GEO-04).**
   - The OSM side is frozen from the exact PBF the routing dataset was built from:
