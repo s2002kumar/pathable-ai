@@ -698,28 +698,46 @@ def lineage_summary(reconciled: Reconciled) -> dict[str, Any]:
     }
 
 
+#: What each date dates, as the evidence states it.
+DATE_MEANINGS = {
+    "source_capture_date": "City SOURCE_DATE: when the record was captured; for orthoimagery, "
+    "the photographs' date. Not an observation of any attribute.",
+    "observation_date": "When the value was observed: an OSM check_date or survey:date tag, or "
+    "the edit of a survey app that entered it. The City supplies none.",
+    "inspection_year": "City LAST_INSPECTION_YEAR: the year of an inspection, not what it found.",
+    "record_created_at": "City CREATE_DATE: database maintenance.",
+    "record_modified_at": "City UPDATE_DATE: database maintenance, mostly one bulk day. Never "
+    "freshness.",
+    "osm_edit_timestamp": "When the OSM element last changed in any way: an edit, not an "
+    "observation.",
+    "osm_value_since": "When OSM's current value entered OSM, from the element's history.",
+}
+#: Dates whose years are worth showing: the ones that say how old evidence is.
+_YEARS = ("source_capture_date", "observation_date", "inspection_year", "osm_value_since")
+
+
 def freshness_summary(reconciled: Reconciled) -> dict[str, Any]:
-    fields = (
-        "source_capture_date",
-        "observation_date",
-        "inspection_year",
-        "record_created_at",
-        "record_modified_at",
-        "osm_edit_timestamp",
-        "osm_value_since",
-    )
-    result: dict[str, Any] = {}
+    """Which dates each source's usable assertions carry, and how old they are."""
+    result: dict[str, Any] = {"date_meanings": DATE_MEANINGS}
     for source in (KITCHENER_SOURCE, OSM_SOURCE):
         mine = [a for a in reconciled.assertions.values() if a.source_id == source and a.usable]
+        years: dict[str, dict[str, int]] = {}
+        for name in _YEARS:
+            values = [getattr(a.dates, name) for a in mine]
+            present = [str(v)[:4] for v in values if v is not None]
+            if present:
+                years[name] = _count(present)
         result[source] = {
             "usable_assertions": len(mine),
             "with_date": {
-                f: sum(1 for a in mine if getattr(a.dates, f) is not None) for f in fields
+                name: sum(1 for a in mine if getattr(a.dates, name) is not None)
+                for name in DATE_MEANINGS
             },
             "freshness_basis": _count(a.dates.freshness_basis for a in mine),
             "observation_date_basis": _count(
                 str(a.dates.observation_date_basis) for a in mine if a.dates.observation_date
             ),
+            "years": years,
         }
     return result
 
@@ -781,49 +799,46 @@ def _assertion_case(a: Assertion) -> dict[str, Any]:
     return {k: row[k] for k in keep if row[k] not in (None, [])}
 
 
-def casebook(reconciled: Reconciled, relationships: Iterable[Relationship]) -> list[dict[str, Any]]:
-    """Every row with these relationships, with both sides' assertions in full. Nothing resolved."""
-    wanted = set(relationships)
-    cases = []
-    for r in reconciled.reconciliations:
-        if r.relationship not in wanted:
-            continue
-        cases.append(
+def casebook(reconciled: Reconciled, relationship: Relationship) -> dict[str, Any]:
+    """Every row with this relationship, both sides' assertions in full. Nothing resolved."""
+    rows = [r for r in reconciled.reconciliations if r.relationship is relationship]
+    constant: dict[str, Any] = {"matcher": ACCEPTED_MATCHER}
+    if rows:
+        constant.update(
             {
-                "reconciliation_id": r.reconciliation_id,
-                "topic": str(r.topic),
-                "property": r.prop,
-                "target": {
-                    "element": r.target.element,
-                    "osm_version": r.target.osm_version,
-                    "type": r.target.target_type,
-                    "from_m": r.target.from_m,
-                    "to_m": r.target.to_m,
-                },
-                "correspondence": {
-                    "kitchener_records": list(r.source_records),
-                    "rules": list(r.correspondence_rules),
-                    "relationship": r.correspondence_relationship,
-                    "matcher": ACCEPTED_MATCHER,
-                },
-                "kitchener": [
-                    _assertion_case(reconciled.assertions[a]) for a in r.kitchener_assertions
-                ],
-                "osm": [_assertion_case(reconciled.assertions[a]) for a in r.osm_assertions],
-                "semantic_relationship": str(r.relationship),
-                "specificity": str(r.specificity),
-                "rule": r.rule,
-                "lineage_relationship": str(r.lineage),
-                "lineage_basis": r.lineage_basis,
-                "lineage_reasons": list(r.lineage_reasons),
-                "target_geometry_lineage": r.target_geometry_lineage,
-                "evidence_state": str(r.evidence_state),
-                "conflict": r.conflict,
-                "routing_eligibility": r.routing_eligibility,
-                "blockers": list(r.blockers),
+                "evidence_state": str(rows[0].evidence_state),
+                "conflict": rows[0].conflict,
+                "routing_eligibility": rows[0].routing_eligibility,
             }
         )
-    return cases
+    cases = [
+        {
+            "reconciliation_id": r.reconciliation_id,
+            "target": {
+                "element": r.target.element,
+                "osm_version": r.target.osm_version,
+                "from_m": r.target.from_m,
+                "to_m": r.target.to_m,
+            },
+            "kitchener_records": list(r.source_records),
+            "correspondence": {
+                "rules": list(r.correspondence_rules),
+                "relationship": r.correspondence_relationship,
+            },
+            "kitchener": [
+                _assertion_case(reconciled.assertions[a]) for a in r.kitchener_assertions
+            ],
+            "osm": [_assertion_case(reconciled.assertions[a]) for a in r.osm_assertions],
+            "specificity": str(r.specificity),
+            "rule": r.rule,
+            "lineage": str(r.lineage),
+            "lineage_basis": r.lineage_basis,
+            "target_geometry_lineage": r.target_geometry_lineage,
+            "blockers": list(r.blockers),
+        }
+        for r in rows
+    ]
+    return {"every_case": constant, "cases": cases}
 
 
 def reconciliation_evidence(
@@ -892,8 +907,15 @@ def reconciliation_evidence(
         "lineage": lineage_summary(reconciled),
         "freshness": freshness_summary(reconciled),
         "value_pairs": value_pairs(rows),
-        "conflict_casebook": casebook(reconciled, (Relationship.CONFLICT,)),
-        "incomparable_cases": casebook(reconciled, (Relationship.INCOMPARABLE,)),
+        "conflict_casebook": {
+            "what_it_is": (
+                "Every conflict, with both assertions, their dates and provenance, the "
+                "correspondence and the lineage. Nothing is resolved: a conflict does not say "
+                "which source is wrong, and either may be."
+            ),
+            **casebook(reconciled, Relationship.CONFLICT),
+        },
+        "incomparable_cases": casebook(reconciled, Relationship.INCOMPARABLE),
         "routing": {
             "routing_eligibility": _count(r.routing_eligibility for r in rows),
             "blockers": _count(b for r in rows for b in r.blockers),

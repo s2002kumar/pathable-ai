@@ -188,9 +188,11 @@ class Dates:
     #: City ``SOURCE_DATE``: when the record was captured (for orthoimagery
     #: sources, the photographs' date). Not when any attribute was observed.
     source_capture_date: str | None = None
-    #: When the value was observed. Only explicit observation tags count
-    #: (OSM ``check_date:<key>``, ``check_date``, ``survey:date``); the City
-    #: supplies no per-attribute observation date.
+    #: When the value was observed, and only where something dates an
+    #: observation: an OSM ``check_date:<key>``, ``check_date`` or
+    #: ``survey:date`` tag, or else the edit of a survey app (StreetComplete,
+    #: Every Door) that entered the value. ``observation_date_basis`` says
+    #: which. The City supplies no per-attribute observation date.
     observation_date: str | None = None
     observation_date_basis: str | None = None
     #: City ``LAST_INSPECTION_YEAR``: the year of an inspection, not what it found.

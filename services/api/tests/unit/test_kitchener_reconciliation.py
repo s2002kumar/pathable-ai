@@ -46,6 +46,7 @@ from pathable_api.geo.kitchener.correspondence import KitchenerFeature, Kitchene
 from pathable_api.geo.kitchener.lineage import ElementHistory
 from pathable_api.geo.kitchener.osm_history import Changeset, Contribution
 from pathable_api.geo.kitchener.reconciliation import (
+    SURVEY_APP_EDIT,
     CityFields,
     Exclusion,
     KerbLocation,
@@ -107,7 +108,7 @@ def _record(
             "origin_railing": "administrative_assertion",
             "source_class": "orthoimagery",
             "source_date": "2016-05-01",
-            "last_inspection_year": 2026,
+            "last_inspection_year": "2026",
             "publications": ["Active_Transportation"],
         },
     )
@@ -448,6 +449,7 @@ def test_every_date_keeps_what_it_dates_and_only_an_observation_is_freshness() -
 
     city = found.assertions["kitchener/1#surface_material"].dates
     assert city.source_capture_date == "2016-05-01"
+    # Regression: the normalized file holds the year as text; it is kept as a year.
     assert city.inspection_year == 2026
     assert city.record_created_at == "2014-06-30T00:00:00Z"
     # UPDATE_DATE is a bulk maintenance day: kept, never freshness.
@@ -618,6 +620,29 @@ def test_agreement_from_a_survey_app_is_apparently_independent_and_still_just_ag
     assert row.lineage_basis == "declared"
 
 
+def test_a_survey_a_mapper_typed_is_independent_but_dates_no_observation() -> None:
+    scene = Scene()
+    tags = {**SIDEWALK, "surface": "asphalt"}
+    scene.street.line(1, [(0, 1), (100, 1)], tags)
+    scene.add(
+        _record(1, [(10, 0), (90, 0)], surface="ASPHALT", surface_state="non_default"),
+        _matched(1, (_way("way/1", 10.0, 90.0),)),
+    )
+    history = _history(
+        "way/1",
+        [_contribution("way/1", "2020-05-01T00:00:00Z", 2, tags, creation=True)],
+        [Changeset(2, "2020-05-01T00:00:00Z", None, 1, None, {"source": "survey"})],
+    )
+
+    found = scene.run(history=history)
+
+    [row] = _rows(found, Topic.SURFACE)
+    assert row.lineage is LineageRelationship.APPARENTLY_INDEPENDENT
+    [osm_id] = row.osm_assertions
+    # "source=survey" does not say when the survey was.
+    assert found.assertions[osm_id].dates.observation_date is None
+
+
 def test_a_kerb_value_keeps_its_own_lineage_apart_from_the_node_geometry() -> None:
     scene = Scene()
     scene.street.line(1, [(0, 1), (100, 1)], SIDEWALK)
@@ -655,6 +680,9 @@ def test_a_kerb_value_keeps_its_own_lineage_apart_from_the_node_geometry() -> No
     assert assertion.dates.osm_value_since == "2023-01-01T00:00:00Z"
     assert assertion.history.introducing_changeset == 2
     assert "survey" in assertion.history.stated_sources
+    # A survey app records answers on the spot: its edit dates the observation.
+    assert assertion.dates.observation_date == "2023-01-01"
+    assert assertion.dates.observation_date_basis == SURVEY_APP_EDIT
 
 
 def test_without_history_two_sided_rows_are_not_assessed_and_one_sided_not_applicable() -> None:
@@ -745,8 +773,8 @@ def test_the_evidence_counts_coverage_and_lists_every_conflict(tmp_path: Path) -
 
     surface = document["coverage"]["surface"]
     assert surface["union"] == surface["baseline_osm"] + surface["kitchener_only"]
-    [case] = document["conflict_casebook"]
+    [case] = document["conflict_casebook"]["cases"]
     assert case["kitchener"][0]["raw_value"] == "BRICK"
     assert case["osm"][0]["raw_value"] == "concrete"
-    assert case["conflict"].startswith("unresolved")
+    assert document["conflict_casebook"]["every_case"]["conflict"].startswith("unresolved")
     assert document["routing"]["eligible_rows"] == 0

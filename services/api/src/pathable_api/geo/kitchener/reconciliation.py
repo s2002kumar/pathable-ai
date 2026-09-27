@@ -69,6 +69,7 @@ from pathable_api.geo.kitchener.correspondence import KitchenerIndex, OsmIndex, 
 from pathable_api.geo.kitchener.lineage import (
     Lineage,
     LineageFinding,
+    Signal,
     attribute_lineage,
     combine,
     geometry_lineage,
@@ -219,11 +220,12 @@ class CityFields:
     state_feature_type: str | None = None
 
 
-def _city_fields(record: Record, extra: CityFields | None) -> Dates:
+def _city_dates(record: Record, extra: CityFields | None) -> Dates:
     a = record.attributes
+    year = a.get("last_inspection_year")
     return Dates(
         source_capture_date=a.get("source_date"),
-        inspection_year=a.get("last_inspection_year"),
+        inspection_year=int(year) if year is not None and str(year).isdigit() else None,
         record_created_at=extra.created_at if extra else None,
         record_modified_at=extra.modified_at if extra else None,
     )
@@ -277,7 +279,7 @@ def city_assertion(record: Record, topic: Topic, extra: CityFields | None = None
         evidence_origin=str(origin) if origin is not None else "unknown",
         scope="kitchener_record",
         capture_source=a.get("source_class"),
-        dates=_city_fields(record, extra),
+        dates=_city_dates(record, extra),
         note=note,
     )
 
@@ -703,12 +705,30 @@ def attach_history(
     reconciled.reconciliations = rows
 
 
+#: The observation-date basis for a value a survey app entered. StreetComplete
+#: and Every Door record answers on the spot, so the edit dates the observation;
+#: a ``source=survey`` a mapper typed does not say when the survey was.
+SURVEY_APP_EDIT = "introducing_edit_by_survey_app"
+
+
 def _with_history(assertion: Assertion, finding: LineageFinding) -> Assertion:
-    """The facts of the edit that introduced the value; the same whatever it is compared with."""
+    """The facts of the edit that introduced the value; the same whatever it is compared with.
+
+    An explicit observation tag keeps precedence: it is later than the edit
+    that introduced the value.
+    """
     step = finding.steps[0] if finding.steps else None
+    dates = replace(assertion.dates, osm_value_since=step.timestamp if step else None)
+    surveyed = step is not None and any(
+        e.signal is Signal.SURVEY and e.where == "changeset created_by" for e in step.evidence
+    )
+    if surveyed and step is not None and dates.observation_date is None:
+        dates = replace(
+            dates, observation_date=step.timestamp[:10], observation_date_basis=SURVEY_APP_EDIT
+        )
     return replace(
         assertion,
-        dates=replace(assertion.dates, osm_value_since=step.timestamp if step else None),
+        dates=dates,
         history=ValueHistory(
             assessed=True,
             introducing_changeset=step.changeset if step else None,
