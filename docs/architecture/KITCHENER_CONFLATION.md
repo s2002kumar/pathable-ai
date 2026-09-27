@@ -350,14 +350,45 @@ still behind the licensing gate, and still without routing.
 - **Short pieces at junctions.** 13 of the 21 matches where the labeller
   abstained are corner or junction pieces of 5 m or less. They need an explicit
   abstention rule.
-- **Stairs on untagged footways.** Decide first what the correspondence is.
-  The City recording a stair where OSM records none may be the most
-  safety-relevant thing this data holds. Matching it silently, or dropping it,
-  would both be wrong.
+- **Stairs on untagged footways.** Decide first what the correspondence is
+  (decided below, for matcher v2). The City recording a stair where OSM records
+  none may be the most safety-relevant thing this data holds. Matching it
+  silently, or dropping it, would both be wrong.
 
 Any change to the matcher is a new policy version, and it needs a new held-out
 sample: this holdout has been used. Without that, the next figures would be
 tuned on the test set.
+
+### Decided after the evaluation: correspondence and attributes are separate
+
+Recorded on 2026-09-27, after the single held-out run, for matcher v2. It
+changes no v1 rule, label or figure above: the seven stair failures in §7 stay
+failures under the frozen guide.
+
+A City record with `FEATURE_TYPE = STAIRS` may correspond to an OSM way tagged
+only `highway=footway`, when geometry and topology make it clear that both
+describe the same physical facility. Two questions are answered separately:
+
+1. **Physical correspondence** — is it the same facility? Geometry and topology
+   decide. The absence of `highway=steps` does not by itself make the
+   correspondence ambiguous.
+2. **Attribute assertions** — what does each source say about it? The City says
+   stairs. OSM's `highway=footway` says a footway and asserts nothing about
+   steps: it does not say "there are no stairs".
+
+A clear case is therefore a correspondence, with the stair recorded as an
+assertion only the City makes. The OSM way is never retagged `highway=steps`,
+and the City's assertion does not become routing truth; routing on it stays
+prohibited.
+
+A stair stays ambiguous where physical identity itself is unclear: several
+plausible footways, topology that disagrees, material geometric displacement, a
+nearby OSM `highway=steps` that may be the actual stair somewhere else, or an
+unclear split or merge.
+
+Matcher v2 needs this rule written into its labelling guide and a new, untouched
+holdout. PA-GEO-06 does not reconcile these stairs; they wait for that
+benchmark.
 
 ## 12. Limitations
 

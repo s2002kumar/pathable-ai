@@ -418,7 +418,10 @@ classes:
 - structures OSM tags as such.
 
 Way-level curb-cut sets, short junction pieces and stairs on untagged footways
-wait for a fixed matcher and a new holdout. The licensing gate stays closed.
+wait for a fixed matcher and a new holdout. For those stairs, the correspondence
+rule is decided (§11 of the doc): a clear physical match to a plain footway is a
+correspondence, and the stair is an assertion only the City makes. The licensing
+gate stays closed.
 
 **Still does not exist.**
 
