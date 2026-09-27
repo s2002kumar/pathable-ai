@@ -586,6 +586,15 @@ def _all_or_none(values: Iterable[bool | None]) -> bool | None:
 def record_lineage(
     record: Mapping[str, Any], label: RecordLabel, history: History | None
 ) -> dict[str, Any] | None:
+    """Where OSM's shape of the same facility came from, per labelled way.
+
+    Only for an obvious correspondence. With an ambiguous one no OSM shape is
+    agreed to be the same facility: the road that carries a lane only as a tag,
+    or the ways meeting where OSM collapses a corner piece into a junction,
+    have a lineage of their own, not the City record's.
+    """
+    if label.correspondence is not Correspondence.OBVIOUS:
+        return None
     ways = [osm for osm in label.osm if osm.startswith("way/")]
     if not ways:
         return None
@@ -649,6 +658,14 @@ def compare_surface(material: str, osm_surface: str | None) -> str:
 KERB_CONSISTENT = frozenset({"lowered", "flush"})
 KERB_CONFLICT = frozenset({"raised"})
 
+#: What the reviewer's correspondence label says about a City virtual link.
+VIRTUAL_LINK_OUTCOMES = {
+    Correspondence.OBVIOUS: "osm_has_the_connection",
+    Correspondence.AMBIGUOUS: "ambiguous",
+    Correspondence.NONE: "osm_lacks_the_connection",
+    Correspondence.NOT_COMPARABLE: "not_comparable",
+}
+
 STRUCTURE_TAGS = {
     "STAIRS": ("highway", frozenset({"steps"})),
     "BRIDGE": ("bridge", None),
@@ -671,10 +688,10 @@ def attribute_comparisons(
         # are not evidence, so nothing is compared.
         return {"restricted": str(kitchener["restricted_lineage"])}
     ways = [o for o in (label.osm if label else ()) if o.startswith("way/")]
-    corresponded = label is not None and label.correspondence in (
-        Correspondence.OBVIOUS,
-        Correspondence.AMBIGUOUS,
-    )
+    # A way's tags describe the City's facility only when the way is agreed to
+    # be that facility. Kerb nodes are associated by where they are instead, so
+    # curb cuts are compared whatever the way correspondence.
+    obvious = label is not None and label.correspondence is Correspondence.OBVIOUS
     since = record["municipal_since"]
     results: dict[str, Any] = {}
 
@@ -744,7 +761,7 @@ def attribute_comparisons(
                 w: _structure_tags(elements[w]["tags"]) for w in ways
             },
             "comparison": (
-                "not_comparable" if not corresponded else "same" if found else "kitchener_only"
+                "not_comparable" if not obvious else "same" if found else "kitchener_only"
             ),
         }
 
@@ -759,7 +776,7 @@ def attribute_comparisons(
             "osm_handrail_tags": handrails,
             "comparison": (
                 "not_comparable"
-                if not corresponded
+                if not obvious
                 else "kitchener_only"
                 if not handrail_values
                 else "conflict"
@@ -777,7 +794,7 @@ def attribute_comparisons(
             "osm_surface": per_way,
             "per_way": outcomes,
             "comparison": _surface_outcome(outcomes.values())
-            if corresponded and ways
+            if obvious and ways
             else "not_comparable",
             "lineage": {
                 way: lineage_of(way, "surface")
@@ -807,11 +824,7 @@ def attribute_comparisons(
             ),
             "osm_condition_tags": osm_condition,
             "comparison": (
-                "not_comparable"
-                if not corresponded
-                else "both_present"
-                if present
-                else "kitchener_only"
+                "not_comparable" if not obvious else "both_present" if present else "kitchener_only"
             ),
         }
 
@@ -828,13 +841,15 @@ def attribute_comparisons(
             if n["osm_tags"].get("highway") == "crossing" or "crossing" in n["osm_tags"]
         ]
         results["virtual_link"] = {
-            "kitchener": "a virtual street crossing: topology only, never a physical facility",
+            "kitchener": "a virtual link: topology only, never a physical facility",
+            "comparison": VIRTUAL_LINK_OUTCOMES.get(label.correspondence) if label else None,
+            "osm_correspondence": str(label.correspondence) if label else None,
+            # Context only: a crossing this near may cross another leg of the junction.
             "osm_crossing_ways_within_5m": crossing_ways,
             "osm_crossing_nodes_within_8m": crossing_nodes,
-            "osm_correspondence": str(label.correspondence) if label else None,
         }
     osm_only = _osm_only(kitchener, ways, elements)
-    if corresponded and osm_only:
+    if obvious and osm_only:
         results["osm_only"] = osm_only
     return results
 
@@ -1049,29 +1064,18 @@ def attribute_summary(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         comparisons: Counter[str] = Counter()
         lineage: Counter[str] = Counter()
         examples: dict[str, list[int]] = defaultdict(list)
-        corresponded = 0
+        correspondence: Counter[str] = Counter()
         for record in items:
             block = record["attributes"][key]
-            label = record.get("labels") or {}
-            if label.get("correspondence") in (
-                str(Correspondence.OBVIOUS),
-                str(Correspondence.AMBIGUOUS),
-            ):
-                corresponded += 1
-            outcome = block.get("comparison") or (
-                "osm_crossing_way"
-                if block.get("osm_crossing_ways_within_5m")
-                else "osm_crossing_node_only"
-                if block.get("osm_crossing_nodes_within_8m")
-                else "no_osm_crossing"
-            )
+            correspondence[(record.get("labels") or {}).get("correspondence") or "unlabelled"] += 1
+            outcome = block.get("comparison") or "unlabelled"
             comparisons[outcome] += 1
             examples[outcome].append(record["activetransportid"])
             for finding in _attribute_findings(block):
                 lineage[finding] += 1
         summary[key] = {
             "sample_records": len(items),
-            "corresponded": corresponded,
+            "correspondence": dict(sorted(correspondence.items())),
             "comparison": dict(sorted(comparisons.items())),
             "osm_value_lineage": dict(sorted(lineage.items())),
             "examples": {k: v[:6] for k, v in sorted(examples.items())},

@@ -272,6 +272,21 @@ class TestHistory:
             Lineage.UNKNOWN
         )
 
+    def test_lineage_is_traced_only_for_an_obvious_correspondence(
+        self, inputs: StudyInputs
+    ) -> None:
+        # Bug: an ambiguous label's cited ways — a road carrying a bicycle lane only
+        # as a tag — had their own lineage counted as the City record's.
+        labels = osm_fixture.labels()
+        labels["records"][4] = osm_fixture.label(
+            1003, "ambiguous_correspondence", ["way/503"], representation="road_attribute"
+        )
+
+        document = run_study(inputs, history=self._history(), labels=labels)
+
+        assert _record(document, 1003)["lineage"] is None
+        assert str(Lineage.KNOWN) not in document["summary"]["all"]["geometry_lineage"]
+
     def test_a_history_file_round_trips(self, tmp_path: Path, inputs: StudyInputs) -> None:
         history = self._history()
         contributions = [c for element in history.elements.values() for c in element.contributions]
@@ -314,6 +329,47 @@ class TestAttributeResults:
         assert results["condition"]["comparison"] == {"both_present": 1}
         # Sidewalk 1001's CONCRETE is a template default: OSM's surface is OSM's alone.
         assert 1001 in results["osm_only"]["surface"]["examples"]
+
+    def test_way_tags_are_compared_only_on_an_obvious_correspondence(
+        self, inputs: StudyInputs
+    ) -> None:
+        # Bug: a bicycle lane OSM records only as a tag on the road was compared
+        # with the road's own surface, and counted as the same.
+        labels = osm_fixture.labels()
+        labels["records"][5] = osm_fixture.label(
+            1005, "ambiguous_correspondence", ["way/505"], representation="road_attribute"
+        )
+
+        document = run_study(inputs, labels=labels)
+
+        trail = _record(document, 1005)["attributes"]
+        assert trail["surface"]["comparison"] == "not_comparable"
+        assert trail["condition"]["comparison"] == "not_comparable"
+        assert "osm_only" not in trail
+        surface = document["attribute_results"]["surface"]
+        assert surface["correspondence"] == {
+            "ambiguous_correspondence": 1,
+            "obvious_correspondence": 1,
+        }
+
+    def test_a_virtual_links_outcome_is_the_reviewers_not_proximity(
+        self, inputs: StudyInputs
+    ) -> None:
+        # Bug: a crossing of another leg of the junction, within 5 m, counted as
+        # OSM having the crossing the City's link makes.
+        labels = osm_fixture.labels()
+        labels["records"][0] = osm_fixture.label(
+            2001, "no_correspondence", [], representation="none"
+        )
+
+        document = run_study(inputs, labels=labels)
+
+        link = _record(document, 2001)["attributes"]["virtual_link"]
+        assert link["osm_crossing_ways_within_5m"] == ["way/506"]
+        assert link["comparison"] == "osm_lacks_the_connection"
+        assert document["attribute_results"]["virtual_link"]["comparison"] == {
+            "osm_lacks_the_connection": 1
+        }
 
     def test_a_record_sourced_from_street_level_imagery_is_never_compared(
         self, inputs: StudyInputs
