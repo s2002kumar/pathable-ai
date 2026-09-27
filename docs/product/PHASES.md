@@ -336,7 +336,7 @@ production OSM-derived routing database
 - A cross-source canonical model; §10 of the audit document lists the
   requirements the real source supports.
 
-### PA-GEO-04 — Kitchener ↔ OpenStreetMap geometry and lineage study _(PR #70)_
+### PA-GEO-04 — Kitchener ↔ OpenStreetMap geometry and lineage study _(merged, PR #70)_
 
 **Delivered** — [`KITCHENER_OSM_LINEAGE.md`](../architecture/KITCHENER_OSM_LINEAGE.md)
 
@@ -379,6 +379,55 @@ PA-GEO-03 is unchanged.
 - A matcher, weights, thresholds, or any accuracy figure.
 - Any Kitchener value in routing, and any change to the graph.
 - Labels by a person: both passes are one AI model's.
+
+### PA-GEO-05 — Kitchener ↔ OpenStreetMap conflation benchmark _(PR #71)_
+
+**Delivered** — [`KITCHENER_CONFLATION.md`](../architecture/KITCHENER_CONFLATION.md)
+
+| Area         | What exists                                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Candidates   | Every `highway` way within 25 m and kerb or crossing node within 10 m, sampled every metre: distance, position and angle                         |
+| Held-out set | `pathable kitchener holdout`: 193 records in 14 strata, none from the development set, drawn before tuning with a seed bound to both inputs      |
+| Labels       | Blind labels by five AI instances, a 60-record repeat by two more, frozen and committed before the matcher saw a held-out record                 |
+| Matcher      | Interpretable rules, named thresholds tuned on the development set only, matched / ambiguous / unmatched, local extents, N:M, no confidence      |
+| Benchmark    | `pathable kitchener benchmark`: baselines, ablations, per-class and per-stratum metrics, failure causes bound to the decisions by hash           |
+| Artifact     | Four GeoParquet/Parquet tables: sources, matches, the City's assertions, both sides' values unresolved; byte-reproducible, never read by routing |
+
+**What it measured**, once, on the held-out sample. The labels are AI labels, and
+none of these is a population figure.
+
+- **Overall:** 135 of 154 obvious counterparts got the exact element set. Pair
+  precision was 0.955 and recall 0.905; the best single-signal baseline managed
+  0.886 and 0.783.
+- **Surfaces:** non-default surfaces were exact on 33 of 33.
+- **Curb cuts:** kerb nodes matched on 23 of 24, with none false. The way sets
+  were exact on only 30 of 44.
+- **Abstention:** the matcher abstained on 7 records. The labellers could not
+  name the elements on 26, and the matcher matched 21 of those.
+- **Failures:** all 43 have a recorded cause. The largest are a class rule that
+  excludes crossing ways from curb cuts, stairs OSM draws as plain footways, and
+  short pieces at junctions.
+- **Full pilot:** 11,547 records in about 80 s on one laptop, with a 1 MB
+  artifact. Two runs were byte-identical.
+
+**Decision: LIMITED GO** to PA-GEO-06, reconciliation research only, for three
+classes:
+
+- non-default surfaces;
+- curb cuts through their kerb node;
+- structures OSM tags as such.
+
+Way-level curb-cut sets, short junction pieces and stairs on untagged footways
+wait for a fixed matcher and a new holdout. For those stairs, the correspondence
+rule is decided (§11 of the doc): a clear physical match to a plain footway is a
+correspondence, and the stair is an assertion only the City makes. The licensing
+gate stays closed.
+
+**Still does not exist.**
+
+- Any Kitchener value in routing, and any change to the graph.
+- Reconciliation: both sides' values are kept, and none is chosen.
+- Labels by a person, or any field check.
 
 ---
 

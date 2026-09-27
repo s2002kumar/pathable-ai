@@ -1,0 +1,2269 @@
+{
+  "kitchener_geo05_labels_version": 1,
+  "set": "holdout",
+  "pass": "primary",
+  "holdout": {
+    "file": "kitchener-geo05-holdout.geojson",
+    "sha256": "6e6be1b682c650860aec88fc147fe486de04288ba8a107bee00cb8e4480abb8f",
+    "sample_version": "pathable-pa-geo-05-holdout-v1",
+    "records": 193
+  },
+  "labelling_guide": {
+    "file": "kitchener-geo05-labelling-guide.md",
+    "sha256": "980bdadb0e2e673cb8658e21337b65b2ac42c1f82b91a521f5163266d84f53e1"
+  },
+  "blind_material": {
+    "review_page": "kitchener-geo05-holdout-review.html",
+    "review_page_sha256": "01ad3c575515576f7d15646d5debe3a86ee8c8529b9c16e6f7824e39e65c6cfc",
+    "digest_sha256": "11dbb801a113954a47359d382fa04b39f73255853c4b3358746518c6fb7aa527",
+    "contents": "For each record: its geometry and attributes, and every OSM candidate within the candidate radius with its tags and geometric measures, as a table and a map. No matcher decision, no baseline output, no other labeller's labels."
+  },
+  "labeller": "Separate AI model instances (Claude), one per pack, each labelling its pack blind: from the pack's digest and maps under the frozen guide, with no access to the matcher, its output, the development labels or another pack's labels. These are AI labels. They are not human ground truth, not expert labels and not externally validated.",
+  "frozen": "Written and committed before the matcher or any baseline was run on a holdout record. Nothing in this file is changed after the holdout evaluation.",
+  "counts": {
+    "ambiguous_correspondence": 26,
+    "no_correspondence": 13,
+    "obvious_correspondence": 154
+  },
+  "packs": [
+    {
+      "pack": "primary-1",
+      "records": 39,
+      "labeller": "AI model instance (Claude), primary pass, pack primary-1, blind to any matcher output and to other labels",
+      "records_digest_sha256": "d62ab838efc6d3c456e8e656f459a5681b44178939590f009dd502814a77e3d9",
+      "maps_sha256": "f5cd2446d442dba2dbc03c41166661deaa24fdff38f5840bd098a4fde4fc1c27",
+      "guide_sha256": "980bdadb0e2e673cb8658e21337b65b2ac42c1f82b91a521f5163266d84f53e1",
+      "labels_file_sha256": "e039e8889ef3c9c14595bd32312dbeb95a4a9f4ed11a1c8ddf819414c2f773e6",
+      "counts": {
+        "ambiguous_correspondence": 9,
+        "no_correspondence": 2,
+        "obvious_correspondence": 28
+      },
+      "reported_deviation": null
+    },
+    {
+      "pack": "primary-2",
+      "records": 39,
+      "labeller": "AI model instance (Claude), primary pass, pack primary-2, blind to any matcher output and to other labels",
+      "records_digest_sha256": "07c3164079182717102564b5b2acacbd8794bfe138dbfbd34691501ddec698dc",
+      "maps_sha256": "ae70730670b2f1fd27ddb30bc282dc9b74369c741863eb5ea5e745771e21ecff",
+      "guide_sha256": "980bdadb0e2e673cb8658e21337b65b2ac42c1f82b91a521f5163266d84f53e1",
+      "labels_file_sha256": "0be63cd89dfd5d47550a207c049b8809bbc209a233e7b12bf1a7daad0c8be1f4",
+      "counts": {
+        "ambiguous_correspondence": 6,
+        "no_correspondence": 3,
+        "obvious_correspondence": 30
+      },
+      "reported_deviation": null
+    },
+    {
+      "pack": "primary-3",
+      "records": 39,
+      "labeller": "AI model instance (Claude), primary pass, pack primary-3, blind to any matcher output and to other labels",
+      "records_digest_sha256": "a690362a2cb9c4eeeeadf2d3beab6e8f3972561edd7c523c38ceb862c7447f0a",
+      "maps_sha256": "e1e329a68abfa57be912af08be8115199d7694ddf7cde12b7131adf2bf33b5b1",
+      "guide_sha256": "980bdadb0e2e673cb8658e21337b65b2ac42c1f82b91a521f5163266d84f53e1",
+      "labels_file_sha256": "cee3668b1ada8c83c634536fdef8cdbe58536f039f84eb2a7332efea2166af93",
+      "counts": {
+        "ambiguous_correspondence": 6,
+        "no_correspondence": 3,
+        "obvious_correspondence": 30
+      },
+      "reported_deviation": "The labeller reported running one directory listing and one line count inside its own pack folder before writing its labels, beyond the instruction to run only the validator. It reported opening no file outside the pack; the pack holds no matcher output."
+    },
+    {
+      "pack": "primary-4",
+      "records": 38,
+      "labeller": "AI model instance (Claude), primary pass, pack primary-4, blind to any matcher output and to other labels",
+      "records_digest_sha256": "844c0dc1e6e923c2c2acd824994d2b2bcd2115e6ff0be98b8067405161b98b58",
+      "maps_sha256": "a92ab1e4ac3f3f1fadf28f07a58230553fa23dc3ec4b164c14b6130a3620d821",
+      "guide_sha256": "980bdadb0e2e673cb8658e21337b65b2ac42c1f82b91a521f5163266d84f53e1",
+      "labels_file_sha256": "6279be8bfa5bb9b5417c0e5ac4eb446435d46a6da714123c0936a24a005af447",
+      "counts": {
+        "ambiguous_correspondence": 4,
+        "no_correspondence": 2,
+        "obvious_correspondence": 32
+      },
+      "reported_deviation": null
+    },
+    {
+      "pack": "primary-5",
+      "records": 38,
+      "labeller": "AI model instance (Claude), primary pass, pack primary-5, blind to any matcher output and to other labels",
+      "records_digest_sha256": "d668ecbc6167e9584596ccc1904e611133837933b24e4a678fd2d8e928d9a4a1",
+      "maps_sha256": "15a67db98972f62021807670846acba7b944fc994267aef9f99d24b7ce8d7311",
+      "guide_sha256": "980bdadb0e2e673cb8658e21337b65b2ac42c1f82b91a521f5163266d84f53e1",
+      "labels_file_sha256": "bda9f6b088383ade1a5a4b57de0b7e2aac388bc1ab322df3124eb39fc035bc64",
+      "counts": {
+        "ambiguous_correspondence": 1,
+        "no_correspondence": 3,
+        "obvious_correspondence": 34
+      },
+      "reported_deviation": null
+    }
+  ],
+  "records": [
+    {
+      "activetransportid": 5113,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/194225555"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C5 way/194225555 (Iron Horse Trail cycleway/path) follows the whole 304 m record at a median 0.6 m and is about the same length; the other City records on it are junction stubs of under 5 m, so they are not counted.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 7911,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/364837704"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM has a bridge footway, C4 way/364837704 (bridge=yes, layer=1), at a median 0.23 m and almost the same length (17.5 m vs 19.3 m). C2 and C3 only touch the ends, and C4 carries no other City record, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 8577,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/738089022"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM path C8 way/738089022 (highway=path, tunnel=yes) runs through the Fischer-Hallman underpass 0.4-1.1 m from the whole record; the road and bridge sidewalks above (C4, C5, C12, C14) are different facilities. C8 runs a few metres past each end and carries no other City trail record.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 10923,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880560635"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C3 way/880560635 is a tunnel=yes sidewalk at a steady 1.0 m along the whole underpass record with a similar length (21.9 m vs 17.4 m) and no other City records. C1 way/880560627 only meets the record's end 1.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 11756,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967150044"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C9 way/967150044 runs parallel along the whole record at about 0.8 m, on the same side of Fife Ave and with about the same length. The only other City records on it are short corner stubs, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 11932,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880816974"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C5 way/880816974 is the same-side Guelph Street sidewalk, 1.1 m away along the whole record; the opposite-side sidewalk C6 is 13 m away. C5 also carries City sidewalk 11933 (146.9 m).",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 11990,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/881240035"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C19 way/881240035 runs along the whole record at about 0.9 m and has almost the same length (73.5 m vs 69.6 m). The only other City records on it are 1-2 m stubs at the ends, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 12025,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/881239981"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C12 way/881239981 follows the whole record about 1 m away on the same side of Park Street and is nearly the same length; the other City records on it are corner stubs under 2 m.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 12072,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/871786946"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C8 way/871786946 is the same-side Glasgow Street sidewalk at a median 0.9 m over 95% of the record, of similar length (87.7 m vs 92.2 m), and carries no other City records.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 12113,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/864845385"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C8 way/864845385 follows the whole record at 0.2-2.5 m on the same side of King St W and is the only sidewalk there. It also carries City sidewalks 12114 and 308977, so many_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 12231,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/374643213"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C5 way/374643213 (highway=path, 37.7 m) follows the walkway at a median 0.4 m. The Weber Street West cycleway C6, about 4 m away, is a different facility and carries the City's BMUT records.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 12425,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880560464",
+        "way/884265010"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "note": "OSM sidewalk C22 way/884265010 carries the record at about 0.8 m but stops about 7 m short of its SW end, where sidewalk C10 way/880560464 carries the last ~10 m to the corner. C22 also carries the 22 m City sidewalk 12424, so many_to_many.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 12434,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/788225157"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C10 way/788225157 follows the record at a median 0.1 m on the same side of Queen Street North; the way continues and also carries City sidewalk 12433.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 13420,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/182031734",
+        "way/869904100"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_many",
+      "note": "OSM splits the left-side David Street sidewalk in two: C31 way/869904100 covers the southern ~95 m from end 1 and C16 way/182031734 the northern ~150 m to end 2, both parallel and within 2 m. C16's only other City record is a 1.3 m junction stub; C19 is the opposite-side sidewalk 10 m away.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 13424,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/864845565"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C14 way/864845565 runs along the whole record at about 0.4 m on the same side of Queen St S. The way continues over City sidewalk 13423, so many_to_one; the driveways and crossings only touch the record.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 13622,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/146313339"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The City records stairs, but OSM has no highway=steps here, only footway C1 way/146313339 running through the stair's location 1.1 m away. The footway may stand in for the walkway including the stair, but it is not tagged as a stair, so the stair itself cannot be named with confidence.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 13661,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/146313339"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM footway C2 way/146313339 lies on the walkway at 0.3 m along its whole length. C2 is 221 m and also carries other City walkway records such as 389902, so many_to_one. C4 is the sidewalk the walkway ends at.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 14088,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971948"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C14 way/959971948 follows the record 0.8 m away along its full 530 m on the same side of Gage Avenue; the 747 m way also carries City sidewalk 426624.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 14343,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/884960141"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C14 way/884960141 is the same-side Cedar Street South sidewalk within 1.7 m along the whole record, of similar length (130 m vs 129 m); its other City records are 1.6-3.8 m junction stubs. C34 is a cycleway 5 m away on the other side of the road.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 14355,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/839910531"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C9 way/839910531 lies within 0.7 m of the whole record on the same side of King St E. It also carries City sidewalk 13364, so many_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 14867,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754932"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C23 way/962754932 is the same-side Borden Avenue North sidewalk, a median 1.2 m away and about the same length (184 m vs 186 m); the only other City record on it is a 2.2 m end stub.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 14910,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967153309"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C8 way/967153309 runs along the whole record at 0.24 m and has nearly the same length (198 m vs 193 m). The only other City record on it is a 2.3 m stub at the end, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 15360,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134382401"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C17 way/1134382401 follows the record at a median 0.2 m and is nearly the same length; only corner stubs under 3 m share the way.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 15583,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754861"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C16 way/962754861 is the same-side Pandora Avenue North sidewalk within 1.3 m along the whole record. It continues past Duke Street and also carries City sidewalk 14796 (131 m), so OSM merges two City records.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 15588,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754831"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C11 way/962754831 runs along the whole record at under 1 m on the same side of Pandora Ave N, with nearly the same length. Only a 1 m corner stub also touches it, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 15767,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/886364670",
+        "way/886364671"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "note": "The north part of the record lies on same-side sidewalk C7 way/886364670 (0.3 m). Where the sidewalk branches toward the rail crossing, the south part follows the short sidewalk C8 way/886364671 (its end is 0.01 m from C8). C7 also carries City sidewalks 384541 and 15766.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 15768,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/886364611"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C14 way/886364611 runs along the whole record at 0.74 m. It continues south over the 29.9 m City sidewalk 308954, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 15790,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/134493384"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C13 way/134493384 follows the record 0.6 m away and is the same length. Cycleway C45, 4.5 m away, is the City's separated bike lane, a different facility; the other City sidewalk records on C13 are short stubs.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 16237,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971809"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C17 way/959971809 is the same-side Belmont Avenue West sidewalk at a steady 0.2 m along the whole record (83 m vs 73 m). Its other City records are junction stubs of 1-5.5 m at the two ends.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 16279,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/965483123",
+        "way/965483124"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "note": "OSM sidewalk C12 way/965483124 carries most of the record at about 1 m. The record's east end runs about 12 m past C12's end along the continuing same-side sidewalk C11 way/965483123, which also carries City sidewalk 16278, so both are cited as many_to_many.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 16355,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961180337"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C13 way/961180337 is the same-side Weichel Street sidewalk, a median 0.7 m away along 99% of the record. It continues on to carry City sidewalk 16356 (95.3 m).",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 16379,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1025420473"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C14 way/1025420473 runs along the whole record at 0.57 m. It is 555 m long and also carries City sidewalk 311450, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 16637,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1025429438"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C10 way/1025429438 follows the record at a median 0.7 m on the north side of Overlea Drive; the 457 m way also carries City sidewalks 16636 and 16651.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 16711,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/970530577"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C7 way/970530577 is the same-side Perth Road sidewalk at a median 0.5 m over 89% of the record. The record's west ~20 m, between the C6 driveway and Burnside Avenue, has no OSM sidewalk. C7 carries only a 2.1 m junction stub besides this record.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 16853,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969450983"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C15 way/969450983 follows the whole record at about 0.2 m on the same side of Kehl St. It also carries City sidewalks 16852 and 389963, so many_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 16891,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/147000141"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "Footway C1 way/147000141 follows the whole walkway at under 1.4 m and is nearly the same length. The other City records on it are short junction stubs (4.6 m and 4.3 m) and a virtual link, which are not counted.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 16924,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967450738"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C12 way/967450738 runs along the whole record at 0.86 m. It is 269 m long and also carries City sidewalks 16923 and 16916, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 17381,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/116233513"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The only OSM element is footway C1 way/116233513. It follows the stair 0.5 m away but is tagged highway=footway, not highway=steps, and runs 80 m over several City walkway records. It may be the same walkway with the stair unmapped, so I cannot name a stair element with confidence.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 17483,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1070830237"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C11 way/1070830237 is the same-side Stonybrook Drive sidewalk at a steady 0.6-1.2 m along the whole record, of the same length (75.5 m vs 74.1 m), and carries no other City records.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 17505,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/116233514"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM footway C1 way/116233514 lies on the stair's line at 0.2 m over its whole length and also carries the adjoining City walkways 403918 and 403919, so many_to_one. OSM tags this way highway=footway rather than steps; that is an attribute difference, which these labels do not judge.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 19034,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/965483166"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C16 way/965483166 is the same-side Spadina Road West sidewalk, 1.1 m away along the whole record and about the same length (33.4 m vs 32.0 m); the other City records on it are end stubs under 5 m.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 19140,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "OSM has no sidewalk on this side of Perth Road: the road C5 way/970530575 is tagged sidewalk=no, and the nearest footway (C4 way/970530574, 5.1 m away and perpendicular) belongs to another street. No correspondence.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 19261,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/902534671"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C12 way/902534671 follows the record at a median 0.3 m over essentially the same 87 m on the same side of St. Vincent Street; only corner stubs under 3 m share it.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 45360,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/37891916"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C5 way/37891916 (Trans Canada Trail, foot and bicycle designated path) runs at a steady 1.7 m along the whole underpass under the Conestoga Parkway bridge. The 716 m way also carries the adjoining City BMUT records 52249 and 5197 and others.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 46801,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/666126727"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM path C4 way/666126727 is tagged bridge=yes and lies on the record at about 0.4 m, with the same length (22.1 m against 22.5 m). Only the 3.4 m City trail stub 7803 at the junction also touches it, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 49949,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/846776251"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "Footway C5 way/846776251 matches the MUT almost exactly (median 0.4 m, 34.3 m vs 32.8 m) and carries no other City record. C4 is a 3 m stub at the end.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 49959,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/134137778"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM steps C2 way/134137778 lie on the stair at a median 0.41 m and have nearly the same length (10.7 m vs 11.2 m). Footways C9-C12 only meet its ends, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 50028,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/85540855"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM cycleway C5 way/85540855 (bridge=yes, foot=designated) carries the MUT across the bridge at a steady 1.3 m. It runs only about 4 m past each end, over the adjoining City MUT pieces 8086 and 7318; that is within junction end slop, so I treat it as one_to_one.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 50036,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/503459341"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C4 way/503459341 is a 3.9 m Iron Horse Trail cycleway segment within 1.3 m of the whole 3.0 m record, with no other City records. The C1 bridge cycleway starts at the record's east end, and C2/C5 are 2-5 m away.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 54501,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/960971553"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "The Iron Horse Trail way C1 way/960971553 runs along the record at 0.02 m and continues over City MUT records 5110, 55508 and 55509, so many_to_one. OSM has no tunnel tag on this stretch, but this trail way is the element that carries the facility through the structure.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 61821,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/144265688"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "Footway C1 way/144265688 carries the path across the City's bridge section at a median 0.4 m, though it has no bridge tag. It also carries the adjoining City MUT records 12248, 61822 and 7912.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 62320,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1119075367"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "The curb-cut piece lies along the last metres of OSM path C2 way/1119075367, where it runs down to Huck Crescent (all within 1 m, at 10 deg). There is no kerb node within 8 m, and sidewalk C3 only touches its end. C2 also carries City MUT 46583, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 85854,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "The record is a 5.6 m dead-end trail spur running north from the west end of OSM path C1 way/1131094438. C1 only touches its south end, at a right angle (86.6 deg), and OSM draws nothing along the spur.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 88142,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/34106846"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C1 way/34106846 is the Henry Sturm Trail tunnel=yes cycleway at a steady 1.0 m through the whole underpass. The 73 m way also carries the adjoining City MUT records 7789 and 88143.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 88218,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/230975613"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM path C6 way/230975613 lies along the whole record at about 0.3 m and continues over the next City MUT, 7812, so many_to_one. Paths C1 and C4 only meet the record's west end.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 91550,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/25947685",
+        "way/194224544",
+        "way/194416965"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The end of Community Trail path C6 way/194416965 carries most of this 13.7 m connector (69% within 2 m). The record then diverges from it at about 20 degrees, crosses Henry Sturm Trail C5 way/194224544 and ends about 6 m from C6, in the C2/C3/C5 junction. Whether C6 alone represents it, or C3 way/25947685 and C5 do too, is unclear.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 96333,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/765839602"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM cycleway C5 way/765839602 (foot=designated) lies on the underpass trail at 0.04 m and covers the same stretch (29 m vs 18.6 m). It has no tunnel tag, which is an attribute and is not judged here. C3 only touches an end, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 96359,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/918858152"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM footway C3 way/918858152 (bridge=yes, surface=wood) carries the trail across the same small bridge 0.8 m away and is about the same length. The approach footways C2 and C5 only touch its ends.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 104832,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969454668"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "There is no kerb node within 8 m. The 3.0 m curb-cut piece lies along C10 way/969454668, a 2.2 m sidewalk stub (100% within 1.5 m, parallel) leading to the C11 crossing way/969454669. C11 only begins at the piece's end, and the C14/C5 ways cross the piece at right angles.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 105982,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1025420443"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C7 way/1025420443 (bridge=yes, layer=1) runs along the whole overpass record at about 0.5 m, with a similar length. The only other City record on it is an on-road bicycle lane, a different facility, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 297858,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1131094328"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C15 way/1131094328 is the same-side Falconridge Drive sidewalk, a median 0.9 m away along the whole record and about the same length (144 m vs 142 m); the other City records on it are short end stubs.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 297881,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1131094317"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C8 way/1131094317 crosses Woolwich Street at 0.73 m and has the same length (11.4 m vs 11.0 m). Its crossing node is not cited because a crossing way exists. The other City records on C8 are 3 m BMUT stubs, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 298200,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "On this east side OSM has only Woolwich Street (C2), with no sidewalk tags. The only OSM sidewalk, C4 way/1131094289, is on the opposite side about 12.7 m away.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 298472,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/931860442"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C7 way/931860442 is the unmarked crossing of Schueller Street, within 1.9 m along the whole record and of similar length (12.0 m vs 14.0 m). Its other City records are 1.3 m and 3.0 m end stubs.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 298796,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1117294611"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "A curb cut with no kerb node within 8 m. The piece lies parallel along OSM footway C10 way/1117294611 at about 0.9 m, on the link from sidewalk C11 to crossing C9. Crossing C9 overlaps only the last metre at its east end, so C10 alone is cited; it carries no other City record.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 301297,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/135654800"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C2 way/135654800 is the same-side Joseph Street sidewalk, a median 1.1 m away along 99% of the record and the same length (88 m vs 87 m); the other records on it are an end stub and a MUT that touches only its end.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 301912,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961706842"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C11 way/961706842 runs along the whole record at 0.5 m. It is 331 m long and also carries other City sidewalks such as 301913 and 16735, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 302361,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1084117307"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C4 way/1084117307 crosses Charles Best Place along the same line, at a median 0.6 m. The City piece runs about 4 m past its end onto sidewalk C3, which is within end slop.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 302375,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969454616"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C5 way/969454616 is the crossing of Pattandon Avenue at a median 0.2 m along the whole record. It extends a few metres past each end over the 3.0 m and 4.4 m City connector stubs, which are not counted.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 302620,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "The City crosswalk crosses Westmount Rd E on the north side of the Stonybrook Dr junction. The nearby OSM crossings C5 and C6 cross Stonybrook Drive, perpendicular to the record, and there is no crossing way or crossing node on Westmount Rd (C12) within 8 m.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 304548,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/146313339"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "This curb-cut piece runs 0.9 m from the last metres of walkway C3 way/146313339, between the sidewalk junction and the start of crossing C6. There is no kerb node within 2 m, and C4 and C6 only touch its ends. C3 also carries City walkways 389902, 13661 and others.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 305171,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/903234714"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C6 way/903234714 crosses Lang Crescent at 0.93 m and has the same length (12.6 m). Only 1-3 m sidewalk stubs share it, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 305439,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/902534780"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C4 way/902534780 crosses Brunswick Avenue 0.85 m from the record and is the same length; only 1 m curb stubs share it.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 305763,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880560638"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C13 way/880560638 is the marked crossing of Wellington Street North at a median 0.3 m and of the same length (20.7 m vs 21.4 m). Its other City records are 1.6-2.8 m stubs. C11 crosses a different leg and carries City crosswalk 305762.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 307254,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967150061"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C13 way/967150061 crosses Bruce St at about 0.66 m along the whole record. Only short corner curb pieces also lie on it, so one_to_one; the other crossings, C5 and C6, cross Fife Ave.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 307341,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/884265056"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C6 way/884265056 is the crossing of Mansion Street at this place, a median 0.9 m away and about the same length. The other crossings (C5, C7) cross Dunham Avenue.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 307342,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/884264922"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C5 way/884264922 crosses Dunham Avenue at 0.93 m and has nearly the same length (12.2 m vs 11.4 m). Only short sidewalk stubs share it, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 307372,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967116491"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C3 way/967116491 crosses Bingeman Street 0.55 m from the record and is the same length; only curb stubs under 1 m share it.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 307889,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967122745"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C10 way/967122745 is the unmarked crossing of Cameron Street North at a median 0.4 m, running kerb to kerb. The City crosswalk runs corner to corner, a few metres further onto the C9/C11 sidewalks, which is end slop only.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 308415,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1119075465"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C5 way/1119075465 crosses Lynnvalley Cres within 0.4 m of the whole record, with the same length, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 308447,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1120245084"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "Crossing way C4 way/1120245084 crosses Jacqueline Place at a steady 1.0 m from the record and is the same length (10.0 m vs 9.8 m). The only other City record on it is a 2.2 m curb-cut stub.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 308819,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "The record crosses Courtland Avenue East on the west side of Cedar Street, but OSM has no crossing way or crossing node over Courtland there. The nearby crossings C7 way/884960159 and C9 way/884960171 cross Cedar Street, a different road. No correspondence.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 308920,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "The City crosswalk crosses Benton Street. The nearby OSM crossings C8 and C11 cross St. George Street, a different road, and OSM has no crossing way or crossing node on Benton Street here.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 308969,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8241884424",
+        "way/1377306796"
+      ],
+      "representation": "multiple",
+      "relationship": "one_to_one",
+      "note": "Kerb node 8241884424 (kerb=lowered, 0.5 m) marks the ramp where the C5 crossing way/886364606 (City crosswalk 308966) leaves the corner. The piece lies on C11 way/1377306796, the 0.8 m sidewalk stub from that kerb to the junction with C3 sidewalk way/886364604 (City sidewalk 12130).",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 309087,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/739451229"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM signalised crossing way C7 way/739451229 crosses Victoria St S within 0.9 m of the whole record, with the same length. Only short curb pieces also lie on it, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 309613,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "OSM has only the roads here, Guelph Street C2 (sidewalk=no) and Riverbend Drive C1. There is no crossing way and no crossing node within 8 m of this crosswalk.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 311115,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/212553251"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C5 way/212553251 runs along the whole record at 0.2 m and has the same length (139.6 m vs 139.5 m). The cycle paths near its south end are a different facility, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 320714,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/1131094384",
+        "way/1131094385",
+        "way/1131094409",
+        "way/1131094410"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The 1 m curb-cut piece sits where sidewalks C4 and C8 and crossings C9 (the City's crosswalk 297702) and C5 meet at one untagged OSM junction. No kerb node lies within 8 m and the piece follows none of the ways, so I cannot say which element represents it.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 320753,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/903270487",
+        "way/903270489"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The 1.4 m corner connector cuts diagonally, at 40-50 degrees, across the untagged junction where the C4 sidewalk way/903270487 meets the C6 crossing way/903270489. There is no kerb node, so OSM collapses the piece into the junction and neither way can be named alone.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 320798,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8389113634",
+        "way/903234715"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_one",
+      "note": "The kerb=lowered node/8389113634, 0.9 m away, marks this ramp where crossing C6 begins. The piece lies along the last 2.5 m of sidewalk C7 way/903234715, which also carries City sidewalk 10443, so many_to_one. Crossing C6 only touches the piece's end.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 320934,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8386062330",
+        "way/902902656"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_one",
+      "note": "kerb=lowered node/8386062330, 0.65 m away, marks where crossing C4 leaves this corner. The piece lies along the first segment of sidewalk C6 way/902902656 (median 0.4 m), from that kerb to the corner. C6 also carries City sidewalk 10736.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 321325,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "node/8382784263",
+        "way/880560544",
+        "way/880560554"
+      ],
+      "representation": "multiple",
+      "relationship": null,
+      "note": "This 1.3 m curb cut sits at the corner where OSM sidewalks C3 way/880560544 and C5 way/880560554 meet, and it cuts across them at 50-70 deg instead of following either. The only kerb node, node/8382784263 at the start of crossing C6, is 3.3 m away, beyond the ~2 m rule, so the elements cannot be named with confidence.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 321375,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8192888268"
+      ],
+      "representation": "node",
+      "relationship": "one_to_one",
+      "note": "OSM draws no stub. Kerb node 8192888268 (kerb=lowered), 1.0 m away where crossing C5 leaves sidewalk C4, marks this ramp; C5 carries the City crosswalk 305285 that the piece touches. It is the only kerb node within 8 m.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 321387,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8192888363",
+        "way/880864072",
+        "way/880864087"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_many",
+      "note": "Kerb node 8192888363 (kerb=lowered, 0.55 m) marks this ramp. The 2.6 m piece straddles it, parallel: about 1.2 m along the last metres of the C6 sidewalk way/880864072 (also City sidewalk 11959) and 1.4 m along the first metres of the C7 crossing way/880864087 (also City crosswalk 305251).",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 321395,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/9234127378"
+      ],
+      "representation": "node",
+      "relationship": "one_to_one",
+      "note": "A 1.2 m corner piece with the kerb=lowered node/9234127378 0.1 m away, where crossing C7 (City crosswalk 305265) leaves the corner. No way follows the piece (C2, C3 and C7 meet it at 29-79 deg), so only the node is cited, one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 321397,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/9234127377"
+      ],
+      "representation": "node",
+      "relationship": "one_to_one",
+      "note": "kerb=lowered node/9234127377 lies 0.1 m from this 1.3 m piece, where crossing C8 leaves the corner. The piece sits across the corner at 30-40 degrees to C4, C7 and C8 and does not follow any of them, so only the kerb node is cited.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 321416,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8493245898",
+        "way/914284851",
+        "way/1342305363"
+      ],
+      "representation": "multiple",
+      "relationship": "one_to_many",
+      "note": "Kerb=lowered node/8493245898 at 0.79 m marks the ramp where crossing C18 way/1342305363 leaves the 1 m sidewalk stub C14 way/914284851. The piece lies along both (within 1.6 m, at ~2 deg): about 0.6 m on C14 and 1.3 m on C18. Neither way carries another City sidewalk record, so one_to_many.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 321440,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/9234127361"
+      ],
+      "representation": "node",
+      "relationship": "one_to_one",
+      "note": "OSM draws no stub. Kerb node 9234127361 (kerb=lowered) is 0.2 m away, where crossing C5 (the City's crosswalk 309004) leaves sidewalk C8, and the piece follows none of the ways.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 321452,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8534508559",
+        "way/880863983"
+      ],
+      "representation": "multiple",
+      "relationship": "one_to_one",
+      "note": "Kerb node 8534508559 (kerb=lowered, 0.04 m) marks this ramp, and the 0.8 m piece follows the first half-metre of the C7 crossing way/880863983 (0.9 degrees; only City virtual link 321454 on it). The second kerb node 8534508558, 2.0 m away, marks the C6 crossing of the other leg; the C2 sidewalk meets at 17 degrees and only touches at the kerb.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 327197,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8534508539"
+      ],
+      "representation": "node",
+      "relationship": "one_to_one",
+      "note": "A 0.7 m piece with the kerb=lowered node/8534508539 0.75 m away, where crossing C4 (City crosswalk 307462) leaves the corner. The piece is too short to follow any way, so only the node is cited, one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 327414,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "node/8534508575",
+        "node/8534508576"
+      ],
+      "representation": "node",
+      "relationship": null,
+      "note": "This 0.95 m corner piece lies between two kerb=lowered nodes: node/8534508576 (1.1 m, crossing C11 over Wellington) and node/8534508575 (1.5 m, crossing C10 over Duke). The City also has separate curb-cut stubs on each of those crossings, and the piece follows no way, so which kerb (if either) marks this ramp is unclear.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 327722,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8192888178",
+        "way/880864000"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_one",
+      "note": "Kerb=lowered node/8192888178 at 0.5 m marks the ramp. The piece lies along the last metres of sidewalk C7 way/880864000 (0.3 m, 5 deg) and ends just before the kerb, so crossing C8 only touches it. C7 also carries City sidewalk 12118, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 327828,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8881878733",
+        "way/1120784363"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_one",
+      "note": "The piece lies along the last 2-3 m of OSM sidewalk C7 way/1120784363 (0.6 m away, parallel) up to kerb node 8881878733, where crossing C5 begins. C7 also carries City sidewalk 13821.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 336908,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/886320191"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C7 way/886320191 is the same-side Victoria Street South sidewalk at a median 0.4 m along the whole 4.4 m piece. The 192 m way also carries City sidewalk 14203 (179 m), so OSM merges the records.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 336909,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/886364687"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "This 3 m sidewalk piece lies parallel to OSM sidewalk C9 way/886364687 at a steady 1.0 m, on the same side of Walnut St. C9 also carries City sidewalk 13508, so many_to_one; C7, the Victoria St sidewalk, only meets its end.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 336945,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/192528884"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "highway=steps C5 way/192528884 lies a median 0.4 m from the stairs and is about the same length (7.6 m vs 8.5 m). No other City record is on it.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 337164,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8931661839",
+        "way/965483170",
+        "way/965483171"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_many",
+      "note": "Kerb=lowered node/8931661839 at 0.71 m marks the ramp for crosswalk 301719. The 4.7 m piece straddles it, lying along the last ~2 m of sidewalk C7 way/965483170 and the first ~2.7 m of crossing C8 way/965483171 (both about 0.7 m away, at 2-3 deg). The other kerb node, at 2.26 m, marks the Spadina crossing. C7 also carries sidewalk 16222, so many_to_many.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 337294,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/965483158"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "The 5.9 m piece lies along OSM sidewalk C6 way/965483158 (0.6 m away, parallel) up to where crossing C7 begins. There is no kerb node, but the piece clearly follows C6, which also carries City sidewalk 16301.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 337358,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/1119075431",
+        "way/1119075432",
+        "way/1119075433"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The 1.1 m curb-cut piece sits at the untagged junction where the C6 crossing way/1119075431 and the C7 way/1119075432 and C8 way/1119075433 sidewalks meet. It follows none of them (39-50 degrees), and no kerb node lies within 8 m.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 337901,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "OSM has no way along this 9.8 m stair between Bridgeport Trail and Tyson Drive. Trail C2 way/1306085291 only touches its north end at right angles, and there is no steps or path way within 5 m.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 338022,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1131094417"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C7 way/1131094417 is the same-side Hawkswood Drive sidewalk, 0.1 m away along the whole record. It continues on to carry City sidewalk 23033 (119 m).",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 365026,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967450769"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "The piece coincides with the 4.7 m OSM sidewalk stub C10 way/967450769 (median 0.13 m, 3 deg) that links the Dixon Street sidewalk to crossing C9. There is no kerb node within 8 m, and no other City sidewalk record shares C10, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 384123,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1070830241"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C12 way/1070830241 follows the whole record 0.9 m away on the same side of Village Road; the 544 m way also carries City sidewalk 17445.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 384441,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/914284855"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C13 way/914284855 is a 2.6 m sidewalk stub, parallel at 0.5 m, from the C6 sidewalk to the start of the C7 signalised crossing, and it matches this 3.4 m piece. It carries no other City records.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 384550,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/892489655"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "A curb cut with no kerb node. The piece lies on OSM sidewalk C3 way/892489655 (0.06 m, parallel) just before its unmarked crossing of Halls Lane West. C3 carries several City sidewalks, including 13406 and 384548, so many_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 384562,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8295118591",
+        "way/892489712"
+      ],
+      "representation": "multiple",
+      "relationship": "one_to_one",
+      "note": "kerb=lowered node/8295118591, 0.44 m away, marks where crossing C8 begins. The piece lies along short sidewalk stub C17 way/892489712 (3.9 m, median 0.2 m) from the corner to that kerb. C8 only touches its end.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 384647,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "node/8132563711",
+        "way/190310442"
+      ],
+      "representation": "multiple",
+      "relationship": null,
+      "note": "Kerb=lowered node/8132563711 at 1.0 m probably marks this ramp, since that is where the Gaukel Street crossing C12 (which carries crosswalk 301303) leaves the corner. But the piece sits in a plaza corner where C4, C6, C12 and the Gaukel Block areas converge, and it runs at ~29 deg to sidewalk C4 way/190310442, so it is unclear whether C4 belongs in the set.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 384657,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8295118575",
+        "way/892489704"
+      ],
+      "representation": "multiple",
+      "relationship": "one_to_one",
+      "note": "OSM draws a 1.4 m sidewalk stub, C19 way/892489704, that matches the piece 0.5 m away, with kerb node 8295118575 (kerb=lowered) 0.5 m away where crossing C15 begins. No other City record shares the stub.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 384679,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/839910524"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C12 way/839910524 is the sidewalk at a median 0.3 m along the whole 6.3 m record, running from the Queen Street corner. The 21.6 m way continues east and also carries City sidewalk 403329 (8.2 m), so OSM merges the records.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 384688,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/839910526",
+        "way/884960130"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "A 3.9 m corner piece joining City sidewalks 14246 and 14245. OSM sidewalks C6 way/839910526 and C8 way/884960130 meet at this corner at an untagged junction, and the kerb nodes 2.5 m away mark the crossings. It is unclear whether the piece belongs to C6, to C8, or to both.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 384791,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/839460905"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C7 way/839460905 is the same-side Duke Street West sidewalk, a median 0.7 m away and parallel. C10 meets it perpendicular at its west end. C7 also carries City sidewalk 12273 (84.5 m).",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 384860,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/871784668"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "The 4.4 m corner piece lies along OSM sidewalk C6 way/871784668 (within 0.5 m, at 7.5 deg), and C11 and C13 only meet its ends. C6 also carries City sidewalk 14743, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 384935,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961403269"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "The 4.2 m corner piece lies along the start of OSM sidewalk C9 way/961403269 (median 0.18 m, all within 2 m). Sidewalk C6 is farther away (1.1 m) and only meets it at the corner. C9 also carries City sidewalk 19571.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 385082,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "OSM has only the Hayward Avenue road (C4 bridge way/144265692 and C16), with no sidewalk tags, 5-9 m away. The only OSM sidewalks (C8-C11) are on the opposite side, 10 m or more away.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 387799,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1120245124"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "A curb cut with no kerb node. The piece lies along OSM shared sidewalk C5 way/1120245124 (bicycle=designated) at about 0.6 m, down to where crossride C6 begins; C6 only touches its end. C5's extra 3 m is junction slop, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 387865,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134382325",
+        "way/1134382326"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "note": "There is no kerb node. The piece lies in line with, and within 1.5 m of, both the last metres of sidewalk C6 way/1134382326 and the first metres of marked crossing C5 way/1134382325; C8 only meets its corner end. C6 also carries City sidewalks 388354, 17304 and others.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 388208,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "node/8891299843",
+        "node/8891299908"
+      ],
+      "representation": "node",
+      "relationship": null,
+      "note": "This 1.8 m corner ramp touches both crosswalks, 306316 and 306317. OSM marks each crossing with its own kerb=lowered node: node/8891299908 at 1.45 m on crossing C7, and node/8891299843 at 1.96 m on crossing C6. The piece runs diagonally across the corner (35-55 deg) without following any way, so it is unclear which node or nodes mark this ramp.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 389615,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1131094367"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "The 1.9 m piece lies along the last 2 m of OSM sidewalk C4 way/1131094367 (a steady 1.1 m away, parallel) up to the untagged node where crossing C5 begins. There is no kerb node, and C4 also carries City sidewalk 297763.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 389640,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1131094314"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "There is no kerb node within 8 m. The whole 9.5 m curb-cut BMUT piece lies along C5 way/1131094314, a foot and bicycle designated path, at a median 0.16 m. C5 also carries City BMUT 23069 (388 m) and 389801. The C26/C29 stubs only touch its ends.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 389643,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1131094487"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "The piece is the roundabout splitter-island link between City crosswalks 389642 and 389644. OSM footway=traffic_island C29 way/1131094487 matches it at about 0.6 m with the same length; crossings C11 and C30 only touch its ends and there is no kerb node, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 389863,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/146313339"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The City records stairs, but OSM has no highway=steps here, only footway C1 way/146313339 at 0.3 m. The footway may stand in for the walkway including the stair, but it is not tagged as a stair, so the stair cannot be named with confidence.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 389873,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/165150232"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM footway C1 way/165150232 lies on the stair piece at 0.18 m (1.4 deg). OSM does not tag steps here, which is an attribute and is not judged. C1 also carries City walkways 17371 and 389874, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 390013,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754946"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C11 way/962754946 follows the crosswalk 0.66 m away between its two kerb nodes and is nearly the same length. The collinear sidewalks C10 and C12 only touch its ends.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 391642,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/165064697"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C5 way/165064697 is a highway=steps way at a median 0.6 m with a similar length (4.9 m vs 5.6 m). The adjoining C4/C9 footways only meet its ends, and C2 is a different stair 7.6 m away.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 391945,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/35927491",
+        "way/93948462"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_many",
+      "note": "OSM steps C4 way/93948462 carry the top 20 m of the stair at under 1 m. The City stair continues about 7 m further down, along footway C1 way/35927491 below the foot of the OSM steps, so both ways are cited, one_to_many. The footway tagging on C1 is an attribute difference, which is not judged here.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 391947,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/35927492"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C2 way/35927492 (footway, bridge=yes, layer=1) carries the walkway across the overpass, 1.3 m away and the same length (30.7 m vs 31.7 m). The steps C4 and C5 carry the adjoining City walkway records at each end.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 392047,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1025420442"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM bridge sidewalk C8 way/1025420442 (bridge=yes) carries the overpass at a median 0.38 m with nearly the same length (56 m vs 59 m). The record runs about 7 m past its NW end onto approach sidewalk C7, which is treated as end slop. C8 otherwise carries only a bike-lane record, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 392063,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880560520",
+        "way/880560521",
+        "way/880560522"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "note": "OSM carries this sidewalk over the Margaret Avenue overpass on bridge sidewalk C9 way/880560522 (18 m, about 1 m away). The City record runs 6-10 m further at each end along sidewalks C7 and C8, which also carry City sidewalks 392062 and 392059, so I cite all three ways.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 392064,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969450897"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C10 way/969450897 is the bridge=yes sidewalk on the same side of the Stirling Avenue South overpass at a median 0.9 m, of the same length (39.4 m vs 42.3 m). Its other City record is a bicycle lane, a different facility. C8/C9 only meet the ends.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 392114,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/884264991"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C14 way/884264991 runs along the whole record at about 1 m, on the same side of Frederick St and with a similar length. Only a 1.7 m corner stub also touches it, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 392115,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/884264993"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "At this place and side, OSM has only C12 way/884264993, tagged highway=construction, construction=footway, demolished:bridge=yes and closed until 2026-11. This is a footway under construction on a demolished bridge, not a current sidewalk, so whether it is the same facility is uncertain.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 392233,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/886364661"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C2 way/886364661 runs through the underpass at 0.46 m. It has no tunnel tag, which is an attribute and is not judged. It also carries City sidewalks 392231 and 392232, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 392435,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8881878514",
+        "way/959971902"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_one",
+      "note": "The piece lies along the first 2 m of OSM sidewalk C9 way/959971902 (0.6 m away, parallel) to kerb node 8881878514, where crossing C7 (the City's crosswalk 402677) begins. The kerb node at 2.8 m belongs to the other crossing, C6. C9 also carries City sidewalk 15698.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 392775,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1062816631"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C12 way/1062816631, a foot and bicycle designated path, lies within 0.5 m of the whole 3.3 m piece. Its other City records are 1.5 m and 1.8 m end stubs, and it extends only junction-width slop beyond the record.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 392778,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/884264962"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM sidewalk C15 way/884264962 (bridge=yes) runs along the whole overpass record at about 0.8 m, with the same length. It carries no other City record, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 392866,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8931661879",
+        "way/965483182"
+      ],
+      "representation": "multiple",
+      "relationship": "one_to_one",
+      "note": "kerb=lowered node/8931661879, 1.2 m away, marks where crossing C5 begins. The piece lies along sidewalk stub C4 way/965483182 (3.1 m, median 1.05 m) from the corner to that kerb. C3 and C7 meet it perpendicular at the corner.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 393600,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971990"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM crossing way C7 way/959971990 crosses Belmont Avenue West at 0.45 m with the same length (17.2 m vs 17.7 m). Crossing nodes are not cited because the way exists. Only a 3.7 m stub shares it, so one_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 393632,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8382784297",
+        "way/902534631"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_one",
+      "note": "The piece lies exactly on the last 2.7 m of OSM sidewalk C3 way/902534631 (0.03 m away) to kerb node 8382784297 (kerb=flush, value not judged), where crossing C5 begins. C3 also carries City sidewalk 393629.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 393824,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "The 3.2 m crosswalk crosses Queen's Boulevard (C2 way/468736245), but OSM has no crossing way and no highway=crossing node within 8 m. The nearest paths and sidewalks are 9 m or more away.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 395205,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/33869047"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM footway C1 way/33869047 lies on the 3.9 m stair at 0.4 m and continues over City walkways 364661 and 395204, so many_to_one. OSM tags no steps here; that attribute difference is not judged.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 395207,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/37692290"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The City records stairs, but OSM has no highway=steps here, only footway C1 way/37692290 lying exactly on the record (0.01 m). The footway may stand in for the walkway including the stair, but it is not tagged as a stair, so the stair cannot be named with confidence.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 395263,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/38742662"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM cycleway C2 way/38742662 (Walter Bean Grand River Trail, foot=designated) lies on the trail at 0.45 m. It also carries City MUTs 46848 and 395262, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 396550,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/186818644"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM steps C2 way/186818644 (highway=steps) follow the stair at a median 0.36 m. They run about 10 m further north than the City's 7.4 m stair, but records.txt lists no other City record on C2, so I treat it as one_to_one.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 398508,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8609156219",
+        "way/928038457"
+      ],
+      "representation": "multiple",
+      "relationship": "one_to_one",
+      "note": "Kerb node 8609156219 (kerb=lowered, 0.27 m) marks the ramp where the C7 crossing way/928038453 (City crossride 305778) begins. The 1.5 m piece lies on C10 way/928038457, the 2.0 m path stub from that kerb, with both ends within 0.3 m.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 401935,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1025420587"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "OSM marked crossing C4 way/1025420587 crosses Forest Hill Dr within 0.7-1.8 m of the whole record, with a similar length, so one_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 401970,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961221689"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "Signalised crossing way C6 way/961221689 crosses both Highland Road West carriageways at a median 0.6 m from the record and is the same length (25.5 m vs 26.7 m). The only other City record on it is a 3 m stub.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 402763,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8382784315",
+        "way/902534638"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_one",
+      "note": "Kerb=lowered node/8382784315 at 0.46 m marks the ramp where crossing C4 starts. The piece lies along the last ~4 m of sidewalk C3 way/902534638 (0.6 m, 4 deg), and C4 only touches its end. C3 also carries sidewalk 10844, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 402806,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/1131094358",
+        "way/1131094359",
+        "way/1131094399"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The 1.6 m piece sits diagonally across the corner where sidewalks C4 and C7 and crossing C5 meet at one untagged junction. There is no kerb node, and at about 45 deg the piece follows none of them.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 403231,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1456801639",
+        "way/1456801653"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_many",
+      "note": "OSM splits the bridge path over the Conestoga Parkway into C27 way/1456801653 (bridge=yes cycleway, 53 m, median 0.1 m) and C19 way/1456801639 (layer=1 cycleway, 5.6 m, parallel) at the south end. Together they cover the 61.5 m record. C14/C15 only touch the ends and the C18 steps are perpendicular.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 403232,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1414135198",
+        "way/1456801643",
+        "way/1456801644"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_many",
+      "note": "OSM splits the stair into three highway=steps ways, C6 way/1414135198, C8 way/1456801643 and C9 way/1456801644. Together they follow the record's L shape at 1-2 m. Footway C10 and cycleways C5 and C7 only touch its ends, so one_to_many.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 403497,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/962754948",
+        "way/962754950"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "This 4.2 m corner piece lies within 2 m of two converging sidewalks at similar angles: C4 way/962754948 (median 0.6 m) and C5 way/962754950 (median 1.25 m), between two kerb nodes. Either or both could carry it.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 403502,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8905697089",
+        "way/961403291"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_one",
+      "note": "Kerb=lowered node/8905697089 at 1.25 m marks the ramp where crossing C10 begins. The 7 m piece lies along sidewalk C5 way/961403291 at a steady 0.75 m and ends about 1 m before the kerb. C5 also carries sidewalk 15564, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 403882,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/965483393"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The only OSM element is footway C5 way/965483393. It follows the stair 0.9 m away but is tagged highway=footway, not highway=steps, and carries several City walkway and MUT records. The stair may simply be unmapped, so I cannot name an element for it with confidence.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 403892,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/116233513"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "C1 way/116233513 is a plain highway=footway at 0.2 m along the stair and carries the adjoining City walkway records. OSM has no highway=steps way here, so it is unclear whether OSM represents the stair itself or only the walkway through it.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 403925,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/160068959"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM footway C1 way/160068959 lies along the whole stair at about 0.7 m and continues over City walkway 336321, so many_to_one. OSM tags no steps here; that attribute difference is not judged.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 403943,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/149299307"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "highway=steps C3 way/149299307 lies a median 0.1 m from the stairs. The record's NW part continues onto footway C5, which is not steps, so it is not cited. The other flight, C6, lies beyond the record's end at 33 degrees.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 404226,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1119234646",
+        "way/1119234647"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "note": "No kerb node is mapped, but the piece follows the line where sidewalk C11 way/1119234647 (0.24 m, 0 deg) runs into unmarked crossing C10 way/1119234646: about 2.3 m lies along C11 and 1.3 m along C10. C11 also carries City sidewalks 16565 and 389176, so many_to_many.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 404420,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "node/9423598998",
+        "node/9423598999"
+      ],
+      "representation": "node",
+      "relationship": null,
+      "note": "Two kerb nodes lie within about 2 m of this 1 m corner piece: 9423598999 at 0.3 m (crossing C8 over Peter Street) and 9423598998 at 2.0 m (crossing C7 over St. George Street). The piece connects to both the City crosswalk 308930 on C7 and the virtual link on C8, so I cannot tell which kerb marks this ramp.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 404424,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8229551846"
+      ],
+      "representation": "node",
+      "relationship": "one_to_one",
+      "note": "Kerb node 8229551846 (kerb=lowered, 1.2 m) marks this ramp where the C7 crossing way/884960177 (City crosswalk 308931) leaves the corner, and no other kerb node lies within 8 m. The piece cuts the C6/C9 sidewalk corner at 49-72 degrees and follows no way, so only the node is cited.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 404714,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1027630858"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "A curb cut with no kerb node. The piece lies parallel along the last 3 m of OSM sidewalk C5 way/1027630858, at 1.15 m, up to where crossing C6 begins; C6 and C7 only touch its ends. C5 also carries City sidewalk 13895, so many_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 405965,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/1027542367",
+        "way/1027542369"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "This 4.1 m corner piece, between crossings C8 and C10, lies within 2 m of both sidewalks as they converge at the corner: C9 way/1027542367 (median 0.65 m) and C11 way/1027542369 (median 0.4 m). Neither is clearly the one that carries it.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 406062,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/970530612"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C15 way/970530612 runs along the whole record at 0.78 m. Cycleway C23, 2.4 m away, is the separate cycle track and a different facility. C15 also carries City sidewalks 16774, 406063 and 406064, so many_to_one.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 411338,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1258482291"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "The piece lies along OSM cycleway C8 way/1258482291 (foot=designated, segregated=no) 0.26 m away, from the end of crossride C5 toward the junction. There is no kerb node, and C8's only other City record is the 3.3 m junction stub 411340.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 411508,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/892489678"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "C13 way/892489678 is the same-side sidewalk, parallel at a steady 1.4 m along the whole 2.7 m piece. The 119 m way also carries City sidewalk 15615 (113 m). C12 crosses the piece's end at 65 degrees.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 411524,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "node/8947764550",
+        "way/967150087",
+        "way/967150088"
+      ],
+      "representation": "multiple",
+      "relationship": "many_to_many",
+      "note": "The kerb=lowered node/8947764550, 0.8 m away, marks this ramp where crossing C8 (City crosswalk 307293) begins. The piece straddles that node: the last 1.7 m of sidewalk C7 way/967150087 and the first 2.7 m of crossing C8 way/967150088. The kerb node at 1.2 m on C4/C11 marks the other crossing. C7 also carries City sidewalk 12457, so many_to_many.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 411866,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/902534890"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "Sidewalk stub C9 way/902534890 (3.0 m) matches this 3.7 m piece at a median 0.4 m and carries only a virtual link. Crossing C10 begins at its end, and sidewalk C5 meets it perpendicular.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 412082,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "The 4.6 m piece sits in the Highland Road West median between two City virtual links. OSM has no footway, crossing way or crossing node within 5 m, only the two carriageways C5 and C6. No correspondence.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 412473,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "node/8893238434",
+        "way/961403297",
+        "way/961403308"
+      ],
+      "representation": "multiple",
+      "relationship": null,
+      "note": "No kerb node lies within 2 m. The nearest, 8893238434, is 3.2 m away at the end of crossing C7 over Ottawa Street South, which runs about 3.8 m north of the piece, and sidewalk C14 passes through the piece at a right angle, so it is unclear how OSM represents this ramp.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 414622,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/867944793",
+        "way/867944819"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "The 3.0 m corner piece links City sidewalks 13440 and 13441. OSM joins the matching sidewalks C10 way/867944793 and C11 way/867944819 directly at one untagged junction, and the piece runs at 31 degrees to both. The piece is not a curb cut, so the nearby kerb nodes cannot be cited, and neither way can be named alone.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 417525,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134382390"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "A curb cut with no kerb node. The piece lies parallel along the last 3 m of OSM sidewalk C3 way/1134382390, at 0.64 m, up to where crossing C4 begins; C4 and C7 only touch its ends. C3 also carries City sidewalk 17069, so many_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 417608,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/1120245093",
+        "way/1120245094",
+        "way/1120245126",
+        "way/1120245129"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "This 1.4 m curb-cut piece sits where sidewalks C13 and C4 and crossings C10 and C5 meet at an untagged junction. There is no kerb node within 8 m, and the piece lies at 38-51 degrees to every way.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 417645,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/1117294645",
+        "way/1117294647",
+        "way/1119075376",
+        "way/1119075377"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "This 1 m curb cut sits at the untagged junction where crossing C6 way/1117294645 meets sidewalks C7 way/1117294647 and C10 way/1119075376, with crossing C11 2.2 m away. It lies at 30-65 deg to all of them and there is no kerb node within 8 m, so it is ambiguous, as in worked example 3.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 418303,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1119088130"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM sidewalk C8 way/1119088130 follows the record 1.0 m away along its whole length on the same side of Wexford Crescent; the 472 m way also carries City sidewalk 401063.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 418326,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1119075395",
+        "way/1119075396"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "note": "There is no kerb node within 8 m. The 1.8 m curb-cut piece lies parallel within 0.6 m along the last metres of the C3 sidewalk way/1119075395 (also City sidewalk 16477) and the first metres of the collinear C4 crossing way/1119075396 (also City crosswalk 300177).",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 418824,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/33869049"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "OSM highway=steps C2 way/33869049 lies on the 2.7 m stair at 0.5 m. The steps way also carries the adjoining City walkways 17275, 418823 and 418825, so many_to_one.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 419225,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1120232960"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "There is no kerb node, but the piece lies parallel to the last metres of sidewalk C4 way/1120232960, a steady 0.87 m away, from the junction with C3 to the start of crossing C5; C3 and C5 only touch its ends. C4 also carries City sidewalk 14365.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 419322,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/34107056",
+        "way/34107057"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "OSM draws footway C3 way/34107057 over this 2 m stair at 0.84 m, but tags steps only 7.5-9.4 m further along the same path (C2 way/34107056, step_count=3, handrail=yes). C2 may be the same stair drawn in a different place, or another stair, so the element cannot be named with confidence.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 424425,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1004592286"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "The piece lies along the first 2.8 m of OSM crossing C9 way/1004592286 (0.2 m away, parallel). There is no kerb node, and the 1.2 m sidewalk stub C10 only touches its end. C9 also carries the City crosswalk 301669.",
+      "pack": "primary-3"
+    },
+    {
+      "activetransportid": 426744,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/965483119"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "note": "C10 way/965483119 is the marked crossing of this Queen's Boulevard carriageway at a median 0.6 m, of the same length (12.2 m vs 12.7 m). Its other City records are 1.8 m and 3.9 m stubs. C8 crosses the other carriageway and carries City crosswalk 426745.",
+      "pack": "primary-4"
+    },
+    {
+      "activetransportid": 426765,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "No OSM way lies along this curving 52 m walkway. The only candidate is Borden Parkway road C1, 13 m or more away.",
+      "pack": "primary-5"
+    },
+    {
+      "activetransportid": 427302,
+      "correspondence": "no_correspondence",
+      "osm": [],
+      "representation": "none",
+      "relationship": null,
+      "note": "OSM has only the Burn Place turning-loop road C2, tagged sidewalk=no, 1 m away. No sidewalk way or node is within 5 m of this 0.9 m sidewalk piece, and a road alone is not a correspondence.",
+      "pack": "primary-1"
+    },
+    {
+      "activetransportid": 427470,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/177586088",
+        "way/1496310684"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "note": "There is no kerb node and no way the piece lies along. It runs from BMUT path C6 way/1496310684 (touching its end at 89 deg) toward the Ottawa Street South crossride 427469, which OSM does not map, and footway C1 way/177586088 ends about 2 m away. This is ambiguous under the curb-cut rule, and OSM may not represent this ramp at all.",
+      "pack": "primary-2"
+    },
+    {
+      "activetransportid": 428402,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134382454"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "note": "The piece lies exactly on the first 3.7 m of OSM sidewalk C5 way/1134382454 (0.03 m away), between the untagged junction with crossing C4 and the junction with sidewalk C7. There is no kerb node, and C5 also carries City sidewalk 14655.",
+      "pack": "primary-3"
+    }
+  ]
+}

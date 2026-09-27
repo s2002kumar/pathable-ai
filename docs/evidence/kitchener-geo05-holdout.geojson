@@ -1,0 +1,8943 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "purpose": "PA-GEO-05 held-out conflation benchmark: records the matcher's design never saw",
+  "sample_version": "pathable-pa-geo-05-holdout-v1",
+  "snapshot_id": "513094727cc139dd29980e2c281570f9d5183c1d0ca8171754ece0cbd7281b38",
+  "osm_extract_sha256": "8391f097fbc77af4f1b69961e8e4de8974b9eeeb715be12b693e849dc0ae2631",
+  "seed": "pathable-pa-geo-05-holdout-v1:513094727cc139dd29980e2c281570f9d5183c1d0ca8171754ece0cbd7281b38:8391f097fbc77af4f1b69961e8e4de8974b9eeeb715be12b693e849dc0ae2631",
+  "method": "Eligible records minus PA-GEO-04's development records, one stratum each by first matching rule, a fixed number per stratum (or all of a smaller one), within a stratum in ascending sha256(seed:ACTIVETRANSPORTID).",
+  "size_rationale": "About 200 records. Each evidence class gets strata of its own large enough to show failures, with room for both matches and hard negatives: 56 curb cuts across two strata (with and without an OSM kerb node nearby), 20 stairs, 20 other structures and 28 non-default surfaces. Nine further strata of 6 to 10 records put the known geometric failure modes in front of the matcher. The ceiling is review cost: every record is labelled blind, and a subset twice. The size carries no claim of statistical certainty.",
+  "eligibility": {
+   "physical_class": "physical_active",
+   "network_roles": [
+    "pedestrian_way",
+    "pedestrian_crossing"
+   ],
+   "excludes": "records sourced from street-level imagery; records not wholly inside the study box shrunk by 50 m",
+   "eligible_records": 11547,
+   "excluded": {
+    "not_a_physical_pedestrian_way_or_crossing": 7458,
+    "outside_the_shrunk_study_area": 15047
+   }
+  },
+  "candidate_contract": {
+   "version": "kitchener-geo05-candidates-v1",
+   "way_radius_m": 25.0,
+   "node_radius_m": 10.0,
+   "node_kinds": [
+    "kerb (barrier=kerb or kerb=*)",
+    "crossing (highway=crossing)"
+   ],
+   "sample_spacing_m": 1.0
+  },
+  "development_set": {
+   "file": "kitchener-geo04-sample.geojson",
+   "sha256": "5c8f5e3548a4f7cf31fd23e1ab7634d8ce9118b71c30ae249a08ca3bef0b4d2c",
+   "records": 80
+  },
+  "eligible_records": 11547,
+  "development_records_excluded": 58,
+  "pool": 11489,
+  "thresholds": {
+   "dense_city_neighbours": 8,
+   "heavy_candidate_ways": 23
+  },
+  "strata": {
+   "stairs": {
+    "rule": "FEATURE_TYPE STAIRS",
+    "target": 20,
+    "population": 37,
+    "sampled": 20
+   },
+   "other_structure": {
+    "rule": "bridges, overpasses, underpasses and boardwalks",
+    "target": 20,
+    "population": 86,
+    "sampled": 20
+   },
+   "curb_cut_osm_kerb_near": {
+    "rule": "CURBCUT = Y with an OSM kerb node within 3 m",
+    "target": 28,
+    "population": 1855,
+    "sampled": 28
+   },
+   "curb_cut_no_osm_kerb": {
+    "rule": "CURBCUT = Y with no OSM kerb node within 3 m",
+    "target": 28,
+    "population": 1327,
+    "sampled": 28
+   },
+   "non_default_surface": {
+    "rule": "a non-default SURFACE_MATERIAL",
+    "target": 28,
+    "population": 3303,
+    "sampled": 28
+   },
+   "no_osm_pedestrian_way": {
+    "rule": "no OSM footway, path, crossing or steps within 5 m of any point",
+    "target": 10,
+    "population": 7,
+    "sampled": 7
+   },
+   "offset_geometry": {
+    "rule": "the best OSM pedestrian way's worst point 3-20 m away",
+    "target": 10,
+    "population": 230,
+    "sampled": 10
+   },
+   "parallel_ways": {
+    "rule": "two or more OSM pedestrian ways running beside the record",
+    "target": 10,
+    "population": 245,
+    "sampled": 10
+   },
+   "short_piece": {
+    "rule": "shorter than 5 m, not a curb cut",
+    "target": 8,
+    "population": 136,
+    "sampled": 8
+   },
+   "osm_split_or_long": {
+    "rule": "two or more OSM ways each nearest for a fifth of it, 150 m or longer, or multi-part",
+    "target": 10,
+    "population": 1135,
+    "sampled": 10
+   },
+   "dense_intersection": {
+    "rule": "among the top tenth by City records within 10 m",
+    "target": 8,
+    "population": 511,
+    "sampled": 8
+   },
+   "candidate_heavy": {
+    "rule": "among the top tenth by candidate OSM ways",
+    "target": 6,
+    "population": 300,
+    "sampled": 6
+   },
+   "crossing": {
+    "rule": "crosswalks and trail crossings",
+    "target": 8,
+    "population": 4,
+    "sampled": 4
+   },
+   "straightforward": {
+    "rule": "every other eligible record",
+    "target": 6,
+    "population": 2313,
+    "sampled": 6
+   }
+  },
+  "coordinates": "OGC:CRS84, rounded to 7 decimal places (about 1 cm) for inspection",
+  "attribution": "Contains information licensed under the Open Government Licence - The Corporation of the City of Kitchener. Signals read OpenStreetMap: © OpenStreetMap contributors, ODbL 1.0."
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "id": 336945,
+   "properties": {
+    "activetransportid": 336945,
+    "stratum": "stairs",
+    "rank_in_stratum": 1,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 8.48,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.68,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.482983,
+      43.4457953
+     ],
+     [
+      -80.4829236,
+      43.4458581
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 337901,
+   "properties": {
+    "activetransportid": 337901,
+    "stratum": "stairs",
+    "rank_in_stratum": 2,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 9.8,
+    "signals": {
+     "candidate_ways": 3,
+     "pedestrian_within_5m_share": 0.545,
+     "best_worst_point_m": 9.82,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4781067,
+      43.483021
+     ],
+     [
+      -80.4780754,
+      43.4829358
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 17381,
+   "properties": {
+    "activetransportid": 17381,
+    "stratum": "stairs",
+    "rank_in_stratum": 3,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 5.33,
+    "signals": {
+     "candidate_ways": 3,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.55,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5059518,
+      43.4314051
+     ],
+     [
+      -80.5059226,
+      43.4314481
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 418824,
+   "properties": {
+    "activetransportid": 418824,
+    "stratum": "stairs",
+    "rank_in_stratum": 4,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 2.68,
+    "signals": {
+     "candidate_ways": 3,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.53,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5423367,
+      43.4289837
+     ],
+     [
+      -80.542345,
+      43.4289603
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 17505,
+   "properties": {
+    "activetransportid": 17505,
+    "stratum": "stairs",
+    "rank_in_stratum": 5,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 37.69,
+    "signals": {
+     "candidate_ways": 2,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.25,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5007561,
+      43.4293912
+     ],
+     [
+      -80.5007024,
+      43.4290541
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 395207,
+   "properties": {
+    "activetransportid": 395207,
+    "stratum": "stairs",
+    "rank_in_stratum": 6,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 4.79,
+    "signals": {
+     "candidate_ways": 2,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.03,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5411296,
+      43.4288797
+     ],
+     [
+      -80.5411234,
+      43.4288368
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 403232,
+   "properties": {
+    "activetransportid": 403232,
+    "stratum": "stairs",
+    "rank_in_stratum": 7,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 15.22,
+    "signals": {
+     "candidate_ways": 13,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 7.75,
+     "parallel_ways": 3,
+     "splitting_ways": 3,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4918353,
+      43.426025
+     ],
+     [
+      -80.4918562,
+      43.4260796
+     ],
+     [
+      -80.4917503,
+      43.4261017
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 419322,
+   "properties": {
+    "activetransportid": 419322,
+    "stratum": "stairs",
+    "rank_in_stratum": 8,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 1.96,
+    "signals": {
+     "candidate_ways": 7,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.86,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5180631,
+      43.4238181
+     ],
+     [
+      -80.5180444,
+      43.4238293
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 391642,
+   "properties": {
+    "activetransportid": 391642,
+    "stratum": "stairs",
+    "rank_in_stratum": 9,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 5.62,
+    "signals": {
+     "candidate_ways": 10,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.98,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4994761,
+      43.4457264
+     ],
+     [
+      -80.4994213,
+      43.4456953
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 403882,
+   "properties": {
+    "activetransportid": 403882,
+    "stratum": "stairs",
+    "rank_in_stratum": 10,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 11.54,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.91,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.483632,
+      43.4445734
+     ],
+     [
+      -80.4835234,
+      43.4445059
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 389873,
+   "properties": {
+    "activetransportid": 389873,
+    "stratum": "stairs",
+    "rank_in_stratum": 11,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 5.4,
+    "signals": {
+     "candidate_ways": 2,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.25,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5188201,
+      43.4281358
+     ],
+     [
+      -80.5187682,
+      43.4281663
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 49959,
+   "properties": {
+    "activetransportid": 49959,
+    "stratum": "stairs",
+    "rank_in_stratum": 12,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 11.18,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.09,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4994154,
+      43.4456238
+     ],
+     [
+      -80.4993749,
+      43.4456084
+     ],
+     [
+      -80.4993608,
+      43.4455797
+     ],
+     [
+      -80.4993191,
+      43.4455586
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 403892,
+   "properties": {
+    "activetransportid": 403892,
+    "stratum": "stairs",
+    "rank_in_stratum": 13,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 11.53,
+    "signals": {
+     "candidate_ways": 1,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.27,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5060785,
+      43.431219
+     ],
+     [
+      -80.5060152,
+      43.431312
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 395205,
+   "properties": {
+    "activetransportid": 395205,
+    "stratum": "stairs",
+    "rank_in_stratum": 14,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 3.89,
+    "signals": {
+     "candidate_ways": 2,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.4,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5411128,
+      43.4280107
+     ],
+     [
+      -80.5411131,
+      43.4279757
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 13622,
+   "properties": {
+    "activetransportid": 13622,
+    "stratum": "stairs",
+    "rank_in_stratum": 15,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 5.37,
+    "signals": {
+     "candidate_ways": 1,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.13,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5201624,
+      43.4489752
+     ],
+     [
+      -80.5202222,
+      43.4489541
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 403925,
+   "properties": {
+    "activetransportid": 403925,
+    "stratum": "stairs",
+    "rank_in_stratum": 16,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 10.27,
+    "signals": {
+     "candidate_ways": 1,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.75,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5331474,
+      43.425038
+     ],
+     [
+      -80.5332033,
+      43.425121
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 391945,
+   "properties": {
+    "activetransportid": 391945,
+    "stratum": "stairs",
+    "rank_in_stratum": 17,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 26.26,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 7.21,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 1,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4652892,
+      43.4648673
+     ],
+     [
+      -80.4650881,
+      43.4646816
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 403943,
+   "properties": {
+    "activetransportid": 403943,
+    "stratum": "stairs",
+    "rank_in_stratum": 18,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 6.99,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 3.06,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4883546,
+      43.4646154
+     ],
+     [
+      -80.4884275,
+      43.4646493
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 396550,
+   "properties": {
+    "activetransportid": 396550,
+    "stratum": "stairs",
+    "rank_in_stratum": 19,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 7.39,
+    "signals": {
+     "candidate_ways": 3,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.02,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.503907,
+      43.4288932
+     ],
+     [
+      -80.5039057,
+      43.4288897
+     ],
+     [
+      -80.5038825,
+      43.4288291
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 389863,
+   "properties": {
+    "activetransportid": 389863,
+    "stratum": "stairs",
+    "rank_in_stratum": 20,
+    "classes": [
+     "structure"
+    ],
+    "family": "stairs",
+    "length_m": 3.92,
+    "signals": {
+     "candidate_ways": 2,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.3,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 1,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5215726,
+      43.4484609
+     ],
+     [
+      -80.521557,
+      43.4484378
+     ],
+     [
+      -80.5215512,
+      43.4484292
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 105982,
+   "properties": {
+    "activetransportid": 105982,
+    "stratum": "other_structure",
+    "rank_in_stratum": 1,
+    "classes": [
+     "structure"
+    ],
+    "family": "trail",
+    "length_m": 50.19,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.59,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.538146,
+      43.4405655
+     ],
+     [
+      -80.5386505,
+      43.4408284
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 96359,
+   "properties": {
+    "activetransportid": 96359,
+    "stratum": "other_structure",
+    "rank_in_stratum": 2,
+    "classes": [
+     "structure",
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 8.44,
+    "signals": {
+     "candidate_ways": 5,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.96,
+     "parallel_ways": 3,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4647246,
+      43.4385669
+     ],
+     [
+      -80.4647232,
+      43.4386429
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 391947,
+   "properties": {
+    "activetransportid": 391947,
+    "stratum": "other_structure",
+    "rank_in_stratum": 3,
+    "classes": [
+     "structure"
+    ],
+    "family": "walkway",
+    "length_m": 31.66,
+    "signals": {
+     "candidate_ways": 5,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.71,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.465532,
+      43.4650908
+     ],
+     [
+      -80.4652892,
+      43.4648673
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392115,
+   "properties": {
+    "activetransportid": 392115,
+    "stratum": "other_structure",
+    "rank_in_stratum": 4,
+    "classes": [
+     "structure"
+    ],
+    "family": "sidewalk",
+    "length_m": 82.6,
+    "signals": {
+     "candidate_ways": 18,
+     "pedestrian_within_5m_share": 0.244,
+     "best_worst_point_m": 73.24,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4709251,
+      43.4590687
+     ],
+     [
+      -80.4709302,
+      43.4590668
+     ],
+     [
+      -80.4714207,
+      43.4589088
+     ],
+     [
+      -80.4718,
+      43.4587864
+     ],
+     [
+      -80.4718606,
+      43.4587712
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 46801,
+   "properties": {
+    "activetransportid": 46801,
+    "stratum": "other_structure",
+    "rank_in_stratum": 5,
+    "classes": [
+     "structure",
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 22.51,
+    "signals": {
+     "candidate_ways": 5,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.71,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5289135,
+      43.4393088
+     ],
+     [
+      -80.5288268,
+      43.4391162
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 403231,
+   "properties": {
+    "activetransportid": 403231,
+    "stratum": "other_structure",
+    "rank_in_stratum": 6,
+    "classes": [
+     "structure"
+    ],
+    "family": "trail",
+    "length_m": 61.53,
+    "signals": {
+     "candidate_ways": 27,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 6.69,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4917503,
+      43.4261017
+     ],
+     [
+      -80.4919544,
+      43.4266354
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392063,
+   "properties": {
+    "activetransportid": 392063,
+    "stratum": "other_structure",
+    "rank_in_stratum": 7,
+    "classes": [
+     "structure"
+    ],
+    "family": "sidewalk",
+    "length_m": 34.06,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 9.54,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4894354,
+      43.4571737
+     ],
+     [
+      -80.4892636,
+      43.4568937
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 50028,
+   "properties": {
+    "activetransportid": 50028,
+    "stratum": "other_structure",
+    "rank_in_stratum": 8,
+    "classes": [
+     "structure"
+    ],
+    "family": "trail",
+    "length_m": 17.45,
+    "signals": {
+     "candidate_ways": 17,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.37,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.493649,
+      43.4436117
+     ],
+     [
+      -80.4934547,
+      43.44368
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392233,
+   "properties": {
+    "activetransportid": 392233,
+    "stratum": "other_structure",
+    "rank_in_stratum": 9,
+    "classes": [
+     "structure"
+    ],
+    "family": "sidewalk",
+    "length_m": 6.81,
+    "signals": {
+     "candidate_ways": 3,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.92,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5043234,
+      43.449366
+     ],
+     [
+      -80.5043884,
+      43.4494049
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 8577,
+   "properties": {
+    "activetransportid": 8577,
+    "stratum": "other_structure",
+    "rank_in_stratum": 10,
+    "classes": [
+     "structure",
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 26.45,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.07,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5310944,
+      43.4381405
+     ],
+     [
+      -80.5308343,
+      43.4382847
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 61821,
+   "properties": {
+    "activetransportid": 61821,
+    "stratum": "other_structure",
+    "rank_in_stratum": 11,
+    "classes": [
+     "structure"
+    ],
+    "family": "trail",
+    "length_m": 86.41,
+    "signals": {
+     "candidate_ways": 1,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.72,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4674001,
+      43.4238705
+     ],
+     [
+      -80.4671285,
+      43.4240451
+     ],
+     [
+      -80.4669709,
+      43.4240373
+     ],
+     [
+      -80.4666115,
+      43.4237364
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 7911,
+   "properties": {
+    "activetransportid": 7911,
+    "stratum": "other_structure",
+    "rank_in_stratum": 12,
+    "classes": [
+     "structure",
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 19.26,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.33,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4684203,
+      43.4230968
+     ],
+     [
+      -80.4686037,
+      43.4229863
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392047,
+   "properties": {
+    "activetransportid": 392047,
+    "stratum": "other_structure",
+    "rank_in_stratum": 13,
+    "classes": [
+     "structure",
+     "surface"
+    ],
+    "family": "sidewalk",
+    "length_m": 59.0,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 7.29,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5390078,
+      43.4407526
+     ],
+     [
+      -80.5384137,
+      43.4404445
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392064,
+   "properties": {
+    "activetransportid": 392064,
+    "stratum": "other_structure",
+    "rank_in_stratum": 14,
+    "classes": [
+     "structure"
+    ],
+    "family": "sidewalk",
+    "length_m": 42.34,
+    "signals": {
+     "candidate_ways": 10,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.4,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.48616,
+      43.4391561
+     ],
+     [
+      -80.485855,
+      43.4394658
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 96333,
+   "properties": {
+    "activetransportid": 96333,
+    "stratum": "other_structure",
+    "rank_in_stratum": 15,
+    "classes": [
+     "structure"
+    ],
+    "family": "trail",
+    "length_m": 18.59,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.04,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4996501,
+      43.4534542
+     ],
+     [
+      -80.4998611,
+      43.4535205
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 88142,
+   "properties": {
+    "activetransportid": 88142,
+    "stratum": "other_structure",
+    "rank_in_stratum": 16,
+    "classes": [
+     "structure"
+    ],
+    "family": "trail",
+    "length_m": 37.35,
+    "signals": {
+     "candidate_ways": 7,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.0,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5165688,
+      43.4365249
+     ],
+     [
+      -80.5161368,
+      43.4366432
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 54501,
+   "properties": {
+    "activetransportid": 54501,
+    "stratum": "other_structure",
+    "rank_in_stratum": 17,
+    "classes": [
+     "structure",
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 5.44,
+    "signals": {
+     "candidate_ways": 1,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.04,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5139192,
+      43.4488637
+     ],
+     [
+      -80.5138903,
+      43.4488195
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 45360,
+   "properties": {
+    "activetransportid": 45360,
+    "stratum": "other_structure",
+    "rank_in_stratum": 18,
+    "classes": [
+     "structure",
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 55.39,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.85,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4703656,
+      43.4307151
+     ],
+     [
+      -80.4699851,
+      43.4303005
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392778,
+   "properties": {
+    "activetransportid": 392778,
+    "stratum": "other_structure",
+    "rank_in_stratum": 19,
+    "classes": [
+     "structure"
+    ],
+    "family": "sidewalk",
+    "length_m": 130.4,
+    "signals": {
+     "candidate_ways": 17,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.07,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4705629,
+      43.4623101
+     ],
+     [
+      -80.4706957,
+      43.4622651
+     ],
+     [
+      -80.4709323,
+      43.462187
+     ],
+     [
+      -80.4710701,
+      43.4621412
+     ],
+     [
+      -80.4713313,
+      43.4620549
+     ],
+     [
+      -80.471524,
+      43.4619896
+     ],
+     [
+      -80.4717569,
+      43.4619109
+     ],
+     [
+      -80.4720299,
+      43.4618237
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 10923,
+   "properties": {
+    "activetransportid": 10923,
+    "stratum": "other_structure",
+    "rank_in_stratum": 20,
+    "classes": [
+     "structure"
+    ],
+    "family": "sidewalk",
+    "length_m": 17.42,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.08,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4812054,
+      43.4619259
+     ],
+     [
+      -80.4810108,
+      43.4619931
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 320798,
+   "properties": {
+    "activetransportid": 320798,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 1,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.5,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.1,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4908941,
+      43.4748499
+     ],
+     [
+      -80.4909231,
+      43.474842
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 321452,
+   "properties": {
+    "activetransportid": 321452,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 2,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 0.81,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.35,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4983744,
+      43.4579158
+     ],
+     [
+      -80.4983761,
+      43.4579086
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384657,
+   "properties": {
+    "activetransportid": 384657,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 3,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.37,
+    "signals": {
+     "candidate_ways": 24,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.78,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4910801,
+      43.4495594
+     ],
+     [
+      -80.4910938,
+      43.4495666
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 327828,
+   "properties": {
+    "activetransportid": 327828,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 4,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.95,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.91,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5178737,
+      43.4535043
+     ],
+     [
+      -80.5178583,
+      43.4534802
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 398508,
+   "properties": {
+    "activetransportid": 398508,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 5,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "trail",
+    "length_m": 1.53,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.3,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4645288,
+      43.46432
+     ],
+     [
+      -80.4645346,
+      43.464333
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 327722,
+   "properties": {
+    "activetransportid": 327722,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 6,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.24,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.35,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5056705,
+      43.4554577
+     ],
+     [
+      -80.5056663,
+      43.4554684
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 321395,
+   "properties": {
+    "activetransportid": 321395,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 7,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.17,
+    "signals": {
+     "candidate_ways": 10,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.48,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5046417,
+      43.461102
+     ],
+     [
+      -80.504647,
+      43.4611118
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 321440,
+   "properties": {
+    "activetransportid": 321440,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 8,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 0.89,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.59,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5018272,
+      43.4576993
+     ],
+     [
+      -80.5018161,
+      43.4576992
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 320934,
+   "properties": {
+    "activetransportid": 320934,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 9,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.79,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.73,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4921687,
+      43.4663081
+     ],
+     [
+      -80.4921951,
+      43.466292
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392866,
+   "properties": {
+    "activetransportid": 392866,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 10,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.17,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.17,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5040862,
+      43.4371091
+     ],
+     [
+      -80.5041254,
+      43.4371093
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 321387,
+   "properties": {
+    "activetransportid": 321387,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 11,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.59,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.17,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5075651,
+      43.4601852
+     ],
+     [
+      -80.5075449,
+      43.460167
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392435,
+   "properties": {
+    "activetransportid": 392435,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 12,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.96,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.62,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.512179,
+      43.4439018
+     ],
+     [
+      -80.5122012,
+      43.4438947
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 327414,
+   "properties": {
+    "activetransportid": 327414,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 13,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 0.95,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.02,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4972752,
+      43.4563734
+     ],
+     [
+      -80.4972644,
+      43.4563699
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 393632,
+   "properties": {
+    "activetransportid": 393632,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 14,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.67,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.04,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4881012,
+      43.46131
+     ],
+     [
+      -80.4880877,
+      43.461288
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 402763,
+   "properties": {
+    "activetransportid": 402763,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 15,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.98,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.75,
+     "parallel_ways": 2,
+     "splitting_ways": 3,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4849914,
+      43.4624479
+     ],
+     [
+      -80.4849451,
+      43.46246
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 327197,
+   "properties": {
+    "activetransportid": 327197,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 16,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 0.66,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.06,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4838605,
+      43.456457
+     ],
+     [
+      -80.4838608,
+      43.4564511
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 403502,
+   "properties": {
+    "activetransportid": 403502,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 17,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 6.99,
+    "signals": {
+     "candidate_ways": 13,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.77,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4731002,
+      43.4438017
+     ],
+     [
+      -80.473145,
+      43.4437478
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384562,
+   "properties": {
+    "activetransportid": 384562,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 18,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.71,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.48,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4969759,
+      43.4514589
+     ],
+     [
+      -80.4969419,
+      43.4514364
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 411524,
+   "properties": {
+    "activetransportid": 411524,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 19,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.43,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.91,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.463179,
+      43.4559328
+     ],
+     [
+      -80.4632281,
+      43.4559151
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384647,
+   "properties": {
+    "activetransportid": 384647,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 20,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.84,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.34,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4929751,
+      43.4499358
+     ],
+     [
+      -80.4929908,
+      43.4499478
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 404420,
+   "properties": {
+    "activetransportid": 404420,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 21,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.02,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.71,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 10,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4879111,
+      43.4454436
+     ],
+     [
+      -80.4878985,
+      43.4454441
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 321375,
+   "properties": {
+    "activetransportid": 321375,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 22,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 0.84,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.01,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5023397,
+      43.4594362
+     ],
+     [
+      -80.5023474,
+      43.4594413
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 308969,
+   "properties": {
+    "activetransportid": 308969,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 23,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.02,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.33,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5035593,
+      43.4534346
+     ],
+     [
+      -80.5035466,
+      43.4534344
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 321416,
+   "properties": {
+    "activetransportid": 321416,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 24,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.95,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.01,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5115361,
+      43.4572557
+     ],
+     [
+      -80.5115461,
+      43.4572397
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 388208,
+   "properties": {
+    "activetransportid": 388208,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 25,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.76,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.65,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5205905,
+      43.4507027
+     ],
+     [
+      -80.520601,
+      43.4506888
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 337164,
+   "properties": {
+    "activetransportid": 337164,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 26,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.71,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.21,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5025412,
+      43.4390942
+     ],
+     [
+      -80.5025645,
+      43.439084
+     ],
+     [
+      -80.5025896,
+      43.4390707
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 321397,
+   "properties": {
+    "activetransportid": 321397,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 27,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.26,
+    "signals": {
+     "candidate_ways": 10,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.6,
+     "parallel_ways": 0,
+     "splitting_ways": 3,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5048723,
+      43.4603441
+     ],
+     [
+      -80.5048568,
+      43.4603433
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 404424,
+   "properties": {
+    "activetransportid": 404424,
+    "stratum": "curb_cut_osm_kerb_near",
+    "rank_in_stratum": 28,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.19,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.97,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4867723,
+      43.446317
+     ],
+     [
+      -80.4867716,
+      43.4463063
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 404226,
+   "properties": {
+    "activetransportid": 404226,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 1,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.63,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.31,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5314127,
+      43.4341098
+     ],
+     [
+      -80.5314047,
+      43.4340776
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 321325,
+   "properties": {
+    "activetransportid": 321325,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 2,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.3,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.95,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4909966,
+      43.4593185
+     ],
+     [
+      -80.490993,
+      43.4593299
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 389640,
+   "properties": {
+    "activetransportid": 389640,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 3,
+    "classes": [
+     "curb_cut",
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 9.52,
+    "signals": {
+     "candidate_ways": 31,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.26,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4814675,
+      43.4985784
+     ],
+     [
+      -80.4814484,
+      43.4985621
+     ],
+     [
+      -80.4814322,
+      43.4985442
+     ],
+     [
+      -80.4814192,
+      43.498525
+     ],
+     [
+      -80.4814096,
+      43.4985047
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 365026,
+   "properties": {
+    "activetransportid": 365026,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 4,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.31,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.68,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4634585,
+      43.4317593
+     ],
+     [
+      -80.4634696,
+      43.4317973
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 428402,
+   "properties": {
+    "activetransportid": 428402,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 5,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.65,
+    "signals": {
+     "candidate_ways": 7,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.06,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5309182,
+      43.4229981
+     ],
+     [
+      -80.5309548,
+      43.4230174
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 387865,
+   "properties": {
+    "activetransportid": 387865,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 6,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.34,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.14,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5299792,
+      43.425865
+     ],
+     [
+      -80.5299803,
+      43.425844
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 320714,
+   "properties": {
+    "activetransportid": 320714,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 7,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.05,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.59,
+     "parallel_ways": 0,
+     "splitting_ways": 3,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4783134,
+      43.4953997
+     ],
+     [
+      -80.4783023,
+      43.4954046
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 104832,
+   "properties": {
+    "activetransportid": 104832,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 8,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "trail",
+    "length_m": 2.99,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.46,
+     "parallel_ways": 3,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4833127,
+      43.425058
+     ],
+     [
+      -80.4832944,
+      43.4250814
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 419225,
+   "properties": {
+    "activetransportid": 419225,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 9,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.32,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.87,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5242942,
+      43.421961
+     ],
+     [
+      -80.524331,
+      43.421948
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 418326,
+   "properties": {
+    "activetransportid": 418326,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 10,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.83,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.62,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5393349,
+      43.434464
+     ],
+     [
+      -80.5393399,
+      43.4344801
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 417525,
+   "properties": {
+    "activetransportid": 417525,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 11,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.02,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.66,
+     "parallel_ways": 2,
+     "splitting_ways": 3,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.542871,
+      43.4247295
+     ],
+     [
+      -80.5428367,
+      43.42474
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 417608,
+   "properties": {
+    "activetransportid": 417608,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 12,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.43,
+    "signals": {
+     "candidate_ways": 13,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.89,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5499281,
+      43.428244
+     ],
+     [
+      -80.5499281,
+      43.4282311
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 62320,
+   "properties": {
+    "activetransportid": 62320,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 13,
+    "classes": [
+     "curb_cut",
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 4.05,
+    "signals": {
+     "candidate_ways": 4,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.95,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5535379,
+      43.4326119
+     ],
+     [
+      -80.5535093,
+      43.432582
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 298796,
+   "properties": {
+    "activetransportid": 298796,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 14,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.41,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.35,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.552839,
+      43.4258861
+     ],
+     [
+      -80.5527846,
+      43.4258856
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 424425,
+   "properties": {
+    "activetransportid": 424425,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 15,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.78,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.32,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5075805,
+      43.4383474
+     ],
+     [
+      -80.5076045,
+      43.4383654
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 337358,
+   "properties": {
+    "activetransportid": 337358,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 16,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.09,
+    "signals": {
+     "candidate_ways": 10,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.43,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5463276,
+      43.4364434
+     ],
+     [
+      -80.5463192,
+      43.4364357
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 304548,
+   "properties": {
+    "activetransportid": 304548,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 17,
+    "classes": [
+     "curb_cut",
+     "surface"
+    ],
+    "family": "walkway",
+    "length_m": 3.76,
+    "signals": {
+     "candidate_ways": 10,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.06,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5197187,
+      43.4491339
+     ],
+     [
+      -80.5197591,
+      43.4491171
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 387799,
+   "properties": {
+    "activetransportid": 387799,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 18,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "trail",
+    "length_m": 7.15,
+    "signals": {
+     "candidate_ways": 20,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.94,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5443641,
+      43.4252371
+     ],
+     [
+      -80.5443527,
+      43.4251733
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 412473,
+   "properties": {
+    "activetransportid": 412473,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 19,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.82,
+    "signals": {
+     "candidate_ways": 24,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.08,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4716795,
+      43.4417846
+     ],
+     [
+      -80.4716622,
+      43.4417742
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384550,
+   "properties": {
+    "activetransportid": 384550,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 20,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.62,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.06,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4983302,
+      43.4522733
+     ],
+     [
+      -80.4983228,
+      43.4522869
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 411338,
+   "properties": {
+    "activetransportid": 411338,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 21,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "trail",
+    "length_m": 5.08,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.71,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5254906,
+      43.4319389
+     ],
+     [
+      -80.5255464,
+      43.431918
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 389615,
+   "properties": {
+    "activetransportid": 389615,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 22,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.93,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.12,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4750944,
+      43.4982404
+     ],
+     [
+      -80.4751139,
+      43.4982304
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 389643,
+   "properties": {
+    "activetransportid": 389643,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 23,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.61,
+    "signals": {
+     "candidate_ways": 33,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.79,
+     "parallel_ways": 3,
+     "splitting_ways": 2,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4813129,
+      43.4985093
+     ],
+     [
+      -80.481292,
+      43.4985099
+     ],
+     [
+      -80.4812706,
+      43.4985024
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 402806,
+   "properties": {
+    "activetransportid": 402806,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 24,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.6,
+    "signals": {
+     "candidate_ways": 7,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.81,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4713816,
+      43.4984086
+     ],
+     [
+      -80.47137,
+      43.4984202
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 404714,
+   "properties": {
+    "activetransportid": 404714,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 25,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.85,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.15,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4978691,
+      43.4234148
+     ],
+     [
+      -80.4978422,
+      43.4234315
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 417645,
+   "properties": {
+    "activetransportid": 417645,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 26,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.0,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.82,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5443864,
+      43.4315133
+     ],
+     [
+      -80.5443985,
+      43.4315148
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 337294,
+   "properties": {
+    "activetransportid": 337294,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 27,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "sidewalk",
+    "length_m": 5.87,
+    "signals": {
+     "candidate_ways": 10,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.77,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5006042,
+      43.4378554
+     ],
+     [
+      -80.5006505,
+      43.4378147
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 427470,
+   "properties": {
+    "activetransportid": 427470,
+    "stratum": "curb_cut_no_osm_kerb",
+    "rank_in_stratum": 28,
+    "classes": [
+     "curb_cut"
+    ],
+    "family": "trail",
+    "length_m": 2.31,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 3.89,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5004469,
+      43.4206968
+     ],
+     [
+      -80.5004535,
+      43.420717
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 297881,
+   "properties": {
+    "activetransportid": 297881,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 1,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 11.04,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.99,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 11,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4810152,
+      43.4934997
+     ],
+     [
+      -80.4811516,
+      43.4935025
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 302361,
+   "properties": {
+    "activetransportid": 302361,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 2,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 16.29,
+    "signals": {
+     "candidate_ways": 7,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 3.95,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4887017,
+      43.4347266
+     ],
+     [
+      -80.4886153,
+      43.4345941
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 401970,
+   "properties": {
+    "activetransportid": 401970,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 3,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 26.69,
+    "signals": {
+     "candidate_ways": 13,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.42,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5215592,
+      43.4330709
+     ],
+     [
+      -80.5217011,
+      43.4332879
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 307341,
+   "properties": {
+    "activetransportid": 307341,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 4,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 9.64,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.24,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4765819,
+      43.4583864
+     ],
+     [
+      -80.4765252,
+      43.4583101
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 305763,
+   "properties": {
+    "activetransportid": 305763,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 5,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 21.38,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.21,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.483193,
+      43.4608804
+     ],
+     [
+      -80.4832581,
+      43.4610669
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 301297,
+   "properties": {
+    "activetransportid": 301297,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 6,
+    "classes": [
+     "surface"
+    ],
+    "family": "sidewalk",
+    "length_m": 86.64,
+    "signals": {
+     "candidate_ways": 24,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.13,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4937025,
+      43.4491206
+     ],
+     [
+      -80.4937422,
+      43.4491211
+     ],
+     [
+      -80.4938137,
+      43.4491429
+     ],
+     [
+      -80.4938328,
+      43.4491471
+     ],
+     [
+      -80.4938538,
+      43.4491507
+     ],
+     [
+      -80.4939486,
+      43.4491602
+     ],
+     [
+      -80.4940174,
+      43.4491691
+     ],
+     [
+      -80.4940877,
+      43.4491806
+     ],
+     [
+      -80.4941572,
+      43.4491945
+     ],
+     [
+      -80.4942664,
+      43.4492215
+     ],
+     [
+      -80.4947049,
+      43.4493464
+     ],
+     [
+      -80.4947199,
+      43.4493418
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 88218,
+   "properties": {
+    "activetransportid": 88218,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 7,
+    "classes": [
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 20.58,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.41,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5309037,
+      43.4378366
+     ],
+     [
+      -80.5307615,
+      43.4377954
+     ],
+     [
+      -80.5306653,
+      43.4377723
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 307372,
+   "properties": {
+    "activetransportid": 307372,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 8,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 8.63,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.24,
+     "parallel_ways": 3,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4765023,
+      43.4545087
+     ],
+     [
+      -80.4765367,
+      43.4545822
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 308447,
+   "properties": {
+    "activetransportid": 308447,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 9,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 9.82,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.04,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5470668,
+      43.4293938
+     ],
+     [
+      -80.5469464,
+      43.4293826
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 395263,
+   "properties": {
+    "activetransportid": 395263,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 10,
+    "classes": [
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 32.58,
+    "signals": {
+     "candidate_ways": 3,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.04,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4702113,
+      43.4979801
+     ],
+     [
+      -80.4701873,
+      43.4979629
+     ],
+     [
+      -80.4700946,
+      43.4979099
+     ],
+     [
+      -80.4699908,
+      43.4978377
+     ],
+     [
+      -80.4699224,
+      43.497777
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 305171,
+   "properties": {
+    "activetransportid": 305171,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 11,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 12.6,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.98,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4908941,
+      43.4748499
+     ],
+     [
+      -80.4907425,
+      43.4748761
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 91550,
+   "properties": {
+    "activetransportid": 91550,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 12,
+    "classes": [
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 13.66,
+    "signals": {
+     "candidate_ways": 7,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 5.86,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5144946,
+      43.4371457
+     ],
+     [
+      -80.5145367,
+      43.4371552
+     ],
+     [
+      -80.5145959,
+      43.437179
+     ],
+     [
+      -80.5146428,
+      43.4372028
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 305439,
+   "properties": {
+    "activetransportid": 305439,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 13,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 8.37,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.04,
+     "parallel_ways": 3,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4952673,
+      43.4618079
+     ],
+     [
+      -80.4951724,
+      43.461838
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 309087,
+   "properties": {
+    "activetransportid": 309087,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 14,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 17.53,
+    "signals": {
+     "candidate_ways": 27,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.88,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 11,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4983021,
+      43.4527513
+     ],
+     [
+      -80.4981012,
+      43.4526922
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 308819,
+   "properties": {
+    "activetransportid": 308819,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 15,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 15.29,
+    "signals": {
+     "candidate_ways": 13,
+     "pedestrian_within_5m_share": 0.706,
+     "best_worst_point_m": 14.1,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 10,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4873475,
+      43.4430315
+     ],
+     [
+      -80.4874583,
+      43.44292
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 401935,
+   "properties": {
+    "activetransportid": 401935,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 16,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 14.11,
+    "signals": {
+     "candidate_ways": 13,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.78,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5202432,
+      43.4248601
+     ],
+     [
+      -80.520141,
+      43.4247571
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 308920,
+   "properties": {
+    "activetransportid": 308920,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 17,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 19.58,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 0.619,
+     "best_worst_point_m": 17.78,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4899645,
+      43.4466521
+     ],
+     [
+      -80.4901536,
+      43.4467621
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 307889,
+   "properties": {
+    "activetransportid": 307889,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 18,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 14.06,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 3.52,
+     "parallel_ways": 3,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4770486,
+      43.448738
+     ],
+     [
+      -80.4771198,
+      43.4488534
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 307254,
+   "properties": {
+    "activetransportid": 307254,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 19,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 7.82,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.68,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 10,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.467052,
+      43.4580932
+     ],
+     [
+      -80.4669642,
+      43.4581226
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 49949,
+   "properties": {
+    "activetransportid": 49949,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 20,
+    "classes": [
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 32.84,
+    "signals": {
+     "candidate_ways": 5,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.59,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4943196,
+      43.4476859
+     ],
+     [
+      -80.4943071,
+      43.4476515
+     ],
+     [
+      -80.4942858,
+      43.44762
+     ],
+     [
+      -80.4942527,
+      43.4475913
+     ],
+     [
+      -80.4941249,
+      43.4475092
+     ],
+     [
+      -80.4940555,
+      43.447471
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 5113,
+   "properties": {
+    "activetransportid": 5113,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 21,
+    "classes": [
+     "surface"
+    ],
+    "family": "trail",
+    "length_m": 304.41,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.64,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 10,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.495575,
+      43.44342
+     ],
+     [
+      -80.4954098,
+      43.443336
+     ],
+     [
+      -80.49526,
+      43.4432662
+     ],
+     [
+      -80.4952149,
+      43.4432437
+     ],
+     [
+      -80.4951709,
+      43.4432209
+     ],
+     [
+      -80.4951269,
+      43.4431972
+     ],
+     [
+      -80.4950484,
+      43.4431521
+     ],
+     [
+      -80.4949611,
+      43.4431001
+     ],
+     [
+      -80.4949136,
+      43.4430669
+     ],
+     [
+      -80.4948803,
+      43.4430416
+     ],
+     [
+      -80.4948618,
+      43.4430265
+     ],
+     [
+      -80.4948434,
+      43.443011
+     ],
+     [
+      -80.4947822,
+      43.4429566
+     ],
+     [
+      -80.4947103,
+      43.4428911
+     ],
+     [
+      -80.4946426,
+      43.4428255
+     ],
+     [
+      -80.4946099,
+      43.4427923
+     ],
+     [
+      -80.4945598,
+      43.4427409
+     ],
+     [
+      -80.4945018,
+      43.4426922
+     ],
+     [
+      -80.4944608,
+      43.4426602
+     ],
+     [
+      -80.4944287,
+      43.4426387
+     ],
+     [
+      -80.494399,
+      43.442621
+     ],
+     [
+      -80.494374,
+      43.4426072
+     ],
+     [
+      -80.4943502,
+      43.4425938
+     ],
+     [
+      -80.4943229,
+      43.4425778
+     ],
+     [
+      -80.4942932,
+      43.442561
+     ],
+     [
+      -80.4942558,
+      43.4425416
+     ],
+     [
+      -80.4942118,
+      43.4425187
+     ],
+     [
+      -80.494156,
+      43.442491
+     ],
+     [
+      -80.4941013,
+      43.4424657
+     ],
+     [
+      -80.4940341,
+      43.4424385
+     ],
+     [
+      -80.4939569,
+      43.44241
+     ],
+     [
+      -80.4939034,
+      43.4423889
+     ],
+     [
+      -80.4938392,
+      43.4423643
+     ],
+     [
+      -80.4937885,
+      43.442344
+     ],
+     [
+      -80.4937261,
+      43.4423198
+     ],
+     [
+      -80.4936371,
+      43.4422881
+     ],
+     [
+      -80.4934929,
+      43.4422398
+     ],
+     [
+      -80.4932785,
+      43.4421686
+     ],
+     [
+      -80.4931782,
+      43.4421354
+     ],
+     [
+      -80.4930576,
+      43.4420955
+     ],
+     [
+      -80.4929182,
+      43.442049
+     ],
+     [
+      -80.4927994,
+      43.4420096
+     ],
+     [
+      -80.4926557,
+      43.4419567
+     ],
+     [
+      -80.4926075,
+      43.4419381
+     ],
+     [
+      -80.4925896,
+      43.4419323
+     ],
+     [
+      -80.4925733,
+      43.4419281
+     ],
+     [
+      -80.4925576,
+      43.4419255
+     ],
+     [
+      -80.4925419,
+      43.4419244
+     ],
+     [
+      -80.4925203,
+      43.4419262
+     ],
+     [
+      -80.4924997,
+      43.4419307
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 307342,
+   "properties": {
+    "activetransportid": 307342,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 22,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 11.37,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.97,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4754202,
+      43.4571634
+     ],
+     [
+      -80.4753048,
+      43.4572218
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 13661,
+   "properties": {
+    "activetransportid": 13661,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 23,
+    "classes": [
+     "surface"
+    ],
+    "family": "walkway",
+    "length_m": 33.03,
+    "signals": {
+     "candidate_ways": 5,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.32,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5215512,
+      43.4484292
+     ],
+     [
+      -80.521371,
+      43.4481623
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 302620,
+   "properties": {
+    "activetransportid": 302620,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 24,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 22.23,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 0.5,
+     "best_worst_point_m": 21.17,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5047986,
+      43.425534
+     ],
+     [
+      -80.5045631,
+      43.425637
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 309613,
+   "properties": {
+    "activetransportid": 309613,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 25,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 20.8,
+    "signals": {
+     "candidate_ways": 2,
+     "pedestrian_within_5m_share": 0.0,
+     "best_worst_point_m": null,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 0,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4703466,
+      43.469298
+     ],
+     [
+      -80.4704821,
+      43.4694571
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 308415,
+   "properties": {
+    "activetransportid": 308415,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 26,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 10.35,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.4,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5400917,
+      43.4363157
+     ],
+     [
+      -80.5401625,
+      43.4362381
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 311115,
+   "properties": {
+    "activetransportid": 311115,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 27,
+    "classes": [
+     "surface"
+    ],
+    "family": "sidewalk",
+    "length_m": 139.51,
+    "signals": {
+     "candidate_ways": 28,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.42,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5248923,
+      43.4303367
+     ],
+     [
+      -80.5252192,
+      43.43085
+     ],
+     [
+      -80.5256321,
+      43.4314712
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 298472,
+   "properties": {
+    "activetransportid": 298472,
+    "stratum": "non_default_surface",
+    "rank_in_stratum": 28,
+    "classes": [
+     "surface"
+    ],
+    "family": "crossing",
+    "length_m": 14.03,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.89,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4665934,
+      43.4777633
+     ],
+     [
+      -80.4667155,
+      43.4778531
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 19140,
+   "properties": {
+    "activetransportid": 19140,
+    "stratum": "no_osm_pedestrian_way",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 48.18,
+    "signals": {
+     "candidate_ways": 7,
+     "pedestrian_within_5m_share": 0.0,
+     "best_worst_point_m": 50.59,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4997024,
+      43.4353197
+     ],
+     [
+      -80.5002511,
+      43.4351513
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 427302,
+   "properties": {
+    "activetransportid": 427302,
+    "stratum": "no_osm_pedestrian_way",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 0.94,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 0.0,
+     "best_worst_point_m": 15.78,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5079639,
+      43.440629
+     ],
+     [
+      -80.5079606,
+      43.4406371
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 426765,
+   "properties": {
+    "activetransportid": 426765,
+    "stratum": "no_osm_pedestrian_way",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "walkway",
+    "length_m": 51.59,
+    "signals": {
+     "candidate_ways": 3,
+     "pedestrian_within_5m_share": 0.0,
+     "best_worst_point_m": 32.06,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4846765,
+      43.4336425
+     ],
+     [
+      -80.4846861,
+      43.4336596
+     ],
+     [
+      -80.4846964,
+      43.4336743
+     ],
+     [
+      -80.4847086,
+      43.4336879
+     ],
+     [
+      -80.4847219,
+      43.4336989
+     ],
+     [
+      -80.4847406,
+      43.4337083
+     ],
+     [
+      -80.4847573,
+      43.4337146
+     ],
+     [
+      -80.4847754,
+      43.4337185
+     ],
+     [
+      -80.4847898,
+      43.4337198
+     ],
+     [
+      -80.4848107,
+      43.4337206
+     ],
+     [
+      -80.4848278,
+      43.4337193
+     ],
+     [
+      -80.484844,
+      43.4337167
+     ],
+     [
+      -80.48486,
+      43.4337122
+     ],
+     [
+      -80.4848748,
+      43.4337064
+     ],
+     [
+      -80.4848883,
+      43.4336988
+     ],
+     [
+      -80.4848986,
+      43.4336914
+     ],
+     [
+      -80.4849076,
+      43.4336823
+     ],
+     [
+      -80.4849158,
+      43.4336738
+     ],
+     [
+      -80.4849229,
+      43.4336685
+     ],
+     [
+      -80.4849325,
+      43.4336652
+     ],
+     [
+      -80.4849455,
+      43.4336633
+     ],
+     [
+      -80.4849562,
+      43.4336627
+     ],
+     [
+      -80.4849676,
+      43.4336645
+     ],
+     [
+      -80.4849787,
+      43.4336697
+     ],
+     [
+      -80.4849961,
+      43.4336808
+     ],
+     [
+      -80.485005,
+      43.4336854
+     ],
+     [
+      -80.4850143,
+      43.4336891
+     ],
+     [
+      -80.4850243,
+      43.4336922
+     ],
+     [
+      -80.4850345,
+      43.4336949
+     ],
+     [
+      -80.4850434,
+      43.4336959
+     ],
+     [
+      -80.485054,
+      43.4336964
+     ],
+     [
+      -80.4850641,
+      43.4336962
+     ],
+     [
+      -80.485074,
+      43.4336953
+     ],
+     [
+      -80.4850876,
+      43.4336927
+     ],
+     [
+      -80.4851007,
+      43.4336888
+     ],
+     [
+      -80.485112,
+      43.4336844
+     ],
+     [
+      -80.4851211,
+      43.4336796
+     ],
+     [
+      -80.4851295,
+      43.4336738
+     ],
+     [
+      -80.4851393,
+      43.4336641
+     ],
+     [
+      -80.4851466,
+      43.4336547
+     ],
+     [
+      -80.4851558,
+      43.4336397
+     ],
+     [
+      -80.4851654,
+      43.4336198
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 393824,
+   "properties": {
+    "activetransportid": 393824,
+    "stratum": "no_osm_pedestrian_way",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "crossing",
+    "length_m": 3.21,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 0.0,
+     "best_worst_point_m": 12.5,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 1,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5264186,
+      43.4276464
+     ],
+     [
+      -80.5264232,
+      43.4276752
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 298200,
+   "properties": {
+    "activetransportid": 298200,
+    "stratum": "no_osm_pedestrian_way",
+    "rank_in_stratum": 5,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 85.12,
+    "signals": {
+     "candidate_ways": 4,
+     "pedestrian_within_5m_share": 0.0,
+     "best_worst_point_m": 13.26,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4843654,
+      43.4841727
+     ],
+     [
+      -80.4843687,
+      43.4841886
+     ],
+     [
+      -80.4843221,
+      43.4845577
+     ],
+     [
+      -80.4842546,
+      43.4849343
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 412082,
+   "properties": {
+    "activetransportid": 412082,
+    "stratum": "no_osm_pedestrian_way",
+    "rank_in_stratum": 6,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.64,
+    "signals": {
+     "candidate_ways": 6,
+     "pedestrian_within_5m_share": 0.0,
+     "best_worst_point_m": 18.4,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 1,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5232059,
+      43.4325824
+     ],
+     [
+      -80.5232324,
+      43.4326195
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 385082,
+   "properties": {
+    "activetransportid": 385082,
+    "stratum": "no_osm_pedestrian_way",
+    "rank_in_stratum": 7,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 29.98,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 0.0,
+     "best_worst_point_m": 13.61,
+     "parallel_ways": 0,
+     "splitting_ways": 0,
+     "city_neighbours": 0,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4706379,
+      43.4250244
+     ],
+     [
+      -80.47092,
+      43.424926
+     ],
+     [
+      -80.4709743,
+      43.4249118
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16637,
+   "properties": {
+    "activetransportid": 16637,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 108.26,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 4.1,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5167955,
+      43.4332638
+     ],
+     [
+      -80.5168266,
+      43.4333222
+     ],
+     [
+      -80.5157108,
+      43.4337356
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 12425,
+   "properties": {
+    "activetransportid": 12425,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 170.84,
+    "signals": {
+     "candidate_ways": 34,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 6.74,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4816884,
+      43.4536467
+     ],
+     [
+      -80.4816758,
+      43.4536629
+     ],
+     [
+      -80.4816601,
+      43.4536769
+     ],
+     [
+      -80.4816429,
+      43.4536902
+     ],
+     [
+      -80.4816116,
+      43.4537079
+     ],
+     [
+      -80.480003,
+      43.4545694
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 12072,
+   "properties": {
+    "activetransportid": 12072,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 92.23,
+    "signals": {
+     "candidate_ways": 18,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 5.65,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5093844,
+      43.4545155
+     ],
+     [
+      -80.5093734,
+      43.4545225
+     ],
+     [
+      -80.5093595,
+      43.4545284
+     ],
+     [
+      -80.5086019,
+      43.4547989
+     ],
+     [
+      -80.5084673,
+      43.4548457
+     ],
+     [
+      -80.5084395,
+      43.4548512
+     ],
+     [
+      -80.5084117,
+      43.4548545
+     ],
+     [
+      -80.5083857,
+      43.4548531
+     ],
+     [
+      -80.5083535,
+      43.4548468
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384791,
+   "properties": {
+    "activetransportid": 384791,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 9.22,
+    "signals": {
+     "candidate_ways": 21,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 3.34,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4938816,
+      43.4526041
+     ],
+     [
+      -80.4939443,
+      43.4526234
+     ],
+     [
+      -80.4939617,
+      43.4525925
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 85854,
+   "properties": {
+    "activetransportid": 85854,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 5,
+    "classes": [
+     "plain"
+    ],
+    "family": "trail",
+    "length_m": 5.61,
+    "signals": {
+     "candidate_ways": 1,
+     "pedestrian_within_5m_share": 0.857,
+     "best_worst_point_m": 5.04,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4799586,
+      43.4962014
+     ],
+     [
+      -80.4799655,
+      43.4962517
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 15767,
+   "properties": {
+    "activetransportid": 15767,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 6,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 13.39,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 5.03,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5090633,
+      43.450611
+     ],
+     [
+      -80.5090233,
+      43.4504941
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16279,
+   "properties": {
+    "activetransportid": 16279,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 7,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 107.38,
+    "signals": {
+     "candidate_ways": 32,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 12.79,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5005542,
+      43.4387738
+     ],
+     [
+      -80.5006488,
+      43.4387332
+     ],
+     [
+      -80.5006713,
+      43.4387265
+     ],
+     [
+      -80.5006945,
+      43.4387212
+     ],
+     [
+      -80.5007181,
+      43.4387173
+     ],
+     [
+      -80.5007422,
+      43.4387147
+     ],
+     [
+      -80.5007664,
+      43.4387135
+     ],
+     [
+      -80.5009877,
+      43.4386862
+     ],
+     [
+      -80.5012053,
+      43.4386457
+     ],
+     [
+      -80.5014175,
+      43.4385923
+     ],
+     [
+      -80.501623,
+      43.4385264
+     ],
+     [
+      -80.5017723,
+      43.4384727
+     ],
+     [
+      -80.5017861,
+      43.4384669
+     ],
+     [
+      -80.5017998,
+      43.438462
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16355,
+   "properties": {
+    "activetransportid": 16355,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 8,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 393.21,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 0.998,
+     "best_worst_point_m": 5.13,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 1,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5201103,
+      43.4404049
+     ],
+     [
+      -80.5203099,
+      43.4405822
+     ],
+     [
+      -80.5203143,
+      43.4405868
+     ],
+     [
+      -80.5203182,
+      43.4405917
+     ],
+     [
+      -80.5203214,
+      43.4405968
+     ],
+     [
+      -80.5203241,
+      43.4406021
+     ],
+     [
+      -80.5203261,
+      43.4406075
+     ],
+     [
+      -80.5203274,
+      43.440613
+     ],
+     [
+      -80.5203281,
+      43.4406186
+     ],
+     [
+      -80.520328,
+      43.4406243
+     ],
+     [
+      -80.5203274,
+      43.4406298
+     ],
+     [
+      -80.520326,
+      43.4406354
+     ],
+     [
+      -80.520324,
+      43.4406408
+     ],
+     [
+      -80.5203213,
+      43.4406461
+     ],
+     [
+      -80.520318,
+      43.4406512
+     ],
+     [
+      -80.5203142,
+      43.440656
+     ],
+     [
+      -80.5203097,
+      43.4406606
+     ],
+     [
+      -80.5203047,
+      43.4406649
+     ],
+     [
+      -80.5202992,
+      43.4406688
+     ],
+     [
+      -80.5202933,
+      43.4406724
+     ],
+     [
+      -80.520287,
+      43.4406756
+     ],
+     [
+      -80.5202803,
+      43.4406784
+     ],
+     [
+      -80.5202733,
+      43.4406807
+     ],
+     [
+      -80.520266,
+      43.4406826
+     ],
+     [
+      -80.5202585,
+      43.440684
+     ],
+     [
+      -80.5179728,
+      43.4414838
+     ],
+     [
+      -80.5179681,
+      43.441486
+     ],
+     [
+      -80.5179632,
+      43.4414878
+     ],
+     [
+      -80.517958,
+      43.4414893
+     ],
+     [
+      -80.5179528,
+      43.4414905
+     ],
+     [
+      -80.5179474,
+      43.4414914
+     ],
+     [
+      -80.5179419,
+      43.4414919
+     ],
+     [
+      -80.5179364,
+      43.4414921
+     ],
+     [
+      -80.5179308,
+      43.4414919
+     ],
+     [
+      -80.5179253,
+      43.4414914
+     ],
+     [
+      -80.5179199,
+      43.4414905
+     ],
+     [
+      -80.5179147,
+      43.4414893
+     ],
+     [
+      -80.5179095,
+      43.4414878
+     ],
+     [
+      -80.5178892,
+      43.4414871
+     ],
+     [
+      -80.5178689,
+      43.4414877
+     ],
+     [
+      -80.5178487,
+      43.4414895
+     ],
+     [
+      -80.5178288,
+      43.4414926
+     ],
+     [
+      -80.5178093,
+      43.4414969
+     ],
+     [
+      -80.5177904,
+      43.4415024
+     ],
+     [
+      -80.5177722,
+      43.441509
+     ],
+     [
+      -80.5177549,
+      43.4415168
+     ],
+     [
+      -80.5177385,
+      43.4415256
+     ],
+     [
+      -80.5177232,
+      43.4415354
+     ],
+     [
+      -80.5177091,
+      43.4415461
+     ],
+     [
+      -80.5176964,
+      43.4415577
+     ],
+     [
+      -80.517685,
+      43.44157
+     ],
+     [
+      -80.5176751,
+      43.4415829
+     ],
+     [
+      -80.5176668,
+      43.4415965
+     ],
+     [
+      -80.5176601,
+      43.4416105
+     ],
+     [
+      -80.517655,
+      43.4416248
+     ],
+     [
+      -80.5176516,
+      43.4416394
+     ],
+     [
+      -80.51765,
+      43.4416542
+     ],
+     [
+      -80.5176501,
+      43.4416691
+     ],
+     [
+      -80.517652,
+      43.4416838
+     ],
+     [
+      -80.5176555,
+      43.4416984
+     ],
+     [
+      -80.5176608,
+      43.4417128
+     ],
+     [
+      -80.5176686,
+      43.4417275
+     ],
+     [
+      -80.5176782,
+      43.4417417
+     ],
+     [
+      -80.5176895,
+      43.4417552
+     ],
+     [
+      -80.5177023,
+      43.441768
+     ],
+     [
+      -80.5177167,
+      43.4417798
+     ],
+     [
+      -80.5177324,
+      43.4417908
+     ],
+     [
+      -80.5177494,
+      43.4418006
+     ],
+     [
+      -80.5177675,
+      43.4418093
+     ],
+     [
+      -80.5177866,
+      43.4418168
+     ],
+     [
+      -80.5178065,
+      43.4418231
+     ],
+     [
+      -80.5178271,
+      43.4418281
+     ],
+     [
+      -80.5178482,
+      43.4418317
+     ],
+     [
+      -80.5178697,
+      43.4418339
+     ],
+     [
+      -80.5178914,
+      43.4418348
+     ],
+     [
+      -80.5179131,
+      43.4418342
+     ],
+     [
+      -80.5179166,
+      43.4418322
+     ],
+     [
+      -80.5179203,
+      43.4418304
+     ],
+     [
+      -80.5179243,
+      43.4418289
+     ],
+     [
+      -80.5179284,
+      43.4418275
+     ],
+     [
+      -80.5179326,
+      43.4418265
+     ],
+     [
+      -80.517937,
+      43.4418257
+     ],
+     [
+      -80.5179414,
+      43.4418252
+     ],
+     [
+      -80.5179459,
+      43.441825
+     ],
+     [
+      -80.5179503,
+      43.4418251
+     ],
+     [
+      -80.5179548,
+      43.4418255
+     ],
+     [
+      -80.5179592,
+      43.4418261
+     ],
+     [
+      -80.5179635,
+      43.441827
+     ],
+     [
+      -80.5179676,
+      43.4418282
+     ],
+     [
+      -80.5179717,
+      43.4418296
+     ],
+     [
+      -80.5179755,
+      43.4418313
+     ],
+     [
+      -80.5179791,
+      43.4418332
+     ],
+     [
+      -80.5179825,
+      43.4418354
+     ],
+     [
+      -80.5179856,
+      43.4418377
+     ],
+     [
+      -80.5179884,
+      43.4418402
+     ],
+     [
+      -80.5185533,
+      43.4423377
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 13420,
+   "properties": {
+    "activetransportid": 13420,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 9,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 243.02,
+    "signals": {
+     "candidate_ways": 45,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 13.8,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4941473,
+      43.4469266
+     ],
+     [
+      -80.4941432,
+      43.4469369
+     ],
+     [
+      -80.4936307,
+      43.4473978
+     ],
+     [
+      -80.492732,
+      43.4482059
+     ],
+     [
+      -80.492623,
+      43.4482598
+     ],
+     [
+      -80.4923737,
+      43.4484885
+     ],
+     [
+      -80.4923665,
+      43.448497
+     ],
+     [
+      -80.4923612,
+      43.4485063
+     ],
+     [
+      -80.4923585,
+      43.4485165
+     ],
+     [
+      -80.4923547,
+      43.4485322
+     ],
+     [
+      -80.492351,
+      43.4485436
+     ],
+     [
+      -80.492344,
+      43.4485577
+     ],
+     [
+      -80.4923374,
+      43.4485693
+     ],
+     [
+      -80.4923275,
+      43.4485793
+     ],
+     [
+      -80.492317,
+      43.4485873
+     ],
+     [
+      -80.4923035,
+      43.4485929
+     ],
+     [
+      -80.4922897,
+      43.4485984
+     ],
+     [
+      -80.4922735,
+      43.4486022
+     ],
+     [
+      -80.492257,
+      43.4486029
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 14867,
+   "properties": {
+    "activetransportid": 14867,
+    "stratum": "offset_geometry",
+    "rank_in_stratum": 10,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 186.33,
+    "signals": {
+     "candidate_ways": 30,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 4.34,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4709125,
+      43.4457463
+     ],
+     [
+      -80.4709012,
+      43.4457682
+     ],
+     [
+      -80.470888,
+      43.4457781
+     ],
+     [
+      -80.4688605,
+      43.4464917
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 15790,
+   "properties": {
+    "activetransportid": 15790,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 104.07,
+    "signals": {
+     "candidate_ways": 52,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.05,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 11,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4911219,
+      43.4493527
+     ],
+     [
+      -80.4916765,
+      43.4486969
+     ],
+     [
+      -80.4917078,
+      43.4486597
+     ],
+     [
+      -80.4917217,
+      43.4486395
+     ],
+     [
+      -80.4917466,
+      43.448601
+     ],
+     [
+      -80.4917645,
+      43.4485692
+     ],
+     [
+      -80.4917748,
+      43.4485469
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 405965,
+   "properties": {
+    "activetransportid": 405965,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.14,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.72,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5067209,
+      43.4282414
+     ],
+     [
+      -80.5067257,
+      43.4282586
+     ],
+     [
+      -80.506724,
+      43.4282688
+     ],
+     [
+      -80.5067166,
+      43.4282765
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 12231,
+   "properties": {
+    "activetransportid": 12231,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "walkway",
+    "length_m": 34.68,
+    "signals": {
+     "candidate_ways": 13,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.68,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.494928,
+      43.4559527
+     ],
+     [
+      -80.4949384,
+      43.4559843
+     ],
+     [
+      -80.4950837,
+      43.4562124
+     ],
+     [
+      -80.49505,
+      43.4562266
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 403497,
+   "properties": {
+    "activetransportid": 403497,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.21,
+    "signals": {
+     "candidate_ways": 17,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.84,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4675555,
+      43.444097
+     ],
+     [
+      -80.4675374,
+      43.4441144
+     ],
+     [
+      -80.4675336,
+      43.4441302
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384441,
+   "properties": {
+    "activetransportid": 384441,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 5,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.35,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.19,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5106689,
+      43.4567092
+     ],
+     [
+      -80.5106516,
+      43.4567367
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 411866,
+   "properties": {
+    "activetransportid": 411866,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 6,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.74,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.69,
+     "parallel_ways": 2,
+     "splitting_ways": 3,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4965116,
+      43.4650799
+     ],
+     [
+      -80.4964831,
+      43.4651065
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 50036,
+   "properties": {
+    "activetransportid": 50036,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 7,
+    "classes": [
+     "plain"
+    ],
+    "family": "trail",
+    "length_m": 2.96,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.31,
+     "parallel_ways": 3,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5034021,
+      43.4440716
+     ],
+     [
+      -80.5033666,
+      43.4440651
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384679,
+   "properties": {
+    "activetransportid": 384679,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 8,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 6.31,
+    "signals": {
+     "candidate_ways": 26,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.42,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4899498,
+      43.4487992
+     ],
+     [
+      -80.4900192,
+      43.4488252
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 411508,
+   "properties": {
+    "activetransportid": 411508,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 9,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.7,
+    "signals": {
+     "candidate_ways": 20,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.39,
+     "parallel_ways": 2,
+     "splitting_ways": 2,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4834042,
+      43.4472281
+     ],
+     [
+      -80.4834321,
+      43.4472414
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 406062,
+   "properties": {
+    "activetransportid": 406062,
+    "stratum": "parallel_ways",
+    "rank_in_stratum": 10,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 153.6,
+    "signals": {
+     "candidate_ways": 30,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.27,
+     "parallel_ways": 2,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4964367,
+      43.429703
+     ],
+     [
+      -80.4965742,
+      43.430047
+     ],
+     [
+      -80.4966018,
+      43.4301259
+     ],
+     [
+      -80.4966221,
+      43.430199
+     ],
+     [
+      -80.4966375,
+      43.4302727
+     ],
+     [
+      -80.4966422,
+      43.4303186
+     ],
+     [
+      -80.496644,
+      43.4303668
+     ],
+     [
+      -80.4966412,
+      43.4304383
+     ],
+     [
+      -80.4966317,
+      43.4305094
+     ],
+     [
+      -80.496613,
+      43.4305731
+     ],
+     [
+      -80.4965463,
+      43.4307529
+     ],
+     [
+      -80.4964856,
+      43.4309545
+     ],
+     [
+      -80.4964619,
+      43.4310013
+     ],
+     [
+      -80.4964453,
+      43.4310491
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384935,
+   "properties": {
+    "activetransportid": 384935,
+    "stratum": "short_piece",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.21,
+    "signals": {
+     "candidate_ways": 17,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.04,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4746664,
+      43.442106
+     ],
+     [
+      -80.4746462,
+      43.4420941
+     ],
+     [
+      -80.4746306,
+      43.4420789
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 320753,
+   "properties": {
+    "activetransportid": 320753,
+    "stratum": "short_piece",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 1.36,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.83,
+     "parallel_ways": 0,
+     "splitting_ways": 2,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4866528,
+      43.4790321
+     ],
+     [
+      -80.486664,
+      43.4790412
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392775,
+   "properties": {
+    "activetransportid": 392775,
+    "stratum": "short_piece",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "trail",
+    "length_m": 3.29,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.46,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4645346,
+      43.464333
+     ],
+     [
+      -80.4645487,
+      43.4643323
+     ],
+     [
+      -80.4645616,
+      43.4643329
+     ],
+     [
+      -80.4645742,
+      43.4643365
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384688,
+   "properties": {
+    "activetransportid": 384688,
+    "stratum": "short_piece",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.85,
+    "signals": {
+     "candidate_ways": 13,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.96,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4886472,
+      43.448361
+     ],
+     [
+      -80.4886331,
+      43.4483471
+     ],
+     [
+      -80.4886224,
+      43.4483316
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 336908,
+   "properties": {
+    "activetransportid": 336908,
+    "stratum": "short_piece",
+    "rank_in_stratum": 5,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.38,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.57,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.504088,
+      43.447067
+     ],
+     [
+      -80.5040805,
+      43.447106
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 336909,
+   "properties": {
+    "activetransportid": 336909,
+    "stratum": "short_piece",
+    "rank_in_stratum": 6,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 3.05,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.04,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.50411,
+      43.4471231
+     ],
+     [
+      -80.5040805,
+      43.447106
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 414622,
+   "properties": {
+    "activetransportid": 414622,
+    "stratum": "short_piece",
+    "rank_in_stratum": 7,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 2.98,
+    "signals": {
+     "candidate_ways": 26,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.28,
+     "parallel_ways": 0,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4958069,
+      43.4496756
+     ],
+     [
+      -80.4958016,
+      43.449667
+     ],
+     [
+      -80.4957997,
+      43.4496581
+     ],
+     [
+      -80.4958003,
+      43.4496497
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384860,
+   "properties": {
+    "activetransportid": 384860,
+    "stratum": "short_piece",
+    "rank_in_stratum": 8,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 4.41,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.47,
+     "parallel_ways": 1,
+     "splitting_ways": 2,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4839546,
+      43.4466429
+     ],
+     [
+      -80.4839439,
+      43.4466264
+     ],
+     [
+      -80.4839268,
+      43.4466132
+     ],
+     [
+      -80.483923,
+      43.4466113
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 14910,
+   "properties": {
+    "activetransportid": 14910,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 192.96,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.47,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4672964,
+      43.4461541
+     ],
+     [
+      -80.4662648,
+      43.4445877
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 418303,
+   "properties": {
+    "activetransportid": 418303,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 201.73,
+    "signals": {
+     "candidate_ways": 10,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.1,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5357521,
+      43.4348881
+     ],
+     [
+      -80.5341283,
+      43.4354545
+     ],
+     [
+      -80.5340897,
+      43.4354706
+     ],
+     [
+      -80.5340599,
+      43.4354864
+     ],
+     [
+      -80.5340323,
+      43.4355043
+     ],
+     [
+      -80.5340073,
+      43.435524
+     ],
+     [
+      -80.5339849,
+      43.4355454
+     ],
+     [
+      -80.5337251,
+      43.4358571
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 13424,
+   "properties": {
+    "activetransportid": 13424,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 190.26,
+    "signals": {
+     "candidate_ways": 37,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.6,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4915403,
+      43.447626
+     ],
+     [
+      -80.4916359,
+      43.4475352
+     ],
+     [
+      -80.4916764,
+      43.4475001
+     ],
+     [
+      -80.4917414,
+      43.447432
+     ],
+     [
+      -80.4917622,
+      43.4474086
+     ],
+     [
+      -80.4917715,
+      43.4473895
+     ],
+     [
+      -80.491852,
+      43.4473046
+     ],
+     [
+      -80.4918678,
+      43.447294
+     ],
+     [
+      -80.4918885,
+      43.4472819
+     ],
+     [
+      -80.4921607,
+      43.447026
+     ],
+     [
+      -80.4921706,
+      43.4470154
+     ],
+     [
+      -80.4921766,
+      43.4470032
+     ],
+     [
+      -80.4921842,
+      43.4469897
+     ],
+     [
+      -80.4921981,
+      43.4469757
+     ],
+     [
+      -80.4922123,
+      43.4469634
+     ],
+     [
+      -80.4922287,
+      43.4469568
+     ],
+     [
+      -80.4922431,
+      43.4469476
+     ],
+     [
+      -80.4922543,
+      43.4469388
+     ],
+     [
+      -80.4924095,
+      43.4467937
+     ],
+     [
+      -80.4927517,
+      43.4464669
+     ],
+     [
+      -80.4929321,
+      43.4462873
+     ],
+     [
+      -80.4929353,
+      43.4462845
+     ],
+     [
+      -80.4929388,
+      43.446282
+     ],
+     [
+      -80.4929426,
+      43.4462796
+     ],
+     [
+      -80.4929466,
+      43.4462775
+     ],
+     [
+      -80.4929508,
+      43.4462755
+     ],
+     [
+      -80.4929552,
+      43.4462739
+     ],
+     [
+      -80.4929598,
+      43.4462725
+     ],
+     [
+      -80.4929645,
+      43.4462714
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 15360,
+   "properties": {
+    "activetransportid": 15360,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 301.9,
+    "signals": {
+     "candidate_ways": 17,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.73,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5419155,
+      43.42264
+     ],
+     [
+      -80.5413054,
+      43.422988
+     ],
+     [
+      -80.5412792,
+      43.4230085
+     ],
+     [
+      -80.5412624,
+      43.4230245
+     ],
+     [
+      -80.5412477,
+      43.4230416
+     ],
+     [
+      -80.5412352,
+      43.4230596
+     ],
+     [
+      -80.5412248,
+      43.4230783
+     ],
+     [
+      -80.5412169,
+      43.4230976
+     ],
+     [
+      -80.5412113,
+      43.4231173
+     ],
+     [
+      -80.5412082,
+      43.4231374
+     ],
+     [
+      -80.5412076,
+      43.4231575
+     ],
+     [
+      -80.5412094,
+      43.4231777
+     ],
+     [
+      -80.5412137,
+      43.4231976
+     ],
+     [
+      -80.5412204,
+      43.4232172
+     ],
+     [
+      -80.5412295,
+      43.4232362
+     ],
+     [
+      -80.5412409,
+      43.4232546
+     ],
+     [
+      -80.5412545,
+      43.4232721
+     ],
+     [
+      -80.5413753,
+      43.423387
+     ],
+     [
+      -80.5415992,
+      43.4235966
+     ],
+     [
+      -80.5422302,
+      43.4241866
+     ],
+     [
+      -80.5422808,
+      43.4242354
+     ],
+     [
+      -80.5423258,
+      43.4242795
+     ],
+     [
+      -80.5423648,
+      43.4243265
+     ],
+     [
+      -80.5426655,
+      43.4247913
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 15768,
+   "properties": {
+    "activetransportid": 15768,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 5,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 151.35,
+    "signals": {
+     "candidate_ways": 22,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.8,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5056348,
+      43.4539721
+     ],
+     [
+      -80.50638,
+      43.4527221
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16853,
+   "properties": {
+    "activetransportid": 16853,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 6,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 269.56,
+    "signals": {
+     "candidate_ways": 25,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.52,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.484792,
+      43.4313999
+     ],
+     [
+      -80.4863222,
+      43.4335558
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 14088,
+   "properties": {
+    "activetransportid": 14088,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 7,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 529.5,
+    "signals": {
+     "candidate_ways": 26,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.02,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5200773,
+      43.4452323
+     ],
+     [
+      -80.5200406,
+      43.4452403
+     ],
+     [
+      -80.5199595,
+      43.4452597
+     ],
+     [
+      -80.5198538,
+      43.445288
+     ],
+     [
+      -80.5197095,
+      43.4453334
+     ],
+     [
+      -80.5195351,
+      43.4453869
+     ],
+     [
+      -80.5163309,
+      43.4465416
+     ],
+     [
+      -80.516277,
+      43.446555
+     ],
+     [
+      -80.5141813,
+      43.447296
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 384123,
+   "properties": {
+    "activetransportid": 384123,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 8,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 173.43,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.1,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5083041,
+      43.4267394
+     ],
+     [
+      -80.5064693,
+      43.4275458
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16379,
+   "properties": {
+    "activetransportid": 16379,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 9,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 199.63,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.86,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5259163,
+      43.4400135
+     ],
+     [
+      -80.5252681,
+      43.4405934
+     ],
+     [
+      -80.5250024,
+      43.4408856
+     ],
+     [
+      -80.5248021,
+      43.4411105
+     ],
+     [
+      -80.5247973,
+      43.4411155
+     ],
+     [
+      -80.5247918,
+      43.44112
+     ],
+     [
+      -80.5247859,
+      43.4411243
+     ],
+     [
+      -80.5247794,
+      43.4411281
+     ],
+     [
+      -80.5247726,
+      43.4411315
+     ],
+     [
+      -80.5247653,
+      43.4411344
+     ],
+     [
+      -80.5247577,
+      43.4411369
+     ],
+     [
+      -80.5247499,
+      43.4411389
+     ],
+     [
+      -80.5247418,
+      43.4411404
+     ],
+     [
+      -80.5247336,
+      43.4411413
+     ],
+     [
+      -80.5247253,
+      43.4411417
+     ],
+     [
+      -80.524717,
+      43.4411416
+     ],
+     [
+      -80.5247087,
+      43.441141
+     ],
+     [
+      -80.5247006,
+      43.4411399
+     ],
+     [
+      -80.5246926,
+      43.4411382
+     ],
+     [
+      -80.5246848,
+      43.441136
+     ],
+     [
+      -80.5246774,
+      43.4411334
+     ],
+     [
+      -80.5246703,
+      43.4411303
+     ],
+     [
+      -80.524434,
+      43.4409806
+     ],
+     [
+      -80.5243168,
+      43.4409418
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16711,
+   "properties": {
+    "activetransportid": 16711,
+    "stratum": "osm_split_or_long",
+    "rank_in_stratum": 10,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 186.09,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 0.905,
+     "best_worst_point_m": 21.6,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4975322,
+      43.4359407
+     ],
+     [
+      -80.4993363,
+      43.4353076
+     ],
+     [
+      -80.4996194,
+      43.4352421
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16237,
+   "properties": {
+    "activetransportid": 16237,
+    "stratum": "dense_intersection",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 73.18,
+    "signals": {
+     "candidate_ways": 26,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.31,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 12,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5075985,
+      43.4395226
+     ],
+     [
+      -80.5070527,
+      43.4390275
+     ],
+     [
+      -80.5070365,
+      43.4390067
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 15583,
+   "properties": {
+    "activetransportid": 15583,
+    "stratum": "dense_intersection",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 126.06,
+    "signals": {
+     "candidate_ways": 20,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.28,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4787962,
+      43.4452057
+     ],
+     [
+      -80.4787962,
+      43.4452321
+     ],
+     [
+      -80.4784633,
+      43.445589
+     ],
+     [
+      -80.4779576,
+      43.4461572
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 19034,
+   "properties": {
+    "activetransportid": 19034,
+    "stratum": "dense_intersection",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 31.98,
+    "signals": {
+     "candidate_ways": 21,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.43,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4998202,
+      43.4394845
+     ],
+     [
+      -80.4998478,
+      43.4394847
+     ],
+     [
+      -80.5000141,
+      43.4395015
+     ],
+     [
+      -80.5001781,
+      43.4395127
+     ],
+     [
+      -80.5002107,
+      43.4395219
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 11932,
+   "properties": {
+    "activetransportid": 11932,
+    "stratum": "dense_intersection",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 132.72,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.76,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 11,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5014493,
+      43.4605329
+     ],
+     [
+      -80.5025578,
+      43.45986
+     ],
+     [
+      -80.5026536,
+      43.4598007
+     ],
+     [
+      -80.5026655,
+      43.4597918
+     ],
+     [
+      -80.5026726,
+      43.459783
+     ],
+     [
+      -80.5026759,
+      43.4597786
+     ],
+     [
+      -80.5026786,
+      43.4597741
+     ],
+     [
+      -80.5026808,
+      43.4597694
+     ],
+     [
+      -80.5026823,
+      43.4597646
+     ],
+     [
+      -80.5026833,
+      43.4597597
+     ],
+     [
+      -80.5026837,
+      43.4597548
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 14343,
+   "properties": {
+    "activetransportid": 14343,
+    "stratum": "dense_intersection",
+    "rank_in_stratum": 5,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 128.81,
+    "signals": {
+     "candidate_ways": 36,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.67,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 16,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4842962,
+      43.4464585
+     ],
+     [
+      -80.484294,
+      43.4464474
+     ],
+     [
+      -80.4842956,
+      43.4464353
+     ],
+     [
+      -80.4843028,
+      43.4464218
+     ],
+     [
+      -80.4851208,
+      43.4454941
+     ],
+     [
+      -80.4851448,
+      43.445486
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 297858,
+   "properties": {
+    "activetransportid": 297858,
+    "stratum": "dense_intersection",
+    "rank_in_stratum": 6,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 141.59,
+    "signals": {
+     "candidate_ways": 20,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.48,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 9,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4809366,
+      43.49336
+     ],
+     [
+      -80.4809155,
+      43.4933702
+     ],
+     [
+      -80.4801803,
+      43.4934891
+     ],
+     [
+      -80.4800514,
+      43.4934908
+     ],
+     [
+      -80.4797959,
+      43.4935294
+     ],
+     [
+      -80.47973,
+      43.4935344
+     ],
+     [
+      -80.4792253,
+      43.4936145
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 11756,
+   "properties": {
+    "activetransportid": 11756,
+    "stratum": "dense_intersection",
+    "rank_in_stratum": 7,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 123.99,
+    "signals": {
+     "candidate_ways": 21,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.87,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 8,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4671736,
+      43.458209
+     ],
+     [
+      -80.4685096,
+      43.457789
+     ],
+     [
+      -80.4685716,
+      43.4577724
+     ],
+     [
+      -80.468582,
+      43.4577691
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16891,
+   "properties": {
+    "activetransportid": 16891,
+    "stratum": "dense_intersection",
+    "rank_in_stratum": 8,
+    "classes": [
+     "plain"
+    ],
+    "family": "walkway",
+    "length_m": 74.48,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.4,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 10,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4892903,
+      43.4352497
+     ],
+     [
+      -80.4894292,
+      43.4352191
+     ],
+     [
+      -80.4901238,
+      43.4349683
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 392114,
+   "properties": {
+    "activetransportid": 392114,
+    "stratum": "candidate_heavy",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 104.73,
+    "signals": {
+     "candidate_ways": 23,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.53,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4697524,
+      43.4594637
+     ],
+     [
+      -80.46976,
+      43.4594572
+     ],
+     [
+      -80.4697694,
+      43.4594526
+     ],
+     [
+      -80.4699438,
+      43.4593957
+     ],
+     [
+      -80.470046,
+      43.4593634
+     ],
+     [
+      -80.4702789,
+      43.4592871
+     ],
+     [
+      -80.4706134,
+      43.4591811
+     ],
+     [
+      -80.4706484,
+      43.4591607
+     ],
+     [
+      -80.4709251,
+      43.4590687
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 12113,
+   "properties": {
+    "activetransportid": 12113,
+    "stratum": "candidate_heavy",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 52.42,
+    "signals": {
+     "candidate_ways": 23,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 2.49,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5043871,
+      43.4549443
+     ],
+     [
+      -80.5044051,
+      43.4549392
+     ],
+     [
+      -80.5044216,
+      43.4549383
+     ],
+     [
+      -80.5044361,
+      43.4549388
+     ],
+     [
+      -80.5044499,
+      43.4549408
+     ],
+     [
+      -80.504985,
+      43.4551101
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 12434,
+   "properties": {
+    "activetransportid": 12434,
+    "stratum": "candidate_heavy",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 86.8,
+    "signals": {
+     "candidate_ways": 35,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.1,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4867912,
+      43.452661
+     ],
+     [
+      -80.4871096,
+      43.452261
+     ],
+     [
+      -80.4871489,
+      43.4521567
+     ],
+     [
+      -80.4872688,
+      43.4519954
+     ],
+     [
+      -80.4872733,
+      43.4519846
+     ],
+     [
+      -80.4872742,
+      43.4519683
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 14355,
+   "properties": {
+    "activetransportid": 14355,
+    "stratum": "candidate_heavy",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 134.1,
+    "signals": {
+     "candidate_ways": 24,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.73,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4846213,
+      43.4478067
+     ],
+     [
+      -80.4854422,
+      43.4481604
+     ],
+     [
+      -80.4860478,
+      43.4484213
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 11990,
+   "properties": {
+    "activetransportid": 11990,
+    "stratum": "candidate_heavy",
+    "rank_in_stratum": 5,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 69.61,
+    "signals": {
+     "candidate_ways": 32,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.1,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5184474,
+      43.4555207
+     ],
+     [
+      -80.5184479,
+      43.455516
+     ],
+     [
+      -80.5184504,
+      43.4555115
+     ],
+     [
+      -80.5184663,
+      43.4555007
+     ],
+     [
+      -80.5192103,
+      43.4552401
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 12025,
+   "properties": {
+    "activetransportid": 12025,
+    "stratum": "candidate_heavy",
+    "rank_in_stratum": 6,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 60.71,
+    "signals": {
+     "candidate_ways": 25,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.3,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5102902,
+      43.4543063
+     ],
+     [
+      -80.5103058,
+      43.4543102
+     ],
+     [
+      -80.5103169,
+      43.4543164
+     ],
+     [
+      -80.5107648,
+      43.4546677
+     ],
+     [
+      -80.5107882,
+      43.4546878
+     ],
+     [
+      -80.5107884,
+      43.4547064
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 393600,
+   "properties": {
+    "activetransportid": 393600,
+    "stratum": "crossing",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "crossing",
+    "length_m": 17.66,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.85,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5181443,
+      43.4538353
+     ],
+     [
+      -80.5183403,
+      43.4537653
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 426744,
+   "properties": {
+    "activetransportid": 426744,
+    "stratum": "crossing",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "crossing",
+    "length_m": 12.72,
+    "signals": {
+     "candidate_ways": 16,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.62,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4999356,
+      43.4393938
+     ],
+     [
+      -80.4997852,
+      43.4393605
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 302375,
+   "properties": {
+    "activetransportid": 302375,
+    "stratum": "crossing",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "crossing",
+    "length_m": 9.25,
+    "signals": {
+     "candidate_ways": 8,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.54,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.483571,
+      43.4342994
+     ],
+     [
+      -80.4835344,
+      43.4343783
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 390013,
+   "properties": {
+    "activetransportid": 390013,
+    "stratum": "crossing",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "crossing",
+    "length_m": 15.77,
+    "signals": {
+     "candidate_ways": 12,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.59,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 2,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4716724,
+      43.4433845
+     ],
+     [
+      -80.4717725,
+      43.4432627
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 338022,
+   "properties": {
+    "activetransportid": 338022,
+    "stratum": "straightforward",
+    "rank_in_stratum": 1,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 33.86,
+    "signals": {
+     "candidate_ways": 9,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.21,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 4,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4759934,
+      43.4979534
+     ],
+     [
+      -80.4762437,
+      43.4981979
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 16924,
+   "properties": {
+    "activetransportid": 16924,
+    "stratum": "straightforward",
+    "rank_in_stratum": 2,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 75.92,
+    "signals": {
+     "candidate_ways": 14,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.86,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 3,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4640727,
+      43.4346176
+     ],
+     [
+      -80.463147,
+      43.434507
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 17483,
+   "properties": {
+    "activetransportid": 17483,
+    "stratum": "straightforward",
+    "rank_in_stratum": 3,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 74.09,
+    "signals": {
+     "candidate_ways": 15,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.19,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.5054774,
+      43.4250653
+     ],
+     [
+      -80.5046971,
+      43.425414
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 301912,
+   "properties": {
+    "activetransportid": 301912,
+    "stratum": "straightforward",
+    "rank_in_stratum": 4,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 54.06,
+    "signals": {
+     "candidate_ways": 11,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.65,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 5,
+     "osm_kerb_within_3m": false
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4954082,
+      43.4374168
+     ],
+     [
+      -80.4953797,
+      43.4375799
+     ],
+     [
+      -80.4953699,
+      43.4376222
+     ],
+     [
+      -80.4953641,
+      43.4376449
+     ],
+     [
+      -80.4953588,
+      43.4376605
+     ],
+     [
+      -80.4953511,
+      43.4376828
+     ],
+     [
+      -80.4953451,
+      43.437697
+     ],
+     [
+      -80.4953426,
+      43.4377027
+     ],
+     [
+      -80.4953294,
+      43.4377352
+     ],
+     [
+      -80.4953216,
+      43.4377631
+     ],
+     [
+      -80.4953199,
+      43.4377778
+     ],
+     [
+      -80.4953198,
+      43.4377914
+     ],
+     [
+      -80.4953209,
+      43.4378069
+     ],
+     [
+      -80.4953254,
+      43.4378241
+     ],
+     [
+      -80.4953305,
+      43.4378377
+     ],
+     [
+      -80.4953585,
+      43.4378926
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 19261,
+   "properties": {
+    "activetransportid": 19261,
+    "stratum": "straightforward",
+    "rank_in_stratum": 5,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 86.59,
+    "signals": {
+     "candidate_ways": 21,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 1.61,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 6,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4869954,
+      43.4654922
+     ],
+     [
+      -80.4869761,
+      43.465479
+     ],
+     [
+      -80.4869586,
+      43.4654639
+     ],
+     [
+      -80.4869372,
+      43.4654406
+     ],
+     [
+      -80.4865747,
+      43.4648463
+     ],
+     [
+      -80.4865693,
+      43.4648343
+     ],
+     [
+      -80.4865665,
+      43.4648216
+     ],
+     [
+      -80.486567,
+      43.4648073
+     ],
+     [
+      -80.4865842,
+      43.4647886
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 15588,
+   "properties": {
+    "activetransportid": 15588,
+    "stratum": "straightforward",
+    "rank_in_stratum": 6,
+    "classes": [
+     "plain"
+    ],
+    "family": "sidewalk",
+    "length_m": 119.53,
+    "signals": {
+     "candidate_ways": 19,
+     "pedestrian_within_5m_share": 1.0,
+     "best_worst_point_m": 0.95,
+     "parallel_ways": 1,
+     "splitting_ways": 1,
+     "city_neighbours": 7,
+     "osm_kerb_within_3m": true
+    }
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -80.4789207,
+      43.4452764
+     ],
+     [
+      -80.4788975,
+      43.4452842
+     ],
+     [
+      -80.4788808,
+      43.4452921
+     ],
+     [
+      -80.4788241,
+      43.4453538
+     ],
+     [
+      -80.4781052,
+      43.4461472
+     ],
+     [
+      -80.4780998,
+      43.4461553
+     ],
+     [
+      -80.4780984,
+      43.4461645
+     ]
+    ]
+   }
+  }
+ ]
+}
