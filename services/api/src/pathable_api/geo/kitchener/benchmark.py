@@ -284,12 +284,12 @@ def candidate_recall(
         "among_candidates": found,
         "recall": _ratio(found, wanted),
         "missing": missing,
-        "candidate_ways_per_record": _distribution(ways),
-        "candidate_nodes_per_record": _distribution(nodes),
+        "candidate_ways_per_record": distribution(ways),
+        "candidate_nodes_per_record": distribution(nodes),
     }
 
 
-def _distribution(values: Sequence[int]) -> dict[str, Any]:
+def distribution(values: Sequence[int]) -> dict[str, Any]:
     if not values:
         return {"n": 0}
     array = np.asarray(values, dtype=float)

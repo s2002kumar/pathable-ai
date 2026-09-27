@@ -61,6 +61,13 @@ from pathable_api.geo.kitchener.arcgis import (
 from pathable_api.geo.kitchener.audit import AuditError, run_audit
 from pathable_api.geo.kitchener.audit import write_outputs as write_kitchener_outputs
 from pathable_api.geo.kitchener.conflation import load_inputs as load_conflation_inputs
+from pathable_api.geo.kitchener.evaluation import (
+    BenchmarkError,
+    load_label_sets,
+    run_benchmark,
+    run_pilot,
+)
+from pathable_api.geo.kitchener.failures_page import render_failures
 from pathable_api.geo.kitchener.geography import (
     PathAbleReadError,
     read_dataset_source,
@@ -90,6 +97,7 @@ from pathable_api.geo.kitchener.osm_history import (
 )
 from pathable_api.geo.kitchener.review import render_review
 from pathable_api.geo.kitchener.snapshot import SnapshotError, SnapshotPlan, take_snapshot
+from pathable_api.geo.kitchener.study import ATTRIBUTION as KITCHENER_OSM_ATTRIBUTION
 from pathable_api.geo.kitchener.study import (
     StudyError,
     history_document,
@@ -694,6 +702,36 @@ def build_parser() -> argparse.ArgumentParser:
     holdout_review.add_argument("--sample-sha256", default=None)
     holdout_review.add_argument("--html", type=Path, required=True)
     holdout_review.add_argument("--digest", type=Path, required=True)
+
+    benchmark = kitchener_actions.add_parser(
+        "benchmark",
+        help=(
+            "Run PA-GEO-05's benchmark: check the development grid still selects the frozen "
+            "policy, then score the matcher, baselines and ablations against the frozen held-out "
+            "labels; optionally run the full-pilot dry run and write its research artifact."
+        ),
+    )
+    frozen_inputs(benchmark)
+    benchmark.add_argument(
+        "--evidence-dir",
+        type=Path,
+        required=True,
+        help="The folder holding the committed sample and label files.",
+    )
+    benchmark.add_argument(
+        "--failure-analysis",
+        type=Path,
+        default=None,
+        help="Causes recorded for the failures, for these exact decisions.",
+    )
+    benchmark.add_argument("--json", type=Path, required=True)
+    benchmark.add_argument("--errors-html", type=Path, default=None)
+    benchmark.add_argument(
+        "--artifact-dir",
+        type=Path,
+        default=None,
+        help="Run the full pilot and write the research artifact here (never committed).",
+    )
 
     return parser
 
@@ -1319,6 +1357,8 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         return _kitchener_holdout(args)
     if args.kitchener_command == "holdout-review":
         return _kitchener_holdout_review(args)
+    if args.kitchener_command == "benchmark":
+        return _kitchener_benchmark(args)
     if args.kitchener_command == "lineage-history":
         return _kitchener_lineage_history(args)
     if args.kitchener_command == "snapshot":
@@ -1426,6 +1466,7 @@ _KITCHENER_OFFLINE = frozenset(
         "imagery-metadata",
         "holdout",
         "holdout-review",
+        "benchmark",
     }
 )
 
@@ -1459,6 +1500,66 @@ def _kitchener_holdout_review(args: argparse.Namespace) -> int:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8", newline="\n")
         print(f"Wrote {path}")
+    return EXIT_OK
+
+
+def _kitchener_benchmark(args: argparse.Namespace) -> int:
+    started = time.perf_counter()
+    try:
+        sets = load_label_sets(args.evidence_dir)
+        inputs = load_conflation_inputs(
+            args.normalized, args.extract, args.extract_manifest, progress=print
+        )
+        loaded = time.perf_counter()
+        causes = (
+            json.loads(args.failure_analysis.read_text("utf-8"))
+            if args.failure_analysis is not None
+            else None
+        )
+        report, timings, decisions = run_benchmark(
+            inputs, sets, failure_causes=causes, progress=print
+        )
+        if args.artifact_dir is not None:
+            pilot, pilot_timings = run_pilot(
+                inputs, args.artifact_dir, check=decisions, progress=print
+            )
+            report["full_pilot_dry_run"] = pilot
+            timings.update(pilot_timings)
+    except (BenchmarkError, LabelError, ExtractSourceError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    report["inputs"] = inputs.identity
+    report["attribution"] = KITCHENER_OSM_ATTRIBUTION
+    timings["load_inputs_s"] = round(loaded - started, 2)
+    timings["total_s"] = round(time.perf_counter() - started, 2)
+    report["run"] = {**_run_measurements(), "timings": timings}
+    if args.artifact_dir is not None:
+        manifest = {
+            "artifact_version": report["full_pilot_dry_run"]["artifact"]["version"],
+            "purpose": "PA-GEO-05 research artifact: never read by routing",
+            "inputs": inputs.identity,
+            "policy": report["policy"],
+            "decisions_sha256": report["full_pilot_dry_run"]["decisions_sha256"],
+            "files": report["full_pilot_dry_run"]["artifact"]["files"],
+            "attribution": KITCHENER_OSM_ATTRIBUTION,
+            "run": report["run"],
+        }
+        write_json(args.artifact_dir / "manifest.json", manifest)
+    report["content_sha256"] = content_sha256(report)
+    write_json(args.json, report)
+    holdout = report["holdout"]
+    print(f"\nHeld-out records {holdout['records']}; decisions {holdout['decisions_sha256'][:16]}")
+    for name, value in holdout["matcher"]["records_level"].items():
+        print(f"  {name:<44}{value}")
+    print(f"  pairs {holdout['matcher']['pairs']}")
+    print(f"Wrote {args.json}")
+    if args.errors_html is not None:
+        page = render_failures(
+            report, inputs.population.physical, inputs.osm, KITCHENER_OSM_ATTRIBUTION
+        )
+        args.errors_html.parent.mkdir(parents=True, exist_ok=True)
+        args.errors_html.write_text(page, encoding="utf-8", newline="\n")
+        print(f"Wrote {args.errors_html}")
     return EXIT_OK
 
 
