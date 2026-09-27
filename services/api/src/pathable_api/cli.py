@@ -67,6 +67,8 @@ from pathable_api.geo.kitchener.geography import (
     read_pathable_edges,
 )
 from pathable_api.geo.kitchener.holdout import HoldoutError, build_holdout
+from pathable_api.geo.kitchener.holdout_review import blind_document, retitle
+from pathable_api.geo.kitchener.holdout_review import digest as holdout_digest
 from pathable_api.geo.kitchener.imagery import ImageryError, survey_imagery
 from pathable_api.geo.kitchener.lineage import ESRI_MUNICIPAL_SINCE, LabelError
 from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
@@ -679,6 +681,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     holdout.add_argument("--development-sample-sha256", default=None)
     holdout.add_argument("--out", type=Path, required=True, help="Write the sample GeoJSON here.")
+
+    holdout_review = kitchener_actions.add_parser(
+        "holdout-review",
+        help=(
+            "Write the blind review page and text digest for PA-GEO-05's held-out records: "
+            "no strata, no labels, no matcher output, candidates in OSM-id order."
+        ),
+    )
+    frozen_inputs(holdout_review)
+    holdout_review.add_argument("--sample", type=Path, required=True)
+    holdout_review.add_argument("--sample-sha256", default=None)
+    holdout_review.add_argument("--html", type=Path, required=True)
+    holdout_review.add_argument("--digest", type=Path, required=True)
 
     return parser
 
@@ -1302,6 +1317,8 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         return _kitchener_imagery_metadata(args)
     if args.kitchener_command == "holdout":
         return _kitchener_holdout(args)
+    if args.kitchener_command == "holdout-review":
+        return _kitchener_holdout_review(args)
     if args.kitchener_command == "lineage-history":
         return _kitchener_lineage_history(args)
     if args.kitchener_command == "snapshot":
@@ -1408,8 +1425,41 @@ _KITCHENER_OFFLINE = frozenset(
         "lineage-history",
         "imagery-metadata",
         "holdout",
+        "holdout-review",
     }
 )
+
+
+def _kitchener_holdout_review(args: argparse.Namespace) -> int:
+    try:
+        inputs = load_inputs(
+            args.sample,
+            args.normalized,
+            args.extract,
+            args.extract_manifest,
+            expected_sample_sha256=args.sample_sha256,
+            progress=print,
+        )
+        document = blind_document(run_study(inputs, progress=print))
+    except (StudyError, NormalizationError, ExtractSourceError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    features = inputs.kitchener.features
+
+    def describe(ids: Sequence[int]) -> list[str]:
+        return [
+            f"{i} {features[i].subcategory} ({features[i].physical_class}, "
+            f"{features[i].geometry.length:.1f} m)"
+            for i in sorted(ids)
+            if i in features
+        ]
+
+    page = retitle(render_review(document, inputs.kitchener, inputs.osm, blind=True))
+    for path, text in ((args.html, page), (args.digest, holdout_digest(document, describe))):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8", newline="\n")
+        print(f"Wrote {path}")
+    return EXIT_OK
 
 
 def _kitchener_holdout(args: argparse.Namespace) -> int:

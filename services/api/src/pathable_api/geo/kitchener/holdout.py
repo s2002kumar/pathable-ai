@@ -423,3 +423,25 @@ def build_holdout(
     return holdout_document(
         drawn, description, inputs.identity, development_identity, seed, geometries
     )
+
+
+#: The blind second pass: one record per stratum, then filled by hash to this size.
+REPEAT_VERSION = "pathable-pa-geo-05-repeat-v1"
+REPEAT_TARGET = 60
+
+
+def repeat_subset(document: Mapping[str, Any], *, target: int = REPEAT_TARGET) -> list[int]:
+    """The held-out records labelled a second time, blind to the first pass."""
+    features = [f["properties"] for f in document["features"]]
+    seed = f"{REPEAT_VERSION}:{document['metadata']['seed']}"
+    ordered = sorted(features, key=lambda p: selection_key(seed, int(p["activetransportid"])))
+    chosen: list[int] = []
+    for stratum in dict.fromkeys(p["stratum"] for p in features):
+        first = next(p for p in ordered if p["stratum"] == stratum)
+        chosen.append(int(first["activetransportid"]))
+    for item in ordered:
+        if len(chosen) >= target:
+            break
+        if int(item["activetransportid"]) not in chosen:
+            chosen.append(int(item["activetransportid"]))
+    return sorted(chosen)
