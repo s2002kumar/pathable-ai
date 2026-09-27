@@ -380,7 +380,7 @@ PA-GEO-03 is unchanged.
 - Any Kitchener value in routing, and any change to the graph.
 - Labels by a person: both passes are one AI model's.
 
-### PA-GEO-05 — Kitchener ↔ OpenStreetMap conflation benchmark _(PR #71)_
+### PA-GEO-05 — Kitchener ↔ OpenStreetMap conflation benchmark _(merged, PR #71)_
 
 **Delivered** — [`KITCHENER_CONFLATION.md`](../architecture/KITCHENER_CONFLATION.md)
 
@@ -426,7 +426,55 @@ gate stays closed.
 **Still does not exist.**
 
 - Any Kitchener value in routing, and any change to the graph.
-- Reconciliation: both sides' values are kept, and none is chosen.
+- Labels by a person, or any field check.
+
+### PA-GEO-06 — Provenance-aware accessibility evidence reconciliation _(PR #72)_
+
+**Delivered** —
+[`ACCESSIBILITY_EVIDENCE_RECONCILIATION.md`](../architecture/ACCESSIBILITY_EVIDENCE_RECONCILIATION.md),
+[ADR 0011](../adr/0011-accessibility-evidence-reconciliation.md)
+
+| Area           | What exists                                                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Evidence model | Sources, assertions (raw and normalized value, value state, evidence origin, typed dates), correspondences and reconciliations, each versioned |
+| Input contract | PA-GEO-05's artifact read and hash-checked, never re-made; a gate per class; every exclusion with its reason                                   |
+| Reconciliation | Per property per local target: agreement, compatible, conflict, incomparable, one source, unknown; no precedence, nothing resolved             |
+| Lineage        | OSM's edit history under PA-GEO-04's rules, unchanged: attribute and geometry lineage apart, never a confidence                                |
+| Isolation      | Every row `not_routing_eligible` with its blockers; static tests keep routing from the modules and the artifact                                |
+| Commands       | `pathable kitchener reconcile-history` and `reconcile`: a byte-reproducible four-table artifact and an evidence summary                        |
+
+**What it measured**, over every correspondence the gate accepts in the full
+pilot. None of it is field-verified.
+
+- **Surfaces:** 7,930 targets. OSM asserts a surface on 5,262; the City adds 943
+  more, and 257 conflict, all kept open.
+- **Curb ramps:** 1,648 City curb cuts beside an OSM kerb node are compatible,
+  never agreement; only 13 add a ramp OSM lacks. 1,152 City curb cuts have no
+  OSM kerb node and wait for matcher v2.
+- **Structures:** 63 accepted, all already tagged in OSM. 45 City structures OSM
+  does not tag wait for matcher v2.
+- **Lineage:** 1,449 of 1,671 surface agreements are with OSM values whose edit
+  states an unrelated source, mostly survey-app edits. Agreement stays
+  agreement; it is not independence.
+- **Freshness:** the City supplies no observation date; 2,891 OSM values carry
+  one, most from 2021.
+- **Run:** 10,523 reconciliations in about 24 s on one laptop; two runs were
+  byte-identical.
+
+**Decision: LIMITED GO** to routing-evidence integration research for surfaces
+only. That is not integration: the founder licensing decision, validation and a
+routing policy all come first.
+
+**Matcher v2, planned and not started.** It covers stairs and structures OSM
+draws as plain footways, under the correspondence rule already decided;
+way-level curb-cut correspondence; abstention for short pieces at junctions,
+and better abstention generally; and a redesign of class compatibility. It needs
+a new policy version and a new, untouched holdout: PA-GEO-05's is spent.
+
+**Still does not exist.**
+
+- Any Kitchener value in routing, and any change to the graph.
+- A routing policy for multi-source evidence.
 - Labels by a person, or any field check.
 
 ---
