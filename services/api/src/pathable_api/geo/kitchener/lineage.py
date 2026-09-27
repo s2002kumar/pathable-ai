@@ -381,18 +381,22 @@ _DATA_WORDS = (
     rf"open ?data|import|data ?set|{_A}gis{_Z}|shapefile|geojson|licen[cs]e|{_A}ogl{_Z}|"
     r"city data|municipal data|active transportation|inventory"
 )
-_KITCHENER = re.compile(rf"{_A}kitchener{_Z}", re.IGNORECASE)
+#: The City, or its open-data portal (``kitchenergis.opendata.arcgis.com``).
+_KITCHENER = re.compile(rf"{_A}kitchener(gis)?{_Z}", re.IGNORECASE)
 _MUNICIPAL_PLACES = re.compile(
-    rf"region of waterloo|waterloo region|city of waterloo|{_A}cambridge{_Z}|{_A}woolwich{_Z}",
+    rf"region of waterloo|regionofwaterloo|waterloo region|city of waterloo|"
+    rf"{_A}cambridge{_Z}|{_A}woolwich{_Z}",
     re.IGNORECASE,
 )
 #: The Region's and the Province's orthophotos, however a mapper or an editor
 #: names them: "Region of Waterloo 2024", the Region's imagery WMS, the Ontario mosaics.
 _PUBLIC_IMAGERY = re.compile(
-    r"region of waterloo \d{4}|regionofwaterloo|waimagery|geospatial ontario|"
+    r"region of waterloo \d{4}|waimagery|geospatial ontario|"
     rf"ontario (imagery|mosaic|orthophoto)|{_A}swoop{_Z}|{_A}oids{_Z}",
     re.IGNORECASE,
 )
+#: Data from outside OSM whose origin is not named: it could be the City's.
+_EXTERNAL_DATA = re.compile(r"open ?data|local data|proprietary", re.IGNORECASE)
 _GOVERNMENT = re.compile(
     rf"canvec|geobase|nrcan|statistics canada|statcan|ontario road network|{_A}orn{_Z}|"
     rf"land information ontario|{_A}lio{_Z}|government",
@@ -403,14 +407,18 @@ _DATA = re.compile(_DATA_WORDS, re.IGNORECASE)
 # Not preceded by a letter: "Geobase_Import_2009" names an import.
 _IMPORT = re.compile(rf"{_A}import", re.IGNORECASE)
 _SURVEY = re.compile(
-    rf"{_A}survey|{_A}gps{_Z}|{_A}gnss{_Z}|on[- ]the[- ]ground|local knowledge|ground truth|"
+    rf"{_A}survey|{_A}gps{_Z}|{_A}gnss{_Z}|on[- ]the[- ]ground|{_A}knowledge{_Z}|ground truth|"
     rf"{_A}in person{_Z}|streetcomplete|every ?door",
     re.IGNORECASE,
 )
 _STREET_LEVEL = re.compile(
-    r"mapillary|kartaview|openstreetcam|panoramax|streetside|streetlevel|street[- ]level",
+    r"mapillary|kartaview|openstreetcam|panoramax|mapilio|streetside|streetlevel|street[- ]level",
     re.IGNORECASE,
 )
+#: Layers of other people's GPS traces, which an editor records as on screen.
+_GPS_LAYERS = re.compile(r"gps traces|osm-gps|strava", re.IGNORECASE)
+#: A data file the mapper loaded into the editor: anything, the City's included.
+_DATA_FILE = re.compile(r"\.\w+ data file", re.IGNORECASE)
 _NAMED_IMAGERY = re.compile(
     rf"{_A}bing{_Z}|mapbox|maxar|digitalglobe|nearmap|vexcel",
     re.IGNORECASE,
@@ -444,6 +452,9 @@ _ID_RECORDED = frozenset(
         "aerial imagery",
         "streetlevel imagery",
         "mapillary",
+        "mapillary-signs",
+        "mapillary-map-features",
+        "mapilio",
         "openstreetcam",
         "kartaview",
         "streetside",
@@ -451,14 +462,26 @@ _ID_RECORDED = frozenset(
         "panoramax",
     }
 )
+#: Editors that write the layer words into ``source`` themselves: iD, and Rapid,
+#: which is built on it.
+_ID_EDITORS = ("iD ", "Rapid ")
 
 
 def signals_in_source(value: str, *, when: str | None = None) -> set[Signal]:
     """What a ``source``-like value, a tag a mapper wrote to name a source, says.
 
     ``when`` is the time of the edit that wrote it, which decides what Esri's
-    imagery was.
+    imagery was. A value naming several sources is read part by part, so one
+    part's imagery never turns another part's data into imagery.
     """
+    found: set[Signal] = set()
+    for part in (p.strip() for p in value.split(";")):
+        if part:
+            found |= _signals_in_one_source(part, when=when)
+    return found
+
+
+def _signals_in_one_source(value: str, *, when: str | None) -> set[Signal]:
     found: set[Signal] = set()
     public_imagery = bool(_PUBLIC_IMAGERY.search(value))
     if public_imagery:
@@ -469,7 +492,7 @@ def signals_in_source(value: str, *, when: str | None = None) -> set[Signal]:
         found.add(Signal.PUBLIC_IMAGERY if _IMAGERY.search(value) else Signal.OTHER_GOVERNMENT)
     if _GOVERNMENT.search(value):
         found.add(Signal.OTHER_GOVERNMENT)
-    if _IMPORT.search(value) or re.search(r"open ?data", value, re.IGNORECASE):
+    if _IMPORT.search(value) or _EXTERNAL_DATA.search(value):
         found.add(Signal.IMPORT)
     if _SURVEY.search(value):
         found.add(Signal.SURVEY)
@@ -500,8 +523,10 @@ def signals_in_imagery_used(value: str, *, when: str | None = None) -> set[Signa
             found.add(Signal.PUBLIC_IMAGERY)
         elif _STREET_LEVEL.search(layer):
             found.add(Signal.EDITOR_STREET_LEVEL)
-        elif ".gpx" in layer.lower():
+        elif ".gpx" in layer.lower() or _GPS_LAYERS.search(layer):
             found.add(Signal.EDITOR_GPS)
+        elif _DATA_FILE.search(layer):
+            found.add(Signal.IMPORT)
         elif _ESRI.search(layer):
             found.add(_esri(when, Signal.EDITOR_IMAGERY))
         elif _NAMED_IMAGERY.search(layer):
@@ -514,8 +539,8 @@ def signals_in_imagery_used(value: str, *, when: str | None = None) -> set[Signa
 
 
 def signals_in_changeset_source(value: str, *, editor: str, when: str | None = None) -> set[Signal]:
-    """A changeset's source tag. From iD, the layer words are the editor's own record."""
-    if not editor.startswith("iD "):
+    """A changeset's source tag. From iD or Rapid, the layer words are the editor's own record."""
+    if not editor.startswith(_ID_EDITORS):
         return signals_in_source(value, when=when)
     found: set[Signal] = set()
     for word in (part.strip() for part in value.split(";")):

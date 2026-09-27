@@ -155,6 +155,35 @@ class TestSignals:
                 "GRT GTFS; GRT Schedule; Region of Waterloo 2024; Bing",
                 {Signal.PUBLIC_IMAGERY, Signal.DECLARED_IMAGERY},
             ),
+            # Regression: the City's open-data portal is Kitchener data, and was missed.
+            (
+                "Bing, OSC, Mapillary; Canvec; local data: "
+                "http://data.kitchenergis.opendata.arcgis.com/datasets?q=Basemap",
+                {
+                    Signal.DECLARED_IMAGERY,
+                    Signal.STREET_LEVEL,
+                    Signal.OTHER_GOVERNMENT,
+                    Signal.KITCHENER,
+                    Signal.IMPORT,
+                },
+            ),
+            # Regression: imagery named in one part turned another part's data into imagery.
+            (
+                "Bing; Region of Waterloo 2024; Esri World Imagery; Kitchener Open Data",
+                {
+                    Signal.DECLARED_IMAGERY,
+                    Signal.PUBLIC_IMAGERY,
+                    Signal.KITCHENER,
+                    Signal.IMPORT,
+                },
+            ),
+            # Regression: a Region web page is not the Region's imagery.
+            (
+                "https://rowpages.regionofwaterloo.ca/RoadClosures/RoadClosure",
+                {Signal.OTHER_GOVERNMENT},
+            ),
+            ("knowledge", {Signal.SURVEY}),
+            ("tt_proprietary", {Signal.IMPORT}),
         ],
     )
     def test_a_source_value_names_its_kind(self, value: str, expected: set[Signal]) -> None:
@@ -173,6 +202,13 @@ class TestSignals:
                 {Signal.PUBLIC_IMAGERY},
             ),
             ("Bing Maps Aerial;.gpx data file", {Signal.EDITOR_IMAGERY, Signal.EDITOR_GPS}),
+            ("Bing;OpenStreetMap GPS traces", {Signal.EDITOR_IMAGERY, Signal.EDITOR_GPS}),
+            (
+                "Bing Maps Aerial;Mapilio Images",
+                {Signal.EDITOR_IMAGERY, Signal.EDITOR_STREET_LEVEL},
+            ),
+            # A data file loaded into the editor could be the City's own.
+            ("Bing Maps Aerial;.geojson data file", {Signal.EDITOR_IMAGERY, Signal.IMPORT}),
             ("None", set()),
         ],
     )
@@ -191,10 +227,19 @@ class TestSignals:
         assert Signal.SURVEY in signals_in_changeset_source(
             f"{written};local knowledge", editor="iD 2.20.1"
         )
-        # Typed into another editor, the same words are the mapper's statement.
+        # Typed into another editor, the same words are the mapper's statement,
+        # each part read on its own: street-level imagery and unnamed aerial imagery.
         assert signals_in_changeset_source(written, editor="JOSM/1.5 (18969 en)") == {
-            Signal.STREET_LEVEL
+            Signal.STREET_LEVEL,
+            Signal.UNSPECIFIED_IMAGERY,
         }
+        # Rapid, built on iD, writes them itself too, and so do iD's own layer ids.
+        assert signals_in_changeset_source(
+            "aerial imagery;streetlevel imagery", editor="Rapid 2.5.7"
+        ) == {Signal.EDITOR_STREET_LEVEL, Signal.UNSPECIFIED_IMAGERY}
+        assert signals_in_changeset_source(
+            ";streetlevel imagery;mapillary;mapillary-signs", editor="iD 2.21.1"
+        ) == {Signal.EDITOR_STREET_LEVEL}
 
     def test_a_place_name_in_a_comment_is_not_a_source(self) -> None:
         assert signals_in_comment("Added sidewalks in Kitchener") == set()
