@@ -138,12 +138,14 @@ class TestLabelled:
     ) -> None:
         document = run_study(inputs, labels=osm_fixture.labels())
 
+        # CURBCUT = Y is never restated as a kerb value: a lowered kerb is
+        # consistent with the City's "curbcut down to street level", not the same.
         curb = _record(document, 1002)["attributes"]["curb_cut"]
-        assert curb["comparison"] == "same"
+        assert curb["comparison"] == "consistent"
         assert curb["osm_kerb_values"] == ["lowered"]
         stairs = _record(document, 1004)["attributes"]
         assert stairs["structure"]["comparison"] == "same"
-        assert stairs["railing"]["comparison"] == "same"
+        assert stairs["railing"]["comparison"] == "consistent"
         trail = _record(document, 1005)["attributes"]
         assert trail["surface"]["comparison"] == "conflict"  # STONEDUST against gravel
         assert trail["condition"]["comparison"] == "both_present"
@@ -321,7 +323,7 @@ class TestAttributeResults:
     def test_results_per_attribute_and_what_only_osm_says(self, inputs: StudyInputs) -> None:
         results = run_study(inputs, labels=osm_fixture.labels())["attribute_results"]
 
-        assert results["curb_cut"]["comparison"] == {"same": 1}
+        assert results["curb_cut"]["comparison"] == {"consistent": 1}
         assert results["structure"]["comparison"] == {"same": 1}
         # Trail 1005's STONEDUST against gravel; crosswalk 1003's painted asphalt
         # beside an OSM crossing with no surface tag.
@@ -454,6 +456,7 @@ class TestReviewAndCommand:
         assert "<h3>Labels</h3>" not in blind
         assert "obvious_correspondence</td>" not in blind.split("<main")[1]
         assert "src=" not in page  # nothing fetched: no basemap, no imagery
+        assert "What this does not show" in page
 
     def test_the_command_writes_the_document_and_the_page(
         self, files: dict[str, Any], tmp_path: Path

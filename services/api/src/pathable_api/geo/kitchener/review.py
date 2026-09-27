@@ -115,13 +115,25 @@ def _header(document: Mapping[str, Any], *, blind: bool, count: int) -> str:
         if blind
         else ""
     )
+    scope = document.get("scope") or {}
+    scope_html = "".join(
+        f"<details><summary>{title}</summary><ul>"
+        + "".join(f"<li>{html.escape(item)}</li>" for item in scope[key])
+        + "</ul></details>"
+        for key, title in (
+            ("what_this_shows", "What this shows"),
+            ("what_this_does_not_show", "What this does not show"),
+        )
+        if scope.get(key)
+    )
     return (
         "<header><h1>Kitchener and OpenStreetMap: geometry and lineage review</h1>"
         f"<p>{count} records from the PA-GEO-03 sample, drawn in the City's own NAD83 / UTM 17N "
         "metres against the frozen OSM extract PathAble's routing dataset was built from. No "
         "basemap, no imagery. Candidate numbers are the study's display order, not a ranking. "
         "Nothing here is a match decision or a routing input.</p>"
-        f"{note}{_table(['Input', 'Identity'], rows)}{legend}{definition_html}</header>"
+        f"{note}{scope_html}{_table(['Input', 'Identity'], rows)}{legend}{definition_html}"
+        "</header>"
     )
 
 

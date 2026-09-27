@@ -719,10 +719,12 @@ def attribute_comparisons(
             for c in record["candidates"]
             if c["metrics"]["min_distance_m"] <= NODE_NEAR_M
         )
+        # "consistent", never "same": the City's definition implies neither kerb
+        # value, so OSM's lowered or flush agrees with it without restating it.
         if not values:
             comparison = "kitchener_only"
         elif set(values) & KERB_CONSISTENT and not set(values) & KERB_CONFLICT:
-            comparison = "same"
+            comparison = "consistent"
         elif set(values) <= KERB_CONFLICT:
             comparison = "conflict"
         else:
@@ -771,6 +773,9 @@ def attribute_comparisons(
             for way in ways
         }
         handrail_values = {v for tags in handrails.values() for v in tags.values()}
+        # A handrail is a railing, but a railing — a bridge's guard rail, say — need
+        # not be a handrail: OSM's handrail tags can agree with RAILING = Y, and
+        # handrail=no does not contradict it.
         results["railing"] = {
             "kitchener": "RAILING = Y",
             "osm_handrail_tags": handrails,
@@ -779,9 +784,9 @@ def attribute_comparisons(
                 if not obvious
                 else "kitchener_only"
                 if not handrail_values
-                else "conflict"
+                else "osm_no_handrail"
                 if handrail_values == {"no"}
-                else "same"
+                else "consistent"
             ),
         }
 
@@ -1257,6 +1262,7 @@ def run_study(
     document: dict[str, Any] = {
         "kitchener_geo04_lineage_version": STUDY_FORMAT_VERSION,
         "attribution": ATTRIBUTION,
+        "scope": SCOPE,
         "inputs": {**inputs.identity, "osm_history": history.identity if history else None},
         "definitions": {
             "version": DEFINITIONS_VERSION,
@@ -1360,9 +1366,10 @@ LINEAGE_DEFINITIONS = {
         "own source tags written by that contribution. A place name alone is not a source."
     ),
     str(Lineage.POSSIBLE): (
-        "No statement of Kitchener data, but a statement of municipal orthoimagery, other "
-        "government data or an unnamed import, or the OSM vertices coincide with the City's "
-        "under one common displacement."
+        "No statement of Kitchener data, but a statement of public orthoimagery the City's own "
+        "records may also have been traced from (Region of Waterloo, Ontario or City photos), "
+        "of other government data or of an unnamed import; or the OSM vertices coincide with "
+        "the City's under one common displacement."
     ),
     str(Lineage.INDEPENDENT): (
         "Positive evidence only: every contribution that shaped it states survey, street-level "
@@ -1374,8 +1381,42 @@ LINEAGE_DEFINITIONS = {
         "Anything else, including contributions that state no source at all: absence of a "
         "municipal source tag is not evidence of independence."
     ),
+    "not_assessed": (
+        "No geometry lineage traced: the record has no obvious correspondence with an OSM way "
+        "(none, an ambiguous one, or only an OSM node), so no OSM shape is agreed to be the "
+        "City's facility."
+    ),
     RESTRICTED: (
         "A Kitchener record whose own SOURCE names street-level imagery. Its assertions are not "
         "used as evidence."
     ),
+}
+
+#: What the evidence shows and does not, carried in the file itself.
+SCOPE = {
+    "what_this_shows": [
+        "How the 80 records of PA-GEO-03's deterministic, stratified sample of the City of "
+        "Kitchener's Active Transportation inventory correspond to the OSM ways of the frozen "
+        "extract PathAble's routing dataset was built from, judged by manual review against "
+        "written label definitions whose every change is recorded.",
+        "For the obvious correspondences, where OSM's geometry and attribute values came from, "
+        "as far as their edit history and changeset metadata state it.",
+        "How consistently the labels were applied, over a deterministic 40-record subset "
+        "labelled twice.",
+        "How each candidate signal separated the reviewed ways from the other OSM ways nearby, "
+        "in this sample.",
+    ],
+    "what_this_does_not_show": [
+        "Proportions for the City's 34,052 records: the sample is stratified, and its strata "
+        "are not weighted by population.",
+        "The precision, recall or accuracy of any matcher: none exists, and no weight or "
+        "threshold was set.",
+        "Inter-rater reliability: both passes were made by instances of one AI model (Claude "
+        "Opus 5.5), the second blind to the first.",
+        "Ground truth: nothing was checked in the field, and no imagery was inspected.",
+        "Proven independence: apparently_independent rests on what OSM contributions state "
+        "about their sources, and each finding records whether a mapper declared that source "
+        "or an editor recorded it.",
+        "Anything PathAble routes on: no City value reaches routing, costs or explanations.",
+    ],
 }
