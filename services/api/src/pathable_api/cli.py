@@ -26,7 +26,7 @@ import json
 import sys
 import time
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -94,6 +94,16 @@ from pathable_api.geo.kitchener.osm_history import (
     fetch_history,
     ohsome_metadata,
     ohsome_requests,
+)
+from pathable_api.geo.kitchener.reconciliation_run import (
+    ReconciliationError,
+    RunInputs,
+    compare_runs,
+    load_run_inputs,
+    reconciliation_evidence,
+    reconciliation_manifest,
+    run_reconciliation,
+    write_reconciliation_artifact,
 )
 from pathable_api.geo.kitchener.review import render_review
 from pathable_api.geo.kitchener.snapshot import SnapshotError, SnapshotPlan, take_snapshot
@@ -622,6 +632,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write a page of the repeat-review subset without labels or history here.",
     )
 
+    def history_sources(command: argparse.ArgumentParser) -> None:
+        command.add_argument(
+            "--dump", type=Path, required=True, help="A planet changesets-*.osm.bz2 file."
+        )
+        command.add_argument(
+            "--dump-index",
+            type=Path,
+            default=None,
+            help="The dump's stream index; built beside the dump when missing.",
+        )
+        command.add_argument(
+            "--cache",
+            type=Path,
+            default=Path(".kitchener-data/osm/ohsome"),
+            help="ohsome answers, kept by request hash and reused.",
+        )
+        command.add_argument("--ohsome-url", default=OHSOME_API)
+        command.add_argument(
+            "--out",
+            type=Path,
+            required=True,
+            help="Write the history here. It holds changeset comments: keep it out of git.",
+        )
+
     lineage_history = kitchener_actions.add_parser(
         "lineage-history",
         help=(
@@ -634,28 +668,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     lineage_history.add_argument("--extract", type=Path, required=True)
     lineage_history.add_argument("--extract-manifest", type=Path, required=True)
-    lineage_history.add_argument(
-        "--dump", type=Path, required=True, help="A planet changesets-*.osm.bz2 file."
-    )
-    lineage_history.add_argument(
-        "--dump-index",
-        type=Path,
-        default=None,
-        help="The dump's stream index; built beside the dump when missing.",
-    )
-    lineage_history.add_argument(
-        "--cache",
-        type=Path,
-        default=Path(".kitchener-data/osm/ohsome"),
-        help="ohsome answers, kept by request hash and reused.",
-    )
-    lineage_history.add_argument("--ohsome-url", default=OHSOME_API)
-    lineage_history.add_argument(
-        "--out",
-        type=Path,
-        required=True,
-        help="Write the history here. It holds changeset comments: keep it out of git.",
-    )
+    history_sources(lineage_history)
 
     imagery_metadata = kitchener_actions.add_parser(
         "imagery-metadata",
@@ -731,6 +744,55 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Run the full pilot and write the research artifact here (never committed).",
+    )
+
+    def reconciliation_inputs(command: argparse.ArgumentParser) -> None:
+        frozen_inputs(command)
+        command.add_argument(
+            "--geo05-artifact",
+            type=Path,
+            required=True,
+            help="PA-GEO-05's full-pilot artifact: its decisions are read, never re-made.",
+        )
+        command.add_argument(
+            "--evidence-dir",
+            type=Path,
+            required=True,
+            help="The folder holding the committed Kitchener snapshot evidence.",
+        )
+
+    reconcile_history = kitchener_actions.add_parser(
+        "reconcile-history",
+        help=(
+            "Read the edit history of the OSM elements PA-GEO-06 compares with the City, from "
+            "the ohsome API and a planet changeset dump. Never uses the OSM editing API."
+        ),
+    )
+    reconciliation_inputs(reconcile_history)
+    history_sources(reconcile_history)
+
+    reconcile = kitchener_actions.add_parser(
+        "reconcile",
+        help=(
+            "Run PA-GEO-06: where PA-GEO-05's correspondences are accepted, keep what OSM and "
+            "the City each assert, classify how they relate, and write the research artifact "
+            "(never committed, never read by routing) and its evidence summary."
+        ),
+    )
+    reconciliation_inputs(reconcile)
+    reconcile.add_argument(
+        "--history",
+        type=Path,
+        default=None,
+        help="From reconcile-history. Without it, lineage is recorded as not assessed.",
+    )
+    reconcile.add_argument("--artifact-dir", type=Path, required=True)
+    reconcile.add_argument("--json", type=Path, required=True)
+    reconcile.add_argument(
+        "--compare-to",
+        type=Path,
+        default=None,
+        help="An earlier run's artifact folder: record whether every file is byte-identical.",
     )
 
     return parser
@@ -1361,6 +1423,10 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         return _kitchener_benchmark(args)
     if args.kitchener_command == "lineage-history":
         return _kitchener_lineage_history(args)
+    if args.kitchener_command == "reconcile-history":
+        return _kitchener_reconcile_history(args)
+    if args.kitchener_command == "reconcile":
+        return _kitchener_reconcile(args)
     if args.kitchener_command == "snapshot":
         if args.chunk_size < 1:
             print("error: --chunk-size must be at least 1.", file=sys.stderr)
@@ -1467,6 +1533,8 @@ _KITCHENER_OFFLINE = frozenset(
         "holdout",
         "holdout-review",
         "benchmark",
+        "reconcile-history",
+        "reconcile",
     }
 )
 
@@ -1669,12 +1737,16 @@ def _kitchener_lineage_study(args: argparse.Namespace) -> int:
 
 def _kitchener_lineage_history(args: argparse.Namespace) -> int:
     study = json.loads(args.study.read_text("utf-8"))
+    return _write_osm_history(history_elements(study), args)
+
+
+def _write_osm_history(elements: Sequence[str], args: argparse.Namespace) -> int:
+    """The edit history of these OSM elements and their changesets, as one local file."""
     manifest = json.loads(args.extract_manifest.read_text("utf-8"))
     transport = RequestsTransport(timeout_seconds=300.0)
     try:
         extract = load_study_extract(args.extract, expected_sha256=manifest["output"]["sha256"])
         metadata = ohsome_metadata(transport, base_url=args.ohsome_url)
-        elements = history_elements(study)
         west, south, east, north = manifest["dataset"]["source_bbox"]
         # ohsome keeps elements that intersect the box; a margin keeps candidates
         # that lie just outside it.
@@ -1725,6 +1797,101 @@ def _kitchener_lineage_history(args: argparse.Namespace) -> int:
         f"frozen state; {len(changesets)} of {len(wanted)} changesets found"
     )
     print(f"Wrote {args.out}")
+    return EXIT_OK
+
+
+#: The committed snapshot evidence the reconciliation reads its source registry from.
+KITCHENER_SNAPSHOT_EVIDENCE = "kitchener-active-transport-snapshot.json"
+
+
+def _reconciliation_inputs(args: argparse.Namespace) -> RunInputs:
+    return load_run_inputs(
+        args.normalized,
+        args.extract,
+        args.extract_manifest,
+        args.geo05_artifact,
+        args.evidence_dir / KITCHENER_SNAPSHOT_EVIDENCE,
+        progress=print,
+    )
+
+
+def _kitchener_reconcile_history(args: argparse.Namespace) -> int:
+    try:
+        reconciled = run_reconciliation(_reconciliation_inputs(args), None, progress=print)
+    except (ReconciliationError, ExtractSourceError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    return _write_osm_history(reconciled.history_elements(), args)
+
+
+def _history_identity(path: Path, identity: Mapping[str, Any]) -> dict[str, Any]:
+    """What the lineage was read from, without the per-request list."""
+    ohsome = identity.get("ohsome", {})
+    requests = ohsome.get("requests", [])
+    return {
+        "file_sha256": file_sha256(path),
+        "frozen_extract_sha256": identity.get("frozen_extract_sha256"),
+        "ohsome": {
+            "api": ohsome.get("api"),
+            "api_version": ohsome.get("api_version"),
+            "temporal_extent": ohsome.get("temporal_extent"),
+            "requests": len(requests),
+            "response_bytes": sum(int(r.get("response_bytes", 0)) for r in requests),
+        },
+        "changeset_dump": identity.get("changeset_dump"),
+        "elements_requested": identity.get("elements_requested"),
+        "elements_with_history": identity.get("elements_with_history"),
+        "changesets_found": identity.get("changesets_found"),
+        "rules": "PA-GEO-04's lineage rules, unchanged",
+    }
+
+
+def _kitchener_reconcile(args: argparse.Namespace) -> int:
+    started = time.perf_counter()
+    timings: dict[str, float] = {}
+    try:
+        run_inputs = _reconciliation_inputs(args)
+        timings["load_inputs_s"] = round(time.perf_counter() - started, 2)
+        history = None
+        if args.history is not None:
+            mark = time.perf_counter()
+            history = load_history(args.history)
+            timings["load_history_s"] = round(time.perf_counter() - mark, 2)
+            frozen = run_inputs.identity["osm_frozen"]["extract_sha256"]
+            if history.identity.get("frozen_extract_sha256") != frozen:
+                print("error: the history was read for a different OSM extract.", file=sys.stderr)
+                return EXIT_FAILED
+        mark = time.perf_counter()
+        reconciled = run_reconciliation(run_inputs, history, progress=print)
+        timings["reconcile_s"] = round(time.perf_counter() - mark, 2)
+        mark = time.perf_counter()
+        files = write_reconciliation_artifact(args.artifact_dir, run_inputs, reconciled)
+        timings["artifact_write_s"] = round(time.perf_counter() - mark, 2)
+    except (ReconciliationError, ExtractSourceError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    identity = _history_identity(args.history, history.identity) if history is not None else None
+    document = reconciliation_evidence(run_inputs, reconciled, files, identity)
+    timings["total_s"] = round(time.perf_counter() - started, 2)
+    measurements: dict[str, Any] = {**_run_measurements(), "timings": timings}
+    if args.compare_to is not None:
+        measurements["determinism"] = compare_runs(files, args.compare_to)
+    write_json(
+        args.artifact_dir / "manifest.json",
+        reconciliation_manifest(run_inputs, files, identity, measurements),
+    )
+    document["content_sha256"] = content_sha256(document)
+    document["run"] = measurements
+    write_json(args.json, document)
+    print(
+        f"\nReconciliations {len(reconciled.reconciliations)}; "
+        f"assertions {len(reconciled.assertions)}"
+    )
+    for topic, block in document["outcomes"].items():
+        print(f"  {topic:<10}{block['semantic_relationship']}")
+    if "determinism" in measurements:
+        print(f"  byte-identical to {args.compare_to}: {measurements['determinism']['identical']}")
+    print(f"Wrote {args.artifact_dir} and {args.json}")
     return EXIT_OK
 
 
