@@ -1439,7 +1439,9 @@ LINEAGE_DEFINITIONS = {
         "attributes visible from above, not for kerb heights), or it was last shaped before the "
         "City's record can have existed — the earlier of the record's creation and source "
         "dates, which cannot show City data older than the record itself; and the history "
-        "reaches the frozen state."
+        "reaches the frozen state. It describes what OSM contribution metadata positively "
+        "states about a non-municipal source. It does not establish that the upstream imagery "
+        "itself had no shared municipal lineage, and it is not ground truth."
     ),
     str(Lineage.UNKNOWN): (
         "Anything else, including contributions that state no source at all: absence of a "
@@ -1480,7 +1482,8 @@ SCOPE = {
         "Ground truth: nothing was checked in the field, and no imagery was inspected.",
         "Proven independence: apparently_independent rests on what OSM contributions state "
         "about their sources, and each finding records whether a mapper declared that source "
-        "or an editor recorded it.",
+        "or an editor recorded it. It does not establish that the upstream imagery itself had "
+        "no shared municipal lineage.",
         "Anything PathAble routes on: no City value reaches routing, costs or explanations.",
     ],
 }
