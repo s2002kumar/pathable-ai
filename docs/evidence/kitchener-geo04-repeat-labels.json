@@ -1,0 +1,496 @@
+{
+  "kitchener_geo04_labels_version": 1,
+  "pass": "repeat",
+  "definitions_version": 1,
+  "labeller": "fresh agent instance, second pass, blind to the first labels",
+  "records": [
+    {
+      "activetransportid": 6009,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/156273998"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_disagreement",
+      "note": "OSM cycleway way/156273998 (Iron Horse Trail) runs along the whole record within about 1 m; its few extra metres only cover short City junction stubs at Madison Ave S. OSM also has a dirt path (way/165213936) joining the trail mid-way, a junction the City record does not have."
+    },
+    {
+      "activetransportid": 7863,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/67661461"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM bridge path way/67661461 (bridge=yes, surface=wood) matches the City's wooden trail bridge in length and line, with split points only 1-3 m apart, and joins the same trail pieces at both ends."
+    },
+    {
+      "activetransportid": 10441,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/903270392"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk way/903270392 runs with the record on the west side of Lancaster St W for its full length; its extra 3 m only covers the City's 2 m corner stubs leading to the General Dr and Lang Cres crossings."
+    },
+    {
+      "activetransportid": 13991,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/970244757"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk way/970244757 follows the record on the same side of Inverness Dr and meets the Aberdeen Rd and Huntley Cres sidewalks at the same corners. It runs about 5 m further at the Aberdeen end to the road edge, where the City has a virtual crossing link instead."
+    },
+    {
+      "activetransportid": 15565,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961403271"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk way/961403271 matches the record on the west side of Borden Ave S within about 1 m and connects to the same sidewalks and crossings at the King St E and Charles St E corners."
+    },
+    {
+      "activetransportid": 16039,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134722618"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk way/1134722618 follows the record around the Newbury Dr bend within about 0.3 m and meets the Burnaby Cres and Rolling Meadows Dr sidewalks and crossings at the same corners."
+    },
+    {
+      "activetransportid": 16079,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134722580"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_disagreement",
+      "note": "OSM sidewalk way/1134722580 carries this record together with City sidewalks 16080 and 16082; OSM puts the record's last few metres into a driveway-crossing way. At the south end the City has a junction with two virtual links across Rolling Meadows Dr, while the OSM sidewalk simply continues with no junction."
+    },
+    {
+      "activetransportid": 16341,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971824"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk way/959971824 carries this record and the adjoining City sidewalk 16340 as one way, closely aligned, and both sources connect at the parking-aisle crossing and the Lawrence Ave corner."
+    },
+    {
+      "activetransportid": 16892,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/176876976"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM footway way/176876976 matches the walkway from the Highland Rd E sidewalk to the steps within about 1 m and connects to the same sidewalk and steps at its ends."
+    },
+    {
+      "activetransportid": 17528,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1075923996"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk way/1075923996 carries this record and City sidewalk 17527 (the rest of the cul-de-sac bulb) as one way, closely aligned. Both sources connect at the Chandler Dr corner, though the City's extra virtual link across Chandler Dr there has no OSM counterpart."
+    },
+    {
+      "activetransportid": 17843,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/195205571"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM footway way/195205571 matches the walkway end to end within 0.5 m and joins the same trail junction and Resurrection Dr sidewalk. The City's extra virtual link across the road at the north end has no OSM counterpart, but both connect at the same point."
+    },
+    {
+      "activetransportid": 24574,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754912"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "partial_overlap",
+      "topology": "topology_disagreement",
+      "note": "OSM sidewalk way/962754912 matches the record, then continues about 20 m past the City's dead end and turns to meet the end of Stirling Ave N. OSM therefore connects where the City record stops."
+    },
+    {
+      "activetransportid": 50569,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/178418432"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "The City's on-road connection runs along the Falconridge Dr centreline within about 0.6 m, so the OSM road way/178418432 carries the same connection, together with the neighbouring on-road connections 50558 and 50563."
+    },
+    {
+      "activetransportid": 59794,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/40585186"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_disagreement",
+      "note": "OSM path way/40585186 carries this MUT and the continuing City MUT 44906 as one way, within about 0.2 m. OSM has an informal path joining mid-way and no junction where the City's minor trail branches off at the south-west end."
+    },
+    {
+      "activetransportid": 88229,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/40016699",
+        "way/803517546",
+        "way/1377315067",
+        "way/1004152571"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "geometry": "differently_split",
+      "topology": "topology_disagreement",
+      "note": "The trail is carried by four OSM ways: the end of way/40016699, way/803517546, the service-tagged trail segment way/1377315067, and way/1004152571, which continues south with City MUT 47693. OSM also has a path and service roads joining mid-record where the City record has no junction."
+    },
+    {
+      "activetransportid": 88440,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/164568370"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM path way/164568370 matches the MUT within about 0.7 m and continues 8 m to Grenville Ave along the City's virtual MUT link 302431; both sources connect to the same sidewalks and to the Ottawa St S crossing."
+    },
+    {
+      "activetransportid": 301013,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/722723469"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "This 10 m sidewalk piece lies on the long OSM Homer Watson Blvd sidewalk way/722723469, which also carries the adjoining City sidewalk records, and it meets the same crossing connector at its south-east end."
+    },
+    {
+      "activetransportid": 301514,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1134382377"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM crossing way/1134382377 crosses West Acres Cres at the same place within about 1 m and joins the same corner sidewalks. The City's extra virtual links across Blackwell Dr at both ends have no OSM counterpart."
+    },
+    {
+      "activetransportid": 304564,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/888038980"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "Although the City codes this crosswalk as virtual, OSM has a marked crossing (way/888038980) with lowered, tactile kerbs on the same line across Gage Ave about 1.3 m away, which settles it as a physical crossing."
+    },
+    {
+      "activetransportid": 307104,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/34023019"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "partial_overlap",
+      "topology": "topology_disagreement",
+      "note": "This 3 m curb-cut walkway lies on the end of OSM footway way/34023019, which also carries City walkway 16507 and continues about 3 m further to the Beechmanor Cres centreline. OSM therefore connects to the road where the City record dead-ends at the curb."
+    },
+    {
+      "activetransportid": 307529,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/967116563"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM crossing way/967116563 crosses Brubacher St at the same place within about 0.5 m, with lowered kerbs, and joins the same corner sidewalks and Samuel St crossings."
+    },
+    {
+      "activetransportid": 321269,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/884264978",
+        "way/884264979"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "geometry": null,
+      "topology": "ambiguous_topology",
+      "note": "A 1.2 m corner connector at Bruce St and Frederick St; in OSM this corner is just the meeting of the Bruce sidewalk (way/884264978) and the Frederick sidewalk (way/884264979) with two kerb nodes, so no single way can be said to carry it."
+    },
+    {
+      "activetransportid": 321409,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/881239962",
+        "way/881239944"
+      ],
+      "representation": "separate_way",
+      "relationship": null,
+      "geometry": null,
+      "topology": "ambiguous_topology",
+      "note": "A 1.1 m curb-cut corner connector at Park St and Union Blvd; OSM forms the corner from sidewalks way/881239962 and way/881239944 and two lowered-kerb nodes, so no single way can be said to carry it."
+    },
+    {
+      "activetransportid": 335487,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/916487109"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM has a dedicated 1.08 m sidewalk connector (way/916487109) at the same Frederick St and Lancaster St E corner, ending at a lowered kerb, and it carries only this record."
+    },
+    {
+      "activetransportid": 337163,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971787"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "The City codes this raised trail crossing as virtual, but OSM has the Community Trail crossing way/959971787, tagged traffic_calming=table with flush kerbs, on the same line across Patricia Ave, which settles it as physical."
+    },
+    {
+      "activetransportid": 337378,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961221679"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM has a dedicated 2.7 m sidewalk connector (way/961221679) running from the Highland Rd W sidewalk to the crossings, matching this curb-cut piece."
+    },
+    {
+      "activetransportid": 373137,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/880817054"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "This 4 m corner piece lies on the end of OSM sidewalk way/880817054, which also carries the Weber St W sidewalk records; both sources connect it to the Guelph St sidewalk and both corner crossings."
+    },
+    {
+      "activetransportid": 384751,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/871784704"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "This 3 m corner piece lies on the corner section of OSM Duke St W sidewalk way/871784704, which also carries City sidewalk 15783; both sources join it to the Goudies Lane sidewalk and the two signalised crossings."
+    },
+    {
+      "activetransportid": 388284,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961159332"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM sidewalk way/961159332 matches the record on Earl St within about 0.2 m; its extra few metres only reach the Rock Ave crossing kerb, and it meets the same sidewalks at both corners."
+    },
+    {
+      "activetransportid": 388300,
+      "correspondence": "ambiguous_correspondence",
+      "osm": [
+        "way/1453492697",
+        "way/1453492698"
+      ],
+      "representation": "road_attribute",
+      "relationship": null,
+      "geometry": null,
+      "topology": "ambiguous_topology",
+      "note": "A painted bike lane lying between the Belmont Ave W service road and the main carriageway; OSM records bike lanes only as cycleway tags on the road ways (way/1453492697, way/1453492698), so the carrying way is unclear and the shapes cannot be compared."
+    },
+    {
+      "activetransportid": 391249,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969450853"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "The City's 3 m virtual link round the Mill St and Ottawa St S corner lies along OSM sidewalk way/969450853, which carries the same connection (over a railway crossing node) together with many City sidewalk records."
+    },
+    {
+      "activetransportid": 392049,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1070842173",
+        "way/1070842172",
+        "way/1070842184"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_many",
+      "geometry": "differently_split",
+      "topology": "topology_agreement",
+      "note": "The City's overpass sidewalk extends 6 m and 12 m beyond the ends of OSM bridge sidewalk way/1070842173, onto the approach sidewalks way/1070842184 and way/1070842172, which also carry other City records."
+    },
+    {
+      "activetransportid": 396104,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/961403342"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_disagreement",
+      "note": "OSM sidewalk way/961403342 carries this record and the adjoining King St E sidewalk records as one way, within about 0.7 m. OSM has a footway (way/549243013) joining mid-record, a junction the City record lacks."
+    },
+    {
+      "activetransportid": 400043,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1058040238"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM steps way/1058040238 (highway=steps, handrail=yes) match the City's 4 m stairs in length and position and join the Woodside Ave sidewalk and the continuing footway."
+    },
+    {
+      "activetransportid": 402036,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959971949"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "The City splits the Westmount Rd W crosswalk at the centreline; OSM crossing way/959971949 carries this half and the other half (304608) as one way, within about 0.8 m."
+    },
+    {
+      "activetransportid": 403539,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/962754860"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "This 3 m curb-cut piece lies on the last segment of OSM sidewalk way/962754860, between the Borden Ave N sidewalk and the kerb of the Borden crossing; the same way carries the Weber St E sidewalk records."
+    },
+    {
+      "activetransportid": 403885,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/965483393"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "OSM footway way/965483393 runs 0.8 m from the walkway and carries it with the next two City walkway pieces (403882, 15623); the City's parallel MUT 425545 has no separate OSM way."
+    },
+    {
+      "activetransportid": 413633,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/959992015"
+      ],
+      "representation": "separate_way",
+      "relationship": "many_to_one",
+      "geometry": "differently_merged",
+      "topology": "topology_agreement",
+      "note": "This 2 m curb-cut piece lies along the start of OSM Spadina Rd E sidewalk way/959992015, which also carries the continuing City sidewalk records, and both sources join it to the Russel St crossing."
+    },
+    {
+      "activetransportid": 415387,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/969450818"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "closely_aligned",
+      "topology": "topology_agreement",
+      "note": "OSM path way/969450818 joins the same two points, the end of the Bedford Rd crossing and the road intersection, within about 0.7 m, so it carries the same connection, although OSM tags it foot=no."
+    },
+    {
+      "activetransportid": 419454,
+      "correspondence": "obvious_correspondence",
+      "osm": [
+        "way/1089478684"
+      ],
+      "representation": "separate_way",
+      "relationship": "one_to_one",
+      "geometry": "materially_different",
+      "topology": "ambiguous_topology",
+      "note": "OSM mountain-bike trail way/1089478684 follows the same single-track loop, but its line departs from the City's by up to 14 m in the northern section. Its east end meets the base trail about 14 m from the City's junction, so the connections cannot be compared with confidence."
+    }
+  ]
+}

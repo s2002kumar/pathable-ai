@@ -1,0 +1,747 @@
+{
+  "kitchener_geo04_imagery_version": 1,
+  "what_this_is": "Esri World Imagery metadata over Kitchener: the finest source Esri records at each point, now and in the first and last archived release of each year. Metadata only; no imagery was retrieved. It says which photographs an OpenStreetMap editor showing 'Esri World Imagery' at high zoom was most likely looking at, not which zoom a mapper used.",
+  "services": {
+    "current": "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer",
+    "archive": "https://metadata.maptiles.arcgis.com/arcgis/rest/services"
+  },
+  "acquired_at": "2026-09-27T00:43:11Z",
+  "releases_queried": [
+    "World_Imagery_Metadata_2014_r01",
+    "World_Imagery_Metadata_2014_r21",
+    "World_Imagery_Metadata_2015_r01",
+    "World_Imagery_Metadata_2015_r23",
+    "World_Imagery_Metadata_2016_r02",
+    "World_Imagery_Metadata_2016_r22",
+    "World_Imagery_Metadata_2017_r01",
+    "World_Imagery_Metadata_2017_r21",
+    "World_Imagery_Metadata_2018_r00",
+    "World_Imagery_Metadata_2018_r17",
+    "World_Imagery_Metadata_2019_r00",
+    "World_Imagery_Metadata_2019_r16",
+    "World_Imagery_Metadata_2020_r01",
+    "World_Imagery_Metadata_2020_r16",
+    "World_Imagery_Metadata_2021_r01",
+    "World_Imagery_Metadata_2021_r17",
+    "World_Imagery_Metadata_2022_r00",
+    "World_Imagery_Metadata_2022_r15",
+    "World_Imagery_Metadata_2023_r00",
+    "World_Imagery_Metadata_2023_r11",
+    "World_Imagery_Metadata_2024_r00",
+    "World_Imagery_Metadata_2024_r13",
+    "World_Imagery_Metadata_2025_r01",
+    "World_Imagery_Metadata_2025_r12",
+    "World_Imagery_Metadata_2026_r01",
+    "World_Imagery_Metadata_2026_r07"
+  ],
+  "points": {
+    "downtown Kitchener": {
+      "lon": -80.4925,
+      "lat": 43.4516,
+      "current": {
+        "credit": "Region of Waterloo",
+        "source": "Waterloo Imagery2022",
+        "date": "2022-04-28",
+        "resolution_m": 0.1,
+        "levels": "20-21",
+        "municipal": true
+      },
+      "clarity": {
+        "credit": "Kitchener",
+        "source": "Kit2016",
+        "date": "2016-09-30",
+        "resolution_m": 0.12,
+        "levels": "21-21",
+        "municipal": true
+      },
+      "releases": {
+        "World_Imagery_Metadata_2014_r01": {
+          "credit": "AEX",
+          "source": "Aerials Express",
+          "date": "2007-09-15",
+          "resolution_m": 0.5,
+          "levels": "18-18",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2014_r21": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2015_r01": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2015_r23": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2016_r02": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2016_r22": {
+          "credit": "Kitchener",
+          "source": "City of Kitchener 2012",
+          "date": "2016-02-23",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2017_r01": {
+          "credit": "Kitchener",
+          "source": "City of Kitchener 2012",
+          "date": "2016-02-23",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2017_r21": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2018_r00": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2018_r17": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2019_r00": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2019_r16": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2020_r01": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2020_r16": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2021_r01": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2021_r17": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2022_r00": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2022_r15": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2023_r00": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2023_r11": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2024_r00": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2024_r13": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2025_r01": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2025_r12": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2026_r01": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2026_r07": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        }
+      }
+    },
+    "south Kitchener (Forest Heights)": {
+      "lon": -80.521,
+      "lat": 43.433,
+      "current": {
+        "credit": "Region of Waterloo",
+        "source": "Waterloo Imagery2022",
+        "date": "2022-04-28",
+        "resolution_m": 0.1,
+        "levels": "20-21",
+        "municipal": true
+      },
+      "clarity": {
+        "credit": "Kitchener",
+        "source": "Kit2016",
+        "date": "2016-09-30",
+        "resolution_m": 0.12,
+        "levels": "21-21",
+        "municipal": true
+      },
+      "releases": {
+        "World_Imagery_Metadata_2014_r01": {
+          "credit": "AEX",
+          "source": "Aerials Express",
+          "date": "2007-09-15",
+          "resolution_m": 0.5,
+          "levels": "18-18",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2014_r21": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2015_r01": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2015_r23": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2016_r02": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2016_r22": {
+          "credit": "Kitchener",
+          "source": "City of Kitchener 2012",
+          "date": "2016-02-23",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2017_r01": {
+          "credit": "Kitchener",
+          "source": "City of Kitchener 2012",
+          "date": "2016-02-23",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2017_r21": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2018_r00": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2018_r17": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2019_r00": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2019_r16": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2020_r01": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2020_r16": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2021_r01": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2021_r17": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2022_r00": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2022_r15": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2023_r00": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2023_r11": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2024_r00": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2024_r13": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2025_r01": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2025_r12": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2026_r01": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2026_r07": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        }
+      }
+    },
+    "east Kitchener (Victoria Hills)": {
+      "lon": -80.502,
+      "lat": 43.442,
+      "current": {
+        "credit": "Region of Waterloo",
+        "source": "Waterloo Imagery2022",
+        "date": "2022-04-28",
+        "resolution_m": 0.1,
+        "levels": "20-21",
+        "municipal": true
+      },
+      "clarity": {
+        "credit": "Kitchener",
+        "source": "Kit2016",
+        "date": "2016-09-30",
+        "resolution_m": 0.12,
+        "levels": "21-21",
+        "municipal": true
+      },
+      "releases": {
+        "World_Imagery_Metadata_2014_r01": {
+          "credit": "AEX",
+          "source": "Aerials Express",
+          "date": "2007-09-15",
+          "resolution_m": 0.5,
+          "levels": "18-18",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2014_r21": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2015_r01": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2015_r23": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2016_r02": {
+          "credit": "DigitalGlobe",
+          "source": "QB02",
+          "date": "2008-05-29",
+          "resolution_m": 0.6,
+          "levels": "14-17",
+          "municipal": false
+        },
+        "World_Imagery_Metadata_2016_r22": {
+          "credit": "Kitchener",
+          "source": "City of Kitchener 2012",
+          "date": "2016-02-23",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2017_r01": {
+          "credit": "Kitchener",
+          "source": "City of Kitchener 2012",
+          "date": "2016-02-23",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2017_r21": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2018_r00": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2018_r17": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2019_r00": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2019_r16": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2020_r01": {
+          "credit": "Kitchener",
+          "source": "Kit2016",
+          "date": "2016-09-30",
+          "resolution_m": 0.12,
+          "levels": "21-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2020_r16": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2021_r01": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2021_r17": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2022_r00": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2022_r15": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2023_r00": {
+          "credit": "City of Kitchener",
+          "source": "Kit2019",
+          "date": "2019-05-15",
+          "resolution_m": 0.1,
+          "levels": "18-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2023_r11": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2024_r00": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2024_r13": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2025_r01": {
+          "credit": "Region of Waterloo",
+          "source": "2037WTRL-2020",
+          "date": "2020-05-01",
+          "resolution_m": 0.1,
+          "levels": "19-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2025_r12": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2026_r01": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        },
+        "World_Imagery_Metadata_2026_r07": {
+          "credit": "Region of Waterloo",
+          "source": "Waterloo Imagery2022",
+          "date": "2022-04-28",
+          "resolution_m": 0.1,
+          "levels": "20-21",
+          "municipal": true
+        }
+      }
+    }
+  },
+  "municipal_imagery": {
+    "first_release_showing_it": "World_Imagery_Metadata_2016_r22",
+    "last_release_before_it": "World_Imagery_Metadata_2016_r02",
+    "releases_since_without_it": [],
+    "earliest_source_date": "2016-02-23"
+  },
+  "content_sha256": "d279320100b68ab6874530640d613532718be9df761a1a8f4eaab3636ee593ea",
+  "run": {
+    "environment": {
+      "python": "3.13.2",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "git_commit": "8fbcd145dd605070107698c05db7e44237df18d3-dirty"
+    },
+    "machine_memory_mb": 16498.0,
+    "peak_process_memory_mb": 173.2,
+    "process_memory_method": "windows:GetProcessMemoryInfo working set"
+  }
+}
