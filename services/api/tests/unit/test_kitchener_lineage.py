@@ -164,7 +164,7 @@ class TestSignals:
         ("value", "expected"),
         [
             (
-                "Esri World Imagery;Mapillary Images;OpenStreetCam Images",
+                "Bing Maps Aerial;Mapillary Images;OpenStreetCam Images",
                 {Signal.EDITOR_IMAGERY, Signal.EDITOR_STREET_LEVEL},
             ),
             (
@@ -210,12 +210,54 @@ class TestSignals:
             None,
             1,
             None,
-            {"imagery_used": "Esri World Imagery", "created_by": "StreetComplete 57.1"},
+            {"imagery_used": "Bing Maps Aerial", "created_by": "StreetComplete 57.1"},
         )
 
         signals = {e.signal for e in changeset_evidence(changeset)}
 
         assert signals == {Signal.EDITOR_IMAGERY, Signal.SURVEY}
+
+    def test_esri_imagery_since_2016_is_the_citys_own_photography(self) -> None:
+        # Bug: Esri World Imagery counted as imagery unrelated to the City's, but
+        # since 2016 its finest layer over Kitchener has been the City's own
+        # orthophotos, then the Region's: the photographs the City traced.
+        layers = "Esri World Imagery;Mapillary Images"
+
+        assert signals_in_imagery_used(layers, when="2021-06-01T10:00:00Z") == {
+            Signal.PUBLIC_IMAGERY,
+            Signal.EDITOR_STREET_LEVEL,
+        }
+        assert signals_in_imagery_used(layers, when="2015-06-01T10:00:00Z") == {
+            Signal.EDITOR_IMAGERY,
+            Signal.EDITOR_STREET_LEVEL,
+        }
+        assert signals_in_imagery_used("Esri World Imagery (Clarity) Beta") == {
+            Signal.PUBLIC_IMAGERY  # no date: the conservative reading
+        }
+        assert signals_in_source("survey;Esri", when="2019-03-01T00:00:00Z") == {
+            Signal.SURVEY,
+            Signal.PUBLIC_IMAGERY,
+        }
+        assert signals_in_source("Esri", when="2014-03-01T00:00:00Z") == {Signal.DECLARED_IMAGERY}
+
+    def test_a_shape_traced_on_esri_after_2016_is_possible_shared_lineage(self) -> None:
+        history = _history(_contribution(1, "2021-04-01T00:00:00Z", creation=True))
+        changesets = {
+            1: Changeset(
+                1,
+                "2021-04-01T00:00:00Z",
+                None,
+                1,
+                None,
+                {"imagery_used": "Esri World Imagery", "created_by": "iD 2.19.6"},
+            )
+        }
+
+        finding = geometry_lineage(
+            history, changesets, municipal_since=None, vertex_coincidence=False
+        )
+
+        assert finding.label is Lineage.POSSIBLE
 
 
 def _contribution(

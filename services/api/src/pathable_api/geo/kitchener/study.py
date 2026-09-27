@@ -53,6 +53,7 @@ from pathable_api.geo.kitchener.lineage import (
     DEFINITION_REFINEMENTS,
     DEFINITIONS,
     DEFINITIONS_VERSION,
+    ESRI_MUNICIPAL_SINCE,
     RESTRICTED,
     Correspondence,
     ElementHistory,
@@ -1283,6 +1284,7 @@ def run_study(
             "node_near_m": NODE_NEAR_M,
             "history_near_m": HISTORY_NEAR_M,
             "kerb_association_m": KERB_ASSOCIATION_M,
+            "esri_world_imagery_is_municipal_from": ESRI_MUNICIPAL_SINCE,
             "vertex_coincidence": {
                 "min_pairs": VERTEX_MIN_PAIRS,
                 "min_share": VERTEX_MIN_SHARE,
@@ -1376,9 +1378,11 @@ LINEAGE_DEFINITIONS = {
     ),
     str(Lineage.POSSIBLE): (
         "No statement of Kitchener data, but a statement of public orthoimagery the City's own "
-        "records may also have been traced from (Region of Waterloo, Ontario or City photos), "
-        "of other government data or of an unnamed import; or the OSM vertices coincide with "
-        "the City's under one common displacement."
+        "records may also have been traced from (Region of Waterloo, Ontario or City photos, "
+        "and Esri World Imagery from 2016-02-23, since when its finest layer over Kitchener has "
+        "been the City's and then the Region's own photography), of other government data or "
+        "of an unnamed import; or the OSM vertices coincide with the City's under one common "
+        "displacement."
     ),
     str(Lineage.INDEPENDENT): (
         "Positive evidence only: every contribution that shaped it states survey, street-level "

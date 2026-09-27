@@ -65,7 +65,8 @@ from pathable_api.geo.kitchener.geography import (
     read_dataset_source,
     read_pathable_edges,
 )
-from pathable_api.geo.kitchener.lineage import LabelError
+from pathable_api.geo.kitchener.imagery import ImageryError, survey_imagery
+from pathable_api.geo.kitchener.lineage import ESRI_MUNICIPAL_SINCE, LabelError
 from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
 from pathable_api.geo.kitchener.osm_extract import (
     EXTRACT_FORMAT_VERSION,
@@ -642,6 +643,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         required=True,
         help="Write the history here. It holds changeset comments: keep it out of git.",
+    )
+
+    imagery_metadata = kitchener_actions.add_parser(
+        "imagery-metadata",
+        help=(
+            "Read Esri World Imagery's metadata over Kitchener: which photographs its finest "
+            "layer showed, now and in archived releases. Metadata only, never imagery."
+        ),
+    )
+    imagery_metadata.add_argument(
+        "--json", type=Path, required=True, help="Write the metadata evidence here."
     )
 
     return parser
@@ -1262,6 +1274,8 @@ def _osm_ids(raw_ids: Iterable[str]) -> set[int]:
 def _kitchener_offline(args: argparse.Namespace) -> int:
     if args.kitchener_command == "lineage-study":
         return _kitchener_lineage_study(args)
+    if args.kitchener_command == "imagery-metadata":
+        return _kitchener_imagery_metadata(args)
     if args.kitchener_command == "lineage-history":
         return _kitchener_lineage_history(args)
     if args.kitchener_command == "snapshot":
@@ -1360,7 +1374,35 @@ async def _kitchener_audit(database: Database, args: argparse.Namespace) -> int:
 
 
 #: `pathable kitchener` commands that need no database.
-_KITCHENER_OFFLINE = frozenset({"snapshot", "normalize", "lineage-study", "lineage-history"})
+_KITCHENER_OFFLINE = frozenset(
+    {"snapshot", "normalize", "lineage-study", "lineage-history", "imagery-metadata"}
+)
+
+
+def _kitchener_imagery_metadata(args: argparse.Namespace) -> int:
+    try:
+        document = survey_imagery(RequestsTransport(timeout_seconds=120.0), progress=print)
+    except ImageryError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    document["run"] = _run_measurements()
+    write_json(args.json, document)
+    municipal = document["municipal_imagery"]
+    print(
+        f"\nMunicipal photography first in {municipal['first_release_showing_it']} "
+        f"(after {municipal['last_release_before_it']}); earliest source date "
+        f"{municipal['earliest_source_date']}"
+    )
+    print(f"Wrote {args.json}")
+    # The lineage rules carry this date as a constant; a different measurement
+    # means the rules no longer describe what Esri served.
+    if municipal["earliest_source_date"] != ESRI_MUNICIPAL_SINCE:
+        print(
+            f"warning: the lineage rules use {ESRI_MUNICIPAL_SINCE}; review them.",
+            file=sys.stderr,
+        )
+        return EXIT_REVIEW_REQUIRED
+    return EXIT_OK
 
 
 def _kitchener_lineage_study(args: argparse.Namespace) -> int:

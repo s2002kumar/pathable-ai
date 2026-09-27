@@ -350,7 +350,9 @@ def raw_agreement(
 class Signal(StrEnum):
     KITCHENER = "kitchener_data"
     #: Region of Waterloo, Ontario or City orthophotos: photographs the City's own
-    #: ORTHO-sourced records may have been traced from too.
+    #: ORTHO-sourced records may have been traced from too. Esri World Imagery
+    #: counts from :data:`ESRI_MUNICIPAL_SINCE`, when its finest layer over
+    #: Kitchener became those photographs.
     PUBLIC_IMAGERY = "public_orthoimagery"
     OTHER_GOVERNMENT = "other_government_data"
     IMPORT = "import_or_external_data"
@@ -410,9 +412,28 @@ _STREET_LEVEL = re.compile(
     re.IGNORECASE,
 )
 _NAMED_IMAGERY = re.compile(
-    rf"{_A}bing{_Z}|{_A}esri{_Z}|mapbox|maxar|digitalglobe|world ?imagery|nearmap|vexcel",
+    rf"{_A}bing{_Z}|mapbox|maxar|digitalglobe|nearmap|vexcel",
     re.IGNORECASE,
 )
+#: Esri World Imagery, and its Clarity variant, however it is named.
+_ESRI = re.compile(rf"{_A}esri{_Z}|world ?imagery", re.IGNORECASE)
+#: From this date, Esri World Imagery's finest layer over Kitchener has been the
+#: City of Kitchener's own orthophotos, then the Region of Waterloo's: the
+#: photographs the City's ORTHO-sourced records were traced from. Before it,
+#: Esri showed commercial satellite and aerial imagery there. Measured from
+#: Esri's archived imagery metadata (``pathable kitchener imagery-metadata``,
+#: docs/evidence/kitchener-geo04-esri-imagery.json): the earliest date Esri
+#: gives any municipal source over the City, so a conservative bound.
+ESRI_MUNICIPAL_SINCE = "2016-02-23"
+
+
+def _esri(when: str | None, otherwise: Signal) -> Signal:
+    """Esri World Imagery is the City's own photography from 2016; unknown dates count too."""
+    if when is None or when >= ESRI_MUNICIPAL_SINCE:
+        return Signal.PUBLIC_IMAGERY
+    return otherwise
+
+
 _GOOGLE = re.compile(r"google", re.IGNORECASE)
 _SURVEY_EDITORS = re.compile(r"^(streetcomplete|every ?door)", re.IGNORECASE)
 #: The words iD writes into a changeset's source tag by itself, from the layers
@@ -432,8 +453,12 @@ _ID_RECORDED = frozenset(
 )
 
 
-def signals_in_source(value: str) -> set[Signal]:
-    """What a ``source``-like value, a tag a mapper wrote to name a source, says."""
+def signals_in_source(value: str, *, when: str | None = None) -> set[Signal]:
+    """What a ``source``-like value, a tag a mapper wrote to name a source, says.
+
+    ``when`` is the time of the edit that wrote it, which decides what Esri's
+    imagery was.
+    """
     found: set[Signal] = set()
     public_imagery = bool(_PUBLIC_IMAGERY.search(value))
     if public_imagery:
@@ -450,6 +475,8 @@ def signals_in_source(value: str) -> set[Signal]:
         found.add(Signal.SURVEY)
     if _STREET_LEVEL.search(value):
         found.add(Signal.STREET_LEVEL)
+    if _ESRI.search(value):
+        found.add(_esri(when, Signal.DECLARED_IMAGERY))
     if _NAMED_IMAGERY.search(value):
         found.add(Signal.DECLARED_IMAGERY)
     if _GOOGLE.search(value):
@@ -459,7 +486,7 @@ def signals_in_source(value: str) -> set[Signal]:
     return found
 
 
-def signals_in_imagery_used(value: str) -> set[Signal]:
+def signals_in_imagery_used(value: str, *, when: str | None = None) -> set[Signal]:
     """What an editor's record of the layers on screen says, layer by layer."""
     found: set[Signal] = set()
     for layer in (part.strip() for part in value.split(";")):
@@ -475,6 +502,8 @@ def signals_in_imagery_used(value: str) -> set[Signal]:
             found.add(Signal.EDITOR_STREET_LEVEL)
         elif ".gpx" in layer.lower():
             found.add(Signal.EDITOR_GPS)
+        elif _ESRI.search(layer):
+            found.add(_esri(when, Signal.EDITOR_IMAGERY))
         elif _NAMED_IMAGERY.search(layer):
             found.add(Signal.EDITOR_IMAGERY)
         elif _GOOGLE.search(layer):
@@ -484,10 +513,10 @@ def signals_in_imagery_used(value: str) -> set[Signal]:
     return found
 
 
-def signals_in_changeset_source(value: str, *, editor: str) -> set[Signal]:
+def signals_in_changeset_source(value: str, *, editor: str, when: str | None = None) -> set[Signal]:
     """A changeset's source tag. From iD, the layer words are the editor's own record."""
     if not editor.startswith("iD "):
-        return signals_in_source(value)
+        return signals_in_source(value, when=when)
     found: set[Signal] = set()
     for word in (part.strip() for part in value.split(";")):
         if not word:
@@ -496,7 +525,7 @@ def signals_in_changeset_source(value: str, *, editor: str) -> set[Signal]:
             street_level = _STREET_LEVEL.search(word)
             found.add(Signal.EDITOR_STREET_LEVEL if street_level else Signal.UNSPECIFIED_IMAGERY)
         else:
-            found |= signals_in_source(word)
+            found |= signals_in_source(word, when=when)
     return found
 
 
@@ -550,15 +579,18 @@ def changeset_evidence(changeset: Changeset | None) -> list[Evidence]:
     evidence: list[Evidence] = []
     tags = changeset.tags
     editor = tags.get("created_by", "")
+    when = changeset.created_at
     if "source" in tags:
         evidence.extend(
             Evidence(signal, "changeset source", tags["source"])
-            for signal in sorted(signals_in_changeset_source(tags["source"], editor=editor))
+            for signal in sorted(
+                signals_in_changeset_source(tags["source"], editor=editor, when=when)
+            )
         )
     if "imagery_used" in tags:
         evidence.extend(
             Evidence(signal, "changeset imagery_used", tags["imagery_used"])
-            for signal in sorted(signals_in_imagery_used(tags["imagery_used"]))
+            for signal in sorted(signals_in_imagery_used(tags["imagery_used"], when=when))
         )
     if "comment" in tags:
         for signal in sorted(signals_in_comment(tags["comment"])):
@@ -573,12 +605,16 @@ def changeset_evidence(changeset: Changeset | None) -> list[Evidence]:
 
 
 def element_source_evidence(
-    before: Mapping[str, str] | None, after: Mapping[str, str], keys: Sequence[str]
+    before: Mapping[str, str] | None,
+    after: Mapping[str, str],
+    keys: Sequence[str],
+    *,
+    when: str | None = None,
 ) -> list[Evidence]:
     """Source tags a contribution set or changed on the element itself.
 
     A ``source`` tag outlives the edit that wrote it, so it is evidence only for
-    the contribution that set it.
+    the contribution that set it, made at ``when``.
     """
     evidence: list[Evidence] = []
     for key in keys:
@@ -586,7 +622,8 @@ def element_source_evidence(
         if value is None or (before is not None and before.get(key) == value):
             continue
         evidence.extend(
-            Evidence(s, f"element {key}", value) for s in sorted(signals_in_source(value))
+            Evidence(s, f"element {key}", value)
+            for s in sorted(signals_in_source(value, when=when))
         )
     return evidence
 
@@ -731,7 +768,10 @@ def geometry_lineage(
         if contribution.creation or contribution.geometry_change:
             evidence = changeset_evidence(changesets.get(contribution.changeset))
             evidence += element_source_evidence(
-                previous, contribution.tags, ("source", "source:geometry")
+                previous,
+                contribution.tags,
+                ("source", "source:geometry"),
+                when=contribution.timestamp,
             )
             steps.append(
                 Step(
@@ -787,7 +827,9 @@ def attribute_lineage(
     contribution = contributions[introduced]
     previous = contributions[introduced - 1].tags if introduced > 0 else None
     evidence = changeset_evidence(changesets.get(contribution.changeset))
-    evidence += element_source_evidence(previous, contribution.tags, ("source", f"source:{key}"))
+    evidence += element_source_evidence(
+        previous, contribution.tags, ("source", f"source:{key}"), when=contribution.timestamp
+    )
     step = Step(
         contribution.timestamp, contribution.changeset, _kinds(contribution), tuple(evidence)
     )
