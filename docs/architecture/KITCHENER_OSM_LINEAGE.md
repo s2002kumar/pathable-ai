@@ -42,6 +42,8 @@ Headline findings:
    - 9 of 22 comparable non-default surfaces are the City's alone.
    - OSM carries all 6 sampled stairs and structures, yet 20 of the 40 in-area
      stairs have no OSM steps within 3 m.
+   - The gap runs both ways. OSM has a lowered or flush kerb at 769 places in
+     the City's network where the City records no curb cut within 3 m.
 
 **Every proportion describes a stratified sample.** Strata are deliberately over-
 and under-drawn. None of these figures is an estimate for the City's 34,052
@@ -399,9 +401,10 @@ dated fact about one imagery layer. It is recorded here because the earlier
 answer looked well supported.
 
 A last review of every distinct source value in the history found two more
-misreadings (§13). Fixing them gives the final figures above (`7eef7d10…`):
-50569 became known Kitchener-derived, and 47012 moved from apparently
-independent to possible shared.
+misreadings (§13). Fixing them gives the final figures above: 50569 became known
+Kitchener-derived, and 47012 moved from apparently independent to possible
+shared. The committed evidence (`2b093d52…`) also carries the OSM-only kerb
+count of §8, which changed no lineage.
 
 ### Attribute lineage
 
@@ -467,6 +470,13 @@ occurred.
   in-area curb-cut records have a lowered or flush OSM kerb node within 3 m. 1,419
   have no kerb node, 5 have other or mixed values, and 1 has a raised kerb. A
   nearby node may belong to a different corner.
+- **OSM only.** At record level the question does not arise, because the City
+  draws each curb cut as its own short segment. Across the study area it does.
+  - Of the 2,896 lowered or flush OSM kerb nodes that lie where the City maps its
+    network (some City record within 10 m), 2,127 have a City curb cut within
+    3 m and 769 do not.
+  - Another 1,827 lie more than 10 m from any City record, outside the City's
+    network. That network excludes the parts of the box in the City of Waterloo.
 
 **Stairs and structures.** OSM carries all six sampled: the three stairs as
 `highway=steps`, the overpass and two bridges as `bridge=yes`.
@@ -509,6 +519,8 @@ Neither is a current condition, and neither would be presented as one.
 - **OSM only:**
   - surfaces on 30 records where the City has only its default;
   - handrails on 2 stairs;
+  - by proximity, lowered or flush kerbs at 769 places in the City's network with
+    no City curb cut within 3 m;
   - the kerb and crossing detail at junctions where the City has only a short
     segment.
 
