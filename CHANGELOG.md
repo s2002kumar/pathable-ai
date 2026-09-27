@@ -12,6 +12,31 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **A geometry and lineage study of Kitchener against OpenStreetMap
+  (PA-GEO-04).**
+  - The OSM side is frozen from the exact PBF the routing dataset was built from:
+    `pathable kitchener lineage-extract`.
+  - Every way within 25 m of each of the 80 sampled records is a candidate, with
+    descriptive signals and no weights.
+  - A static review page draws each record with no basemap and no imagery.
+  - OSM history comes from ohsome and the planet changeset dump, never the
+    editing API: `lineage-history`.
+  - Esri's archived imagery metadata dates which photographs its imagery showed:
+    `imagery-metadata`.
+  - Conservative lineage rules give every finding a basis.
+  - Findings, from a stratified sample:
+    - 69 of 80 records have an obvious OSM counterpart.
+    - Since 2016, Esri World Imagery's finest layer over Kitchener has been the
+      City's and the Region's own photography. 63 of those 69 were shaped in
+      edits that recorded it, so the City's geometry confirms nothing
+      independently.
+    - OSM's kerb values at sampled curb cuts came from StreetComplete surveys.
+    - The City alone records 6 of 10 sampled curb cuts and 9 of 22 comparable
+      surfaces.
+    - Repeat-label consistency: correspondence 40 of 40.
+  - Decision: LIMITED GO to PA-GEO-05 for curb cuts, stairs and structures, and
+    non-default surfaces. Nothing routes on it.
+  - See [`KITCHENER_OSM_LINEAGE.md`](docs/architecture/KITCHENER_OSM_LINEAGE.md).
 - **A frozen, audited snapshot of the City of Kitchener's Active Transportation
   inventory (PA-GEO-03).**
   - `pathable kitchener snapshot` reads both of the City's hosted publications by

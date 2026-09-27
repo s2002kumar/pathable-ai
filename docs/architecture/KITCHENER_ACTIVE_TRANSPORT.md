@@ -270,6 +270,19 @@ coincident.
 - For sidewalks: 7,190 of 7,654 (93.9%), median worst point 0.91 m.
 - For CURBCUT=Y segments: 2,986 of 3,296.
 
+**Found by PA-GEO-04.** "OSM" in these figures, and in the sample's two OSM-based
+strata, means PathAble's graph. That graph is clipped to the pilot box and leaves
+out `highway=cycleway`. All three records sampled as "not along OSM" have an
+obvious OSM counterpart:
+
+- two run past the box edge, where the graph stops;
+- one is the Iron Horse Trail, an OSM cycleway with `foot=designated`.
+
+The figures measure distance to PathAble's graph, and understate closeness to
+OSM itself. PA-GEO-04 also traced the likely route of the shared lineage: the
+same municipal photographs, served through Esri World Imagery since 2016
+([`KITCHENER_OSM_LINEAGE.md`](KITCHENER_OSM_LINEAGE.md) §7).
+
 That is consistent with OSM's pedestrian network sharing lineage with the City's
 inventory, through import or through tracing the same imagery. It is not proof,
 and it is measured across a datum shift of stated 4 m accuracy. **This does not
@@ -442,4 +455,6 @@ the licensing gate in §2 applies.
 - Whether combined and mixed crossrides are for pedestrians.
 - Which NAD83 realization the City's coordinates use.
 - What the roughly 8,000 internal records missing from both publications are.
-- Whether OSM's kerb values in Kitchener came from CURBCUT.
+- Whether OSM's kerb values in Kitchener came from CURBCUT. In PA-GEO-04's
+  sample, all five found at curb cuts came from StreetComplete survey edits; the
+  population was not traced.

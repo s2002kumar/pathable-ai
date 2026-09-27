@@ -18,13 +18,16 @@ which is ODbL 1.0: _© OpenStreetMap contributors. Available under the Open
 Database License. Data from TomTom. Overture Maps Foundation, overturemaps.org._
 See [`DATA_SOURCES.md` §10](../licensing/DATA_SOURCES.md).
 
-**Kitchener-derived files.** The four `kitchener-*` files hold the City of
-Kitchener's published schema, counts and distributions from its Active
-Transportation inventory, and 80 sampled records with their geometry: _Contains
-information licensed under the Open Government Licence – The Corporation of the
-City of Kitchener._ Credit is optional under that licence and given voluntarily.
-Their proximity figures also read PathAble's OpenStreetMap graph, © OpenStreetMap
-contributors, ODbL 1.0. See [`DATA_SOURCES.md` §11](../licensing/DATA_SOURCES.md).
+**Kitchener-derived files.** The `kitchener-*` files hold the City of Kitchener's
+published schema, counts and distributions from its Active Transportation
+inventory, and 80 sampled records with their geometry: _Contains information
+licensed under the Open Government Licence – The Corporation of the City of
+Kitchener._ Credit is optional under that licence and given voluntarily. Their
+proximity figures also read PathAble's OpenStreetMap graph, and PA-GEO-04's
+lineage, label and review files hold OSM ways, tags and findings from OSM edit
+history: © OpenStreetMap contributors, ODbL 1.0. PA-GEO-04's Esri imagery file
+holds facts from Esri's imagery metadata, cited to Esri, and no imagery. See
+[`DATA_SOURCES.md` §11 and §12](../licensing/DATA_SOURCES.md).
 
 **Every file here is regenerated after any change that could move it.** Two were
 briefly wrong and are worth naming: the coverage report was first run before
@@ -68,6 +71,13 @@ believed.
 | `kitchener-active-transport-normalized.json`  | Manifest of the GeoParquet 1.1.0 file normalized from that snapshot: input hashes, output SHA-256, the `geo` metadata, the CRS pipeline and its stated accuracy, columns, and join results. Produced by `pathable kitchener normalize`.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `kitchener-active-transport-profile.json`     | PA-GEO-03's profile: value states per field, the default-value investigation, provenance and freshness, evidence origin, plausibility, physical and virtual classes, the study area and descriptive overlap with PathAble's graph, the field adoption matrix and the exit-gate figures. Produced by `pathable kitchener audit`, reading PathAble in a read-only transaction.                                                                                                                                                                                                                                                                                                             |
 | `kitchener-geo04-sample.geojson`              | The deterministic, stratified 80-record sample for PA-GEO-04's manual geometry and OSM-lineage inspection, with its method, seed and strata in the file.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `kitchener-geo04-lineage.json`                | PA-GEO-04's evidence: the frozen inputs on both sides, every OSM candidate within 25 m of each sampled record with its signals, the reviewer's labels, topology facts, attribute comparisons, geometry and attribute lineage from OSM history, repeat-label consistency, what the labels say about each matching signal, and in-area proximity context. Produced by `pathable kitchener lineage-study`.                                                                                                                                                                                                                                                                                  |
+| `kitchener-geo04-labels.json`                 | The labels the study's results use: the first pass with label definitions version 2 applied to all 80 records, and one error the repeat review found corrected. Each of the six revisions carries its reason and its before and after.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `kitchener-geo04-first-pass-labels.json`      | The first manual pass over all 80 records, as labelled under definitions version 1, with who labelled them, how, and the two refinements made during the pass.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `kitchener-geo04-repeat-labels.json`          | The second pass over a deterministic 40-record subset, labelled blind to the first, as labelled.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `kitchener-geo04-repeat-refined-labels.json`  | The same 40 records, re-reviewed by the second pass under definitions version 2, still blind to the first pass.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `kitchener-geo04-review.html`                 | The static review page: one map and one set of tables per record, drawn from the two datasets — no basemap, no imagery, nothing fetched. Open it in a browser.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `kitchener-geo04-esri-imagery.json`           | Which photographs Esri World Imagery's finest layer showed over Kitchener, now and in the first and last archived release of each year since 2014, at three points: source, credit, date and resolution, cited to Esri. Metadata only; no imagery was retrieved. Produced by `pathable kitchener imagery-metadata`.                                                                                                                                                                                                                                                                                                                                                                      |
 | `waterloo-geometry-inspection.json`           | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `waterloo-dataset-lifecycle.json`             | PA-GEO-02 on the real dataset, in a disposable database: the 0006 upgrade over the legacy rows, the legacy content checksum recorded from its rows, a candidate rebuilt from the same extract with OSM edit provenance, refused a seal until elevated, sealed to the legacy checksum exactly, judged identical on 120 route comparisons, activated, rolled back, the database refusing edits to sealed rows, and the restore script run as a role that is not a superuser. Every figure is parsed from the run's own command output or read back from the database, none typed in; the procedure is the command sequence in the README. ODbL-derived.                                    |
 | `screenshots/`                                | The real product answering from this dataset. The `demo-*` captures are the PA-RR-06 recruiter journey; their provenance is in [`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -143,6 +153,57 @@ is still at 0005 and was not migrated.
 (`what_this_shows`, `what_this_does_not_show`, and the `label` of every proximity
 figure) and in
 [`KITCHENER_ACTIVE_TRANSPORT.md`](../architecture/KITCHENER_ACTIVE_TRANSPORT.md).
+
+---
+
+## Kitchener lineage study (PA-GEO-04)
+
+**Reproducing.** From `services/api`, with the PA-GEO-03 snapshot normalized and
+the dataset's own source extract at hand:
+
+```
+pathable kitchener lineage-extract --region waterloo --pbf <ontario-latest.osm.pbf> \
+    --out <study-extract.jsonl.gz> --json <manifest.json>
+pathable kitchener lineage-study --sample ../../docs/evidence/kitchener-geo04-sample.geojson \
+    --sample-sha256 5c8f5e3548a4f7cf31fd23e1ab7634d8ce9118b71c30ae249a08ca3bef0b4d2c \
+    --normalized <folder> --extract <study-extract.jsonl.gz> --extract-manifest <manifest.json> \
+    --json <candidates.json> --full-json <candidates-full.json>
+pathable kitchener lineage-history --study <candidates-full.json> --extract <…> \
+    --extract-manifest <…> --dump <changesets-260921.osm.bz2> --out <history.json>
+pathable kitchener imagery-metadata --json <esri-imagery.json>
+pathable kitchener lineage-study <the same inputs> --history <history.json> \
+    --labels ../../docs/evidence/kitchener-geo04-labels.json \
+    --first-pass-labels ../../docs/evidence/kitchener-geo04-first-pass-labels.json \
+    --repeat-labels ../../docs/evidence/kitchener-geo04-repeat-labels.json \
+    --repeat-refined-labels ../../docs/evidence/kitchener-geo04-repeat-refined-labels.json \
+    --json <lineage.json> --html <review.html>
+```
+
+What each command needs:
+
+- **`lineage-extract`** needs the database, which it reads in a `READ ONLY`
+  transaction, and the PBF whose SHA-256 the dataset recorded.
+- **`lineage-history`** needs the network for ohsome, and the planet changeset
+  dump on disk (8.8 GB). It keeps ohsome's answers by request hash, so a re-run
+  reads nothing it has already read.
+- **`imagery-metadata`** needs only the network.
+- **`lineage-study`** needs neither.
+
+The history file holds changeset comments and stays out of git. So do the
+extract, the dump and its stream index.
+
+**Which run produced what.** The committed lineage evidence and review page came
+from the code at commit `ab5a122`, with the label files committed beside them.
+Two runs gave the same content hash (`7eef7d10…`) and byte-identical review
+pages. The Esri metadata was read at `dc9fca3`, and `ab5a122` changed only the
+lineage rules, not the metadata command. Two study extracts from the source PBF
+were byte-identical.
+
+**Scope.** What the study shows, and does not, is stated inside the evidence
+file (`scope`), on the review page, and in
+[`KITCHENER_OSM_LINEAGE.md`](../architecture/KITCHENER_OSM_LINEAGE.md). The
+labels are an AI model's, made twice. Every proportion describes a stratified
+sample, not the City's inventory.
 
 ---
 
@@ -267,3 +328,18 @@ attractive fields are template defaults: 96.1% of sidewalks carry the default
 1.5 m width, and 98.5% the default CONCRETE. What it records beyond its defaults
 is located — 6,888 curb-cut segments, 77 stairs, 133 railings. Whether even those
 are new to OSM is PA-GEO-04's question.
+
+**Both maps were most likely drawn on the same photographs.**
+
+- Since 2016, the finest layer of Esri World Imagery over Kitchener has been the
+  City's own orthophotos, then the Region of Waterloo's. The City's records name
+  photographs of the same years as their source.
+- In PA-GEO-04's 80-record sample, 63 of the 69 records with an obvious OSM
+  counterpart were shaped in OSM edits that recorded Esri imagery since then.
+- Before Esri's metadata was read, the same rules had called 47 of those records
+  independently mapped. The final figure is 3.
+- OSM's accessibility values are another matter. All five kerb values found at
+  sampled curb cuts were set by StreetComplete surveys.
+
+So the City's geometry confirms nothing, while its curb cuts, stairs and surfaces
+can still add what OSM lacks.
