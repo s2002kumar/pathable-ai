@@ -107,7 +107,9 @@ def _record(
             "state_railing": railing_state,
             "origin_railing": "administrative_assertion",
             "source_class": "orthoimagery",
-            "source_date": "2016-05-01",
+            # PA-GEO-05's records format SOURCE_DATE themselves; the
+            # reconciliation reads its own, in UTC, and must not use this one.
+            "source_date": "2016-04-30",
             "last_inspection_year": "2026",
             "publications": ["Active_Transportation"],
         },
@@ -119,6 +121,7 @@ def _fields(record: Record) -> CityFields:
         created_at="2014-06-30T00:00:00Z",
         modified_at="2026-08-24T00:00:00Z",
         state_feature_type="non_default" if record.structure else "template_default",
+        source_date="2016-05-01",
     )
 
 

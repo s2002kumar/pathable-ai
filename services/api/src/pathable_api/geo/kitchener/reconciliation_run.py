@@ -155,6 +155,7 @@ SELECT activetransportid,
     strftime(create_date, '%Y-%m-%dT%H:%M:%SZ'),
     strftime(update_date, '%Y-%m-%dT%H:%M:%SZ'),
     state_feature_type,
+    strftime(source_date, '%Y-%m-%d'),
     coalesce(curbcut = 'Y' AND state_curbcut = 'non_default'
         AND physical_class <> 'virtual_link', false)
 FROM read_parquet(?) WHERE activetransportid IS NOT NULL ORDER BY activetransportid
@@ -162,17 +163,24 @@ FROM read_parquet(?) WHERE activetransportid IS NOT NULL ORDER BY activetranspor
 
 
 def city_record_fields(parquet: Path) -> tuple[dict[int, CityFields], set[int]]:
-    """Every record's database dates and FEATURE_TYPE state, and the physical
-    records carrying CURBCUT = Y."""
+    """Every record's dates and FEATURE_TYPE state, and the physical records
+    carrying CURBCUT = Y.
+
+    Dates are formatted in UTC. DuckDB otherwise uses the machine's time zone,
+    which moved the City's midnight-UTC SOURCE_DATE to the previous day on this
+    laptop and made the output depend on where it ran.
+    """
     connection = duckdb.connect(database=":memory:")
     try:
+        connection.execute("SET TimeZone = 'UTC'")
         connection.execute("SET autoinstall_known_extensions = false")
         connection.execute("SET autoload_known_extensions = false")
         rows = connection.execute(_CITY_QUERY, [parquet.as_posix()]).fetchall()
     finally:
         connection.close()
     fields = {
-        int(i): CityFields(created, modified, state) for i, created, modified, state, _cut in rows
+        int(i): CityFields(created, modified, state, source)
+        for i, created, modified, state, source, _cut in rows
     }
     return fields, {int(i) for i, *_rest, cut in rows if cut}
 

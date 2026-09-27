@@ -212,19 +212,21 @@ def gate(record: Record, decision: Decision) -> Gate:
 
 @dataclass(frozen=True, slots=True)
 class CityFields:
-    """City fields PA-GEO-05's records do not carry: the database dates, and the
-    value state of FEATURE_TYPE."""
+    """City fields read here rather than from PA-GEO-05's records: the dates, in
+    UTC, and the value state of FEATURE_TYPE, which those records do not carry."""
 
     created_at: str | None = None
     modified_at: str | None = None
     state_feature_type: str | None = None
+    #: SOURCE_DATE's calendar date. The City stores it at midnight UTC.
+    source_date: str | None = None
 
 
 def _city_dates(record: Record, extra: CityFields | None) -> Dates:
     a = record.attributes
     year = a.get("last_inspection_year")
     return Dates(
-        source_capture_date=a.get("source_date"),
+        source_capture_date=extra.source_date if extra else None,
         inspection_year=int(year) if year is not None and str(year).isdigit() else None,
         record_created_at=extra.created_at if extra else None,
         record_modified_at=extra.modified_at if extra else None,
@@ -633,7 +635,7 @@ def municipal_since(records: Iterable[Record], city_fields: Mapping[int, CityFie
     dates = []
     for record in records:
         extra = city_fields.get(record.activetransportid)
-        for value in (extra.created_at if extra else None, record.attributes.get("source_date")):
+        for value in (extra.created_at, extra.source_date) if extra else ():
             if value:
                 dates.append(value[:10])
     return min(dates) if dates else None
