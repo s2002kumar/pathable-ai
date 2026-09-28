@@ -536,6 +536,15 @@ def _overlay_segments(
     return found
 
 
+def _cost(value: float) -> float | None:
+    """A path's cost, or None where it crosses a segment the profile cannot use."""
+    return round(value, 3) if math.isfinite(value) else None
+
+
+def _said(value: float) -> str:
+    return f"{value:.1f}" if math.isfinite(value) else "nothing: it is unusable"
+
+
 def explain_change(
     base_route: Route,
     shadow_route: Route,
@@ -544,23 +553,34 @@ def explain_change(
     base_lookup: Mapping[str, tuple[str | None, SurfaceClass]],
     shadow_lookup: Mapping[str, tuple[str | None, SurfaceClass]],
 ) -> dict[str, Any]:
-    """Why the chosen path moved, from the costs: each path, under each graph."""
+    """Why the chosen path moved, from the costs: each path, under each graph.
+
+    A path that crosses a segment the profile may not use has no cost; it is
+    said to be unusable, not given a number.
+    """
     a_base = cost_under(base_route, base_lookup, profile)
     a_shadow = cost_under(base_route, shadow_lookup, profile)
     b_base = cost_under(shadow_route, base_lookup, profile)
     b_shadow = cost_under(shadow_route, shadow_lookup, profile)
-    a_moved = a_shadow - a_base
-    b_moved = b_shadow - b_base
     parts = [
-        f"Baseline: route A costs {a_base:.1f} effective m, route B {b_base:.1f}; A is chosen.",
+        f"Baseline: route A costs {_said(a_base)} effective m, route B {_said(b_base)}; "
+        "A is chosen.",
     ]
-    if a_moved > 1e-6:
+    if not math.isfinite(a_shadow):
         parts.append(
-            f"City surfaces on A's filled segments raise its cost by {a_moved:.1f} "
+            "City surfaces make a segment of A unusable for this profile: a surface it "
+            "declared it cannot use."
+        )
+    elif a_shadow - a_base > 1e-6:
+        parts.append(
+            f"City surfaces on A's filled segments raise its cost by {a_shadow - a_base:.1f} "
             "(a known surface this profile penalises more than an unknown one)."
         )
-    elif a_moved < -1e-6:
-        parts.append(f"City surfaces on A's filled segments lower its cost by {-a_moved:.1f}.")
+    elif a_shadow - a_base < -1e-6:
+        parts.append(
+            f"City surfaces on A's filled segments lower its cost by {a_base - a_shadow:.1f}."
+        )
+    b_moved = b_shadow - b_base if math.isfinite(b_shadow) and math.isfinite(b_base) else 0.0
     if b_moved < -1e-6:
         parts.append(
             f"City surfaces on B's filled segments lower its cost by {-b_moved:.1f} "
@@ -568,22 +588,24 @@ def explain_change(
         )
     elif b_moved > 1e-6:
         parts.append(f"City surfaces on B's filled segments raise its cost by {b_moved:.1f}.")
-    parts.append(f"Shadow: A costs {a_shadow:.1f}, B {b_shadow:.1f}; B is chosen.")
+    parts.append(f"Shadow: A costs {_said(a_shadow)}, B {_said(b_shadow)}; B is chosen.")
+    delta = b_shadow - a_base
     return {
         "route_a_baseline": {
             "distance_m": round(base_route.distance_m, 2),
-            "cost_baseline": round(a_base, 3),
-            "cost_shadow": round(a_shadow, 3),
+            "cost_baseline": _cost(a_base),
+            "cost_shadow": _cost(a_shadow),
+            "unusable_in_shadow": not math.isfinite(a_shadow),
             "filled_segments": _overlay_segments(base_route, fills, base_lookup),
         },
         "route_b_shadow": {
             "distance_m": round(shadow_route.distance_m, 2),
-            "cost_baseline": round(b_base, 3),
-            "cost_shadow": round(b_shadow, 3),
+            "cost_baseline": _cost(b_base),
+            "cost_shadow": _cost(b_shadow),
             "filled_segments": _overlay_segments(shadow_route, fills, base_lookup),
         },
         "distance_delta_m": round(shadow_route.distance_m - base_route.distance_m, 2),
-        "cost_delta_m": round(b_shadow - a_base, 3),
+        "cost_delta_m": _cost(delta),
         "cause": " ".join(parts),
         "records": sorted(
             {
@@ -762,7 +784,13 @@ def summarise_results(results: Sequence[Result]) -> dict[str, Any]:
                 "distance_delta_m": _describe(
                     [c.cause["distance_delta_m"] for c in changed if c.cause]
                 ),
-                "cost_delta_m": _describe([c.cause["cost_delta_m"] for c in changed if c.cause]),
+                "cost_delta_m": _describe(
+                    [
+                        c.cause["cost_delta_m"]
+                        for c in changed
+                        if c.cause and c.cause["cost_delta_m"] is not None
+                    ]
+                ),
             },
         }
     return out

@@ -34,7 +34,7 @@ def representatives(
     changed.sort(
         key=lambda r: (
             r.category is not Category.FEASIBILITY_CHANGED,
-            -abs(float((r.cause or {}).get("cost_delta_m", 0.0))),
+            -abs(float((r.cause or {}).get("cost_delta_m") or 0.0)),
             r.journey.journey_id,
             r.profile_key,
         )
@@ -125,13 +125,15 @@ def _figure(result: Result, pair: Pair, profile: MobilityProfile, fills: Mapping
         + "</svg>"
     )
     records = ", ".join(str(r) for r in cause.get("records", [])) or "none"
+    delta = cause.get("cost_delta_m")
+    moved = "not comparable: route A is unusable" if delta is None else f"{delta:+.1f} effective m"
     return (
         "<figure>"
         f"<figcaption><strong>{html.escape(result.journey.journey_id)}</strong> "
         f"({html.escape(result.journey.corpus)} corpus) · profile "
         f"<code>{html.escape(result.profile_key)}</code> · {html.escape(str(result.category))}"
-        f"<br>Distance {cause.get('distance_delta_m', 0):+.1f} m, cost "
-        f"{cause.get('cost_delta_m', 0):+.1f} effective m against the baseline. City records: "
+        f"<br>Distance {cause.get('distance_delta_m', 0):+.1f} m, cost {moved} against the "
+        f"baseline. City records: "
         f"{html.escape(records)}.<br>{html.escape(str(cause.get('cause', '')))}</figcaption>"
         f"{svg}</figure>"
     )

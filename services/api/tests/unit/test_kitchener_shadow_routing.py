@@ -391,6 +391,11 @@ def test_municipal_gravel_is_a_hard_change_only_for_a_declared_requirement() -> 
 
     assert custom.category is Category.FEASIBILITY_CHANGED
     assert custom.blocked == ("a->b#0",)
+    # Regression: the blocked path used to cost inf, which no JSON evidence can hold.
+    assert custom.cause is not None
+    assert custom.cause["route_a_baseline"]["unusable_in_shadow"]
+    assert custom.cause["route_a_baseline"]["cost_shadow"] is None
+    json.dumps(custom.cause, allow_nan=False)
     # No preset excludes a rough surface: for them it is a cost, and the route moves by weight.
     assert wheelchair.category is Category.ROUTE_CHANGED
     assert wheelchair.blocked == ()
