@@ -18,11 +18,13 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
+from shapely.geometry import Point
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.geo.content_checksum import compute_content_checksum
 from pathable_api.geo.enums import SurfaceClass
+from pathable_api.geo.geometry import geodesic_distance_m
 from pathable_api.geo.kitchener.correspondence import to_native
 from pathable_api.geo.kitchener.osm_extract import StudyExtract
 from pathable_api.geo.kitchener.shadow_overlay import (
@@ -65,10 +67,10 @@ from pathable_api.geo.kitchener.shadow_study import (
 )
 from pathable_api.geo.models import DatasetVersion, GraphEdge, PilotRegion
 from pathable_api.routing.comparison import RouteComparison
-from pathable_api.routing.engine import RoutingError, compute_route
+from pathable_api.routing.engine import MAX_SNAP_DISTANCE_M, RoutingError, compute_route
 from pathable_api.routing.graph import RoutableGraph, load_graph
 from pathable_api.routing.load_benchmark import fingerprint, process_memory
-from pathable_api.routing.profiles import STANDARD
+from pathable_api.routing.profiles import STANDARD, MobilityProfile
 
 Progress = Callable[[str], None]
 
@@ -161,6 +163,66 @@ class StudyOutput:
     timings: dict[str, float]
     memory: dict[str, float | None]
     shadow_identity: dict[str, str] = field(default_factory=dict)
+    #: Journey-profile pairs the sensitivity actually routed; the rest provably
+    #: route as the baseline does (:func:`may_move`).
+    sensitivity_rerouted: int = 0
+
+
+def _penalty(profile: MobilityProfile, surface: SurfaceClass | None) -> float:
+    if surface is SurfaceClass.ROUGH and profile.hard_limits.exclude_rough_surface:
+        return float("inf")
+    return profile.surface_penalty.get(surface, 0.0) if surface is not None else 0.0
+
+
+def may_move(
+    journey: Journey,
+    profile: MobilityProfile,
+    base: RouteFacts,
+    plan: OverlayPlan,
+    positions: Mapping[str, tuple[float, float]],
+    lengths: Mapping[str, float],
+) -> bool:
+    """Whether replacing surfaces per ``plan`` could change this journey's answer at all.
+
+    Exact, not a sample. Every segment costs at least its length, so any path
+    through a segment costs at least the straight-line distance from where the
+    route starts to the segment and on to where it ends — the bound A*'s own
+    heuristic rests on. A segment that becomes cheaper can only enter the
+    route if that bound fits within the baseline's cost, allowing for the
+    snap at each end — or if the route could start or end on it, which a snap
+    within reach of the segment allows. A segment that becomes dearer, or any
+    change on either route the explanation compares, can only matter if a
+    route already uses it.
+    """
+    if base.overlay_m > 0 or base.standard_overlay_m > 0:
+        return True
+    margin = 2 * MAX_SNAP_DISTANCE_M
+    origin, destination = Point(*journey.origin), Point(*journey.destination)
+    for fill in plan.fills.values():
+        if _penalty(profile, fill.surface_class) >= _penalty(profile, fill.replaces):
+            continue
+        if not base.exists:
+            return True
+        u, rest = fill.identity.split("->")
+        v = rest.split("#")[0]
+        ends = [Point(*positions[n]) for n in (u, v) if n in positions]
+        if not ends:
+            return True
+        reach = MAX_SNAP_DISTANCE_M + lengths.get(fill.identity, float("inf"))
+        if any(
+            geodesic_distance_m(point, end) <= reach
+            for point in (origin, destination)
+            for end in ends
+        ):
+            return True
+        bound = min(
+            geodesic_distance_m(origin, a) + geodesic_distance_m(b, destination)
+            for a in ends
+            for b in ends
+        )
+        if bound - margin <= base.effective_m:
+            return True
+    return False
 
 
 def _given(comparison: RouteComparison) -> RouteComparison:
@@ -223,6 +285,7 @@ def run_study(
     seed: str,
     per_stratum: int,
     recheck: int = 12,
+    prune: bool = True,
     progress: Progress | None = None,
 ) -> StudyOutput:
     say = progress or (lambda _message: None)
@@ -314,20 +377,32 @@ def run_study(
     started = time.perf_counter()
     flipped = shadow_graph(graph, conflict_plan)
     flip_lookups = (lookups[0], surface_lookup(flipped))
-    sensitivity = [
-        assess(
-            journey,
-            profile,
-            conflict_base[(journey.journey_id, profile.key)],
-            compare_on(flipped, journey, profile),
-            conflict_plan.fills,
-            flip_lookups,
-            functools.partial(compare_on, graph, journey, profile),
-        )[0]
-        for journey in (*broad, *targeted)
-        for profile in profiles
-    ]
+    lengths = {e.identity: e.length_m for e in graph.segments}
+    sensitivity: list[Result] = []
+    rerouted = 0
+    for journey in (*broad, *targeted):
+        for profile in profiles:
+            base = conflict_base[(journey.journey_id, profile.key)]
+            if prune and not may_move(
+                journey, profile, base, conflict_plan, graph.node_positions, lengths
+            ):
+                # Provably the baseline's own answer: no route to compute.
+                sensitivity.append(Result(journey, profile.key, base, base, Category.NOT_EXPOSED))
+                continue
+            rerouted += 1
+            sensitivity.append(
+                assess(
+                    journey,
+                    profile,
+                    base,
+                    compare_on(flipped, journey, profile),
+                    conflict_plan.fills,
+                    flip_lookups,
+                    functools.partial(compare_on, graph, journey, profile),
+                )[0]
+            )
     timings["conflict_sensitivity_s"] = round(time.perf_counter() - started, 2)
+    sensitivity_rerouted = rerouted
     del flipped
 
     # The overlay removed: the baseline graph routes exactly as it did.
@@ -363,6 +438,7 @@ def run_study(
         timings=timings,
         memory=memory,
         shadow_identity=shadow_identity,
+        sensitivity_rerouted=sensitivity_rerouted,
     )
 
 
@@ -845,9 +921,18 @@ def shadow_evidence(
             "agree": len(output.agreement) - len(disagreements),
             "disagreements": disagreements,
         },
-        "conflicts": conflict_analysis(
-            evidence, output.conflict_plan, output.results, output.sensitivity
-        ),
+        "conflicts": {
+            **conflict_analysis(evidence, output.conflict_plan, output.results, output.sensitivity),
+            "sensitivity_pairs_routed_again": output.sensitivity_rerouted,
+            "sensitivity_pairs_provably_unchanged": len(output.sensitivity)
+            - output.sensitivity_rerouted,
+            "pruning": (
+                "A pair is routed again unless the City's side provably cannot move it: no "
+                "conflict segment on either route the explanation compares, and no segment "
+                "made cheaper within straight-line reach of the baseline's cost (the bound A* "
+                "rests on). Tested equal to routing every pair again."
+            ),
+        },
         "validation_queue": {
             "what_it_is": (
                 "City records to check in the field or with an external party first, chosen by "

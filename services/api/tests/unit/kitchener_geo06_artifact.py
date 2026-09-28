@@ -32,8 +32,9 @@ RECONCILIATIONS = """CREATE TABLE r AS SELECT * FROM (VALUES
 ASSERTIONS = """CREATE TABLE a AS SELECT * FROM (VALUES
 ('kitchener/1#surface_material', 'ASPHALT', 'asphalt', 'orthoimagery', '2012-05-01',
  2021::BIGINT, NULL, NULL),
-('kitchener/2#surface_material', 'GRAVEL', 'gravel', 'orthoimagery', NULL, NULL, NULL, NULL),
-('way/{conflict_way}@v3#surface', 'asphalt', 'asphalt', NULL, NULL, NULL, '2021-03-25',
+('kitchener/2#surface_material', '{city_raw}', '{city_normalized}', 'orthoimagery', NULL, NULL,
+ NULL, NULL),
+('way/{conflict_way}@v3#surface', '{osm_surface}', '{osm_surface}', NULL, NULL, NULL, '2021-03-25',
  '2021-03-25T00:00:00Z')
 ) AS v(assertion_id, raw_value, normalized_value, capture_source, source_capture_date,
        inspection_year, observation_date, osm_value_since)"""
@@ -46,14 +47,22 @@ def write_geo06_artifact(
     eligible_way: int = 100,
     conflict_way: int = 101,
     eligible_count: int = 1,
+    conflict_city: tuple[str, str] = ("GRAVEL", "gravel"),
+    conflict_osm: str = "asphalt",
 ) -> tuple[Path, Path]:
     """The artifact folder and the committed evidence file that describes it."""
     folder.mkdir(parents=True, exist_ok=True)
-    ways = {"eligible_way": eligible_way, "conflict_way": conflict_way}
+    ways = {
+        "eligible_way": eligible_way,
+        "conflict_way": conflict_way,
+        "city_raw": conflict_city[0],
+        "city_normalized": conflict_city[1],
+        "osm_surface": conflict_osm,
+    }
     connection = duckdb.connect(database=":memory:")
     try:
-        connection.execute(RECONCILIATIONS.format(**ways))
-        connection.execute(ASSERTIONS.format(**ways))
+        connection.execute(RECONCILIATIONS.format_map(ways))
+        connection.execute(ASSERTIONS.format_map(ways))
         for table, name in (("r", "reconciliations"), ("a", "assertions")):
             connection.execute(f"COPY {table} TO '{(folder / name).as_posix()}.parquet'")
     finally:

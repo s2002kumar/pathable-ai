@@ -31,6 +31,8 @@ from pathable_api.geo.kitchener.shadow_overlay import (
     CONFLICT_SENSITIVITY,
     NOT_IN_GRAPH,
     CitySurface,
+    Fill,
+    OverlayPlan,
     SegmentSource,
     ShadowError,
     Skip,
@@ -47,6 +49,7 @@ from pathable_api.geo.kitchener.shadow_run import (
     ActiveDataset,
     changed_routes,
     graph_identity,
+    may_move,
     run_study,
     shadow_evidence,
     validation_queue,
@@ -543,9 +546,9 @@ def test_the_standard_profile_has_no_surface_rule() -> None:
 # ---------------------------------------------------------------------------
 
 
-def osm_grid() -> tuple[
-    RoutableGraph, list[SegmentSource], StudyExtract, tuple[float, float, float, float]
-]:
+def osm_grid(
+    conflict_surface: str = "asphalt",
+) -> tuple[RoutableGraph, list[SegmentSource], StudyExtract, tuple[float, float, float, float]]:
     """A 4 x 3 grid of 400 m blocks with OSM-style ids, cut at every node, and its extract.
 
     Way 100 runs along the bottom row with no surface; way 106, the right-hand
@@ -559,7 +562,7 @@ def osm_grid() -> tuple[
         (100 + row, [row * 4 + col + 1 for col in range(4)], dict(FOOTWAY)) for row in range(3)
     ]
     for col in range(4):
-        tags = {"highway": "footway", "surface": "asphalt"} if col == 3 else dict(FOOTWAY)
+        tags = {"highway": "footway", "surface": conflict_surface} if col == 3 else dict(FOOTWAY)
         ways.append((103 + col, [col + 1 + 4 * row for row in range(3)], tags))
     edges = [
         NetworkEdge(
@@ -643,3 +646,101 @@ def test_the_whole_study_runs_and_leaves_the_baseline_graph_as_it_was(tmp_path: 
     assert WATERMARK in page
     for entry in queue:
         assert entry["provenance"]["routing_eligibility"] == "not_routing_eligible"
+
+
+@pytest.mark.parametrize(
+    ("osm_surface", "city"),
+    [("asphalt", ("GRAVEL", "gravel")), ("gravel", ("ASPHALT", "asphalt"))],
+)
+def test_the_pruned_conflict_sensitivity_is_the_exhaustive_one(
+    tmp_path: Path, osm_surface: str, city: tuple[str, str]
+) -> None:
+    # Pruning skips only journeys the City's side provably cannot move; in both
+    # directions — a conflict segment made dearer, and one made cheaper — it
+    # must give exactly what routing every journey again gives.
+    graph, sources, extract, bounds = osm_grid(conflict_surface=osm_surface)
+    folder, committed = write_geo06_artifact(
+        tmp_path, eligible_way=100, conflict_way=106, conflict_city=city, conflict_osm=osm_surface
+    )
+    evidence = load_surface_evidence(folder, committed)
+
+    def study(prune: bool) -> Any:
+        return run_study(
+            graph,
+            sources,
+            evidence,
+            extract,
+            bounds=bounds,
+            broad_size=6,
+            seed="test",
+            per_stratum=2,
+            recheck=1,
+            prune=prune,
+        )
+
+    pruned, full = study(True), study(False)
+
+    def outcome(result: Any) -> tuple[Any, ...]:
+        return (
+            result.journey.journey_id,
+            result.profile_key,
+            str(result.category),
+            json.dumps(result.shadow.outcome(), sort_keys=True, default=str),
+        )
+
+    assert sorted(map(outcome, pruned.sensitivity)) == sorted(map(outcome, full.sensitivity))
+    assert pruned.sensitivity_rerouted <= full.sensitivity_rerouted == len(full.sensitivity)
+
+
+def test_a_cheaper_segment_far_from_both_ends_matters_only_within_the_bound() -> None:
+    # A 20 m conflict segment 1 km from each end of a 2 km journey: any route
+    # through it costs at least 2 km, less the snap allowance at each end.
+    positions = {"u": at(1000, 300), "v": at(1020, 300)}
+    lengths = {"u->v#0": 20.0}
+    journey = Journey("P000", "test", at(0, 0), at(2000, 0))
+    cheaper = OverlayPlan(
+        CONFLICT_SENSITIVITY,
+        fills={
+            "u->v#0": Fill(
+                "u->v#0",
+                1,
+                0.0,
+                20.0,
+                "asphalt",
+                SurfaceClass.PAVED,
+                1.0,
+                (1,),
+                ("r",),
+                replaces=SurfaceClass.ROUGH,
+            )
+        },
+    )
+    dearer = OverlayPlan(
+        CONFLICT_SENSITIVITY,
+        fills={
+            "u->v#0": Fill(
+                "u->v#0",
+                1,
+                0.0,
+                20.0,
+                "gravel",
+                SurfaceClass.ROUGH,
+                1.0,
+                (1,),
+                ("r",),
+                replaces=SurfaceClass.PAVED,
+            )
+        },
+    )
+    wheelchair = get_profile("wheelchair")
+
+    def base(cost: float) -> RouteFacts:
+        return RouteFacts(True, path=("x",), effective_m=cost)
+
+    assert may_move(journey, wheelchair, base(2500.0), cheaper, positions, lengths)
+    assert not may_move(journey, wheelchair, base(1500.0), cheaper, positions, lengths)
+    # Dearer and on no route: it cannot matter, however expensive the journey.
+    assert not may_move(journey, wheelchair, base(9000.0), dearer, positions, lengths)
+    # Any change on a route already travelled is routed again.
+    touching = RouteFacts(True, path=("u->v#0",), effective_m=1500.0, overlay_m=20.0)
+    assert may_move(journey, wheelchair, touching, dearer, positions, lengths)
