@@ -31,6 +31,7 @@ from pathable_api.geo.kitchener.shadow_overlay import (
     FILLED,
     OTHER_CLASS_MAX,
     SHADOW_POLICY_VERSION,
+    CitySurface,
     OverlayPlan,
     SegmentSource,
     SurfaceEvidence,
@@ -399,19 +400,81 @@ def _fill_records(plan: OverlayPlan) -> dict[int, list[str]]:
     return found
 
 
-def changed_routes(results: Sequence[Result]) -> list[dict[str, Any]]:
-    return [
-        {
+def _assertion(item: CitySurface) -> dict[str, Any]:
+    return {
+        "record_id": item.record_id,
+        "reconciliation_id": item.reconciliation_id,
+        "raw_value": item.raw_value,
+        "routing_class": item.surface_class.value,
+        "way": f"way/{item.way_id}",
+        "from_m": round(item.from_m, 2),
+        "to_m": round(item.to_m, 2),
+        "source_capture_date": item.source_capture_date,
+        "freshness": item.freshness,
+    }
+
+
+def changed_routes(
+    results: Sequence[Result], plan: OverlayPlan, surfaces: Sequence[CitySurface]
+) -> list[dict[str, Any]]:
+    """Every journey whose path or feasibility moved, with the City assertions behind it.
+
+    A hard change also names the rule, the segments it blocks and what each run
+    did, because it is the category a wrong assertion would do most harm in.
+    """
+    by_record: dict[int, list[CitySurface]] = defaultdict(list)
+    for item in surfaces:
+        by_record[item.record_id].append(item)
+    found = []
+    for r in sorted(results, key=lambda r: (r.journey.journey_id, r.profile_key)):
+        if r.cause is None and r.category is not Category.FEASIBILITY_CHANGED:
+            continue
+        records = sorted(set((r.cause or {}).get("records", [])))
+        for identity in r.blocked:
+            if identity in plan.fills:
+                records = sorted(set(records) | set(plan.fills[identity].records))
+        assertions = [_assertion(i) for record in records for i in by_record.get(record, [])]
+        entry: dict[str, Any] = {
             "journey": r.journey.journey_id,
             "corpus": r.journey.corpus,
             "profile": r.profile_key,
             "category": str(r.category),
-            "blocked_segments": list(r.blocked),
             **(r.cause or {}),
+            "city_assertions": assertions,
+            "evidence_dating": sorted({a["freshness"] for a in assertions}),
         }
-        for r in sorted(results, key=lambda r: (r.journey.journey_id, r.profile_key))
-        if r.cause is not None or r.category is Category.FEASIBILITY_CHANGED
-    ]
+        if r.category is Category.FEASIBILITY_CHANGED:
+            entry["hard_constraint"] = {
+                "profile_rule": "exclude_rough_surface: a requirement the traveller declared",
+                "blocked_segments": [
+                    {
+                        "segment": identity,
+                        "city_surface": plan.fills[identity].surface,
+                        "city_class": plan.fills[identity].surface_class.value,
+                        "way": f"way/{plan.fills[identity].way_id}",
+                        "way_extent_m": [
+                            round(plan.fills[identity].start_m, 2),
+                            round(plan.fills[identity].end_m, 2),
+                        ],
+                        "records": list(plan.fills[identity].records),
+                    }
+                    for identity in r.blocked
+                    if identity in plan.fills
+                ],
+                "baseline_state": "surface unknown: the segment may be used",
+                "shadow_state": "City surface in the rough class: the segment is excluded",
+                "consequence": (
+                    "no route in the shadow"
+                    if not r.shadow.exists
+                    else f"the route moves by {r.shadow.distance_m - r.base.distance_m:+.1f} m"
+                ),
+                "reading": (
+                    "Potential impact only. The shadow answer is not safer or more correct: it "
+                    "rests on an unvalidated City assertion."
+                ),
+            }
+        found.append(entry)
+    return found
 
 
 def conflict_analysis(
@@ -746,7 +809,7 @@ def shadow_evidence(
             "profiles": [p.key for p in profiles],
         },
         "results": summarise_results(output.results),
-        "route_changes": changed_routes(output.results),
+        "route_changes": changed_routes(output.results, output.plan, evidence.eligible),
         "per_journey": {
             "columns": [
                 "journey",

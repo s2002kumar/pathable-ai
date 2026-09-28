@@ -45,6 +45,7 @@ from pathable_api.geo.kitchener.shadow_overlay import (
 from pathable_api.geo.kitchener.shadow_page import WATERMARK, render_changes
 from pathable_api.geo.kitchener.shadow_run import (
     ActiveDataset,
+    changed_routes,
     graph_identity,
     run_study,
     shadow_evidence,
@@ -399,6 +400,33 @@ def test_municipal_gravel_is_a_hard_change_only_for_a_declared_requirement() -> 
     # No preset excludes a rough surface: for them it is a cost, and the route moves by weight.
     assert wheelchair.category is Category.ROUTE_CHANGED
     assert wheelchair.blocked == ()
+
+
+def test_a_hard_change_names_its_rule_segment_and_city_record() -> None:
+    net = _fork()
+    graph = net.graph()
+    gravel = [city(1, 0.0, 100.0, "GRAVEL", "gravel", record=77)]
+    plan = plan_overlay(gravel, net.segments, features_of(graph))
+    shadow = shadow_graph(graph, plan)
+    profile = next(p for p in study_profiles() if p.key == CUSTOM_ROUGH_KEY)
+    result, _pair = run_pair(
+        _journey(net),
+        profile,
+        graph,
+        shadow,
+        plan.fills,
+        (surface_lookup(graph), surface_lookup(shadow)),
+    )
+
+    [entry] = changed_routes([result], plan, gravel)
+
+    hard = entry["hard_constraint"]
+    assert hard["profile_rule"].startswith("exclude_rough_surface")
+    assert [b["segment"] for b in hard["blocked_segments"]] == ["a->b#0"]
+    assert hard["blocked_segments"][0]["records"] == [77]
+    assert hard["consequence"].startswith("the route moves by +")
+    assert entry["city_assertions"][0]["raw_value"] == "GRAVEL"
+    assert entry["evidence_dating"] == ["capture_dated_only"]
 
 
 def test_municipal_asphalt_on_the_chosen_path_changes_only_its_cost() -> None:
