@@ -106,6 +106,17 @@ from pathable_api.geo.kitchener.reconciliation_run import (
     write_reconciliation_artifact,
 )
 from pathable_api.geo.kitchener.review import render_review
+from pathable_api.geo.kitchener.shadow_overlay import ShadowError, load_surface_evidence
+from pathable_api.geo.kitchener.shadow_page import render_changes
+from pathable_api.geo.kitchener.shadow_run import (
+    active_dataset,
+    load_active,
+    read_only,
+    shadow_evidence,
+    validation_queue,
+)
+from pathable_api.geo.kitchener.shadow_run import run_study as run_shadow_study
+from pathable_api.geo.kitchener.shadow_study import study_profiles
 from pathable_api.geo.kitchener.snapshot import SnapshotError, SnapshotPlan, take_snapshot
 from pathable_api.geo.kitchener.study import ATTRIBUTION as KITCHENER_OSM_ATTRIBUTION
 from pathable_api.geo.kitchener.study import (
@@ -795,6 +806,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="An earlier run's artifact folder: record whether every file is byte-identical.",
     )
 
+    shadow = kitchener_actions.add_parser(
+        "shadow-routing",
+        help=(
+            "Run PA-GEO-07's offline shadow-routing study: route deterministic journeys on the "
+            "active graph and on a shadow copy with City-only surfaces filled in, with the "
+            "production router. Reads the database only, in READ ONLY transactions."
+        ),
+    )
+    shadow.add_argument("--region", default="waterloo")
+    shadow.add_argument(
+        "--geo06-artifact",
+        type=Path,
+        required=True,
+        help="PA-GEO-06's reconciliation artifact folder.",
+    )
+    shadow.add_argument(
+        "--evidence-dir",
+        type=Path,
+        required=True,
+        help="The folder holding PA-GEO-06's committed evidence.",
+    )
+    shadow.add_argument("--extract", type=Path, required=True)
+    shadow.add_argument("--extract-manifest", type=Path, required=True)
+    shadow.add_argument("--broad-size", type=int, default=200)
+    shadow.add_argument("--per-stratum", type=int, default=6)
+    shadow.add_argument("--seed", default="pathable-pa-geo-07-v1")
+    shadow.add_argument("--json", type=Path, required=True)
+    shadow.add_argument("--html", type=Path, default=None)
+    shadow.add_argument(
+        "--compare-to",
+        type=Path,
+        default=None,
+        help="An earlier run's evidence: record whether every outcome is identical.",
+    )
+
     return parser
 
 
@@ -858,6 +904,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _overture_link(database, args)
             case "kitchener" if args.kitchener_command == "lineage-extract":
                 return await _kitchener_lineage_extract(database, args)
+            case "kitchener" if args.kitchener_command == "shadow-routing":
+                return await _kitchener_shadow_routing(database, args)
             case "kitchener":
                 return await _kitchener_audit(database, args)
             case "datasets" if args.dataset_command == "seal":
@@ -1892,6 +1940,93 @@ def _kitchener_reconcile(args: argparse.Namespace) -> int:
     if "determinism" in measurements:
         print(f"  byte-identical to {args.compare_to}: {measurements['determinism']['identical']}")
     print(f"Wrote {args.artifact_dir} and {args.json}")
+    return EXIT_OK
+
+
+#: PA-GEO-06's committed evidence, which the shadow study binds its artifact to.
+GEO06_EVIDENCE = "kitchener-geo06-reconciliation.json"
+
+
+async def _kitchener_shadow_routing(database: Database, args: argparse.Namespace) -> int:
+    started = time.perf_counter()
+    try:
+        evidence = load_surface_evidence(args.geo06_artifact, args.evidence_dir / GEO06_EVIDENCE)
+        manifest = json.loads(args.extract_manifest.read_text("utf-8"))
+        extract = load_study_extract(args.extract, expected_sha256=manifest["output"]["sha256"])
+    except (ShadowError, ExtractSourceError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    async with database.session() as session:
+        await read_only(session)
+        before = await active_dataset(session, args.region)
+        graph, sources = await load_active(session, before, args.region)
+        await session.rollback()
+    if str(before.dataset_id) != manifest["dataset"]["dataset_id"]:
+        print("error: the OSM study extract was not cut for the active dataset.", file=sys.stderr)
+        return EXIT_FAILED
+    loaded = time.perf_counter()
+    print(f"graph: {graph.segment_count} segments, loaded read-only in {loaded - started:.1f} s")
+    output = run_shadow_study(
+        graph,
+        sources,
+        evidence,
+        extract,
+        bounds=tuple(manifest["dataset"]["source_bbox"]),
+        broad_size=args.broad_size,
+        seed=args.seed,
+        per_stratum=args.per_stratum,
+        progress=print,
+    )
+    queue = validation_queue(evidence, output, graph)
+    async with database.session() as session:
+        await read_only(session)
+        after = await active_dataset(session, args.region)
+        await session.rollback()
+    document = shadow_evidence(
+        evidence=evidence,
+        output=output,
+        dataset_before=before,
+        dataset_after=after,
+        extract_sha256=manifest["output"]["sha256"],
+        seed=args.seed,
+        queue=queue,
+        attribution=KITCHENER_OSM_ATTRIBUTION,
+    )
+    document["run"]["timings_s"]["load_graph_s"] = round(loaded - started, 2)
+    document["run"]["timings_s"]["total_s"] = round(time.perf_counter() - started, 2)
+    document["run"].update(_run_measurements())
+    if args.compare_to is not None:
+        earlier = json.loads(args.compare_to.read_text("utf-8"))
+        document["run"]["determinism"] = {
+            "compared_with": args.compare_to.name,
+            "results_identical": earlier.get("results_sha256") == document["results_sha256"],
+            "corpora_identical": all(
+                earlier["corpora"][name]["sha256"] == document["corpora"][name]["sha256"]
+                for name in ("broad", "targeted")
+            ),
+        }
+    document["content_sha256"] = content_sha256(document)
+    write_json(args.json, document)
+    if args.html is not None:
+        page = render_changes(
+            output.results,
+            output.pairs,
+            {p.key: p for p in study_profiles()},
+            output.plan.fills,
+            KITCHENER_OSM_ATTRIBUTION,
+        )
+        args.html.parent.mkdir(parents=True, exist_ok=True)
+        args.html.write_text(page, encoding="utf-8", newline="\n")
+    isolation = document["production_isolation"]
+    print(f"\nShadow study: {len(output.results)} journey-profile pairs")
+    for corpus, profiles in document["results"].items():
+        for key, block in profiles.items():
+            print(f"  {corpus:<9}{key:<40}{block['categories']}")
+    print(f"  database unchanged: {isolation['database']['unchanged']}")
+    print(f"  baseline graph unchanged: {isolation['baseline_graph_unchanged']}")
+    if "determinism" in document["run"]:
+        print(f"  identical to {args.compare_to}: {document['run']['determinism']}")
+    print(f"Wrote {args.json}")
     return EXIT_OK
 
 
