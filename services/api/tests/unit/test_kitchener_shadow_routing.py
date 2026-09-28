@@ -16,11 +16,11 @@ from __future__ import annotations
 
 import json
 import math
+import uuid
 from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
-import duckdb
 import pytest
 from shapely.geometry import LineString, Point
 
@@ -42,7 +42,14 @@ from pathable_api.geo.kitchener.shadow_overlay import (
     surface_class_of,
     way_vertex_positions,
 )
-from pathable_api.geo.kitchener.shadow_run import graph_identity
+from pathable_api.geo.kitchener.shadow_page import WATERMARK, render_changes
+from pathable_api.geo.kitchener.shadow_run import (
+    ActiveDataset,
+    graph_identity,
+    run_study,
+    shadow_evidence,
+    validation_queue,
+)
 from pathable_api.geo.kitchener.shadow_study import (
     CUSTOM_ROUGH_KEY,
     Category,
@@ -60,6 +67,7 @@ from pathable_api.geo.network import NetworkEdge, NetworkNode, NetworkPayload
 from pathable_api.routing.engine import compute_route
 from pathable_api.routing.graph import RoutableGraph, graph_from_payload
 from pathable_api.routing.profiles import STANDARD, get_profile
+from tests.unit.kitchener_geo06_artifact import write_geo06_artifact
 from tests.unit.kitchener_streets import Identity
 
 LON, LAT = -80.49, 43.45
@@ -274,79 +282,8 @@ def test_the_conflict_sensitivity_only_touches_segments_osm_describes() -> None:
     assert plan.fills["a->b#0"].replaces is SurfaceClass.PAVED
 
 
-def _artifact(folder: Path, *, eligible_count: int = 1) -> tuple[Path, Path]:
-    """A miniature PA-GEO-06 artifact: one surface row of every relationship, one curb ramp."""
-    folder.mkdir(parents=True, exist_ok=True)
-    connection = duckdb.connect(database=":memory:")
-    try:
-        connection.execute(
-            """CREATE TABLE r AS SELECT * FROM (VALUES
-            ('s1', 'surface', 'source_only_kitchener', [1::BIGINT], 'way/100', 0.0, 20.0,
-             ['kitchener/1#surface_material'], []::VARCHAR[], 'not_applicable'),
-            ('s2', 'surface', 'conflict', [2::BIGINT], 'way/101', 0.0, 20.0,
-             ['kitchener/2#surface_material'], ['way/101@v3#surface'], 'apparently_independent'),
-            ('s3', 'surface', 'agreement', [3::BIGINT], 'way/102', 0.0, 20.0,
-             ['kitchener/3#surface_material'], ['way/102@v1#surface'], 'possible_shared_lineage'),
-            ('s4', 'surface', 'source_only_osm', [4::BIGINT], 'way/103', 0.0, 20.0,
-             []::VARCHAR[], ['way/103@v1#surface'], 'not_applicable'),
-            ('s5', 'surface', 'unknown', [5::BIGINT], 'way/104', 0.0, 20.0,
-             []::VARCHAR[], []::VARCHAR[], 'not_applicable'),
-            ('c1', 'curb_ramp', 'source_only_kitchener', [6::BIGINT], 'node/9', NULL, NULL,
-             ['kitchener/6#curb_ramp'], ['node/9@v1#barrier'], 'not_applicable')
-            ) AS v(reconciliation_id, topic, semantic_relationship, source_records,
-                   target_element, from_m, to_m, kitchener_assertions, osm_assertions,
-                   lineage_relationship)"""
-        )
-        connection.execute(
-            """CREATE TABLE a AS SELECT * FROM (VALUES
-            ('kitchener/1#surface_material', 'ASPHALT', 'asphalt', 'orthoimagery', '2012-05-01',
-             2021::BIGINT, NULL, NULL),
-            ('kitchener/2#surface_material', 'BRICK', 'bricks', 'orthoimagery', NULL, NULL,
-             NULL, NULL),
-            ('way/101@v3#surface', 'concrete', 'concrete', NULL, NULL, NULL, '2021-03-25',
-             '2021-03-25T00:00:00Z')
-            ) AS v(assertion_id, raw_value, normalized_value, capture_source,
-                   source_capture_date, inspection_year, observation_date, osm_value_since)"""
-        )
-        for table, name in (("r", "reconciliations"), ("a", "assertions")):
-            connection.execute(f"COPY {table} TO '{(folder / name).as_posix()}.parquet'")
-    finally:
-        connection.close()
-    from pathable_api.geo.overture.evidence import file_sha256
-
-    files = {
-        name: {"file": f"{name}.parquet", "sha256": file_sha256(folder / f"{name}.parquet")}
-        for name in ("reconciliations", "assertions")
-    }
-    (folder / "manifest.json").write_text(
-        json.dumps(
-            {
-                "artifact_version": "kitchener-geo06-artifact-v1",
-                "versions": {"reconciliation_policy": "kitchener-geo06-reconciliation-v1"},
-                "files": files,
-                "content_sha256": "c" * 64,
-            }
-        ),
-        encoding="utf-8",
-    )
-    committed = folder / "evidence.json"
-    committed.write_text(
-        json.dumps(
-            {
-                "artifact": {"files": files},
-                "outcomes": {
-                    "surface": {"semantic_relationship": {"source_only_kitchener": eligible_count}}
-                },
-                "content_sha256": "e" * 64,
-            }
-        ),
-        encoding="utf-8",
-    )
-    return folder, committed
-
-
 def test_only_city_only_surface_rows_are_eligible(tmp_path: Path) -> None:
-    folder, committed = _artifact(tmp_path)
+    folder, committed = write_geo06_artifact(tmp_path)
 
     found = load_surface_evidence(folder, committed)
 
@@ -355,7 +292,8 @@ def test_only_city_only_surface_rows_are_eligible(tmp_path: Path) -> None:
     assert found.eligible[0].freshness == "capture_dated_only"
     # Conflicts are kept apart for the sensitivity, never mixed into the policy.
     assert [i.reconciliation_id for i in found.conflicts] == ["s2"]
-    assert found.conflicts[0].osm_value == "concrete"
+    assert found.conflicts[0].osm_value == "asphalt"
+    assert found.conflicts[0].surface_class is SurfaceClass.ROUGH
     assert found.relationships == {
         "agreement": 1,
         "conflict": 1,
@@ -366,7 +304,7 @@ def test_only_city_only_surface_rows_are_eligible(tmp_path: Path) -> None:
 
 
 def test_an_artifact_the_committed_evidence_does_not_describe_is_refused(tmp_path: Path) -> None:
-    folder, committed = _artifact(tmp_path)
+    folder, committed = write_geo06_artifact(tmp_path)
     document = json.loads(committed.read_text("utf-8"))
     document["artifact"]["files"]["assertions"]["sha256"] = "0" * 64
     committed.write_text(json.dumps(document), encoding="utf-8")
@@ -376,7 +314,7 @@ def test_an_artifact_the_committed_evidence_does_not_describe_is_refused(tmp_pat
 
 
 def test_a_city_only_count_that_disagrees_with_the_evidence_is_refused(tmp_path: Path) -> None:
-    folder, committed = _artifact(tmp_path, eligible_count=943)
+    folder, committed = write_geo06_artifact(tmp_path, eligible_count=943)
 
     with pytest.raises(ShadowError, match="count"):
         load_surface_evidence(folder, committed)
@@ -565,3 +503,110 @@ def test_the_standard_profile_has_no_surface_rule() -> None:
     # The premise of "the shortest route never moves": if this changes, so must the study.
     assert STANDARD.surface_penalty == {}
     assert not STANDARD.hard_limits.exclude_rough_surface
+
+
+# ---------------------------------------------------------------------------
+# The whole study, end to end
+# ---------------------------------------------------------------------------
+
+
+def osm_grid() -> tuple[
+    RoutableGraph, list[SegmentSource], StudyExtract, tuple[float, float, float, float]
+]:
+    """A 4 x 3 grid of 400 m blocks with OSM-style ids, cut at every node, and its extract.
+
+    Way 100 runs along the bottom row with no surface; way 106, the right-hand
+    column, is asphalt in OSM.
+    """
+    nodes: dict[int, tuple[float, float]] = {}
+    for row in range(3):
+        for col in range(4):
+            nodes[row * 4 + col + 1] = at(400.0 * col, 400.0 * row)
+    ways: list[tuple[int, list[int], dict[str, str]]] = [
+        (100 + row, [row * 4 + col + 1 for col in range(4)], dict(FOOTWAY)) for row in range(3)
+    ]
+    for col in range(4):
+        tags = {"highway": "footway", "surface": "asphalt"} if col == 3 else dict(FOOTWAY)
+        ways.append((103 + col, [col + 1 + 4 * row for row in range(3)], tags))
+    edges = [
+        NetworkEdge(
+            source_u=str(u),
+            source_v=str(v),
+            edge_key=key,
+            geometry=LineString([nodes[u], nodes[v]]),
+            features=normalise_edge(tags),
+            source_way_id=str(way_id),
+        )
+        for way_id, refs, tags in ways
+        for key, (u, v) in enumerate(pairwise(refs))
+    ]
+    payload = NetworkPayload(
+        nodes=[NetworkNode(str(i), Point(*xy)) for i, xy in sorted(nodes.items())], edges=edges
+    )
+    extract = StudyExtract(
+        nodes={i: OsmNode(i, xy[0], xy[1], 1, None, {}) for i, xy in nodes.items()},
+        ways={w: OsmWay(w, 1, None, tags, tuple(refs)) for w, refs, tags in ways},
+    )
+    sources = [SegmentSource(e.source_u, e.source_v, e.edge_key, e.source_way_id) for e in edges]
+    lons = [xy[0] for xy in nodes.values()]
+    lats = [xy[1] for xy in nodes.values()]
+    bounds = (min(lons) - 0.001, min(lats) - 0.001, max(lons) + 0.001, max(lats) + 0.001)
+    return graph_from_payload(payload), sources, extract, bounds
+
+
+def test_the_whole_study_runs_and_leaves_the_baseline_graph_as_it_was(tmp_path: Path) -> None:
+    graph, sources, extract, bounds = osm_grid()
+    folder, committed = write_geo06_artifact(tmp_path, eligible_way=100, conflict_way=106)
+    evidence = load_surface_evidence(folder, committed)
+
+    output = run_study(
+        graph,
+        sources,
+        evidence,
+        extract,
+        bounds=bounds,
+        broad_size=4,
+        seed="test",
+        per_stratum=2,
+        recheck=2,
+    )
+
+    # The City's asphalt describes the three segments of way 100, and nothing else.
+    assert sorted(f.way_id for f in output.plan.fills.values()) == [100, 100, 100]
+    # The conflict sensitivity would put the City's gravel where OSM says asphalt.
+    assert {f.replaces for f in output.conflict_plan.fills.values()} == {SurfaceClass.PAVED}
+    assert output.isolation["baseline_graph_unchanged"]
+    rerouted = output.isolation["baseline_rerouted_after_study"]
+    assert rerouted["identical"] == rerouted["routes"] > 0
+    assert output.corpora["targeted"]
+    assert len(output.results) == 7 * (
+        len(output.corpora["broad"]) + len(output.corpora["targeted"])
+    )
+    assert all(a["agree"] for a in output.agreement)
+
+    queue = validation_queue(evidence, output, graph)
+    dataset = ActiveDataset(uuid.uuid4(), "i" * 64, "fixture", "c" * 64, 2)
+    document = shadow_evidence(
+        evidence=evidence,
+        output=output,
+        dataset_before=dataset,
+        dataset_after=dataset,
+        extract_sha256="x" * 64,
+        seed="test",
+        queue=queue,
+        attribution={"openstreetmap": "© OpenStreetMap contributors"},
+    )
+    page = render_changes(
+        output.results,
+        output.pairs,
+        {p.key: p for p in study_profiles()},
+        output.plan.fills,
+        {"openstreetmap": "© OpenStreetMap contributors"},
+    )
+
+    assert json.loads(json.dumps(document))["production_isolation"]["database"]["unchanged"]
+    assert document["surface_evidence"]["city_only"]["outcome"] == {"filled": 1}
+    assert document["label"] == WATERMARK
+    assert WATERMARK in page
+    for entry in queue:
+        assert entry["provenance"]["routing_eligibility"] == "not_routing_eligible"
