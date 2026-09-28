@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import math
 import uuid
+from collections import Counter
 from itertools import pairwise
 from pathlib import Path
 from typing import Any
@@ -36,6 +37,7 @@ from pathable_api.geo.kitchener.shadow_overlay import (
     SegmentSource,
     ShadowError,
     Skip,
+    SurfaceEvidence,
     WaySegment,
     load_surface_evidence,
     locate_segments,
@@ -47,6 +49,7 @@ from pathable_api.geo.kitchener.shadow_overlay import (
 from pathable_api.geo.kitchener.shadow_page import WATERMARK, render_changes
 from pathable_api.geo.kitchener.shadow_run import (
     ActiveDataset,
+    StudyOutput,
     changed_routes,
     graph_identity,
     may_move,
@@ -744,3 +747,40 @@ def test_a_cheaper_segment_far_from_both_ends_matters_only_within_the_bound() ->
     # Any change on a route already travelled is routed again.
     touching = RouteFacts(True, path=("u->v#0",), effective_m=1500.0, overlay_m=20.0)
     assert may_move(journey, wheelchair, touching, dearer, positions, lengths)
+
+
+def test_only_the_blocking_record_is_queued_for_a_feasibility_change(tmp_path: Path) -> None:
+    # Regression: the queue credited every City record on either path with the
+    # feasibility change, including asphalt the new route merely runs along.
+    net = _fork()
+    graph = net.graph()
+    items = [
+        city(1, 0.0, 100.0, "GRAVEL", "gravel", record=77),
+        city(2, 0.0, 115.0, record=88),
+    ]
+    plan = plan_overlay(items, net.segments, features_of(graph))
+    shadow = shadow_graph(graph, plan)
+    lookups = (surface_lookup(graph), surface_lookup(shadow))
+    profile = next(p for p in study_profiles() if p.key == CUSTOM_ROUGH_KEY)
+    result, _pair = run_pair(_journey(net), profile, graph, shadow, plan.fills, lookups)
+    assert result.category is Category.FEASIBILITY_CHANGED
+    evidence = SurfaceEvidence(items, [], {}, {})
+    output = StudyOutput(
+        plan=plan,
+        conflict_plan=OverlayPlan(CONFLICT_SENSITIVITY),
+        locate_problems=Counter(),
+        corpora={"broad": [], "targeted": []},
+        results=[result],
+        sensitivity=[],
+        pairs={},
+        agreement=[],
+        isolation={},
+        network={},
+        timings={},
+        memory={},
+    )
+
+    queue = validation_queue(evidence, output, graph)
+
+    feasibility = [e["record_id"] for e in queue if "feasibility_change" in e["selected_for"]]
+    assert feasibility == [77]

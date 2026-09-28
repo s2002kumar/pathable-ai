@@ -648,13 +648,19 @@ def validation_queue(
     feasibility: Counter[int] = Counter()
     moved: Counter[int] = Counter()
     for r in output.results:
-        records = set(r.cause["records"]) if r.cause else set()
         if r.category is Category.FEASIBILITY_CHANGED:
-            for identity in r.blocked:
-                records.update(plan.fills[identity].records if identity in plan.fills else ())
-            feasibility.update(records)
-        elif r.category is Category.ROUTE_CHANGED:
-            moved.update(records)
+            # Only the records on the segments that became unusable changed
+            # feasibility; others on either path merely lie along it.
+            feasibility.update(
+                {
+                    record
+                    for identity in r.blocked
+                    if identity in plan.fills
+                    for record in plan.fills[identity].records
+                }
+            )
+        elif r.category is Category.ROUTE_CHANGED and r.cause:
+            moved.update(r.cause["records"])
     candidates["feasibility_change"] = [
         k for k, _ in sorted(feasibility.items(), key=lambda i: (-i[1], i[0]))
     ]
