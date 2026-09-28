@@ -13,7 +13,7 @@ import functools
 import hashlib
 import time
 import uuid
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -630,20 +630,35 @@ def validation_queue(
     output: StudyOutput,
     graph: RoutableGraph,
 ) -> list[dict[str, Any]]:
-    """A small, explicit set of City records worth checking in the field, and why each."""
-    plan = output.plan
-    items = {i.record_id: i for i in evidence.eligible}
-    conflicts = {i.record_id: i for i in evidence.conflicts}
-    segments = _fill_records(plan)
+    """A small, explicit set of City records worth checking in the field, and why each.
+
+    Strata take turns, one record each per round, so a stratum late in the list
+    is never crowded out by the ones before it. A record is described by the
+    assertion it was chosen for: a conflict by its conflict rows, the plan that
+    would take the City's side and the sensitivity's routes; any other by its
+    City-only rows, the fill-missing plan and the study's routes.
+    """
     lengths = {e.identity: e for e in graph.segments}
-    uses: dict[int, list[Result]] = defaultdict(list)
-    for r in output.results:
-        for record in set(r.shadow.overlay_records) | set(r.base.overlay_records):
-            uses[record].append(r)
+    rows: dict[bool, dict[int, list[CitySurface]]] = {
+        False: defaultdict(list),
+        True: defaultdict(list),
+    }
+    for item in evidence.eligible:
+        rows[False][item.record_id].append(item)
+    for item in evidence.conflicts:
+        rows[True][item.record_id].append(item)
+    plans = {False: output.plan, True: output.conflict_plan}
+    segments = {side: _fill_records(plan) for side, plan in plans.items()}
+    uses: dict[bool, dict[int, list[Result]]] = {False: defaultdict(list), True: defaultdict(list)}
+    for side, results in ((False, output.results), (True, output.sensitivity)):
+        for r in results:
+            for record in set(r.shadow.overlay_records) | set(r.base.overlay_records):
+                uses[side][record].append(r)
 
-    def filled_m(record: int) -> float:
-        return sum(lengths[s].length_m for s in segments.get(record, ()) if s in lengths)
+    def filled_m(record: int, conflict: bool = False) -> float:
+        return sum(lengths[s].length_m for s in segments[conflict].get(record, ()) if s in lengths)
 
+    plan = output.plan
     candidates: dict[str, list[int]] = {}
     feasibility: Counter[int] = Counter()
     moved: Counter[int] = Counter()
@@ -665,19 +680,21 @@ def validation_queue(
         k for k, _ in sorted(feasibility.items(), key=lambda i: (-i[1], i[0]))
     ]
     candidates["route_change"] = [k for k, _ in sorted(moved.items(), key=lambda i: (-i[1], i[0]))]
-    journeys_on = {k: len({r.journey.journey_id for r in v}) for k, v in uses.items()}
+    used = uses[False]
+    journeys_on = {k: len({r.journey.journey_id for r in v}) for k, v in used.items()}
     candidates["repeated_exposure"] = sorted(
         (k for k, n in journeys_on.items() if n >= 3), key=lambda k: (-journeys_on[k], k)
     )
     candidates["rough_or_compacted"] = sorted(
         (
             k
-            for k in uses
-            if k in items and items[k].surface_class in (SurfaceClass.ROUGH, SurfaceClass.COMPACTED)
+            for k in used
+            if rows[False].get(k)
+            and rows[False][k][0].surface_class in (SurfaceClass.ROUGH, SurfaceClass.COMPACTED)
         ),
         key=lambda k: (-filled_m(k), k),
     )
-    candidates["long_extent"] = sorted(uses, key=lambda k: (-filled_m(k), k))
+    candidates["long_extent"] = sorted(used, key=lambda k: (-filled_m(k), k))
     flips: Counter[int] = Counter()
     for r in output.sensitivity:
         if r.category in (Category.ROUTE_CHANGED, Category.FEASIBILITY_CHANGED) and r.cause:
@@ -686,26 +703,38 @@ def validation_queue(
         k for k, _ in sorted(flips.items(), key=lambda i: (-i[1], i[0]))
     ]
 
-    chosen: dict[int, list[str]] = {}
-    for stratum, _why in VALIDATION_STRATA:
-        taken = 0
-        for record in candidates.get(stratum, ()):
-            if len(chosen) >= VALIDATION_MAX or taken >= VALIDATION_PER_STRATUM:
-                break
-            if record in chosen:
-                chosen[record].append(stratum)
+    chosen: dict[tuple[int, bool], str] = {}
+    pending = {stratum: deque(candidates[stratum]) for stratum, _why in VALIDATION_STRATA}
+    taken: Counter[str] = Counter()
+    while len(chosen) < VALIDATION_MAX:
+        added = False
+        for stratum, _why in VALIDATION_STRATA:
+            if len(chosen) >= VALIDATION_MAX or taken[stratum] >= VALIDATION_PER_STRATUM:
                 continue
-            chosen[record] = [stratum]
-            taken += 1
+            conflict = stratum == "conflict_that_matters"
+            waiting = pending[stratum]
+            while waiting and (waiting[0], conflict) in chosen:
+                waiting.popleft()
+            if waiting:
+                chosen[(waiting.popleft(), conflict)] = stratum
+                taken[stratum] += 1
+                added = True
+        if not added:
+            break
+
     queue = []
-    for record, strata in chosen.items():
-        item = items.get(record) or conflicts.get(record)
-        if item is None:
+    for (record, conflict), stratum in chosen.items():
+        described = sorted(rows[conflict].get(record, []), key=lambda i: (i.way_id, i.from_m))
+        if not described:
             continue
-        fills = [plan.fills[s] for s in segments.get(record, ()) if s in plan.fills]
+        item = described[0]
+        plan_for = plans[conflict]
+        fills = [
+            plan_for.fills[s] for s in segments[conflict].get(record, ()) if s in plan_for.fills
+        ]
         coords = [
             pt
-            for s in segments.get(record, ())
+            for s in segments[conflict].get(record, ())
             if s in lengths
             for pt in lengths[s].geometry.coords
         ]
@@ -718,7 +747,7 @@ def validation_queue(
                 "cost_delta_m": (r.cause or {}).get("cost_delta_m"),
             }
             for r in sorted(
-                uses.get(record, []),
+                uses[conflict].get(record, []),
                 key=lambda r: (
                     r.category is Category.NOT_EXPOSED,
                     str(r.category),
@@ -727,10 +756,17 @@ def validation_queue(
                 ),
             )[:3]
         ]
+        also = [
+            s
+            for s, _why in VALIDATION_STRATA
+            if s != stratum
+            and record in candidates[s]
+            and (s == "conflict_that_matters") == conflict
+        ]
         queue.append(
             {
                 "record_id": record,
-                "selected_for": strata,
+                "selected_for": [stratum, *also],
                 "municipal_assertion": {
                     "field": "SURFACE_MATERIAL",
                     "raw_value": item.raw_value,
@@ -739,23 +775,23 @@ def validation_queue(
                 },
                 "osm_state": (
                     {
-                        "way": f"way/{item.way_id}",
-                        "surface": None,
-                        "meaning": "OSM records no surface",
+                        "surfaces": sorted({i.osm_value for i in described if i.osm_value}),
+                        "meaning": "OSM records another surface: a conflict, held open",
                     }
-                    if item.relationship == "source_only_kitchener"
-                    else {
-                        "way": f"way/{item.way_id}",
-                        "surface": item.osm_value,
-                        "meaning": "conflict",
-                    }
+                    if conflict
+                    else {"surfaces": [], "meaning": "OSM records no surface"}
                 ),
                 "local_extent": {
-                    "way": f"way/{item.way_id}",
-                    "from_m": round(item.from_m, 2),
-                    "to_m": round(item.to_m, 2),
+                    "extents": [
+                        {
+                            "way": f"way/{i.way_id}",
+                            "from_m": round(i.from_m, 2),
+                            "to_m": round(i.to_m, 2),
+                        }
+                        for i in described
+                    ],
                     "graph_segments": sorted({f.identity for f in fills}),
-                    "graph_metres": round(filled_m(record), 1),
+                    "graph_metres": round(filled_m(record, conflict), 1),
                     "midpoint_lon_lat": (
                         [
                             round(sum(p[0] for p in coords) / len(coords), 6),
@@ -772,6 +808,7 @@ def validation_queue(
                     "freshness": item.freshness,
                     "routing_eligibility": "not_routing_eligible",
                 },
+                "route_impact_examples_from": plan_for.policy,
                 "route_impact_examples": examples,
             }
         )

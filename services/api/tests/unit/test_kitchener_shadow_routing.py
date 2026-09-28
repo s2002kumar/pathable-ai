@@ -18,6 +18,7 @@ import json
 import math
 import uuid
 from collections import Counter
+from dataclasses import replace
 from itertools import pairwise
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,7 @@ from pathable_api.geo.kitchener.osm_extract import OsmNode, OsmWay, StudyExtract
 from pathable_api.geo.kitchener.shadow_overlay import (
     CONFLICT_SENSITIVITY,
     NOT_IN_GRAPH,
+    SHADOW_POLICY_VERSION,
     CitySurface,
     Fill,
     OverlayPlan,
@@ -61,6 +63,7 @@ from pathable_api.geo.kitchener.shadow_study import (
     CUSTOM_ROUGH_KEY,
     Category,
     Journey,
+    Result,
     RouteFacts,
     algorithms_agree,
     broad_corpus,
@@ -784,3 +787,153 @@ def test_only_the_blocking_record_is_queued_for_a_feasibility_change(tmp_path: P
 
     feasibility = [e["record_id"] for e in queue if "feasibility_change" in e["selected_for"]]
     assert feasibility == [77]
+
+
+def _queue_output(
+    plan: OverlayPlan,
+    results: list[Any],
+    conflict_plan: OverlayPlan | None = None,
+    sensitivity: list[Any] | None = None,
+) -> StudyOutput:
+    return StudyOutput(
+        plan=plan,
+        conflict_plan=conflict_plan or OverlayPlan(CONFLICT_SENSITIVITY),
+        locate_problems=Counter(),
+        corpora={"broad": [], "targeted": []},
+        results=results,
+        sensitivity=sensitivity or [],
+        pairs={},
+        agreement=[],
+        isolation={},
+        network={},
+        timings={},
+        memory={},
+    )
+
+
+def test_a_late_stratum_is_not_crowded_out_of_the_validation_queue() -> None:
+    # Regression: strata were filled in order, eight each, so five full strata
+    # took all forty places and a conflict that moves a route was never queued.
+    graph = _fork().graph()
+    records = tuple(range(1, 61))
+    items = [city(1, 0.0, 100.0, "GRAVEL", "gravel", record=k) for k in records]
+    disputed = replace(
+        city(2, 0.0, 115.0, "GRAVEL", "gravel", "conflict", record=900), osm_value="asphalt"
+    )
+    blocked = "a->b#0"
+    fill = Fill(blocked, 1, 0.0, 100.0, "gravel", SurfaceClass.ROUGH, 1.0, records, ())
+    plan = OverlayPlan(SHADOW_POLICY_VERSION, fills={blocked: fill})
+    journey = Journey("J", "broad", at(0, 0), at(100, 0))
+    results = [
+        Result(
+            replace(journey, journey_id=f"J{k}-{n}"),
+            "wheelchair",
+            RouteFacts(True, overlay_records=(k,)),
+            RouteFacts(True, overlay_records=(k,)),
+            Category.ROUTE_CHANGED,
+            cause={"records": [k]},
+        )
+        for k in records
+        for n in range(3)
+    ]
+    results.append(
+        Result(
+            journey,
+            CUSTOM_ROUGH_KEY,
+            RouteFacts(True),
+            RouteFacts(True),
+            Category.FEASIBILITY_CHANGED,
+            blocked=(blocked,),
+        )
+    )
+    moved = Result(
+        journey,
+        "wheelchair",
+        RouteFacts(True),
+        RouteFacts(True),
+        Category.ROUTE_CHANGED,
+        cause={"records": [900]},
+    )
+    output = _queue_output(plan, results, sensitivity=[moved])
+
+    queue = validation_queue(SurfaceEvidence(items, [disputed], {}, {}), output, graph)
+
+    assert len(queue) == 40
+    first = Counter(e["selected_for"][0] for e in queue)
+    assert set(first) == {
+        "feasibility_change",
+        "route_change",
+        "repeated_exposure",
+        "rough_or_compacted",
+        "long_extent",
+        "conflict_that_matters",
+    }
+    assert [e["record_id"] for e in queue if e["selected_for"][0] == "conflict_that_matters"] == [
+        900
+    ]
+
+
+def test_a_queued_conflict_is_described_by_its_own_rows_plan_and_routes() -> None:
+    # Regression: a queued conflict took its segments and route examples from
+    # the fill-missing plan and the study, which never hold a conflict, so its
+    # entry named no segment and no route.
+    net = _fork({**FOOTWAY, "surface": "asphalt"})
+    graph = net.graph()
+    disputed = replace(
+        city(1, 0.0, 100.0, "GRAVEL", "gravel", "conflict", record=55), osm_value="asphalt"
+    )
+    conflict_plan = plan_overlay(
+        [disputed], net.segments, features_of(graph), policy=CONFLICT_SENSITIVITY
+    )
+    flipped = shadow_graph(graph, conflict_plan)
+    profile = next(p for p in study_profiles() if p.key == CUSTOM_ROUGH_KEY)
+    result, _pair = run_pair(
+        _journey(net),
+        profile,
+        graph,
+        flipped,
+        conflict_plan.fills,
+        (surface_lookup(graph), surface_lookup(flipped)),
+    )
+    assert result.category is Category.FEASIBILITY_CHANGED
+    output = _queue_output(
+        OverlayPlan(SHADOW_POLICY_VERSION), [], conflict_plan=conflict_plan, sensitivity=[result]
+    )
+
+    [entry] = validation_queue(SurfaceEvidence([], [disputed], {}, {}), output, graph)
+
+    assert entry["record_id"] == 55
+    assert entry["selected_for"] == ["conflict_that_matters"]
+    assert entry["osm_state"]["surfaces"] == ["asphalt"]
+    assert entry["local_extent"]["graph_segments"] == ["a->b#0"]
+    assert entry["local_extent"]["extents"] == [{"way": "way/1", "from_m": 0.0, "to_m": 100.0}]
+    assert entry["route_impact_examples_from"] == CONFLICT_SENSITIVITY
+    assert entry["route_impact_examples"][0]["category"] == "feasibility_changed"
+
+
+def test_a_city_record_on_two_ways_is_queued_with_both_extents() -> None:
+    # Regression: records were keyed by id, so a City record matched to two OSM
+    # ways was described by whichever row came last.
+    net = _fork()
+    graph = net.graph()
+    items = [
+        city(1, 0.0, 100.0, "GRAVEL", "gravel", record=7),
+        city(2, 0.0, 115.0, "GRAVEL", "gravel", record=7),
+    ]
+    plan = plan_overlay(items, net.segments, features_of(graph))
+    shadow = shadow_graph(graph, plan)
+    profile = next(p for p in study_profiles() if p.key == "wheelchair")
+    result, _pair = run_pair(
+        _journey(net),
+        profile,
+        graph,
+        shadow,
+        plan.fills,
+        (surface_lookup(graph), surface_lookup(shadow)),
+    )
+    output = _queue_output(plan, [result])
+
+    [entry] = validation_queue(SurfaceEvidence(items, [], {}, {}), output, graph)
+
+    assert [e["way"] for e in entry["local_extent"]["extents"]] == ["way/1", "way/2"]
+    assert entry["local_extent"]["graph_segments"] == ["a->b#0", "a->m#0", "m->b#1"]
