@@ -272,6 +272,8 @@ def _kitchener(
 ) -> tuple[list[KitchenerFeature], dict[int, dict[str, Any]]]:
     connection = duckdb.connect(database=":memory:")
     try:
+        # Format dates in UTC whatever the machine's time zone: the City stores them in UTC.
+        connection.execute("SET TimeZone = 'UTC'")
         connection.execute("SET autoinstall_known_extensions = false")
         connection.execute("SET autoload_known_extensions = false")
         rows = connection.execute(_FEATURE_QUERY, [parquet.as_posix()]).fetchall()
@@ -1132,6 +1134,8 @@ def population_context(inputs: StudyInputs) -> dict[str, Any] | None:
         return None
     connection = duckdb.connect(database=":memory:")
     try:
+        # Format dates in UTC whatever the machine's time zone: the City stores them in UTC.
+        connection.execute("SET TimeZone = 'UTC'")
         connection.execute("SET autoinstall_known_extensions = false")
         connection.execute("SET autoload_known_extensions = false")
         rows = connection.execute(

@@ -151,6 +151,8 @@ def load_population(parquet: Path, area: BaseGeometry) -> Population:
     """Every eligible City record inside the shrunk study area, in id order."""
     connection = duckdb.connect(database=":memory:")
     try:
+        # Format dates in UTC whatever the machine's time zone: the City stores them in UTC.
+        connection.execute("SET TimeZone = 'UTC'")
         connection.execute("SET autoinstall_known_extensions = false")
         connection.execute("SET autoload_known_extensions = false")
         rows = connection.execute(_POPULATION_QUERY, [parquet.as_posix()]).fetchall()

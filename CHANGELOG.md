@@ -12,6 +12,36 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **Provenance-aware reconciliation of accessibility evidence from OSM and the
+  City of Kitchener (PA-GEO-06).**
+  - An evidence model keeps each source's assertion as published: raw and
+    normalized value, value state, evidence origin and typed dates. Agreement,
+    compatible, conflict, incomparable and one-source relationships are
+    classified per property and local target. Nothing is merged, no source
+    outranks the other, and a conflict stays open.
+  - PA-GEO-05's matches are read, never re-made, through a gate per class:
+    curb cuts only at their kerb node, structures only where OSM tags them,
+    surfaces except short pieces.
+  - Lineage from OSM's edit history is stored apart from agreement, for the
+    attribute and the geometry separately. Only an observation date counts as
+    freshness.
+  - `pathable kitchener reconcile-history` and `reconcile` write a
+    byte-reproducible research artifact that no routing code reads. Every row
+    is `not_routing_eligible`, with its blockers.
+  - Full pilot:
+    - The City adds a surface on 943 of 7,930 surface targets; 257 conflicts
+      are kept open.
+    - 1,648 City curb cuts are compatible with OSM kerbs; only 13 add a ramp OSM
+      lacks.
+    - 1,449 of 1,671 surface agreements are with OSM values whose edits state an
+      unrelated source.
+  - The City's dates are now read in UTC everywhere in the Kitchener research
+    code. They were formatted in the machine's time zone, which moved
+    `SOURCE_DATE` a day early on a Toronto laptop; no match or metric read them.
+  - Decision: LIMITED GO to routing-evidence integration research, surfaces
+    only. The licensing gate stays closed. See
+    [`ACCESSIBILITY_EVIDENCE_RECONCILIATION.md`](docs/architecture/ACCESSIBILITY_EVIDENCE_RECONCILIATION.md)
+    and [ADR 0011](docs/adr/0011-accessibility-evidence-reconciliation.md).
 - **A deterministic Kitchener–OpenStreetMap matcher, benchmarked once on a
   blind held-out sample (PA-GEO-05).**
   - `pathable kitchener holdout` draws 193 held-out records in 14 strata, none

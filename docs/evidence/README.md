@@ -89,6 +89,7 @@ believed.
 | `kitchener-geo05-benchmark.json`              | PA-GEO-05's evidence: the development check, candidate recall, baselines, the frozen matcher and its ablations per class, stratum and labelling pack, every failure with its cause, repeat-label consistency, attributes after matching, and the full-pilot dry run. Produced by `pathable kitchener benchmark`.                                                                                                                                                                                                                                                                                                                                                                         |
 | `kitchener-geo05-failure-analysis.json`       | One cause for each of the 43 held-out failures, written after the single evaluation and bound to its decisions by hash.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `kitchener-geo05-errors.html`                 | Every held-out failure drawn: the City record, what the labeller named, what the matcher named. Open it in a browser.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `kitchener-geo06-reconciliation.json`         | PA-GEO-06's evidence: the inputs and versions it is bound to, the accepted-input accounting per class, every reconciliation outcome per topic, lineage, typed dates, potential coverage, every observed value pair, all 257 conflicts in full, routing blockers, and the artifact's hashes. Produced by `pathable kitchener reconcile`.                                                                                                                                                                                                                                                                                                                                                  |
 | `waterloo-geometry-inspection.json`           | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `waterloo-dataset-lifecycle.json`             | PA-GEO-02 on the real dataset, in a disposable database: the 0006 upgrade over the legacy rows, the legacy content checksum recorded from its rows, a candidate rebuilt from the same extract with OSM edit provenance, refused a seal until elevated, sealed to the legacy checksum exactly, judged identical on 120 route comparisons, activated, rolled back, the database refusing edits to sealed rows, and the restore script run as a role that is not a superuser. Every figure is parsed from the run's own command output or read back from the database, none typed in; the procedure is the command sequence in the README. ODbL-derived.                                    |
 | `screenshots/`                                | The real product answering from this dataset. The `demo-*` captures are the PA-RR-06 recruiter journey; their provenance is in [`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -236,9 +237,37 @@ commit attached the failure analysis. It reproduced every decision, every
 metric and all four research-artifact files byte for byte, and its content hash
 is `6b43fac3…`. The artifact itself stays in the ignored data folder.
 
+**Dates in the PA-GEO-04 and PA-GEO-05 files.** Both cards formatted the City's
+`SOURCE_DATE` and `CREATE_DATE` in the laptop's time zone (America/Toronto).
+The City stores `SOURCE_DATE` at midnight UTC, so in these files it reads one
+day early, and `CREATE_DATE` is local time. PA-GEO-06 found and fixed this
+(`fe55f20`). The files are left as produced. No match, label or metric reads
+a date; PA-GEO-04's rule that an OSM shape older than the City's record is
+independent compares against the date, and can be off by that day.
+
 **Scope.** Counts over a stratified sample scored against AI labels. They are
 not proportions of the City's inventory and not field-verified accuracy.
 Intervals are sampling uncertainty conditional on the labels.
+
+## Accessibility evidence reconciliation (PA-GEO-06)
+
+**Reproducing.** The commands are in
+[`ACCESSIBILITY_EVIDENCE_RECONCILIATION.md`](../architecture/ACCESSIBILITY_EVIDENCE_RECONCILIATION.md)
+§14. `reconcile-history` reads the ohsome API and the local planet changeset
+dump; `reconcile` needs neither the network nor the database. It refuses a
+PA-GEO-05 artifact whose files do not match its manifest, and inputs other than
+those the artifact was made from.
+
+**Which run produced what.** Two runs from `fe55f20`, with a clean tree and the
+same history file (`9f382a3b…`), wrote byte-identical artifacts. The second
+recorded the comparison, and both have content hash `6bb58d6f…`. The artifact
+— City and OSM values in one table — stays in the ignored data folder.
+
+**Scope.** Every correspondence the class gates accept in the full pilot, as
+PA-GEO-05's frozen matcher decided them. None of it is field-verified.
+Relationships come from the written vocabulary, and lineage is what OSM's edit
+metadata states. Coverage is potential evidence coverage, not validated or
+routing coverage.
 
 ---
 

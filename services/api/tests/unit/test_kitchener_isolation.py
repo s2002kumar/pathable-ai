@@ -1,14 +1,17 @@
 """No path from the Kitchener research code into routing, in either direction.
 
-PA-GEO-05 matches City records to OSM and writes research artifacts. None of
-it may reach what PathAble routes on until a founder licensing decision says
-so. This is checked statically, from the source, so it holds for code paths no
+PA-GEO-05 matches City records to OSM and PA-GEO-06 reconciles what each
+asserts, both into research artifacts. None of it may reach what PathAble
+routes on until a founder licensing decision says so. This is checked statically, from the source, so it holds for code paths no
 test happens to run:
 
 - nothing that serves or builds routes imports the Kitchener modules — only
   the command line, which runs the research commands, does;
-- the conflation modules import neither the database layer nor routing, so
-  they cannot write anything routing reads.
+- the conflation and reconciliation modules import neither the database layer
+  nor routing, so they cannot write anything routing reads;
+- nothing outside the research code and the command line names the research
+  artifacts or the folder they live in, so nothing that serves routes can
+  open them.
 """
 
 from __future__ import annotations
@@ -29,7 +32,13 @@ CONFLATION_MODULES = (
     "canonical.py",
     "evaluation.py",
     "failures_page.py",
+    "assertions.py",
+    "reconciliation.py",
+    "reconciliation_vocabulary.py",
+    "reconciliation_run.py",
 )
+#: What would name the research artifacts or the ignored folder that holds them.
+ARTIFACT_MARKERS = (".kitchener-data", "kitchener-geo05-artifact", "kitchener-geo06-artifact")
 
 
 def _imports(path: Path) -> set[str]:
@@ -61,3 +70,15 @@ def test_the_conflation_modules_reach_neither_the_database_nor_routing() -> None
         assert path.exists(), module
         reached = {name for name in _imports(path) if name.startswith(forbidden)}
         assert not reached, f"{module} imports {sorted(reached)}"
+
+
+def test_nothing_that_serves_routes_names_the_research_artifacts() -> None:
+    naming = sorted(
+        f"{path.relative_to(PACKAGE)}: {marker}"
+        for path in PACKAGE.rglob("*.py")
+        if KITCHENER not in path.parents and path.name != "cli.py"
+        for marker in ARTIFACT_MARKERS
+        if marker in path.read_text("utf-8")
+    )
+
+    assert naming == []
