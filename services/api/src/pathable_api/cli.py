@@ -95,6 +95,9 @@ from pathable_api.geo.kitchener.matcher_v2_labels import (
     LABELS_VERSION as MATCHER_V2_LABELS_VERSION,
 )
 from pathable_api.geo.kitchener.matcher_v2_labels import (
+    collect_labels as collect_matcher_v2_labels,
+)
+from pathable_api.geo.kitchener.matcher_v2_labels import (
     development_labels as matcher_v2_development_labels,
 )
 from pathable_api.geo.kitchener.matcher_v2_labels import label_facts as matcher_v2_label_facts
@@ -792,6 +795,18 @@ def build_parser() -> argparse.ArgumentParser:
     frozen_inputs(matcher_v2_development)
     matcher_v2_development.add_argument("--evidence-dir", type=Path, required=True)
     matcher_v2_development.add_argument("--out", type=Path, required=True)
+
+    matcher_v2_collect = kitchener_actions.add_parser(
+        "matcher-v2-collect-labels",
+        help="Merge one labelling pass's validated pack files into the committed label file.",
+    )
+    matcher_v2_collect.add_argument("--packs-dir", type=Path, required=True)
+    matcher_v2_collect.add_argument("--pass", dest="labelling_pass", required=True)
+    matcher_v2_collect.add_argument("--sample", type=Path, required=True)
+    matcher_v2_collect.add_argument("--guide", type=Path, required=True)
+    matcher_v2_collect.add_argument("--review-page", type=Path, required=True)
+    matcher_v2_collect.add_argument("--digest", type=Path, required=True)
+    matcher_v2_collect.add_argument("--out", type=Path, required=True)
 
     matcher_v2_validate = kitchener_actions.add_parser(
         "matcher-v2-validate-labels",
@@ -1562,6 +1577,8 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         return _kitchener_matcher_v2_review(args)
     if args.kitchener_command == "matcher-v2-development-labels":
         return _kitchener_matcher_v2_development(args)
+    if args.kitchener_command == "matcher-v2-collect-labels":
+        return _kitchener_matcher_v2_collect(args)
     if args.kitchener_command == "matcher-v2-validate-labels":
         return _kitchener_matcher_v2_validate(args)
     if args.kitchener_command == "holdout-review":
@@ -1684,6 +1701,7 @@ _KITCHENER_OFFLINE = frozenset(
         "matcher-v2-review",
         "matcher-v2-validate-labels",
         "matcher-v2-development-labels",
+        "matcher-v2-collect-labels",
         "reconcile-history",
         "reconcile",
     }
@@ -1933,6 +1951,49 @@ def _kitchener_matcher_v2_development(args: argparse.Namespace) -> int:
     counts = collections.Counter(r["correspondence"] for r in document["records"])
     print(f"development labels: {len(document['records'])} records {dict(sorted(counts.items()))}")
     print(f"conversions: {len(document['conversions'])}")
+    print(f"Wrote {args.out}")
+    return EXIT_OK
+
+
+def _kitchener_matcher_v2_collect(args: argparse.Namespace) -> int:
+    folders = sorted(
+        f
+        for f in args.packs_dir.iterdir()
+        if f.is_dir() and f.name.startswith(f"{args.labelling_pass}-")
+    )
+    sample = json.loads(args.sample.read_text("utf-8"))
+    material = {
+        "holdout": {
+            "file": args.sample.name,
+            "sha256": file_sha256(args.sample),
+            "sample_version": sample["metadata"]["sample_version"],
+            "records": len(sample["features"]),
+        },
+        "labelling_guide": {"file": args.guide.name, "sha256": file_sha256(args.guide)},
+        "blind_material": {
+            "review_page": args.review_page.name,
+            "review_page_sha256": file_sha256(args.review_page),
+            "digest_sha256": file_sha256(args.digest),
+            "contents": (
+                "For each record: its geometry and attributes, every OSM candidate with its tags, "
+                "measures and connections, and tagged nodes near it, as text and a map. No "
+                "matcher decision, no baseline output, no other labeller's labels, no stratum."
+            ),
+        },
+    }
+    try:
+        packs = {
+            folder.name: json.loads((folder / "labels.json").read_text("utf-8"))
+            for folder in folders
+        }
+        document = collect_matcher_v2_labels(
+            packs, labelling_pass=args.labelling_pass, sample=sample, material=material
+        )
+    except (LabelError, ValueError, OSError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    write_json(args.out, document)
+    print(f"{args.labelling_pass}: {len(document['records'])} records from {len(packs)} packs")
     print(f"Wrote {args.out}")
     return EXIT_OK
 

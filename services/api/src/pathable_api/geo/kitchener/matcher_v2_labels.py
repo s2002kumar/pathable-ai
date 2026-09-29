@@ -377,3 +377,50 @@ def label_facts(inputs: Any, documents: Iterable[Mapping[str, Any]]) -> dict[str
             for way in ways:
                 along[way] = inputs.relationships.along(int(way.split("/")[1]))
     return {"structures": structures, "structure_tagged": tagged, "other_records_along": along}
+
+
+LABELLER = (
+    "Separate AI model instances (Claude), one per pack, each labelling its pack blind from the "
+    "pack's text digest and maps under the frozen guide, with no access to either matcher, their "
+    "output, the development labels or another pack. They were told to open only their pack "
+    "folder and to run only the validator, and each reported back only its record count and the "
+    "validator's verdict. These are AI labels: not human ground truth, not expert labels, not "
+    "externally validated, and the same model family as the guide's author and the matcher's "
+    "designer."
+)
+
+
+def collect_labels(
+    packs: Mapping[str, Mapping[str, Any]],
+    *,
+    labelling_pass: str,
+    sample: Mapping[str, Any],
+    material: Mapping[str, Any],
+) -> dict[str, Any]:
+    """One pass's pack files, checked and merged, each record carrying the pack it came from."""
+    records: list[dict[str, Any]] = []
+    seen: set[int] = set()
+    for name, document in sorted(packs.items()):
+        for record_id, label in parse_labels(document).items():
+            if record_id in seen:
+                raise LabelError(f"record {record_id} is labelled in two packs.")
+            seen.add(record_id)
+            records.append({**label_dict(label), "pack": name})
+    counts: dict[str, int] = {}
+    for item in records:
+        counts[item["correspondence"]] = counts.get(item["correspondence"], 0) + 1
+    return {
+        LABELS_KEY: LABELS_VERSION,
+        "set": "holdout",
+        "pass": labelling_pass,
+        **dict(material),
+        "labeller": LABELLER,
+        "frozen": (
+            "Collected and committed after matcher v2's policy was frozen and before either "
+            "matcher or any baseline was run on a held-out record. Nothing in this file is changed "
+            "after the held-out evaluation."
+        ),
+        "counts": dict(sorted(counts.items())),
+        "packs": len(packs),
+        "records": sorted(records, key=lambda r: r["activetransportid"]),
+    }

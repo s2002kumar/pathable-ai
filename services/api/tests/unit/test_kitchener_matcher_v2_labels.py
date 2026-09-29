@@ -14,6 +14,7 @@ from pathable_api.geo.kitchener.benchmark_labels import OBVIOUS, LabelError
 from pathable_api.geo.kitchener.matcher_v2_labels import (
     LABELS_KEY,
     LABELS_VERSION,
+    collect_labels,
     development_labels,
     parse_label,
     parse_labels,
@@ -140,3 +141,22 @@ def test_the_validator_refuses_an_element_the_pack_never_showed(
 
     reordered = [_label(activetransportid=2, osm=["way/20"]), _label()]
     assert cli.main(_pack(tmp_path, reordered)) == EXIT_FAILED
+
+
+def test_collecting_a_pass_refuses_a_record_labelled_in_two_packs() -> None:
+    pack = {LABELS_KEY: LABELS_VERSION, "records": [_label()]}
+    material = {"holdout": {"sha256": "h"}}
+
+    merged = collect_labels(
+        {"primary-1": pack}, labelling_pass="primary", sample={}, material=material
+    )
+    assert merged["records"][0]["pack"] == "primary-1"
+    assert merged["counts"] == {"obvious_correspondence": 1}
+
+    with pytest.raises(LabelError, match="two packs"):
+        collect_labels(
+            {"primary-1": pack, "primary-2": pack},
+            labelling_pass="primary",
+            sample={},
+            material=material,
+        )
