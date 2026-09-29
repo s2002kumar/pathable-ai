@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import json
 import time
 import uuid
 from collections import Counter, defaultdict, deque
@@ -813,6 +814,35 @@ def validation_queue(
             }
         )
     return queue
+
+
+def compare_shadow_runs(
+    earlier: Mapping[str, Any], document: Mapping[str, Any], name: str
+) -> dict[str, Any]:
+    """Whether two runs' evidence agree, and on what.
+
+    ``results_identical`` compares the digest of every outcome, the wording of
+    each explanation included. ``outcomes_identical`` compares every
+    journey-profile row and every route change without that wording, so it
+    still holds across a change that only rewords the explanations.
+    """
+
+    def plain(value: Any) -> Any:
+        return json.loads(json.dumps(value, default=str))
+
+    def unworded(changes: Any) -> Any:
+        return [{k: v for k, v in c.items() if k != "cause"} for c in plain(changes or [])]
+
+    return {
+        "compared_with": name,
+        "results_identical": earlier.get("results_sha256") == document["results_sha256"],
+        "outcomes_identical": plain(earlier.get("per_journey")) == plain(document["per_journey"])
+        and unworded(earlier.get("route_changes")) == unworded(document["route_changes"]),
+        "corpora_identical": all(
+            earlier["corpora"][corpus]["sha256"] == document["corpora"][corpus]["sha256"]
+            for corpus in ("broad", "targeted")
+        ),
+    }
 
 
 LIMITATIONS = (

@@ -53,6 +53,7 @@ from pathable_api.geo.kitchener.shadow_run import (
     ActiveDataset,
     StudyOutput,
     changed_routes,
+    compare_shadow_runs,
     graph_identity,
     may_move,
     run_study,
@@ -406,6 +407,9 @@ def test_municipal_gravel_is_a_hard_change_only_for_a_declared_requirement() -> 
     assert custom.cause["route_a_baseline"]["unusable_in_shadow"]
     assert custom.cause["route_a_baseline"]["cost_shadow"] is None
     json.dumps(custom.cause, allow_nan=False)
+    # Regression: the explanation said the blocked path "costs nothing".
+    assert "Shadow: route A cannot be used" in custom.cause["cause"]
+    assert "nothing" not in custom.cause["cause"]
     # No preset excludes a rough surface: for them it is a cost, and the route moves by weight.
     assert wheelchair.category is Category.ROUTE_CHANGED
     assert wheelchair.blocked == ()
@@ -937,3 +941,70 @@ def test_a_city_record_on_two_ways_is_queued_with_both_extents() -> None:
 
     assert [e["way"] for e in entry["local_extent"]["extents"]] == ["way/1", "way/2"]
     assert entry["local_extent"]["graph_segments"] == ["a->b#0", "a->m#0", "m->b#1"]
+
+
+def test_the_page_shows_which_city_segment_a_route_cannot_use_and_labels_each_way_once() -> None:
+    # Regression: every filled segment was drawn in one colour with its own
+    # label, so labels piled up and the segment that blocks route A could not
+    # be told from asphalt the new route merely runs along.
+    net = _fork()
+    graph = net.graph()
+    items = [
+        city(1, 0.0, 100.0, "GRAVEL", "gravel", record=77),
+        city(2, 0.0, 115.0, record=88),
+    ]
+    plan = plan_overlay(items, net.segments, features_of(graph))
+    shadow = shadow_graph(graph, plan)
+    profile = next(p for p in study_profiles() if p.key == CUSTOM_ROUGH_KEY)
+    result, pair = run_pair(
+        _journey(net),
+        profile,
+        graph,
+        shadow,
+        plan.fills,
+        (surface_lookup(graph), surface_lookup(shadow)),
+    )
+    assert result.category is Category.FEASIBILITY_CHANGED
+    assert pair is not None
+
+    page = render_changes(
+        [result],
+        {(result.journey.journey_id, result.profile_key): pair},
+        {profile.key: profile},
+        plan.fills,
+        {"openstreetmap": "© OpenStreetMap contributors"},
+    )
+
+    assert page.count("City gravel: cannot be used") == 1
+    assert page.count(">City asphalt<") == 1  # two segments of way 2, one label
+    assert 'stroke="#dc2626"' in page
+    assert "on the segments route A cannot use: 77." in page
+    assert "Shadow: route A cannot be used" in page
+
+
+def test_a_reworded_explanation_does_not_hide_that_the_outcomes_are_identical() -> None:
+    change = {"journey": "A016", "cost_delta_m": -98.5, "cause": "Shadow: A costs nothing"}
+    earlier = {
+        "results_sha256": "a" * 64,
+        "corpora": {"broad": {"sha256": "b"}, "targeted": {"sha256": "t"}},
+        "per_journey": {"columns": ["journey", "cost"], "rows": [["A016", 1.5]]},
+        "route_changes": [change],
+    }
+    reworded = {
+        **earlier,
+        "results_sha256": "c" * 64,
+        "per_journey": {"columns": ("journey", "cost"), "rows": [("A016", 1.5)]},
+        "route_changes": [{**change, "cause": "Shadow: route A cannot be used"}],
+    }
+    moved = {**reworded, "route_changes": [{**change, "cost_delta_m": -90.0}]}
+
+    same = compare_shadow_runs(earlier, reworded, "earlier.json")
+    different = compare_shadow_runs(earlier, moved, "earlier.json")
+
+    assert same == {
+        "compared_with": "earlier.json",
+        "results_identical": False,
+        "outcomes_identical": True,
+        "corpora_identical": True,
+    }
+    assert not different["outcomes_identical"]

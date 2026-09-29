@@ -110,6 +110,7 @@ from pathable_api.geo.kitchener.shadow_overlay import ShadowError, load_surface_
 from pathable_api.geo.kitchener.shadow_page import render_changes
 from pathable_api.geo.kitchener.shadow_run import (
     active_dataset,
+    compare_shadow_runs,
     load_active,
     read_only,
     shadow_evidence,
@@ -1997,14 +1998,9 @@ async def _kitchener_shadow_routing(database: Database, args: argparse.Namespace
     document["run"].update(_run_measurements())
     if args.compare_to is not None:
         earlier = json.loads(args.compare_to.read_text("utf-8"))
-        document["run"]["determinism"] = {
-            "compared_with": args.compare_to.name,
-            "results_identical": earlier.get("results_sha256") == document["results_sha256"],
-            "corpora_identical": all(
-                earlier["corpora"][name]["sha256"] == document["corpora"][name]["sha256"]
-                for name in ("broad", "targeted")
-            ),
-        }
+        document["run"]["determinism"] = compare_shadow_runs(
+            earlier, document, args.compare_to.name
+        )
     document["content_sha256"] = content_sha256(document)
     write_json(args.json, document)
     if args.html is not None:

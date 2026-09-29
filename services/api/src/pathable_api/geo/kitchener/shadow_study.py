@@ -541,8 +541,9 @@ def _cost(value: float) -> float | None:
     return round(value, 3) if math.isfinite(value) else None
 
 
-def _said(value: float) -> str:
-    return f"{value:.1f}" if math.isfinite(value) else "nothing: it is unusable"
+def _said(route: str, value: float) -> str:
+    # A path the profile may not use has no cost at all, not a cost of nothing.
+    return f"{route} costs {value:.1f}" if math.isfinite(value) else f"{route} cannot be used"
 
 
 def explain_change(
@@ -563,8 +564,8 @@ def explain_change(
     b_base = cost_under(shadow_route, base_lookup, profile)
     b_shadow = cost_under(shadow_route, shadow_lookup, profile)
     parts = [
-        f"Baseline: route A costs {_said(a_base)} effective m, route B {_said(b_base)}; "
-        "A is chosen.",
+        f"Baseline, in effective metres: {_said('route A', a_base)}, "
+        f"{_said('route B', b_base)}; A is chosen.",
     ]
     if not math.isfinite(a_shadow):
         parts.append(
@@ -588,7 +589,9 @@ def explain_change(
         )
     elif b_moved > 1e-6:
         parts.append(f"City surfaces on B's filled segments raise its cost by {b_moved:.1f}.")
-    parts.append(f"Shadow: A costs {_said(a_shadow)}, B {_said(b_shadow)}; B is chosen.")
+    parts.append(
+        f"Shadow: {_said('route A', a_shadow)}, {_said('route B', b_shadow)}; B is chosen."
+    )
     delta = b_shadow - a_base
     return {
         "route_a_baseline": {
