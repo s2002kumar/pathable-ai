@@ -387,7 +387,8 @@ nearby OSM `highway=steps` that may be the actual stair somewhere else, or an
 unclear split or merge.
 
 Matcher v2 needs this rule written into its labelling guide and a new, untouched
-holdout. PA-GEO-06 does not reconcile these stairs; they wait for that
+holdout. PA-GEO-08 did both:
+[`KITCHENER_MATCHER_V2.md`](KITCHENER_MATCHER_V2.md). PA-GEO-06 does not reconcile these stairs; they wait for that
 benchmark.
 
 ## 12. Limitations

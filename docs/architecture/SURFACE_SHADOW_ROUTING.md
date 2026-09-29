@@ -394,7 +394,8 @@ City-only evidence surfaces could not reach is larger and more
 safety-relevant: 1,152 City curb cuts with no OSM kerb node, and stairs OSM
 draws as plain footways, where a missing stair is a hard constraint for
 several profiles. Matcher v2 remains planned only and needs a new, untouched
-holdout.
+holdout. PA-GEO-08 has since built and measured it:
+[`KITCHENER_MATCHER_V2.md`](KITCHENER_MATCHER_V2.md).
 
 ## 13. Limitations
 

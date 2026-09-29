@@ -310,6 +310,9 @@ Matcher v2 is a later card:
 It needs a new policy version and a new, untouched held-out sample. PA-GEO-05's
 holdout has been used and may not serve as v2's test.
 
+PA-GEO-08 has since built and measured it:
+[`KITCHENER_MATCHER_V2.md`](KITCHENER_MATCHER_V2.md).
+
 ## 12. Decision: LIMITED GO — surfaces only
 
 To routing-evidence integration research, and not to integration. The founder

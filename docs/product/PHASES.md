@@ -465,7 +465,7 @@ pilot. None of it is field-verified.
 only. That is not integration: the founder licensing decision, validation and a
 routing policy all come first.
 
-**Matcher v2, planned and not started.** It covers stairs and structures OSM
+**Matcher v2, planned here, built in PA-GEO-08.** It covers stairs and structures OSM
 draws as plain footways, under the correspondence rule already decided;
 way-level curb-cut correspondence; abstention for short pieces at junctions,
 and better abstention generally; and a redesign of class compatibility. It needs
@@ -477,7 +477,7 @@ a new policy version and a new, untouched holdout: PA-GEO-05's is spent.
 - A routing policy for multi-source evidence.
 - Labels by a person, or any field check.
 
-### PA-GEO-07 — Municipal surface evidence shadow-routing impact study _(PR #81)_
+### PA-GEO-07 — Municipal surface evidence shadow-routing impact study _(merged, PR #81)_
 
 **Delivered** —
 [`SURFACE_SHADOW_ROUTING.md`](../architecture/SURFACE_SHADOW_ROUTING.md)
@@ -516,7 +516,41 @@ validation of a narrow queue of City surface records. That is not integration.
 - Any Kitchener value in production routing, the API or the application.
 - A licensing decision for combining Kitchener and OSM-derived data.
 - Validation of any City surface, or a routing policy for municipal evidence.
-- Matcher v2, which remains planned only.
+- Matcher v2, then planned only (built since, in PA-GEO-08).
+
+### PA-GEO-08 — Accessibility conflation matcher v2 and a new held-out benchmark _(PR #82)_
+
+**Delivered** —
+[`KITCHENER_MATCHER_V2.md`](../architecture/KITCHENER_MATCHER_V2.md)
+
+| Area       | What exists                                                                                                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Benchmark  | A new 186-record held-out sample from records neither earlier sample holds, stratified on what v1 could not settle; PA-GEO-05's spent holdout is development data               |
+| Labels     | Definitions version 2 (stairs on plain footways are correspondences; curb cuts cite the ways they follow); five blind AI labellers and a 60-record repeat                       |
+| Matcher v2 | Deterministic rules with named provenance: crossings carry curb cuts, pieces must follow a way, corners and junctions abstain, kerb choice by topology, displaced steps abstain |
+| Commands   | `matcher-v2-holdout`, `matcher-v2-review`, `matcher-v2-development-labels`, `matcher-v2-validate-labels`, `matcher-v2-collect-labels`, `matcher-v2-benchmark`                   |
+
+**What it measured**, once, on 186 held-out records scored against AI labels:
+
+- **Against v1:** 149 correct decisions against 116; 105 exact sets against 89;
+  15 false attachments against 35; 7 matches where the labeller could not name
+  the elements against 25. Pair precision 0.981 against 0.940.
+- **Abstention** rises from 12.9% to 25.3%, almost all on records the labellers
+  called ambiguous too.
+- **Curb cuts improve most**: false attachments 30 to 12. Short pieces stop
+  over-committing (7 to 1).
+- **Stairs** rest on 17 records: six on plain footways, five matched exactly.
+- **Pilot:** 803 of the 1,152 curb cuts PA-GEO-06 could not accept now have a
+  local correspondence; 349 abstain at junctions.
+
+**Decision: LIMITED GO** to reconciliation research for curb ramps without an
+OSM kerb node, on conditions. Stairs are not established on six records.
+
+**Still does not exist.**
+
+- Any Kitchener value in routing, and any change to the graph.
+- Reconciliation of the newly matched curb ramps or stairs.
+- Labels by a person, or any field check.
 
 ---
 

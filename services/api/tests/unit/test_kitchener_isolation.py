@@ -45,6 +45,7 @@ ARTIFACT_MARKERS = (
     "kitchener-geo05-artifact",
     "kitchener-geo06-artifact",
     "surface-shadow-policy",
+    "kitchener-geo08-matcher-v2",
 )
 
 

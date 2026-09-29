@@ -12,6 +12,25 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **Accessibility conflation matcher v2, measured once on a new held-out
+  benchmark (PA-GEO-08).**
+  - PA-GEO-05's spent holdout becomes development data. A new 186-record
+    sample is drawn from records neither earlier sample holds, weighted to
+    curb cuts without OSM kerb nodes, stairs on plain footways and junction
+    pieces.
+  - Label definitions version 2 separate physical correspondence from
+    attributes: a City stair OSM draws as a plain footway corresponds to it. The
+    labels are blind AI labels, frozen before evaluation.
+  - Matcher v2 abstains where it cannot defend a match:
+    - crossings carry curb cuts;
+    - short pieces must follow one way, and corners abstain;
+    - kerb choice is by topology;
+    - displaced OSM steps abstain.
+  - Held-out, against v1: 149 correct decisions against 116, 15 false
+    attachments against 35, and 7 matches where the labeller could not name the
+    elements against 25.
+  - LIMITED GO to reconciliation research for curb ramps only; nothing is
+    routed.
 - **An offline shadow-routing impact study of municipal surface evidence
   (PA-GEO-07).**
   - `pathable kitchener shadow-routing` routes the same journeys, with the
