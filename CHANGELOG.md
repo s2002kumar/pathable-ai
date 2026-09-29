@@ -12,6 +12,28 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **An offline shadow-routing impact study of municipal surface evidence
+  (PA-GEO-07).**
+  - `pathable kitchener shadow-routing` routes the same journeys, with the
+    routing API's own comparison, on the active OSM-only graph and on an
+    in-memory copy in which accepted City-only surfaces fill surfaces OSM does
+    not record (`surface-shadow-policy-v1`). OSM's surface is never replaced.
+  - City extents map onto routing segments by their exact position along each
+    OSM way; a segment is filled only when one City routing class covers 90%
+    of it.
+  - Every journey and profile is categorized, from evidence-only to a changed
+    route or feasibility. Every change is explained from the cost model, with
+    the City records and dates behind it.
+  - A sensitivity shows what taking the City's side of the conflicts would do,
+    without resolving any.
+  - The database is read inside read-only transactions, and its content
+    checksum and the loaded graph's fingerprints are checked unchanged.
+    Kitchener assertions stay `not_routing_eligible`.
+  - Waterloo pilot:
+    - 1,926 segments (23.96 km) would be filled.
+    - Routes change for 5 of 200 broad journeys and 12 of 49 targeted ones.
+    - 59 of 61 changes come from City evidence making a path cheaper.
+  - LIMITED GO to licensing review and external validation only.
 - **Provenance-aware reconciliation of accessibility evidence from OSM and the
   City of Kitchener (PA-GEO-06).**
   - An evidence model keeps each source's assertion as published: raw and

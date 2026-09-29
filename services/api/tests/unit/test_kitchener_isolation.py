@@ -11,7 +11,9 @@ test happens to run:
   nor routing, so they cannot write anything routing reads;
 - nothing outside the research code and the command line names the research
   artifacts or the folder they live in, so nothing that serves routes can
-  open them.
+  open them;
+- PA-GEO-07's shadow router imports routing, never the reverse, and reads the
+  database only inside read-only transactions.
 """
 
 from __future__ import annotations
@@ -38,7 +40,12 @@ CONFLATION_MODULES = (
     "reconciliation_run.py",
 )
 #: What would name the research artifacts or the ignored folder that holds them.
-ARTIFACT_MARKERS = (".kitchener-data", "kitchener-geo05-artifact", "kitchener-geo06-artifact")
+ARTIFACT_MARKERS = (
+    ".kitchener-data",
+    "kitchener-geo05-artifact",
+    "kitchener-geo06-artifact",
+    "surface-shadow-policy",
+)
 
 
 def _imports(path: Path) -> set[str]:
@@ -82,3 +89,26 @@ def test_nothing_that_serves_routes_names_the_research_artifacts() -> None:
     )
 
     assert naming == []
+
+
+#: PA-GEO-07's shadow study routes with the production router, so it imports
+#: routing; the reverse direction is what must never exist. Only the module
+#: that reads the active dataset touches the database, and never the API.
+SHADOW_MODULES = ("shadow_overlay.py", "shadow_study.py", "shadow_page.py")
+SHADOW_RUN = "shadow_run.py"
+
+
+def test_the_shadow_study_reaches_no_database_or_api_except_to_read_the_dataset() -> None:
+    for module in SHADOW_MODULES:
+        path = KITCHENER / module
+        assert path.exists(), module
+        reached = {
+            name
+            for name in _imports(path)
+            if name.startswith(("pathable_api.db", "pathable_api.api", "sqlalchemy"))
+        }
+        assert not reached, f"{module} imports {sorted(reached)}"
+    run = KITCHENER / SHADOW_RUN
+    assert not {n for n in _imports(run) if n.startswith("pathable_api.api")}
+    # Every transaction it opens is refused writes by PostgreSQL itself.
+    assert "SET TRANSACTION READ ONLY" in run.read_text("utf-8")

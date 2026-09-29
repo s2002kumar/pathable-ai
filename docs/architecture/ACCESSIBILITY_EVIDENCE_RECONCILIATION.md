@@ -332,6 +332,9 @@ This is not a GO, because licensing is not the only remaining gate: nothing is
 validated by a person or in the field, and no routing policy exists for any of
 it.
 
+PA-GEO-07 did that research for surfaces, offline:
+[`SURFACE_SHADOW_ROUTING.md`](SURFACE_SHADOW_ROUTING.md).
+
 ## 13. Limitations
 
 - **The correspondences are unverified row by row.** They are PA-GEO-05's

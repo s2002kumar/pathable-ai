@@ -428,7 +428,7 @@ gate stays closed.
 - Any Kitchener value in routing, and any change to the graph.
 - Labels by a person, or any field check.
 
-### PA-GEO-06 — Provenance-aware accessibility evidence reconciliation _(PR #72)_
+### PA-GEO-06 — Provenance-aware accessibility evidence reconciliation _(merged, PR #72)_
 
 **Delivered** —
 [`ACCESSIBILITY_EVIDENCE_RECONCILIATION.md`](../architecture/ACCESSIBILITY_EVIDENCE_RECONCILIATION.md),
@@ -476,6 +476,47 @@ a new policy version and a new, untouched holdout: PA-GEO-05's is spent.
 - Any Kitchener value in routing, and any change to the graph.
 - A routing policy for multi-source evidence.
 - Labels by a person, or any field check.
+
+### PA-GEO-07 — Municipal surface evidence shadow-routing impact study _(PR #81)_
+
+**Delivered** —
+[`SURFACE_SHADOW_ROUTING.md`](../architecture/SURFACE_SHADOW_ROUTING.md)
+
+| Area        | What exists                                                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Policy      | `surface-shadow-policy-v1`: OSM's surface is kept; a missing one is filled only from accepted City-only non-default surfaces covering 90% of a segment |
+| Mapping     | City extents onto routing segments by their exact position along each OSM way; a short record cannot describe a long way                               |
+| Shadow      | A copy of the loaded graph with only the filled segments replaced, built in memory from a read-only session; nothing is written back                   |
+| Study       | The routing API's own comparison for seven profiles over a broad and a targeted corpus; every change categorized and explained from the cost model     |
+| Sensitivity | What taking the City's side of the 257 conflicts would do, never a policy; provably unaffected pairs are not routed again                              |
+| Command     | `pathable kitchener shadow-routing`: evidence JSON and a watermarked page of representative route changes                                              |
+
+**What it measured.** An engineering counterfactual, not validation.
+
+- **Coverage:** 888 City-only assertions would fill 1,926 segments, 23.96 km:
+  1.8% of the graph's unknown surface metres.
+- **Broad corpus**, 200 journeys: routes change for 5 of them (16
+  journey-profile pairs, median move 5.5 m); most exposure is evidence or cost
+  on an unchanged path.
+- **Targeted corpus**, 49 journeys passing City evidence: routes change for 12
+  (45 pairs).
+- **Direction:** 59 of 61 changes come from City evidence making a path
+  cheaper, the direction in which a wrong assertion does harm.
+- **Hard changes:** 4, all for a custom profile that must avoid rough
+  surfaces. No preset excludes a surface.
+- **Dates:** every City assertion is dated only by capture, or not at all.
+- **Isolation:** the database checksum and the loaded graph's fingerprints are
+  unchanged; Dijkstra and A\* agree on every checked shadow pair.
+
+**Decision: LIMITED GO** to the founder's licensing review and external
+validation of a narrow queue of City surface records. That is not integration.
+
+**Still does not exist.**
+
+- Any Kitchener value in production routing, the API or the application.
+- A licensing decision for combining Kitchener and OSM-derived data.
+- Validation of any City surface, or a routing policy for municipal evidence.
+- Matcher v2, which remains planned only.
 
 ---
 
