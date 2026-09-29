@@ -90,6 +90,8 @@ believed.
 | `kitchener-geo05-failure-analysis.json`       | One cause for each of the 43 held-out failures, written after the single evaluation and bound to its decisions by hash.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `kitchener-geo05-errors.html`                 | Every held-out failure drawn: the City record, what the labeller named, what the matcher named. Open it in a browser.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `kitchener-geo06-reconciliation.json`         | PA-GEO-06's evidence: the inputs and versions it is bound to, the accepted-input accounting per class, every reconciliation outcome per topic, lineage, typed dates, potential coverage, every observed value pair, all 257 conflicts in full, routing blockers, and the artifact's hashes. Produced by `pathable kitchener reconcile`.                                                                                                                                                                                                                                                                                                                                                  |
+| `kitchener-geo07-shadow-routing.json`         | PA-GEO-07's evidence: the inputs it is bound to, how surface enters routing today, the overlay's accounting per City assertion and segment, both corpora, every journey-profile category, every route change with its cause, the hard-constraint records, information gain, the conflict sensitivity, the validation queue, algorithm agreement, production isolation and timings. Produced by `pathable kitchener shadow-routing`.                                                                                                                                                                                                                                                      |
+| `kitchener-geo07-route-changes.html`          | Representative shadow route changes drawn over OSM geometry, watermarked as a research counterfactual. Open it in a browser.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `waterloo-geometry-inspection.json`           | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `waterloo-dataset-lifecycle.json`             | PA-GEO-02 on the real dataset, in a disposable database: the 0006 upgrade over the legacy rows, the legacy content checksum recorded from its rows, a candidate rebuilt from the same extract with OSM edit provenance, refused a seal until elevated, sealed to the legacy checksum exactly, judged identical on 120 route comparisons, activated, rolled back, the database refusing edits to sealed rows, and the restore script run as a role that is not a superuser. Every figure is parsed from the run's own command output or read back from the database, none typed in; the procedure is the command sequence in the README. ODbL-derived.                                    |
 | `screenshots/`                                | The real product answering from this dataset. The `demo-*` captures are the PA-RR-06 recruiter journey; their provenance is in [`screenshots/DEMO_PROVENANCE.md`](screenshots/DEMO_PROVENANCE.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -268,6 +270,30 @@ PA-GEO-05's frozen matcher decided them. None of it is field-verified.
 Relationships come from the written vocabulary, and lineage is what OSM's edit
 metadata states. Coverage is potential evidence coverage, not validated or
 routing coverage.
+
+---
+
+## Municipal surface evidence shadow routing (PA-GEO-07)
+
+**Reproducing.** The command is in
+[`SURFACE_SHADOW_ROUTING.md`](../architecture/SURFACE_SHADOW_ROUTING.md) §14.
+It reads the active dataset inside read-only transactions, PA-GEO-06's artifact
+(refused unless its files match both its manifest and the committed evidence)
+and PA-GEO-04's study extract. It writes nothing to the database.
+
+**Which run produced what.** Both files come from one run, from `f89a625` on
+a clean tree: content hash `7f1371f5…`, results digest `421713c9…`. Its
+`run.determinism` compares it with an earlier run from `12caea3`. Every
+journey-profile outcome, route change and corpus is identical, and only the
+wording of the explanations differs, which `f89a625` corrected. That earlier
+run had the same results digest and corpora as a third, from `cdcd0f7`.
+Neither earlier run is committed.
+
+**Scope.** A counterfactual: the City's surfaces are treated as accepted only to
+measure what accepting them would do. None is validated, both corpora are
+engineering samples rather than trips, and no shadow route is advice. The
+evidence names OSM segments and City record numbers but holds no City geometry;
+the page draws a few routes over OSM geometry.
 
 ---
 
