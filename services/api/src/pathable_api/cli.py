@@ -78,6 +78,9 @@ from pathable_api.geo.kitchener.holdout_review import blind_document, retitle
 from pathable_api.geo.kitchener.holdout_review import digest as holdout_digest
 from pathable_api.geo.kitchener.imagery import ImageryError, survey_imagery
 from pathable_api.geo.kitchener.lineage import ESRI_MUNICIPAL_SINCE, LabelError
+from pathable_api.geo.kitchener.matcher_v2_holdout import (
+    build_holdout as build_matcher_v2_holdout,
+)
 from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
 from pathable_api.geo.kitchener.osm_extract import (
     EXTRACT_FORMAT_VERSION,
@@ -714,6 +717,29 @@ def build_parser() -> argparse.ArgumentParser:
     )
     holdout.add_argument("--development-sample-sha256", default=None)
     holdout.add_argument("--out", type=Path, required=True, help="Write the sample GeoJSON here.")
+
+    matcher_v2_holdout = kitchener_actions.add_parser(
+        "matcher-v2-holdout",
+        help=(
+            "Draw PA-GEO-08's held-out sample for matcher v2: eligible records minus both "
+            "earlier samples, stratified on what matcher v1 could not settle, in seeded hash order."
+        ),
+    )
+    frozen_inputs(matcher_v2_holdout)
+    matcher_v2_holdout.add_argument(
+        "--development-sample",
+        type=Path,
+        action="append",
+        required=True,
+        help="An earlier sample file whose records are development data (repeat for each).",
+    )
+    matcher_v2_holdout.add_argument(
+        "--development-sample-sha256",
+        action="append",
+        default=None,
+        help="The recorded hash of each --development-sample, in the same order.",
+    )
+    matcher_v2_holdout.add_argument("--out", type=Path, required=True)
 
     holdout_review = kitchener_actions.add_parser(
         "holdout-review",
@@ -1466,6 +1492,8 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         return _kitchener_imagery_metadata(args)
     if args.kitchener_command == "holdout":
         return _kitchener_holdout(args)
+    if args.kitchener_command == "matcher-v2-holdout":
+        return _kitchener_matcher_v2_holdout(args)
     if args.kitchener_command == "holdout-review":
         return _kitchener_holdout_review(args)
     if args.kitchener_command == "benchmark":
@@ -1582,6 +1610,7 @@ _KITCHENER_OFFLINE = frozenset(
         "holdout",
         "holdout-review",
         "benchmark",
+        "matcher-v2-holdout",
         "reconcile-history",
         "reconcile",
     }
@@ -1704,6 +1733,35 @@ def _kitchener_holdout(args: argparse.Namespace) -> int:
     )
     for name, stratum in metadata["strata"].items():
         print(f"  {name:<28}{stratum['sampled']:>4} of {stratum['population']:>6}")
+    print(f"Wrote {args.out} (sha256 {file_sha256(args.out)})")
+    return EXIT_OK
+
+
+def _kitchener_matcher_v2_holdout(args: argparse.Namespace) -> int:
+    hashes = args.development_sample_sha256 or [None] * len(args.development_sample)
+    if len(hashes) != len(args.development_sample):
+        print("error: give one --development-sample-sha256 per sample, or none", file=sys.stderr)
+        return EXIT_FAILED
+    try:
+        inputs = load_conflation_inputs(
+            args.normalized, args.extract, args.extract_manifest, progress=print
+        )
+        document = build_matcher_v2_holdout(
+            inputs, list(zip(args.development_sample, hashes, strict=True)), progress=print
+        )
+    except (HoldoutError, ExtractSourceError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(
+        json.dumps(document, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
+    metadata = document["metadata"]
+    print(
+        f"\nHeld-out sample: {len(document['features'])} records from a pool of {metadata['pool']}"
+    )
+    for name, stratum in metadata["strata"].items():
+        print(f"  {name:<30}{stratum['sampled']:>4} of {stratum['population']:>6}")
     print(f"Wrote {args.out} (sha256 {file_sha256(args.out)})")
     return EXIT_OK
 
