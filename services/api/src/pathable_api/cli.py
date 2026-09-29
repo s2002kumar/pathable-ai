@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import collections
 import datetime as dt
 import json
 import sys
@@ -79,8 +80,29 @@ from pathable_api.geo.kitchener.holdout_review import digest as holdout_digest
 from pathable_api.geo.kitchener.imagery import ImageryError, survey_imagery
 from pathable_api.geo.kitchener.lineage import ESRI_MUNICIPAL_SINCE, LabelError
 from pathable_api.geo.kitchener.matcher_v2_holdout import (
+    PRIMARY_PACKS as MATCHER_V2_PRIMARY_PACKS,
+)
+from pathable_api.geo.kitchener.matcher_v2_holdout import (
+    REPEAT_PACKS as MATCHER_V2_REPEAT_PACKS,
+)
+from pathable_api.geo.kitchener.matcher_v2_holdout import (
     build_holdout as build_matcher_v2_holdout,
 )
+from pathable_api.geo.kitchener.matcher_v2_holdout import packs as matcher_v2_packs
+from pathable_api.geo.kitchener.matcher_v2_holdout import repeat_subset as matcher_v2_repeat
+from pathable_api.geo.kitchener.matcher_v2_labels import DEFINITIONS as MATCHER_V2_DEFINITIONS
+from pathable_api.geo.kitchener.matcher_v2_labels import (
+    LABELS_VERSION as MATCHER_V2_LABELS_VERSION,
+)
+from pathable_api.geo.kitchener.matcher_v2_labels import (
+    development_labels as matcher_v2_development_labels,
+)
+from pathable_api.geo.kitchener.matcher_v2_labels import label_facts as matcher_v2_label_facts
+from pathable_api.geo.kitchener.matcher_v2_labels import parse_labels as parse_matcher_v2_labels
+from pathable_api.geo.kitchener.matcher_v2_review import blind as matcher_v2_blind
+from pathable_api.geo.kitchener.matcher_v2_review import digest as matcher_v2_digest
+from pathable_api.geo.kitchener.matcher_v2_review import elements_by_record as matcher_v2_elements
+from pathable_api.geo.kitchener.matcher_v2_review import retitle as matcher_v2_retitle
 from pathable_api.geo.kitchener.normalize import NormalizationError, normalize_snapshot
 from pathable_api.geo.kitchener.osm_extract import (
     EXTRACT_FORMAT_VERSION,
@@ -740,6 +762,48 @@ def build_parser() -> argparse.ArgumentParser:
         help="The recorded hash of each --development-sample, in the same order.",
     )
     matcher_v2_holdout.add_argument("--out", type=Path, required=True)
+
+    matcher_v2_review = kitchener_actions.add_parser(
+        "matcher-v2-review",
+        help=(
+            "Write the blind review page, text digest and labelling packs for PA-GEO-08's "
+            "held-out records: no strata, no labels, no matcher output, candidates in OSM-id order."
+        ),
+    )
+    frozen_inputs(matcher_v2_review)
+    matcher_v2_review.add_argument("--sample", type=Path, required=True)
+    matcher_v2_review.add_argument("--sample-sha256", default=None)
+    matcher_v2_review.add_argument("--html", type=Path, required=True)
+    matcher_v2_review.add_argument("--digest", type=Path, required=True)
+    matcher_v2_review.add_argument(
+        "--packs-dir",
+        type=Path,
+        default=None,
+        help="Also write one folder per labelling pack: its records, and the elements each may cite.",
+    )
+
+    matcher_v2_development = kitchener_actions.add_parser(
+        "matcher-v2-development-labels",
+        help=(
+            "Re-read PA-GEO-04's and PA-GEO-05's committed labels under definitions version 2, "
+            "recording every change: matcher v2's development set."
+        ),
+    )
+    frozen_inputs(matcher_v2_development)
+    matcher_v2_development.add_argument("--evidence-dir", type=Path, required=True)
+    matcher_v2_development.add_argument("--out", type=Path, required=True)
+
+    matcher_v2_validate = kitchener_actions.add_parser(
+        "matcher-v2-validate-labels",
+        help="Check a PA-GEO-08 label file against definitions version 2 and its pack.",
+    )
+    matcher_v2_validate.add_argument("--labels", type=Path, required=True)
+    matcher_v2_validate.add_argument(
+        "--pack-elements",
+        type=Path,
+        required=True,
+        help="The pack's elements.json: its records, in order, and what each may cite.",
+    )
 
     holdout_review = kitchener_actions.add_parser(
         "holdout-review",
@@ -1494,6 +1558,12 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         return _kitchener_holdout(args)
     if args.kitchener_command == "matcher-v2-holdout":
         return _kitchener_matcher_v2_holdout(args)
+    if args.kitchener_command == "matcher-v2-review":
+        return _kitchener_matcher_v2_review(args)
+    if args.kitchener_command == "matcher-v2-development-labels":
+        return _kitchener_matcher_v2_development(args)
+    if args.kitchener_command == "matcher-v2-validate-labels":
+        return _kitchener_matcher_v2_validate(args)
     if args.kitchener_command == "holdout-review":
         return _kitchener_holdout_review(args)
     if args.kitchener_command == "benchmark":
@@ -1611,6 +1681,9 @@ _KITCHENER_OFFLINE = frozenset(
         "holdout-review",
         "benchmark",
         "matcher-v2-holdout",
+        "matcher-v2-review",
+        "matcher-v2-validate-labels",
+        "matcher-v2-development-labels",
         "reconcile-history",
         "reconcile",
     }
@@ -1763,6 +1836,130 @@ def _kitchener_matcher_v2_holdout(args: argparse.Namespace) -> int:
     for name, stratum in metadata["strata"].items():
         print(f"  {name:<30}{stratum['sampled']:>4} of {stratum['population']:>6}")
     print(f"Wrote {args.out} (sha256 {file_sha256(args.out)})")
+    return EXIT_OK
+
+
+def _kitchener_matcher_v2_review(args: argparse.Namespace) -> int:
+    try:
+        inputs = load_inputs(
+            args.sample,
+            args.normalized,
+            args.extract,
+            args.extract_manifest,
+            expected_sample_sha256=args.sample_sha256,
+            progress=print,
+        )
+        document = matcher_v2_blind(run_study(inputs, progress=print))
+    except (StudyError, NormalizationError, ExtractSourceError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    features = inputs.kitchener.features
+
+    def describe(ids: Sequence[int]) -> list[str]:
+        return [
+            f"{i} {features[i].subcategory} ({features[i].physical_class}, "
+            f"{features[i].geometry.length:.1f} m)"
+            for i in sorted(ids)
+            if i in features
+        ]
+
+    page = matcher_v2_retitle(render_review(document, inputs.kitchener, inputs.osm, blind=True))
+    text = matcher_v2_digest(document, describe, inputs.osm)
+    for path, content in ((args.html, page), (args.digest, text)):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8", newline="\n")
+        print(f"Wrote {path}")
+    if args.packs_dir is not None:
+        sample = json.loads(args.sample.read_text("utf-8"))
+        ids = [int(f["properties"]["activetransportid"]) for f in sample["features"]]
+        allowed = matcher_v2_elements(document)
+        dealt = {
+            **matcher_v2_packs(ids, MATCHER_V2_PRIMARY_PACKS, "primary"),
+            **matcher_v2_packs(matcher_v2_repeat(sample), MATCHER_V2_REPEAT_PACKS, "repeat"),
+        }
+        for name, members in dealt.items():
+            folder = args.packs_dir / name
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / "records.txt").write_text(
+                matcher_v2_digest(document, describe, inputs.osm, members),
+                encoding="utf-8",
+                newline="\n",
+            )
+            write_json(
+                folder / "elements.json",
+                {
+                    "pack": name,
+                    "records": members,
+                    "elements": {str(i): allowed[i] for i in members},
+                },
+            )
+        write_json(
+            args.packs_dir / "packs.json",
+            {"sample_sha256": file_sha256(args.sample), "packs": dealt},
+        )
+        print(f"Wrote {len(dealt)} packs to {args.packs_dir}")
+    return EXIT_OK
+
+
+def _kitchener_matcher_v2_development(args: argparse.Namespace) -> int:
+    try:
+        inputs = load_conflation_inputs(
+            args.normalized, args.extract, args.extract_manifest, progress=print
+        )
+        geo04 = json.loads(
+            (args.evidence_dir / "kitchener-geo05-development-labels.json").read_text("utf-8")
+        )
+        geo05 = json.loads(
+            (args.evidence_dir / "kitchener-geo05-holdout-labels.json").read_text("utf-8")
+        )
+        document = matcher_v2_development_labels(
+            geo04, geo05, **matcher_v2_label_facts(inputs, [geo04, geo05])
+        )
+    except (LabelError, ValueError, ExtractSourceError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    document["inputs"] = {
+        name: {"file": path.name, "sha256": file_sha256(path)}
+        for name, path in (
+            (
+                "geo04_development_labels",
+                args.evidence_dir / "kitchener-geo05-development-labels.json",
+            ),
+            ("geo05_holdout_labels", args.evidence_dir / "kitchener-geo05-holdout-labels.json"),
+        )
+    }
+    document["definitions"] = {"version": MATCHER_V2_LABELS_VERSION, **MATCHER_V2_DEFINITIONS}
+    write_json(args.out, document)
+    counts = collections.Counter(r["correspondence"] for r in document["records"])
+    print(f"development labels: {len(document['records'])} records {dict(sorted(counts.items()))}")
+    print(f"conversions: {len(document['conversions'])}")
+    print(f"Wrote {args.out}")
+    return EXIT_OK
+
+
+def _kitchener_matcher_v2_validate(args: argparse.Namespace) -> int:
+    pack = json.loads(args.pack_elements.read_text("utf-8"))
+    try:
+        document = json.loads(args.labels.read_text("utf-8"))
+        labels = parse_matcher_v2_labels(document)
+    except (LabelError, ValueError, KeyError) as error:
+        print(f"invalid: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    problems = []
+    order = [int(i) for i in pack["records"]]
+    listed = [int(item["activetransportid"]) for item in document.get("records", [])]
+    if listed != order:
+        problems.append("the records are not exactly the pack's, in the order of records.txt")
+    for record_id, label in labels.items():
+        allowed = set(pack["elements"].get(str(record_id), []))
+        extra = sorted(label.osm - allowed)
+        if extra:
+            problems.append(f"record {record_id} cites elements not in its pack: {extra}")
+    for problem in problems:
+        print(f"invalid: {problem}", file=sys.stderr)
+    if problems:
+        return EXIT_FAILED
+    print(f"valid: {len(labels)} records")
     return EXIT_OK
 
 
