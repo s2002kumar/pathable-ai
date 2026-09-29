@@ -750,6 +750,13 @@ def run_pilot(
             "curb_ramp_way_extent_m": bm.distribution(
                 [round(e) for i in new_ramps if (e := local_extent_m(v2[i])) is not None]
             ),
+            "curb_ramps_whose_record_spans_over_20m": sum(
+                1 for i in new_ramps if (local_extent_m(v2[i]) or 0.0) > 20.0
+            ),
+            "curb_ramps_whose_record_spans_over_20m_meaning": (
+                "Long City records carrying CURBCUT = Y: the City does not say where along them "
+                "the ramp is, so the extent is the record's own and locates no ramp."
+            ),
         },
     }
     say(f"pilot: {summary['v2_states']}")
