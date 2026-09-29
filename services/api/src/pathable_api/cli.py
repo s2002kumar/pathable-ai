@@ -79,6 +79,17 @@ from pathable_api.geo.kitchener.holdout_review import blind_document, retitle
 from pathable_api.geo.kitchener.holdout_review import digest as holdout_digest
 from pathable_api.geo.kitchener.imagery import ImageryError, survey_imagery
 from pathable_api.geo.kitchener.lineage import ESRI_MUNICIPAL_SINCE, LabelError
+from pathable_api.geo.kitchener.matcher_v2_benchmark import BenchmarkV2Error
+from pathable_api.geo.kitchener.matcher_v2_benchmark import (
+    load_label_sets as load_matcher_v2_label_sets,
+)
+from pathable_api.geo.kitchener.matcher_v2_benchmark import (
+    render_errors as render_matcher_v2_errors,
+)
+from pathable_api.geo.kitchener.matcher_v2_benchmark import (
+    run_benchmark as run_matcher_v2_benchmark,
+)
+from pathable_api.geo.kitchener.matcher_v2_benchmark import run_pilot as run_matcher_v2_pilot
 from pathable_api.geo.kitchener.matcher_v2_holdout import (
     PRIMARY_PACKS as MATCHER_V2_PRIMARY_PACKS,
 )
@@ -807,6 +818,28 @@ def build_parser() -> argparse.ArgumentParser:
     matcher_v2_collect.add_argument("--review-page", type=Path, required=True)
     matcher_v2_collect.add_argument("--digest", type=Path, required=True)
     matcher_v2_collect.add_argument("--out", type=Path, required=True)
+
+    matcher_v2_benchmark = kitchener_actions.add_parser(
+        "matcher-v2-benchmark",
+        help=(
+            "Run PA-GEO-08's benchmark: check the development grid still selects matcher v2's "
+            "frozen policy, then score the baselines, matcher v1 and matcher v2 against the frozen "
+            "held-out labels; optionally run the full-pilot dry run."
+        ),
+    )
+    frozen_inputs(matcher_v2_benchmark)
+    matcher_v2_benchmark.add_argument("--evidence-dir", type=Path, required=True)
+    matcher_v2_benchmark.add_argument(
+        "--failure-analysis",
+        type=Path,
+        default=None,
+        help="Causes recorded for the failures, for these exact decisions.",
+    )
+    matcher_v2_benchmark.add_argument("--json", type=Path, required=True)
+    matcher_v2_benchmark.add_argument("--errors-html", type=Path, default=None)
+    matcher_v2_benchmark.add_argument(
+        "--pilot", action="store_true", help="Also run both matchers over every eligible record."
+    )
 
     matcher_v2_validate = kitchener_actions.add_parser(
         "matcher-v2-validate-labels",
@@ -1579,6 +1612,8 @@ def _kitchener_offline(args: argparse.Namespace) -> int:
         return _kitchener_matcher_v2_development(args)
     if args.kitchener_command == "matcher-v2-collect-labels":
         return _kitchener_matcher_v2_collect(args)
+    if args.kitchener_command == "matcher-v2-benchmark":
+        return _kitchener_matcher_v2_benchmark(args)
     if args.kitchener_command == "matcher-v2-validate-labels":
         return _kitchener_matcher_v2_validate(args)
     if args.kitchener_command == "holdout-review":
@@ -1702,6 +1737,7 @@ _KITCHENER_OFFLINE = frozenset(
         "matcher-v2-validate-labels",
         "matcher-v2-development-labels",
         "matcher-v2-collect-labels",
+        "matcher-v2-benchmark",
         "reconcile-history",
         "reconcile",
     }
@@ -1995,6 +2031,49 @@ def _kitchener_matcher_v2_collect(args: argparse.Namespace) -> int:
     write_json(args.out, document)
     print(f"{args.labelling_pass}: {len(document['records'])} records from {len(packs)} packs")
     print(f"Wrote {args.out}")
+    return EXIT_OK
+
+
+def _kitchener_matcher_v2_benchmark(args: argparse.Namespace) -> int:
+    started = time.perf_counter()
+    try:
+        sets = load_matcher_v2_label_sets(args.evidence_dir)
+        inputs = load_conflation_inputs(
+            args.normalized, args.extract, args.extract_manifest, progress=print
+        )
+        loaded = time.perf_counter()
+        causes = (
+            json.loads(args.failure_analysis.read_text("utf-8"))
+            if args.failure_analysis is not None
+            else None
+        )
+        report, timings, decisions = run_matcher_v2_benchmark(
+            inputs, sets, failure_causes=causes, progress=print
+        )
+        if args.pilot:
+            pilot, pilot_timings = run_matcher_v2_pilot(inputs, check=decisions, progress=print)
+            report["full_pilot_dry_run"] = pilot
+            timings.update(pilot_timings)
+    except (BenchmarkV2Error, LabelError, ExtractSourceError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    report["inputs"] = inputs.identity
+    report["attribution"] = KITCHENER_OSM_ATTRIBUTION
+    timings["load_inputs_s"] = round(loaded - started, 2)
+    timings["total_s"] = round(time.perf_counter() - started, 2)
+    report["run"] = {**_run_measurements(), "timings": timings}
+    report["content_sha256"] = content_sha256(report)
+    write_json(args.json, report)
+    holdout = report["holdout"]
+    print(f"\nHeld-out records {holdout['records']}; decisions {holdout['decisions_sha256'][:16]}")
+    print(f"Wrote {args.json}")
+    if args.errors_html is not None:
+        page = render_matcher_v2_errors(
+            report, inputs.population.physical, inputs.osm, KITCHENER_OSM_ATTRIBUTION
+        )
+        args.errors_html.parent.mkdir(parents=True, exist_ok=True)
+        args.errors_html.write_text(page, encoding="utf-8", newline="\n")
+        print(f"Wrote {args.errors_html}")
     return EXIT_OK
 
 

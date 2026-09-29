@@ -41,6 +41,8 @@ from pathable_api.geo.kitchener.conflation import (
     candidate_set,
     match,
 )
+from pathable_api.geo.kitchener.correspondence import KitchenerIndex, OsmIndex
+from pathable_api.geo.kitchener.failures_page import render_failures
 from pathable_api.geo.kitchener.matcher_v2 import (
     CANDIDATE_CONTRACT_V2,
     FINE_SAMPLE_SPACING_M,
@@ -756,3 +758,18 @@ def run_pilot(
 
 #: Labels outside obvious, ambiguous and none are not judged.
 JUDGED = (OBVIOUS, AMBIGUOUS, NONE)
+
+
+def render_errors(
+    report: Mapping[str, Any],
+    kitchener: KitchenerIndex,
+    osm: OsmIndex,
+    attribution: Mapping[str, str],
+) -> str:
+    """PA-GEO-05's failure page, for matcher v2's held-out failures."""
+    holdout = report["holdout"]
+    shaped = {"policy": report["policy"], "holdout": {**holdout, "matcher": holdout["matcher_v2"]}}
+    page = render_failures(shaped, kitchener, osm, attribution)
+    return page.replace(
+        "PA-GEO-05 held-out failures", "PA-GEO-08 held-out failures, matcher v2"
+    ).replace("the frozen matcher's decision", "frozen matcher v2's decision")
