@@ -78,6 +78,19 @@
   left: var(--panel-gap);
 }
 
+/* A window shorter than the frames (SHORT_DESKTOP_QUERY): the gap dock under
+   the evidence panel would leave the panel too short for its own actions, so
+   the dock sits to the panel's right and the panel keeps the map's height. */
+@media (min-width: 720px) and (min-height: 600px) and (max-height: 1099px) {
+  .dockArea[data-layout='evidence'] {
+    left: calc(410px + 2 * var(--panel-gap));
+  }
+
+  .panelArea[data-layout='evidence'] {
+    max-height: calc(100% - 2 * var(--panel-gap));
+  }
+}
+
 /* 17:3728 — the idle strip, bottom-left, clear of the map's own credit. */
 .statusArea {
   position: absolute;

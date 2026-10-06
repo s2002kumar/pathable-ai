@@ -378,6 +378,26 @@ test.describe('reflow', () => {
     });
   }
 
+  test('on a 1280 × 800 laptop, one route’s evidence keeps its panel whole beside its gaps', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(PLANNER);
+    await waitForMapReady(page);
+    await runExample(page);
+    await page.getByTestId('view-evidence').click();
+    await expect(page.getByTestId('gap-dock')).toBeVisible();
+
+    const ids = ['gap-banner', 'open-route-details', 'toggle-evidence', 'gap-dock'] as const;
+    expect(await visibleIn(page, ids)).toEqual(Object.fromEntries(ids.map((id) => [id, true])));
+    const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+    const dock = await page.getByTestId('gap-dock').boundingBox();
+    expect(panel).not.toBeNull();
+    expect(dock).not.toBeNull();
+    if (panel !== null && dock !== null) expect(overlapArea(panel, dock)).toBe(0);
+    expect(await hasHorizontalOverflow(page)).toBe(false);
+  });
+
   test('a phone opens the answer at the map, with the sheet under it', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(PLANNER);
