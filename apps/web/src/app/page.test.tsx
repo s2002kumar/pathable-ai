@@ -60,6 +60,9 @@ describe('the landing page', () => {
     const text = document.body.textContent ?? '';
     expect(text).not.toMatch(/barrier-free|AODA|\bAI\b|artificial intelligence/i);
     expect(text).not.toMatch(/guaranteed (safe|accessible)|certified accessible/i);
+    // Nothing is deployed, and the page neither says nor implies otherwise.
+    expect(text).toContain('Local demo · Not deployed');
+    expect(text).not.toMatch(/live demo|deployment pending|try it (live|here)/i);
     // Machine learning is named only to say that none affects a route.
     for (const match of text.matchAll(/machine-learning|machine learning/gi)) {
       const around = text.slice(Math.max(0, (match.index ?? 0) - 40), (match.index ?? 0) + 60);

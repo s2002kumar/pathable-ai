@@ -135,7 +135,7 @@ function Hero() {
               <span />
               <span />
             </span>
-            <span className={styles.visualTitle}>Local demo · Deployment pending</span>
+            <span className={styles.visualTitle}>Local demo · Not deployed</span>
             <Link href={PLANNER_EXAMPLE} className={styles.visualPath}>
               {PLANNER_EXAMPLE}
             </Link>
