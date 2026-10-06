@@ -32,9 +32,11 @@ export function useMediaQuery(query: string): boolean {
 export const PHONE_QUERY = '(max-width: 719px)';
 
 /**
- * A desktop window shorter than the Golden Master's 1152 px frames, where the
- * comparison and its evidence dock cannot both fit as drawn (1440 × 900,
- * 1280 × 800, 1366 × 768). Below 600 px the page reflows as a document instead.
+ * A desktop window shorter than the Golden Master's 1152 px frames needs, where
+ * the comparison and its evidence dock cannot both fit as drawn — which is
+ * most of them: a 1080p screen leaves a browser about 950 px, and laptops less.
+ * The full composition needs about 1,050 px. Below 600 px the page reflows as
+ * a document instead.
  */
 export const SHORT_DESKTOP_QUERY =
-  '(min-width: 720px) and (min-height: 600px) and (max-height: 1000px)';
+  '(min-width: 720px) and (min-height: 600px) and (max-height: 1099px)';
