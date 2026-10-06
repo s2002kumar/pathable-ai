@@ -1,4 +1,8 @@
 import type { Metadata, Viewport } from 'next';
+// Self-hosted, so no request leaves for a font CDN and the browser suite draws
+// the same glyphs offline. Both faces are OFL 1.1.
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -18,10 +22,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Never below 5: capping zoom locks out low-vision users who rely on it.
   maximumScale: 5,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fffdf9' },
-    { media: '(prefers-color-scheme: dark)', color: '#1a1816' },
-  ],
+  colorScheme: 'dark',
+  themeColor: '#060e20',
 };
 
 export default function RootLayout({ children }: { readonly children: React.ReactNode }) {

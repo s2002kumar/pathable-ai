@@ -1,58 +1,56 @@
 /**
- * Design tokens.
+ * Design tokens — the PathAble Golden Master v1 palette.
  *
- * Semantic names only at the point of use — components reference `--color-text`,
- * never `--ivory-100`. That is what makes the dark theme a token swap rather than
- * a rewrite, and it is what will let a future high-contrast mode drop in.
+ * One theme, on purpose: the frozen design is a midnight navigation surface,
+ * and the map, the panels and the route colours were drawn against each other
+ * on that ground. A light variant would be a second design nobody has
+ * approved. Semantic names only at the point of use — components reference
+ * `--color-text`, never a hex value.
  *
- * The palette is a navigation product's: a cool near-white ground, solid white
- * controls, deep-teal identity, and a clear cobalt route over distinctly
- * coloured water, parks and buildings. Colour carries meaning here — teal is
- * selection and identity, cobalt is the route for your profile, amber is
- * missing information and burnt orange is a recorded stairway. None of them
- * ever means a route is safe.
+ * Colour carries meaning and nothing else: emerald is the route for your
+ * profile, sky is a figure derived from the elevation model, peach/amber is
+ * information nobody recorded, and coral is reserved for a recorded barrier or
+ * a hard limit the profile cannot relax. None of them means a route is safe.
  *
- * Contrast figures in the comments were computed for the named pairing from
- * these sRGB values. They are arithmetic, not a certification of the rendered
- * UI: opacity, focus rings, disabled states and anything drawn over live
- * cartography are checked in a browser instead.
- *
- * Contrast: every text/background pairing below meets WCAG 2.1 AA (4.5:1 for body
- * text, 3:1 for large text and UI boundaries) in both themes. Figures quoted in
- * comments were computed for the pairing named; the axe e2e scan checks the
- * rendered result.
+ * Contrast is checked in the browser by the axe e2e scan, not asserted here:
+ * translucent surfaces over live cartography cannot be reasoned about from
+ * hex values alone. Where the frozen design used a colour too faint for
+ * WCAG AA body text it has been lifted to the nearest compliant step, and the
+ * change is recorded in the PA-UX-04 discrepancy log.
  */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
   /* --- Type ------------------------------------------------------------- */
-  /* The platform's own UI face, on purpose. It is already installed, already
-     hinted for the screen it is on, and costs no bytes; a webfont here would be
-     novelty with a licence to track. */
+  /* Inter for the interface and JetBrains Mono for measurements, both
+     self-hosted from @fontsource (OFL 1.1), so no request leaves for a font
+     CDN and the screenshot suite renders the same glyphs offline. */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+    'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
 
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
-  --text-md: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.375rem;
+  --text-2xs: 0.5625rem; /* 9px */
+  --text-xs: 0.625rem; /* 10px */
+  --text-sm: 0.6875rem; /* 11px */
+  --text-base: 0.875rem; /* 14px */
+  --text-md: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
   --text-2xl: 1.75rem;
 
   --leading-tight: 1.2;
   --leading-snug: 1.4;
-  --leading-normal: 1.6;
+  --leading-normal: 1.5;
 
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
+  --weight-bold: 700;
 
-  --tracking-wide: 0.02em;
-  --tracking-caps: 0.06em;
+  --tracking-wide: 0.04em;
+  --tracking-caps: 0.05em;
 
   /* --- Space (4px base) -------------------------------------------------- */
   --space-1: 0.25rem;
@@ -66,185 +64,117 @@
   --space-12: 3rem;
 
   /* --- Radius ------------------------------------------------------------ */
+  --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-pill: 999px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
 
   /* --- Elevation --------------------------------------------------------- */
-  --shadow-sm: 0 1px 2px rgb(16 24 32 / 8%);
-  --shadow-md: 0 4px 12px -2px rgb(16 24 32 / 12%), 0 2px 4px -2px rgb(16 24 32 / 8%);
-  --shadow-lg: 0 16px 40px -12px rgb(16 24 32 / 22%), 0 4px 12px -4px rgb(16 24 32 / 10%);
-  /* The one elevation that has to read against live cartography rather than a
-     page: the floating panel and the map chips. */
-  --shadow-panel: 0 1px 2px rgb(16 24 32 / 10%), 0 8px 28px -8px rgb(16 24 32 / 28%);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -4px rgb(0 0 0 / 10%);
+  --shadow-lg: 0 25px 50px -12px rgb(0 0 0 / 25%);
+  --shadow-pin: 0 20px 25px -5px rgb(0 0 0 / 50%), 0 8px 10px -6px rgb(0 0 0 / 50%);
+  --shadow-panel: 0 25px 50px -12px rgb(0 0 0 / 25%);
+  --shadow-primary: 0 10px 15px -3px rgb(0 240 144 / 20%), 0 4px 6px -4px rgb(0 240 144 / 20%);
 
   /* --- Motion ------------------------------------------------------------
-   * Short and decelerating. Panel and focus changes use --duration-base; the
-   * only longer movement on the page is the map camera, which is capped in
-   * `route-layers.ts` at CAMERA_DURATION_MS. Reduced motion collapses all of it
+   * DESIGN.md: hover/press 120–160 ms, highlight 150–200 ms, cards 160–220 ms,
+   * sheets 180–240 ms, camera 450–600 ms. Reduced motion collapses all of it
    * in globals.css, and the camera reads the same preference.
    */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --duration-fast: 150ms;
-  --duration-base: 200ms;
+  --duration-fast: 140ms;
+  --duration-base: 180ms;
+  --duration-card: 200ms;
+  --duration-sheet: 220ms;
 
   /* --- Layout ------------------------------------------------------------ */
-  --header-height: 3rem;
-  /* The floating planning surface: between 336 and 400 px, following the viewport
-     in between. An ordinary 1000 px laptop window keeps 64% of its width as live
-     map; 320 px was a few percent more map, but it wrapped the comparison onto so
-     many lines under a wider system font (DejaVu Sans on Linux) that the answer
-     no longer fitted a 700 px-tall screen. */
-  --panel-width: clamp(21rem, 28vw, 25rem);
-  /* Room between the floating surfaces and the edges of the viewport. */
-  --panel-gap: var(--space-3);
-  /* How far the panel reaches into the map from the edge it is anchored to.
-     Declared here so the first paint already places the map key and the map's
-     own credit clear of the panel; the workspace overwrites them from the
-     measured panel, because the camera needs real pixels, not an estimate. */
+  --header-height: 64px;
+  --footer-height: 64px;
+  --panel-width: 410px;
+  --panel-gap: 24px;
   --map-inset-left: 0px;
   --map-inset-bottom: 0px;
-  --content-max: 78rem;
+  --content-max: 1168px;
 
-  /* --- Colour: light ----------------------------------------------------- */
-  --color-canvas: #f4f7fa;
-  --color-surface: #ffffff;
-  --color-surface-sunken: #eef2f7;
-  /* Opaque enough that route lines never show through a control that has text
-     on it; the blur behind it does the rest of the work. */
-  --color-surface-overlay: rgb(255 255 255 / 95%);
-  --color-border: #d9e0e8;
-  --color-border-strong: #aab6c2;
+  /* --- Colour: surfaces -------------------------------------------------- */
+  --color-canvas: #0b1326;
+  --color-ink: #060e20;
+  --color-surface: #131b2e;
+  --color-surface-sunken: #0b1326;
+  --color-surface-high: #222a3d;
+  --color-surface-highest: #2d3449;
+  --color-surface-overlay: rgb(6 14 32 / 90%);
+  --color-surface-card: rgb(19 27 46 / 90%);
+  --color-surface-tile: rgb(34 42 61 / 60%);
+  --color-border: #222a3d;
+  --color-border-strong: #3b4a5f;
 
-  /* Ink with a blue cast, to sit with the cobalt route rather than fight it.
-     15.0:1 on white. */
-  --color-text: #15283a;
-  /* 6.3:1 on --color-surface. */
-  --color-text-muted: #526274;
-  /*
-   * Supporting labels only, never body copy — but still held to 4.5:1,
-   * because "supporting" is not a licence to be unreadable.
-   *
-   * Measured against every surface it actually sits on: 5.5:1 on white,
-   * 4.9:1 on the sunken surface, 5.1:1 on the canvas, 4.8:1 on the selected
-   * tint, 5.0:1 on the missing-data notice. The first value tried here was
-   * 4.03:1 on the sunken surface — a real axe failure on the pilot chip in
-   * the header, not a theoretical one.
-   */
-  --color-text-subtle: #5b6b7d;
-  --color-text-inverse: #ffffff;
+  /* --- Colour: text ------------------------------------------------------ */
+  --color-text: #dae2fd;
+  --color-text-muted: #bacbbc;
+  /* Supporting labels: 5.4:1 on --color-surface, 4.5:1 on --color-surface-high
+     (computed for the opaque pairs; the axe scan checks the rendered ones).
+     The design's fainter #3b4a3f (1.8:1) is never used for text. */
+  --color-text-subtle: #849587;
+  --color-text-inverse: #00391e;
 
-  /* 6.4:1 for white text on brand. */
-  --color-brand: #006a68;
-  --color-brand-strong: #005654;
-  /* 5.7:1 for brand text on the selected tint. */
-  --color-brand-soft: #e6f4f1;
-  --color-brand-border: #9ecdc6;
+  /* --- Colour: brand / profile route (emerald) --------------------------- */
+  --color-brand: #00f090;
+  --color-brand-strong: #b4ffcb;
+  --color-brand-soft: rgb(0 240 144 / 15%);
+  --color-brand-tint: rgb(0 240 144 / 20%);
+  --color-brand-border: rgb(0 240 144 / 35%);
+  --color-on-brand: #00683b;
 
-  --color-focus: #006a68;
+  --color-focus: #7bd0ff;
+
+  /* --- Colour: evidence --------------------------------------------------- */
+  /* Derived from the elevation model (sky). */
+  --color-derived: #7bd0ff;
+  --color-derived-strong: #c4e7ff;
+  --color-derived-surface: rgb(0 166 224 / 20%);
+  /* Not recorded (peach/amber). */
+  --color-unknown: #ffb783;
+  --color-unknown-surface: rgb(69 26 3 / 40%);
+  --color-unknown-line: #fb923c;
+  /* A recorded barrier or a broken hard limit (coral). */
+  --color-barrier: #ffb4ab;
+  --color-barrier-surface: rgb(147 0 10 / 40%);
+  --color-barrier-strong: rgb(147 0 10 / 60%);
 
   /* --- Route colours -------------------------------------------------------
-   * Shared by the map layers and the legend swatches so the key is the same
-   * signal in both places. The two routes also differ in dash pattern, so the
-   * comparison survives colour-vision deficiency and a greyscale print. Both
-   * reach 3:1 against the muted basemap, and each line is cased in the surface
-   * colour so it stays legible over any road.
+   * Shared by the map layers and every swatch, so the key is the same signal
+   * in both places. The two routes also differ in dash pattern and width, so
+   * the comparison survives colour-vision deficiency and a greyscale print.
    */
-  /* 5.9:1 on white, so the legend swatch's label and the line agree. */
-  --color-route-accessible: #2456e6;
-  --color-route-standard: #515c6b;
-  --color-marker-origin: #2456e6;
-  --color-marker-destination: #b3261e;
+  --color-route-accessible: #00f090;
+  --color-route-standard: #fb923c;
+  --color-marker-origin: #00a6e0;
+  --color-marker-destination: #00f090;
+  --color-stairs: #ff6b5e;
+  --color-stairs-soft: rgb(147 0 10 / 30%);
 
-  /* A recorded stairway drawn over the route it belongs to. Chosen to be
-     unmistakable against the cobalt route rather than to be pretty, and never
-     used for anything else, so the colour itself carries the meaning. */
-  --color-stairs: #b54708;
-  --color-stairs-soft: #fdead7;
+  /* --- Status tones (system status, notices) ----------------------------- */
+  --color-ok-text: #b4ffcb;
+  --color-ok-surface: rgb(0 240 144 / 12%);
+  --color-ok-border: rgb(0 240 144 / 30%);
+  --color-ok-dot: #00f090;
 
-  /* Cartography. Water and parks are allowed real colour — a map whose water
-     is grey is not a map — while buildings stay subordinate to the routes. */
-  --color-map-water: #bfe2f4;
-  --color-map-park: #d6e9d3;
-  --color-map-building: #e4e6eb;
+  --color-warn-text: #ffb783;
+  --color-warn-surface: rgb(69 26 3 / 40%);
+  --color-warn-border: rgb(251 146 60 / 35%);
+  --color-warn-dot: #fb923c;
 
-  --color-ok-text: #15603a;
-  --color-ok-surface: #e3f3e9;
-  --color-ok-border: #a0ceb2;
-  --color-ok-dot: #1d8a4c;
+  --color-danger-text: #ffb4ab;
+  --color-danger-surface: rgb(147 0 10 / 30%);
+  --color-danger-border: rgb(255 180 171 / 30%);
+  --color-danger-dot: #ff6b5e;
 
-  /* 7.3:1. Missing information, and nothing else. */
-  --color-warn-text: #704900;
-  --color-warn-surface: #fff4db;
-  --color-warn-border: #e8c986;
-  --color-warn-dot: #b47300;
-
-  --color-danger-text: #8a2323;
-  --color-danger-surface: #fbe9e7;
-  --color-danger-border: #e0a8a2;
-  --color-danger-dot: #b93232;
-
-  --color-neutral-text: #495057;
-  --color-neutral-surface: #eceff1;
-  --color-neutral-border: #ccd2d7;
-  --color-neutral-dot: #7d868d;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-canvas: #0d1117;
-    --color-surface: #171d25;
-    --color-surface-sunken: #11161d;
-    --color-surface-overlay: rgb(23 29 37 / 95%);
-    --color-border: #2a323c;
-    --color-border-strong: #45505d;
-
-    --color-text: #eaeff5;
-    --color-text-muted: #aab6c2;
-    --color-text-subtle: #8593a1;
-    --color-text-inverse: #101720;
-
-    /* The teal lifts for a dark ground; the identity is the same hue family. */
-    --color-brand: #4fc2be;
-    --color-brand-strong: #7fd8d4;
-    --color-brand-soft: #123330;
-    --color-brand-border: #2a5f5b;
-
-    --color-focus: #7fd8d4;
-
-    /* Stairs and cartography are NOT re-themed. The basemap is the same light
-       cartography in both schemes, so anything drawn on it has to keep
-       matching what is under it rather than the panel beside it. */
-
-    /* Route and marker colours are deliberately not re-themed: the basemap is
-       the same light cartography in both schemes, and the legend has to match
-       what is drawn on it, not the panel around it. */
-
-    --color-ok-text: #84dfad;
-    --color-ok-surface: #0f2a1d;
-    --color-ok-border: #2b6345;
-    --color-ok-dot: #4ccf87;
-
-    --color-warn-text: #f5cf87;
-    --color-warn-surface: #2c2312;
-    --color-warn-border: #6a5427;
-    --color-warn-dot: #dfa23e;
-
-    --color-danger-text: #ffaaa5;
-    --color-danger-surface: #2d1615;
-    --color-danger-border: #6d3734;
-    --color-danger-dot: #e36666;
-
-    --color-neutral-text: #b0b6bc;
-    --color-neutral-surface: #1f2226;
-    --color-neutral-border: #353a40;
-    --color-neutral-dot: #878e95;
-
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
-    --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 50%);
-    --shadow-lg: 0 16px 40px -12px rgb(0 0 0 / 65%);
-    --shadow-panel: 0 1px 2px rgb(0 0 0 / 50%), 0 8px 28px -8px rgb(0 0 0 / 70%);
-  }
+  --color-neutral-text: #bacbbc;
+  --color-neutral-surface: #222a3d;
+  --color-neutral-border: #2d3449;
+  --color-neutral-dot: #849587;
 }
