@@ -438,9 +438,8 @@ screen-reader behaviour is the platform's rather than an imitation.
 
 ### Measured, at this revision
 
-Captured by
-[`tests/screenshots/ux-02b-states.spec.ts`](../../apps/web/tests/screenshots/ux-02b-states.spec.ts),
-which stubs nothing, against the **production web image** built from this
+Captured by `tests/screenshots/ux-02b-states.spec.ts` (retired in PA-UX-04 with the interface
+it drove; last present at `cd54879`), which stubs nothing, against the **production web image** built from this
 branch and running in the isolated envelope stack — web `3001`, API `8001`,
 database `5434`, dataset `pathable-envelope-db-data` at `0005_kerb_tiers`,
 155,714 nodes and 180,554 segments. Browser: Playwright Chromium with

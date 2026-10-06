@@ -325,8 +325,9 @@ population rate, and nothing reaches routing.
 
 ## Screenshots
 
-Captured by `apps/web/tests/screenshots/real-waterloo.spec.ts` against the running
-API and the active dataset. No API responses are stubbed — a screenshot of a
+Captured by `apps/web/tests/screenshots/real-waterloo.spec.ts` (removed in PA-UX-04 with the
+interface it drove; last present at `cd54879`) against the running API and the active dataset.
+The current interface's captures are in `screenshots/ux-04/`, from `ux-04-states.spec.ts`. No API responses are stubbed — a screenshot of a
 synthetic fixture would be a picture of nothing.
 
 | File                        | What it shows                                                                                                                                                                            |
