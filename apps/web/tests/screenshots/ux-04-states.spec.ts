@@ -174,7 +174,12 @@ test('17:2865 — comparison, phone', async ({ page }, testInfo) => {
   await mapReady(page);
   await runExample(page);
   await settle(page);
-  await capture(page, testInfo, '17-2865-compare-phone', true, [
+  // A full-page capture resizes the viewport while it shoots, and the map's
+  // WebGL canvas is caught blank mid-resize. Make the viewport the page first.
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  await page.setViewportSize({ width: 390, height });
+  await settle(page, 4_000);
+  await capture(page, testInfo, '17-2865-compare-phone', false, [
     'difference-accessible',
     'difference-shortest',
     'mobile-stairs',

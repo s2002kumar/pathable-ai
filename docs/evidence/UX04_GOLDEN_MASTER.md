@@ -9,15 +9,15 @@ precedence").
 
 ## Frames, routes and components
 
-| Frame     | State                                     | Route                              | Components                                                                                                         | Data                                                                    |
-| --------- | ----------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| `10:2318` | Landing, desktop                          | `/`                                | `LandingPage`, `RouteVisual`                                                                                       | `verified-route.ts`: one recorded `POST /routes/compare`, dated         |
-| `17:3167` | Landing, phone                            | `/` below 720 px                   | the same                                                                                                           | the same                                                                |
-| `17:3555` | Planning                                  | `/planner`, no journey             | `PlannerScreen` → `RouteWorkspace` (`plan`) → `PlanPanel`, `ProfileChooser`, `UphillLimitControl`, `MapControls`   | `GET /health/ready`, `GET /routes/profiles`, `GET /geocode/search`      |
-| `9:1905`  | Comparison, desktop                       | `/planner`, two different routes   | `ComparePanel` (`CompareControls`, `RouteCards`), `EvidenceDock`, `comparePins`                                    | `POST /routes/compare`                                                  |
-| `17:3789` | One route's evidence                      | `/planner`, View Evidence          | `EvidencePanel`, `GapDock`, `gapCallouts`, gap lines                                                               | the same response; one route, nothing re-requested                      |
-| `17:4041` | No route for the profile                  | `/planner`, `accessible_route` null | `NoRoutePanel`, `barrierPins`                                                                                     | the same; requirements read from `excluded_by_profile` on the shortest |
-| `17:2865` | Comparison, phone                         | `/planner` below 720 px            | `MobileComparison`, `phonePins`                                                                                    | `POST /routes/compare`                                                  |
+| Frame     | State                    | Route                               | Components                                                                                                       | Data                                                                   |
+| --------- | ------------------------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `10:2318` | Landing, desktop         | `/`                                 | `LandingPage`, `RouteVisual`                                                                                     | `verified-route.ts`: one recorded `POST /routes/compare`, dated        |
+| `17:3167` | Landing, phone           | `/` below 720 px                    | the same                                                                                                         | the same                                                               |
+| `17:3555` | Planning                 | `/planner`, no journey              | `PlannerScreen` → `RouteWorkspace` (`plan`) → `PlanPanel`, `ProfileChooser`, `UphillLimitControl`, `MapControls` | `GET /health/ready`, `GET /routes/profiles`, `GET /geocode/search`     |
+| `9:1905`  | Comparison, desktop      | `/planner`, two different routes    | `ComparePanel` (`CompareControls`, `RouteCards`), `EvidenceDock`, `comparePins`                                  | `POST /routes/compare`                                                 |
+| `17:3789` | One route's evidence     | `/planner`, View Evidence           | `EvidencePanel`, `GapDock`, `gapCallouts`, gap lines                                                             | the same response; one route, nothing re-requested                     |
+| `17:4041` | No route for the profile | `/planner`, `accessible_route` null | `NoRoutePanel`, `barrierPins`                                                                                    | the same; requirements read from `excluded_by_profile` on the shortest |
+| `17:2865` | Comparison, phone        | `/planner` below 720 px             | `MobileComparison`, `phonePins`                                                                                  | `POST /routes/compare`                                                 |
 
 Not in the Golden Master: the **details sheet** (`RouteDetails`), opened by
 Route Details and, on a phone, by View Evidence. It states the whole answer in
@@ -82,8 +82,19 @@ viewer's location, so:
 - **The phone landing** keeps the "recorded from the implemented routing API …
   one journey, not typical of all" line that 17:3167 drops, because it shows
   the same recorded figures.
+- **Desktop windows shorter than the frames.** The comparison frames are
+  1,152 px tall and the composition needs about 1,050 px of viewport; a 1080p
+  screen leaves a browser about 950, and laptops less. There the panel and the
+  dock did not both fit, and the shortest route's card ended up below the
+  panel's fold. Up to 1,099 px tall the comparison puts the answer before the
+  profile controls (in reading order as well as on screen), and the evidence
+  dock slims to its title and its two actions; the cards keep stairs, grade and
+  surface, and View Evidence opens all four categories. One route's evidence
+  moves its gap dock to the panel's right, so the panel keeps its own actions.
 - **Windows under 600 px tall** (a laptop at 200% zoom, a phone on its side)
   use the phone's document flow; floating surfaces left the panel no room.
+- **Every new layout opens at the panel's top**, rather than at the scroll
+  position the planning form was left at.
 
 ### Rendering
 
@@ -111,11 +122,29 @@ recorded or Your profile rule.
 
 ## Evidence
 
-`screenshots/ux-04/` holds the captures, each at its frame's size, taken by
-`apps/web/tests/screenshots/ux-04-states.spec.ts` against the local production
-envelope (real Waterloo dataset, nothing stubbed), with `observations.json`
-recording what each state said and when, and a side-by-side image of each
-frame beside its capture.
+Captured on 2026-10-06 from the local production envelope: the API and web
+production images built from this branch at `b27d441`, the Waterloo dataset
+`51585450-8ff5-409d-a02e-66d5a3c5e260` (checksum `51e75f78…`, OpenStreetMap
+published 2026-08-16), routing policy 2, NRCan HRDEM 1 m elevation. Nothing is
+stubbed. Not a deployment: everything ran on one laptop at `localhost`.
+
+- `screenshots/ux-04/*.png` — each state at its frame's size, from
+  `apps/web/tests/screenshots/ux-04-states.spec.ts`. `observations.json`
+  records what each state said and when.
+- `screenshots/ux-04/side-by-side/` — each Figma frame beside its capture, at
+  half scale.
+- `media/pathable-ux04-demo.webm` — one browser session recorded by Playwright
+  at 1280 × 800, VP8, not edited: landing → Explore Planner → the verified
+  example → the comparison → the shortest route's recorded stairs → one
+  route's evidence (what is not recorded, the grade derived from HRDEM) →
+  Route Details → stop. `screenshots/ux-04/demo-session.json` gives the time of
+  each step and what the API returned. The recording renders on the machine's
+  GPU: under the suite's software renderer, the recorder stalled the page for
+  tens of seconds, which is not what a viewer sees.
+
+The map frames carry the credits the media needs: © OpenStreetMap
+contributors, OpenFreeMap © OpenMapTiles, and, in the credit line, the Open
+Government Licence – Canada statement for HRDEM.
 
 Re-run:
 
