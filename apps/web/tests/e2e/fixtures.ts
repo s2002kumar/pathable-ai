@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /**
  * Shared e2e helpers.
@@ -475,4 +475,119 @@ export async function waitForMapReady(page: Page): Promise<void> {
     undefined,
     { timeout: 30_000 },
   );
+}
+
+/** The planner's address; the root path is the landing page. */
+export const PLANNER = '/planner';
+
+/** Below 720 px the planner is the phone composition (Golden Master 17:2865). */
+export function isPhone(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 1440) < 720;
+}
+
+/** Press the verified example and wait for its answer. */
+export async function runExample(page: Page): Promise<void> {
+  await page.getByTestId('run-verified-example').click();
+  await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+}
+
+/**
+ * Bring the journey and profile controls on screen. Beside a result on a
+ * phone they sit behind "Edit journey or profile"; everywhere else they are
+ * already in the panel.
+ */
+export async function openJourneyControls(page: Page): Promise<void> {
+  const editor = page.getByTestId('mobile-edit');
+  if ((await editor.count()) === 0) return;
+  if ((await editor.getAttribute('open')) === null) await editor.locator('summary').click();
+  await expect(editor).toHaveAttribute('open', '');
+}
+
+/**
+ * No route meets the profile: the API still returns the shortest route, with
+ * the stairway it cannot use marked, and says why the profile's route failed.
+ */
+export const NO_ACCESSIBLE_ROUTE = {
+  profile: 'wheelchair',
+  profile_display_name: 'Wheelchair',
+  profile_description: 'Avoids steps entirely.',
+  standard_route: {
+    profile: 'standard',
+    profile_display_name: 'Standard walking',
+    distance_m: 120,
+    effective_distance_m: 120,
+    estimated_duration_seconds: 126,
+    pace_profile: 'wheelchair',
+    coordinates: [
+      [-80.54, 43.47],
+      [-80.5385, 43.47],
+    ],
+    segments: [
+      {
+        edge_identity: 'way/30:0-1',
+        coordinates: [
+          [-80.54, 43.47],
+          [-80.5385, 43.47],
+        ],
+        length_m: 120,
+        effective_metres: 120,
+        cost_components: [],
+        is_crossing: false,
+        kerb: 'unknown',
+        steps: 'yes',
+        step_count: 22,
+        surface_class: 'unknown',
+        smoothness_class: 'unknown',
+        excluded_by_profile: 'steps',
+        unknown_attributes: ['surface', 'smoothness'],
+      },
+    ],
+    origin: { longitude: -80.54, latitude: 43.47, distance_m: 2 },
+    destination: { longitude: -80.5385, latitude: 43.47, distance_m: 2 },
+    stairway_count: 1,
+    step_count: 22,
+    crossing_count: 0,
+    unknown_kerb_crossing_count: 0,
+    steepest_incline_percent: null,
+    gradient: {
+      steepest_uphill: null,
+      steepest_downhill: null,
+      recorded_fraction: 0,
+      estimated_fraction: 0,
+      unknown_fraction: 1,
+    },
+    unknown_data_fraction: 1,
+    evidence_coverage: { surface: 1, smoothness: 1, gradient: 1, width: 1, kerb: 0 },
+    computation_ms: 3,
+  },
+  accessible_route: null,
+  standard_failure: null,
+  accessible_failure: 'No route satisfies the wheelchair profile between these points.',
+  extra_distance_m: null,
+  extra_distance_fraction: null,
+  explanations: [],
+  cautions: [],
+  dataset: {
+    dataset_id: '0c9d1b3a-0000-4000-8000-000000000000',
+    region: 'waterloo',
+    checksum: 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+    source_type: 'osm',
+    source_name: 'openstreetmap:waterloo',
+    acquired_at: '2026-08-12T00:00:00+00:00',
+    attribution: '© OpenStreetMap contributors, ODbL 1.0',
+  },
+  routing_policy_version: 2,
+  ml_predictions_used: false,
+};
+
+/** Answer every comparison with no route for the profile, as above. */
+export async function stubNoRoute(page: Page): Promise<void> {
+  await page.unroute(COMPARE_PATTERN);
+  await page.route(COMPARE_PATTERN, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(NO_ACCESSIBLE_ROUTE),
+    });
+  });
 }

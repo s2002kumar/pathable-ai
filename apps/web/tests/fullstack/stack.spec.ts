@@ -11,6 +11,9 @@ import { expect, test } from '@playwright/test';
 
 const READINESS_PATH = '/api/v1/health/ready';
 
+/** The planner's address; the root path is the landing page, which asks the API nothing. */
+const PLANNER = '/planner';
+
 /** Matches playwright.fullstack.config.ts, including its Compose override. */
 const API_BASE_URL = process.env.FULLSTACK_API_URL ?? 'http://127.0.0.1:8100';
 
@@ -22,7 +25,7 @@ type ReadinessBody = {
 };
 
 test.describe('full stack', () => {
-  test('status badge is driven by a real API response, not a stub', async ({ page }) => {
+  test('the service status is driven by a real API response, not a stub', async ({ page }) => {
     // Capture the actual network exchange so "it went green" cannot be confused
     // with "something answered". No route handler is registered anywhere here.
     const readinessResponses: { url: string; status: number; body: ReadinessBody }[] = [];
@@ -40,7 +43,7 @@ test.describe('full stack', () => {
       }
     });
 
-    await page.goto('/');
+    await page.goto(PLANNER);
 
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'ready');
 
@@ -80,26 +83,25 @@ test.describe('full stack', () => {
     expect(body.checks.database?.latency_ms).toBeGreaterThan(0);
   });
 
-  test('the badge shows the version the API actually reports', async ({ page }) => {
-    await page.goto('/');
+  test('the status strip carries the version the API actually reports', async ({ page }) => {
+    await page.goto(PLANNER);
 
-    const badge = page.getByTestId('system-status');
-    await expect(badge).toHaveAttribute('data-status', 'ready');
-    await expect(badge).toContainText('API online');
-    await expect(badge).toContainText('pathable-api v0.1.0');
+    const strip = page.getByTestId('system-status');
+    await expect(strip).toHaveAttribute('data-status', 'ready');
+    await expect(strip).toContainText('Ready to route');
+    await expect(strip).toHaveAttribute('title', 'pathable-api v0.1.0');
   });
 
   test('the map and the shell work alongside the live backend', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
 
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'ready');
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
-    await expect(page.getByRole('group', { name: /how do you travel/i })).toBeVisible();
+    await expect(page.getByRole('group', { name: /mobility profile/i })).toBeVisible();
     // The profile's rules are the live API's, not a copy in the browser.
     await expect(page.getByTestId('profile-rule')).toContainText('Hard limit: cannot use steps.');
-    // The map key arrives with the routes it explains, so before a comparison
-    // there is nothing for it to say.
-    await expect(page.getByTestId('map-legend')).toHaveCount(0);
+    // Before a journey there is only the planning form.
+    await expect(page.getByTestId('route-workspace')).toHaveAttribute('data-layout', 'plan');
   });
 
   test('the page stays usable when the backend becomes unavailable', async ({ page }) => {
@@ -107,7 +109,7 @@ test.describe('full stack', () => {
     // path is proven by the tests above, and this simulates the API disappearing
     // mid-session. Killing the Playwright-managed server instead would take the
     // whole suite down with it.
-    await page.goto('/');
+    await page.goto(PLANNER);
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'ready');
 
     await page.route(`**${READINESS_PATH}`, (route) => route.abort('connectionrefused'));
@@ -115,7 +117,8 @@ test.describe('full stack', () => {
 
     await expect(page.getByTestId('system-status')).toHaveAttribute('data-status', 'unreachable');
     await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
-    await expect(page.getByTestId('pilot-description')).toBeVisible();
+    await expect(page.getByTestId('pilot-description')).toBeAttached();
+    await expect(page.getByTestId('header-status')).toHaveText('Routing service: Offline');
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
   });
 });
@@ -131,7 +134,7 @@ test.describe('routing, end to end', () => {
    * over the synthetic network the CI job loads.
    */
   test('compares two real routes over the live backend', async ({ page }) => {
-    await page.goto('/?region=waterloo-synthetic');
+    await page.goto(PLANNER);
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
 
     const response = await page.request.post(`${API_BASE_URL}/api/v1/routes/compare`, {
