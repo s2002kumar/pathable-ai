@@ -16,7 +16,7 @@ import {
 import { usePanelFit } from '@/features/map/usePanelFit';
 import type { SystemStatus } from '@/features/system-status/types';
 import { LINKS } from '@/lib/links';
-import { PHONE_QUERY, useMediaQuery } from '@/lib/useMediaQuery';
+import { PHONE_QUERY, SHORT_DESKTOP_QUERY, useMediaQuery } from '@/lib/useMediaQuery';
 import { ENDPOINT_INPUT_IDS, MAP_POINT_LABEL } from './EndpointField';
 import { EvidenceDock, GapDock } from './EvidenceDock';
 import { type DetailsSection, RouteDetails } from './RouteDetails';
@@ -184,6 +184,7 @@ export function RouteWorkspace({
   const pendingFocus = useRef<'profile' | 'destination' | null>(null);
 
   const phone = useMediaQuery(PHONE_QUERY);
+  const short = useMediaQuery(SHORT_DESKTOP_QUERY);
   const mapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
@@ -347,14 +348,18 @@ export function RouteWorkspace({
     setLayoutChoice('compare');
   }, []);
 
-  // On a phone the form and the answer share one scrolling page. An answer
-  // replacing the form would otherwise open wherever the form was scrolled to
-  // — its foot, where Compare is — with the map and both routes above the
-  // screen. Take the page back to the map when the first answer arrives.
+  // An answer replacing the form would otherwise open wherever the form was
+  // scrolled to — its foot, where Compare is. The panel scrolls back to its
+  // top on every change of layout; on a phone, where the form and the answer
+  // share one scrolling page, the page goes back to the map as well.
   const previousLayout = useRef(layout);
   useEffect(() => {
     const before = previousLayout.current;
     previousLayout.current = layout;
+    if (before === layout) return;
+    // A new layout is a new panel: it opens at its top, not at the scroll
+    // position the last one was left at (the form's foot, for an answer).
+    if (panelRef.current) panelRef.current.scrollTop = 0;
     if (!phone || before !== 'plan' || layout === 'plan') return;
     window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }, [layout, phone]);
@@ -591,6 +596,7 @@ export function RouteWorkspace({
           onRouteDetails={() => openDetails('details')}
           onOpenEvidence={() => openDetails('evidence')}
           phone={phone}
+          answerFirst={short}
           editorOpen={phoneEditorOpen}
           onEditorToggle={setPhoneEditorOpen}
           onShowLayout={setLayoutChoice}
@@ -613,6 +619,7 @@ export function RouteWorkspace({
             profileName={profileName ?? 'profile'}
             onRouteDetails={() => openDetails('details')}
             onViewEvidence={() => setLayoutChoice('evidence')}
+            compact={short}
           />
         </div>
       ) : null}

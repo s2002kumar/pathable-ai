@@ -30,3 +30,11 @@ export function useMediaQuery(query: string): boolean {
 
 /** The Golden Master's phone composition (17:2865) applies below 720 px. */
 export const PHONE_QUERY = '(max-width: 719px)';
+
+/**
+ * A desktop window shorter than the Golden Master's 1152 px frames, where the
+ * comparison and its evidence dock cannot both fit as drawn (1440 × 900,
+ * 1280 × 800, 1366 × 768). Below 600 px the page reflows as a document instead.
+ */
+export const SHORT_DESKTOP_QUERY =
+  '(min-width: 720px) and (min-height: 600px) and (max-height: 1000px)';

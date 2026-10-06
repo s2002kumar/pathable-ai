@@ -47,6 +47,10 @@ function Detail({ fact }: { readonly fact: CategoryFact }) {
  * "Why this route is different" (Golden Master 9:2177): the four categories
  * side by side, each with its own evidence label and its own comparison with
  * the shortest route.
+ *
+ * `compact` is for windows shorter than the frame: the title and the two ways
+ * into the evidence, without the four columns. The cards above still carry
+ * stairs, grade and surface, and View Evidence opens all four with their gaps.
  */
 export function EvidenceDock({
   route,
@@ -55,6 +59,7 @@ export function EvidenceDock({
   profileName,
   onRouteDetails,
   onViewEvidence,
+  compact = false,
 }: {
   readonly route: Route;
   readonly other: Route;
@@ -62,12 +67,14 @@ export function EvidenceDock({
   readonly profileName: string;
   readonly onRouteDetails: () => void;
   readonly onViewEvidence: () => void;
+  readonly compact?: boolean;
 }) {
   const facts = categoryFacts(route, other, rules);
   return (
     <section
       className={`${styles.dock} ${styles.enter}`}
       aria-labelledby="dock-heading"
+      data-compact={compact}
       data-testid="evidence-dock"
     >
       <div className={styles.dockIntro}>
@@ -81,43 +88,47 @@ export function EvidenceDock({
             recorded and derived accessibility evidence.
           </p>
         </div>
-        <div className={styles.legend}>
-          <p className={styles.legendTitle}>Evidence legend</p>
-          <p className={styles.legendTags}>
-            {LEGEND.map((kind) => (
-              <span key={kind} className={styles.tag}>
-                {EVIDENCE_LABELS[kind]}
-              </span>
-            ))}
-          </p>
-        </div>
+        {compact ? null : (
+          <div className={styles.legend}>
+            <p className={styles.legendTitle}>Evidence legend</p>
+            <p className={styles.legendTags}>
+              {LEGEND.map((kind) => (
+                <span key={kind} className={styles.tag}>
+                  {EVIDENCE_LABELS[kind]}
+                </span>
+              ))}
+            </p>
+          </div>
+        )}
       </div>
 
-      <ul className={styles.facts} aria-label="Evidence by category">
-        {facts.map((fact) => (
-          <li key={fact.key} className={styles.fact} data-testid={`dock-${fact.key}`}>
-            <div>
-              <div className={styles.factHead}>
-                <span className={styles.factLabel}>{fact.label}</span>
-                <Tags fact={fact} />
+      {compact ? null : (
+        <ul className={styles.facts} aria-label="Evidence by category">
+          {facts.map((fact) => (
+            <li key={fact.key} className={styles.fact} data-testid={`dock-${fact.key}`}>
+              <div>
+                <div className={styles.factHead}>
+                  <span className={styles.factLabel}>{fact.label}</span>
+                  <Tags fact={fact} />
+                </div>
+                <p className={styles.factFigure}>
+                  <span className={styles.factValue} data-tone={fact.valueTone}>
+                    {fact.value}
+                  </span>
+                  <span className={styles.factUnit}>{fact.unit}</span>
+                </p>
+                <Detail fact={fact} />
               </div>
-              <p className={styles.factFigure}>
-                <span className={styles.factValue} data-tone={fact.valueTone}>
-                  {fact.value}
-                </span>
-                <span className={styles.factUnit}>{fact.unit}</span>
-              </p>
-              <Detail fact={fact} />
-            </div>
-            {fact.footer ? (
-              <p className={styles.factFooter} data-tone={fact.footer.tone}>
-                <Icon name={fact.footer.icon} size={16} />
-                {fact.footer.text}
-              </p>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+              {fact.footer ? (
+                <p className={styles.factFooter} data-tone={fact.footer.tone}>
+                  <Icon name={fact.footer.icon} size={16} />
+                  {fact.footer.text}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className={styles.dockActions}>
         <button

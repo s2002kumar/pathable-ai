@@ -39,6 +39,32 @@ async function fullyInViewport(page: Page, testId: string): Promise<boolean> {
   }, testId);
 }
 
+/**
+ * Which of these sit wholly on screen and inside the panel's visible box —
+ * not merely in the window, where an element scrolled out of the panel still
+ * counts. Elements outside the panel are judged against the window alone.
+ */
+async function visibleIn(page: Page, ids: readonly string[]): Promise<Record<string, boolean>> {
+  return page.evaluate((list) => {
+    const panel = document.querySelector('[aria-label="Route planner"]');
+    const box = panel?.getBoundingClientRect();
+    const result: Record<string, boolean> = {};
+    for (const id of list) {
+      const element = document.querySelector(`[data-testid="${id}"]`);
+      const rect = element?.getBoundingClientRect();
+      if (!element || !rect || rect.height === 0) {
+        result[id] = false;
+        continue;
+      }
+      const inPanel = panel !== null && panel !== undefined && panel.contains(element);
+      const top = inPanel && box ? Math.max(0, box.top) : 0;
+      const bottom = inPanel && box ? Math.min(window.innerHeight, box.bottom) : window.innerHeight;
+      result[id] = rect.top >= top - 1 && rect.bottom <= bottom + 1;
+    }
+    return result;
+  }, ids);
+}
+
 /** Record every map lifecycle transition from now on; a remount passes `initialising`. */
 async function watchMapLifecycle(page: Page): Promise<() => Promise<string[]>> {
   await page.evaluate(() => {
@@ -140,23 +166,27 @@ test.describe('layout', () => {
     }
   });
 
-  test('on a laptop the whole answer is on screen without scrolling', async ({ page }) => {
+  test('at the frame’s own size the whole comparison is on screen as drawn', async ({ page }) => {
+    // 9:1905 is 1280 × 1152: both routes in the panel, all four categories in
+    // the dock beneath, nothing scrolled.
     test.skip(isPhone(page), 'the phone answer is a sheet under the map; see reflow');
+    await page.setViewportSize({ width: 1280, height: 1152 });
     await page.goto(PLANNER);
     await waitForMapReady(page);
     await runExample(page);
 
-    for (const id of [
+    const ids = [
       'difference-accessible',
       'difference-shortest',
       'difference-extra',
       'main-difference',
       'evidence-dock',
       'dock-stairs',
+      'dock-grade',
+      'dock-crossings',
       'dock-surface',
-    ]) {
-      expect(await fullyInViewport(page, id), id).toBe(true);
-    }
+    ] as const;
+    expect(await visibleIn(page, ids)).toEqual(Object.fromEntries(ids.map((id) => [id, true])));
     expect(await page.evaluate(() => document.documentElement.scrollTop)).toBe(0);
   });
 
@@ -309,6 +339,44 @@ test.describe('reflow', () => {
     expect(await fullyInViewport(page, 'difference-accessible')).toBe(true);
     expect(await hasHorizontalOverflow(page)).toBe(false);
   });
+
+  for (const size of [
+    { width: 1280, height: 800 },
+    { width: 1366, height: 768 },
+  ]) {
+    test(`a ${size.width} × ${size.height} laptop shows both routes without scrolling the panel`, async ({
+      page,
+    }) => {
+      // The comparison opened still scrolled to the form's foot, and the frame's
+      // composition left the panel too short to show the shortest route. A
+      // shorter window puts the answer first and slims the dock to one bar.
+      await page.setViewportSize(size);
+      await page.goto(PLANNER);
+      await waitForMapReady(page);
+      await runExample(page);
+
+      const ids = [
+        'difference-accessible',
+        'difference-shortest',
+        'difference-extra',
+        'main-difference',
+        'evidence-dock',
+      ] as const;
+      expect(await visibleIn(page, ids)).toEqual(Object.fromEntries(ids.map((id) => [id, true])));
+      expect(
+        await page
+          .getByRole('complementary', { name: /route planner/i })
+          .evaluate((panel) => panel.scrollTop),
+      ).toBe(0);
+
+      const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+      const dock = await page.getByTestId('evidence-dock').boundingBox();
+      expect(panel).not.toBeNull();
+      expect(dock).not.toBeNull();
+      if (panel !== null && dock !== null) expect(overlapArea(panel, dock)).toBe(0);
+      expect(await fullyInViewport(page, 'evidence-dock')).toBe(true);
+    });
+  }
 
   test('a phone opens the answer at the map, with the sheet under it', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

@@ -30,6 +30,11 @@ const SERIOUS = new Set(['serious', 'critical']);
  * author, so it is excluded; PathAble's own map controls and pins are not.
  */
 async function blockingViolations(page: Page): Promise<string[]> {
+  // Colour is judged as a reader sees it: after entrances have finished, not
+  // halfway through a fade, when every colour on the surface is blended.
+  await page.waitForFunction(() =>
+    document.getAnimations().every((animation) => animation.playState !== 'running'),
+  );
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .exclude('.maplibregl-control-container')

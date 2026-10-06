@@ -85,6 +85,11 @@ export type RoutePlannerProps = {
   /** The phone composition (17:2865): the answer as a sheet under the map. */
   readonly phone?: boolean;
   /**
+   * A desktop window shorter than the frames: the comparison's answer comes
+   * before the profile controls rather than after them.
+   */
+  readonly answerFirst?: boolean;
+  /**
    * Whether the phone's "Edit journey or profile" is open. Held above the
    * sheet, which re-mounts while a changed profile re-runs; held inside it,
    * the controls the traveller was using would snap shut under them.
@@ -370,28 +375,30 @@ function PlanPanel({
  * and the uphill slider. Shared by the desktop panel and the phone's
  * "Edit journey or profile" disclosure.
  */
-export function CompareControls({
+export function CompareControls(props: RoutePlannerProps) {
+  return (
+    <>
+      <JourneyFields {...props} />
+      <ProfileControls {...props} />
+    </>
+  );
+}
+
+/** The two endpoints, and — once they have moved — the notice and Compare. */
+function JourneyFields({
   points,
-  profileKey,
   state,
   apiBaseUrl,
   region,
   pendingEdits,
   canCompare,
   pickTarget,
-  profiles = { status: 'loading' },
-  uphillLimit = NO_UPHILL_LIMIT,
-  onUphillLimitChange = () => {},
-  onUphillLimitCommit = () => {},
-  onProfileChange,
   onCompare,
   onSwapPoints,
   onSelectPlace,
   onPickOnMap,
   fetchImpl,
 }: RoutePlannerProps) {
-  const comparison = state.status === 'success' ? state.comparison : null;
-  const accessible = comparison?.accessible_route ?? null;
   const hasPoints = points.origin !== null || points.destination !== null;
   return (
     <>
@@ -447,7 +454,24 @@ export function CompareControls({
           </button>
         </>
       ) : null}
+    </>
+  );
+}
 
+/** The profile grid and the uphill slider, which re-run the journey on change. */
+function ProfileControls({
+  profileKey,
+  state,
+  profiles = { status: 'loading' },
+  uphillLimit = NO_UPHILL_LIMIT,
+  onUphillLimitChange = () => {},
+  onUphillLimitCommit = () => {},
+  onProfileChange,
+}: RoutePlannerProps) {
+  const comparison = state.status === 'success' ? state.comparison : null;
+  const accessible = comparison?.accessible_route ?? null;
+  return (
+    <>
       <div className={styles.compareSection}>
         <ProfileChooser
           variant="grid"
@@ -481,32 +505,13 @@ function ComparePanel(props: RoutePlannerProps) {
     selectedRoute = 'accessible',
     onSelectRoute = () => {},
     onRetry,
+    answerFirst = false,
   } = props;
   const comparison = state.status === 'success' ? state.comparison : null;
   const age = comparison ? mapAge(comparison) : null;
 
-  return (
-    <section
-      className={`${styles.panel} ${styles.panelCompare}`}
-      aria-labelledby="route-planner-heading"
-      data-testid="plan-journey"
-      data-layout="compare"
-    >
-      <header className={styles.compareHead}>
-        <h1 className={styles.compareTitle} id="route-planner-heading">
-          <span className={styles.titleMark} aria-hidden="true">
-            <Icon name="planner-route" />
-          </span>
-          Route Planner
-        </h1>
-        <span className={styles.compareHeadEnd}>
-          <span className={styles.compareRegion}>{shortRegionName(regionName)}</span>
-          <ClearJourney onClearAll={props.onClearAll} />
-        </span>
-      </header>
-
-      <CompareControls {...props} />
-
+  const answer = (
+    <>
       <StatusRegion state={state} points={points} onRetry={onRetry}>
         {comparison === null ? null : comparison.standard_route && comparison.accessible_route ? (
           <RouteCards
@@ -529,6 +534,43 @@ function ComparePanel(props: RoutePlannerProps) {
           {age ? <span className={styles.statusTrail}>{age}</span> : null}
         </p>
       ) : null}
+    </>
+  );
+
+  return (
+    <section
+      className={`${styles.panel} ${styles.panelCompare}`}
+      aria-labelledby="route-planner-heading"
+      data-testid="plan-journey"
+      data-layout="compare"
+    >
+      <header className={styles.compareHead}>
+        <h1 className={styles.compareTitle} id="route-planner-heading">
+          <span className={styles.titleMark} aria-hidden="true">
+            <Icon name="planner-route" />
+          </span>
+          Route Planner
+        </h1>
+        <span className={styles.compareHeadEnd}>
+          <span className={styles.compareRegion}>{shortRegionName(regionName)}</span>
+          <ClearJourney onClearAll={props.onClearAll} />
+        </span>
+      </header>
+
+      <JourneyFields {...props} />
+      {answerFirst ? (
+        // A window shorter than the frame: the answer before the controls
+        // that change it, so both routes are on screen without scrolling.
+        <>
+          {answer}
+          <ProfileControls {...props} />
+        </>
+      ) : (
+        <>
+          <ProfileControls {...props} />
+          {answer}
+        </>
+      )}
     </section>
   );
 }

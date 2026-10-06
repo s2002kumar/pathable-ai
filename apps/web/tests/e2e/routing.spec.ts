@@ -59,6 +59,9 @@ test.describe('route comparison', () => {
   });
 
   test('states the trade-off and the reason that decided it', async ({ page }) => {
+    // At the frame's own height the dock draws all four categories; shorter
+    // windows slim it to a bar (see layout.spec.ts).
+    if (!isPhone(page)) await page.setViewportSize({ width: 1280, height: 1152 });
     await page.goto(PLANNER);
     await waitForMapReady(page);
     await chooseTwoPoints(page);

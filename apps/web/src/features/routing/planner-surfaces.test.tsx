@@ -253,6 +253,33 @@ describe('the evidence dock', () => {
   });
 });
 
+describe('the evidence dock on a shorter window', () => {
+  it('slims to its title and both ways in, without the columns', async () => {
+    const user = userEvent.setup();
+    const onViewEvidence = vi.fn();
+    render(
+      <EvidenceDock
+        route={accessible}
+        other={shortest}
+        rules={STEP_FREE}
+        profileName="Wheelchair"
+        onRouteDetails={() => {}}
+        onViewEvidence={onViewEvidence}
+        compact
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Why this route is different' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('dock-stairs')).not.toBeInTheDocument();
+    expect(screen.getByTestId('evidence-dock')).toHaveAttribute('data-compact', 'true');
+    await user.click(screen.getByTestId('view-evidence'));
+    expect(onViewEvidence).toHaveBeenCalledOnce();
+    expect(screen.getByTestId('open-route-details')).toBeInTheDocument();
+  });
+});
+
 describe('the data-gap dock', () => {
   const gappy = route(
     [

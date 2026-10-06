@@ -155,15 +155,6 @@
   text-decoration: underline;
 }
 
-/* A short laptop window: the dock would cover most of the map, so it joins
-   the panel's column instead of floating over the routes. */
-@media (min-width: 720px) and (min-height: 600px) and (max-height: 760px) {
-  .dockArea[data-layout='compare'] {
-    left: calc(410px + 2 * var(--panel-gap));
-    right: var(--panel-gap);
-  }
-}
-
 /* ---------------------------------------------------------------------------
  * Phone, or too short to float: a document. Map first, then everything that
  * explains it.

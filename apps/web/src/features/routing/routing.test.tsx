@@ -456,6 +456,26 @@ describe('RoutePlanner', () => {
     expect(props.onCompare).toHaveBeenCalledOnce();
   });
 
+  it('on a window shorter than the frame, puts the answer before the controls that change it', () => {
+    const { unmount } = renderPlanner();
+    const follows = (first: Element, second: Element) =>
+      Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
+    // The frame's order: profiles, then the two routes.
+    expect(
+      follows(screen.getByTestId('mobility-profile'), screen.getByTestId('route-difference')),
+    ).toBe(true);
+    unmount();
+
+    renderPlanner({ answerFirst: true });
+    // Reading order and visual order agree: the routes come first for both.
+    expect(
+      follows(screen.getByTestId('route-difference'), screen.getByTestId('mobility-profile')),
+    ).toBe(true);
+    expect(
+      follows(screen.getByTestId('endpoint-destination'), screen.getByTestId('route-difference')),
+    ).toBe(true);
+  });
+
   it('offers no Compare button beside an answer that is still current', () => {
     renderPlanner();
 
