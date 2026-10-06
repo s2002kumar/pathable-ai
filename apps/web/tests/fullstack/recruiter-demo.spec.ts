@@ -144,12 +144,15 @@ test.describe('the recruiter demo', () => {
     await openPlanner(page);
     await runExample(page);
 
-    // The four categories against the shortest route, each with its label.
-    await expect(page.getByTestId('dock-stairs')).toContainText('Recorded · OSM');
-    await expect(page.getByTestId('dock-stairs')).toContainText('Your profile rule');
-    await expect(page.getByTestId('dock-grade')).toContainText(/Recorded · OSM|Derived · HRDEM/);
-    const dock = page.getByTestId('evidence-dock');
-    await expect(dock).not.toContainText(/\b(verified|safe|guaranteed|confident|score)\b/i);
+    // The four categories of the profile's route, each with its label. On this
+    // 900 px window the comparison's dock is a slim bar, so they are read where
+    // View Evidence opens them.
+    await page.getByTestId('view-evidence').click();
+    await expect(page.getByTestId('gap-stairs')).toContainText('Recorded · OSM');
+    await expect(page.getByTestId('gap-stairs')).toContainText('Your profile rule');
+    await expect(page.getByTestId('gap-grade')).toContainText(/Recorded · OSM|Derived · HRDEM/);
+    const dock = page.getByTestId('gap-dock');
+    await expect(dock).not.toContainText(/\b(verified|safe|guaranteed|confident)\b/i);
 
     // The full record: every statement's label comes from its basis. A reason
     // about missing records is never labelled as a recorded one (D6).
@@ -171,14 +174,16 @@ test.describe('the recruiter demo', () => {
     await openPlanner(page);
     await runExample(page);
 
-    // Per category, never as one figure: the surface record says how much of
-    // the route has no surface on record.
-    const surface = page.getByTestId('dock-surface');
-    await expect(surface).toContainText(/not recorded/);
-    await expect(surface).toBeInViewport({ ratio: 1 });
+    // Per category, never as one figure: the profile route's card says how
+    // much of it has a surface on record, beside the two routes.
+    const card = page.getByTestId('difference-accessible');
+    await expect(card).toContainText(/Surface\s*\d+% Recorded/);
+    await expect(card).toBeInViewport({ ratio: 1 });
 
     // And the route's own record is one press away, with its gaps drawn.
     await page.getByTestId('view-evidence').click();
+    await expect(page.getByTestId('gap-surface')).toContainText('Not recorded');
+    await expect(page.getByTestId('gap-surface')).toBeInViewport({ ratio: 1 });
     await expect(page.getByTestId('gap-banner')).toContainText(
       'Route found with accessibility data gaps',
     );
