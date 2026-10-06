@@ -21,6 +21,13 @@ export type PanelFit = {
    * under the panel with it, which a 320 px browser test caught.
    */
   readonly inset: PanelInset;
+  /**
+   * How far a docked surface along the bottom of the map reaches up into it,
+   * or 0 with none. The evidence dock is drawn across the foot of the map on a
+   * desktop, so the route is framed above it and the map's credit lifted clear
+   * of it.
+   */
+  readonly dockInset: number;
 };
 
 function rectOf(element: Element | null): Rect | null {
@@ -33,6 +40,7 @@ function sameFit(a: PanelFit, b: PanelFit): boolean {
   return (
     a.inset.side === b.inset.side &&
     a.inset.amount === b.inset.amount &&
+    a.dockInset === b.dockInset &&
     a.padding.top === b.padding.top &&
     a.padding.bottom === b.padding.bottom &&
     a.padding.left === b.padding.left &&
@@ -60,34 +68,49 @@ function sameFit(a: PanelFit, b: PanelFit): boolean {
 export function usePanelFit(
   mapRef: RefObject<HTMLElement | null>,
   panelRef: RefObject<HTMLElement | null>,
+  dockRef?: RefObject<HTMLElement | null>,
+  /** Changes whenever the dock appears, disappears or changes shape. */
+  dockKey?: string,
 ): PanelFit {
   const [fit, setFit] = useState<PanelFit>({
     padding: { ...FIT_PADDING },
     inset: NO_PANEL_INSET,
+    dockInset: 0,
   });
 
   const measure = useCallback(() => {
     const map = rectOf(mapRef.current);
     const panel = rectOf(panelRef.current);
+    const dock = rectOf(dockRef?.current ?? null);
+    const dockInset =
+      map !== null && dock !== null && dock.top < map.bottom && dock.bottom > map.top
+        ? Math.max(0, map.bottom - dock.top)
+        : 0;
     const next = {
-      padding: paddingForPanel(map, panel),
+      padding: paddingForPanel(map, panel, {
+        ...FIT_PADDING,
+        bottom: FIT_PADDING.bottom + dockInset,
+      }),
       inset: panelInset(map, panel),
+      dockInset,
     };
     setFit((current) => (sameFit(current, next) ? current : next));
-  }, [mapRef, panelRef]);
+  }, [mapRef, panelRef, dockRef]);
 
   useEffect(() => {
     measure();
 
     const map = mapRef.current;
     const panel = panelRef.current;
+    const dock = dockRef?.current ?? null;
     if (typeof ResizeObserver !== 'function') return;
 
     const observer = new ResizeObserver(() => measure());
     if (map !== null) observer.observe(map);
     if (panel !== null) observer.observe(panel);
+    if (dock !== null) observer.observe(dock);
     return () => observer.disconnect();
-  }, [measure, mapRef, panelRef]);
+  }, [measure, mapRef, panelRef, dockRef, dockKey]);
 
   return fit;
 }

@@ -141,10 +141,14 @@ describe('PlaceSearch', () => {
   });
 
   it('will not submit an empty query', async () => {
+    const user = userEvent.setup();
     const fetchImpl = jsonFetch({ provider: 'nominatim', enabled: true, matches: [] });
     renderSearch(fetchImpl);
 
-    expect(screen.getByRole('button', { name: 'Search' })).toBeDisabled();
+    // No submit control until there is something to search for, and Enter on
+    // an empty field (or one holding only spaces) sends nothing.
+    expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument();
+    await user.type(screen.getByRole('searchbox'), '   {Enter}');
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 

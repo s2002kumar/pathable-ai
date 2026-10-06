@@ -7,7 +7,7 @@
  * added once and then updated, is the accessible route drawn on top, and does a
  * click reach the planner.
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -447,9 +447,8 @@ describe('route layers', () => {
 
     // Read from the segments the response marks as steps, never from a count.
     await waitFor(() => expect(map.dataOf(STAIRS_SOURCE_ID).features).toHaveLength(1));
-    expect(screen.getByTestId('legend-stairs')).toHaveTextContent(
-      'Stairway recorded in OpenStreetMap',
-    );
+    // The same fact in text, on the card of the route that uses it.
+    expect(screen.getByTestId('difference-shortest')).toHaveTextContent('1 recorded stairway');
   });
 
   it('pins what the profile rules out to the map, as text a person can read', async () => {
@@ -462,7 +461,10 @@ describe('route layers', () => {
     await compare();
 
     const barrier = await screen.findByTestId('map-marker-barrier-steps');
-    expect(barrier).toHaveTextContent('Ruled out: 1 stairway');
+    expect(barrier).toHaveTextContent('1 recorded stairway');
+    // Where the fact came from, and what it means for this profile.
+    expect(barrier).toHaveTextContent('Recorded · OSM');
+    expect(barrier).toHaveTextContent('14 recorded steps · shortest route, ruled out');
     // Placed at the stairway's own segment, not somewhere on the route.
     const anchor = barrier.parentElement as HTMLElement;
     expect(anchor.style.transform).toBe('translate(463px, 530px)');
@@ -477,8 +479,8 @@ describe('route layers', () => {
     render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
     await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
 
-    // Nothing to frame, nothing offered.
-    expect(screen.queryByTestId('fit-routes')).not.toBeInTheDocument();
+    // Nothing to frame, so the control is there but cannot be pressed.
+    expect(screen.getByTestId('fit-routes')).toBeDisabled();
 
     const map = FakeMap.instances[0]!;
     await clickMap(map, -80.54, 43.47);
@@ -510,7 +512,7 @@ describe('route layers', () => {
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
 
-    await user.click(screen.getByRole('radio', { name: 'Crutches or cane' }));
+    await user.click(screen.getByRole('radio', { name: /^Crutches or cane/ }));
     await waitFor(() =>
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
@@ -617,7 +619,7 @@ describe('choosing points on the map', () => {
     await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(1));
 
     await act(async () => {
-      screen.getByRole('radio', { name: 'Crutches or cane' }).click();
+      screen.getByRole('radio', { name: /^Crutches or cane/ }).click();
     });
 
     await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(2));
@@ -625,7 +627,31 @@ describe('choosing points on the map', () => {
     expect(JSON.parse(String(init.body)).profile).toBe('crutches');
   });
 
-  it('re-runs with the traveller’s own uphill limit, exactly as typed', async () => {
+  it('sends a limit typed on the planning form exactly as typed', async () => {
+    const user = userEvent.setup();
+    const fetchImpl = respondWithComparison();
+    render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+
+    // Turning it on with no number yet leaves nothing that could be sent.
+    await user.click(screen.getByTestId('uphill-limit-toggle'));
+    expect(screen.getByTestId('compare-routes')).toBeDisabled();
+
+    await user.type(screen.getByTestId('uphill-limit-input'), '6.25');
+    expect(compareCalls(fetchImpl)).toHaveLength(0);
+    await compare();
+
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(1));
+    const body = JSON.parse(String(compareCalls(fetchImpl)[0]![1].body));
+    expect(body.profile).toBe('custom');
+    expect(body.custom).toEqual({ base: 'wheelchair', max_incline_percent: 6.25 });
+  });
+
+  it('re-runs beside an answer once the limit is set, not while it is dragged', async () => {
     const user = userEvent.setup();
     const fetchImpl = respondWithComparison();
     render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
@@ -635,29 +661,42 @@ describe('choosing points on the map', () => {
     await clickMap(map, -80.54, 43.47);
     await clickMap(map, -80.536, 43.47);
     await compare();
-    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(1));
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
     // Off by default: the first request is the preset, with no limit at all.
     expect(JSON.parse(String(compareCalls(fetchImpl)[0]![1].body))).not.toHaveProperty('custom');
 
-    // Turning it on with no number yet asks for nothing.
+    // Turning it on is a decision, and runs at once with the value on show.
     await user.click(screen.getByTestId('uphill-limit-toggle'));
-    expect(compareCalls(fetchImpl)).toHaveLength(1);
-    expect(screen.getByTestId('compare-routes')).toBeDisabled();
-
-    // Typing waits for the number to be finished: Enter or leaving the field.
-    await user.type(screen.getByTestId('uphill-limit-input'), '6.25');
-    expect(compareCalls(fetchImpl)).toHaveLength(1);
-    await user.keyboard('{Enter}');
-
     await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(2));
-    const body = JSON.parse(String(compareCalls(fetchImpl)[1]![1].body));
-    expect(body.profile).toBe('custom');
-    expect(body.custom).toEqual({ base: 'wheelchair', max_incline_percent: 6.25 });
+    expect(JSON.parse(String(compareCalls(fetchImpl)[1]![1].body)).custom).toEqual({
+      base: 'wheelchair',
+      max_incline_percent: 5,
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
+
+    // A drag is many changes and one decision: nothing is sent until it ends.
+    const range = screen.getByTestId('uphill-limit-range');
+    fireEvent.change(range, { target: { value: '7.5' } });
+    fireEvent.change(range, { target: { value: '8' } });
+    expect(compareCalls(fetchImpl)).toHaveLength(2);
+    fireEvent.pointerUp(range);
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(3));
+    expect(JSON.parse(String(compareCalls(fetchImpl)[2]![1].body)).custom).toEqual({
+      base: 'wheelchair',
+      max_incline_percent: 8,
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
+    );
 
     // And off again is the preset again.
     await user.click(screen.getByTestId('uphill-limit-toggle'));
-    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(3));
-    expect(JSON.parse(String(compareCalls(fetchImpl)[2]![1].body)).profile).toBe('wheelchair');
+    await waitFor(() => expect(compareCalls(fetchImpl)).toHaveLength(4));
+    expect(JSON.parse(String(compareCalls(fetchImpl)[3]![1].body)).profile).toBe('wheelchair');
   });
 
   it('clears both points and the drawn routes', async () => {

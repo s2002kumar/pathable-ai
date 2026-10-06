@@ -1,0 +1,25 @@
+/* 64 px bar, the map, 64 px credit line — one viewport, nothing scrolls. */
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 560px;
+  background: var(--color-ink);
+}
+
+.main {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* A phone, or a window too short to float panels over the map, reads the
+   planner as a document: the page scrolls, the map leads. */
+@media (max-width: 719px), (max-height: 599px) {
+  .shell {
+    height: auto;
+    min-height: 100dvh;
+  }
+}

@@ -6,13 +6,14 @@
  * rounded away, "everything recorded" over a derived gradient — and the words
  * the page uses instead.
  */
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Route, RouteCompareResponse } from '@pathable/contracts';
+import { comparison as fixtureComparison } from '@/test/route-fixtures';
 import { RouteComparisonView } from './RouteComparisonView';
 import { RouteDifference } from './RouteDifference';
-import { RoutePlanner } from './RoutePlanner';
+import { RouteWorkspace } from './RouteWorkspace';
 import {
   DISPLAY_EQUAL_BELOW_M,
   differenceIsBelowDisplayPrecision,
@@ -378,8 +379,52 @@ describe('what the uncertainty line may claim', () => {
   });
 });
 
-describe('editing the journey from the result', () => {
+/**
+ * From "no route" (17:4041) back to the controls. The answer stays; only the
+ * panel changes, and focus lands on the control the button named.
+ */
+describe('editing the journey from a result with no route', () => {
   const scrollIntoView = vi.fn();
+  const NO_ROUTE = fixtureComparison({
+    accessible_route: null,
+    accessible_failure: 'No route satisfies the wheelchair profile.',
+    extra_distance_m: null,
+    extra_distance_fraction: null,
+    explanations: [],
+  });
+
+  function compareCalls(fetchImpl: ReturnType<typeof vi.fn>) {
+    return fetchImpl.mock.calls.filter(([url]) => String(url).endsWith('/routes/compare'));
+  }
+
+  async function renderNoRoute() {
+    const fetchImpl = vi.fn(async (url: string) =>
+      String(url).endsWith('/routes/compare')
+        ? new Response(JSON.stringify(NO_ROUTE), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        : new Response('{}', { status: 503 }),
+    );
+    render(
+      <RouteWorkspace
+        apiBaseUrl="http://api.test"
+        region="waterloo"
+        mapStyleUrl="/map-styles/offline-test-style.json"
+        centerLat={43.4668}
+        centerLon={-80.5164}
+        zoom={14}
+        regionName="Waterloo, Ontario"
+        attribution="© OpenStreetMap contributors"
+        fetchImpl={fetchImpl as unknown as typeof fetch}
+        initialExample={CAMPUS_EXAMPLE}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('plan-journey')).toHaveAttribute('data-layout', 'no-route'),
+    );
+    return fetchImpl;
+  }
 
   beforeEach(() => {
     Element.prototype.scrollIntoView = scrollIntoView;
@@ -387,91 +432,45 @@ describe('editing the journey from the result', () => {
 
   afterEach(() => {
     scrollIntoView.mockReset();
+    vi.unstubAllGlobals();
   });
 
-  it('moves focus to the planning controls without touching the comparison', async () => {
+  it('moves focus to the profile without touching the answer', async () => {
     const user = userEvent.setup();
-    const onProfileChange = vi.fn();
-    const onClearPoints = vi.fn();
-    render(
-      <RoutePlanner
-        points={{ origin: ORIGIN, destination: DESTINATION }}
-        profileKey="wheelchair"
-        state={{
-          status: 'success',
-          comparison: comparison(route({ distance_m: 287.4 }), route({ distance_m: 354.1 }), 66.67),
-        }}
-        apiBaseUrl="http://api.test"
-        region="waterloo"
-        example={CAMPUS_EXAMPLE}
-        exampleActive
-        canCompare
-        pendingEdits={false}
-        pickTarget={null}
-        submittedSummary="Davis Centre library to Student Life Centre"
-        onRunExample={() => {}}
-        onProfileChange={onProfileChange}
-        onCompare={() => {}}
-        onClearPoint={onClearPoints}
-        onClearAll={onClearPoints}
-        onSwapPoints={() => {}}
-        onRetry={() => {}}
-        onPickOnMap={() => {}}
-        onSelectPlace={() => {}}
-      />,
-    );
+    const fetchImpl = await renderNoRoute();
 
-    const edit = screen.getByRole('button', { name: /edit journey or profile/i });
-    edit.focus();
-    await user.keyboard('{Enter}');
+    await user.click(screen.getByTestId('edit-profile'));
 
-    const plan = screen.getByTestId('plan-journey');
-    expect(plan).toHaveFocus();
-    expect(plan).toHaveAccessibleName(/plan a journey/i);
+    expect(screen.getByTestId('plan-journey')).toHaveAttribute('data-layout', 'compare');
+    const wheelchair = screen.getByRole('radio', { name: /^Wheelchair/ });
+    expect(wheelchair).toBeChecked();
+    expect(wheelchair).toHaveFocus();
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
 
-    // The result is still there, and nothing about the journey was reset.
-    expect(screen.getByTestId('route-difference')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(/67 m longer/);
-    expect(onProfileChange).not.toHaveBeenCalled();
-    expect(onClearPoints).not.toHaveBeenCalled();
-    expect(within(plan).getByRole('radio', { name: 'Wheelchair' })).toBeChecked();
+    // The answer is still the one on screen, and nothing was asked again.
+    expect(screen.getByTestId('no-accessible-route')).toHaveTextContent(
+      'No route meets the wheelchair profile',
+    );
+    expect(compareCalls(fetchImpl)).toHaveLength(1);
+    expect(screen.getByLabelText('Destination')).toHaveValue('Student Life Centre');
   });
 
-  it('scrolls instantly when the viewer prefers reduced motion', async () => {
+  it('moves focus to the destination, instantly under reduced motion', async () => {
     vi.stubGlobal(
       'matchMedia',
-      vi.fn((query: string) => ({ matches: query === '(prefers-reduced-motion: reduce)' })),
+      vi.fn((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      })),
     );
     const user = userEvent.setup();
-    render(
-      <RoutePlanner
-        points={{ origin: ORIGIN, destination: DESTINATION }}
-        profileKey="wheelchair"
-        state={{ status: 'success', comparison: comparison(route(), route(), 5) }}
-        apiBaseUrl="http://api.test"
-        region="waterloo"
-        example={CAMPUS_EXAMPLE}
-        exampleActive={false}
-        canCompare
-        pendingEdits={false}
-        pickTarget={null}
-        submittedSummary="Davis Centre library to Student Life Centre"
-        onRunExample={() => {}}
-        onProfileChange={() => {}}
-        onCompare={() => {}}
-        onClearPoint={() => {}}
-        onClearAll={() => {}}
-        onSwapPoints={() => {}}
-        onRetry={() => {}}
-        onPickOnMap={() => {}}
-        onSelectPlace={() => {}}
-      />,
-    );
+    await renderNoRoute();
 
-    await user.click(screen.getByTestId('edit-journey'));
+    await user.click(screen.getByTestId('change-destination'));
 
+    expect(screen.getByLabelText('Destination')).toHaveFocus();
     expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }));
-    vi.unstubAllGlobals();
   });
 });

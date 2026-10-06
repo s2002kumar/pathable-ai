@@ -1,75 +1,92 @@
+/* One endpoint field, drawn as the Golden Master draws it: a dot, a small caps
+   label over the value, and any controls inside the same surface. The field's
+   surface comes from the variant class EndpointField passes in. */
 .form {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+}
+
+.field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: var(--field-padding, 8px);
+  border-radius: var(--radius-md);
+  background: var(--field-surface, rgb(19 27 46 / 90%));
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.field:focus-within {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .label {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-}
-
-.row {
-  display: flex;
-  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--field-label-size, var(--text-xs));
+  font-weight: var(--weight-regular);
+  line-height: var(--field-label-leading, 15px);
+  letter-spacing: var(--field-label-tracking, 0.5px);
+  text-transform: uppercase;
 }
 
 .input {
-  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
-  min-height: 2.75rem;
-  padding: var(--space-2) var(--space-3);
-  font: inherit;
-  font-size: var(--text-sm);
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  transition: border-color var(--duration-fast) var(--ease-out);
+  font-size: var(--text-base);
+  line-height: 20px;
+  letter-spacing: -0.07px;
+  text-overflow: ellipsis;
 }
 
 .input::placeholder {
   color: var(--color-text-subtle);
+  opacity: 1;
 }
 
+/* The field's own ring stands in for the input's; an outline drawn around a
+   20 px-tall borderless input would sit on top of the label. */
 .input:focus-visible {
-  outline: 3px solid var(--color-focus);
+  outline: none;
+}
+
+.form:focus-within .field {
+  outline: 2px solid var(--color-focus);
   outline-offset: 1px;
 }
 
+.input::-webkit-search-cancel-button {
+  display: none;
+}
+
 .button {
+  display: flex;
   flex: 0 0 auto;
-  min-height: 2.75rem;
-  padding: var(--space-2) var(--space-4);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  color: var(--color-text-inverse);
-  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
   background: var(--color-brand);
-  border: 1px solid var(--color-brand);
-  border-radius: var(--radius-sm);
-  transition: background-color var(--duration-fast) var(--ease-out);
+  color: var(--color-on-brand);
 }
 
-.button:hover:not(:disabled) {
+.button:hover {
   background: var(--color-brand-strong);
-}
-
-.button:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-/* Inert rather than faded. Dropping a filled button to 55% opacity left white
-   text on a pale teal that was hard to read against the panel; a neutral
-   surface says "nothing to search for yet" and stays legible. */
-.button:disabled {
-  color: var(--color-text-subtle);
-  cursor: not-allowed;
-  background: var(--color-surface-sunken);
-  border-color: var(--color-border);
 }
 
 .results {
@@ -78,27 +95,33 @@
   gap: var(--space-2);
 }
 
+.results:not(:empty) {
+  padding-top: var(--space-2);
+}
+
 .note {
-  font-size: var(--text-xs);
-  line-height: var(--leading-snug);
   color: var(--color-text-subtle);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
 }
 
 .error {
   padding: var(--space-2) var(--space-3);
-  font-size: var(--text-xs);
-  color: var(--color-danger-text);
-  background: var(--color-danger-surface);
   border: 1px solid var(--color-danger-border);
   border-radius: var(--radius-sm);
+  background: var(--color-danger-surface);
+  color: var(--color-danger-text);
+  font-size: var(--text-sm);
 }
 
 .matchList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  padding: 0;
+  gap: 2px;
   margin: 0;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--color-ink);
   list-style: none;
 }
 
@@ -106,34 +129,22 @@
    page rather than navigating anywhere. */
 .match {
   width: 100%;
-  min-height: 2.75rem;
+  min-height: 2.5rem;
   padding: var(--space-2) var(--space-3);
-  font: inherit;
-  font-size: var(--text-xs);
-  line-height: var(--leading-snug);
-  color: var(--color-text);
-  text-align: left;
-  cursor: pointer;
-  background: var(--color-surface-sunken);
-  border: 1px solid var(--color-border);
+  border: 0;
   border-radius: var(--radius-sm);
-  transition: border-color var(--duration-fast) var(--ease-out);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  text-align: left;
 }
 
 .match:hover {
-  border-color: var(--color-brand-border);
+  background: var(--color-surface-high);
 }
 
-.match:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-/* The geocoding provider's own credit, shown with the results it produced.
-   Required by the data source's terms, not a nicety. */
 .attribution {
-  margin-top: var(--space-1);
-  font-size: var(--text-xs);
-  line-height: var(--leading-snug);
   color: var(--color-text-subtle);
+  font-size: var(--text-xs);
 }

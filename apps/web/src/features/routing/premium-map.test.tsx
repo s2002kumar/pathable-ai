@@ -15,6 +15,7 @@ import { RouteComparisonView } from './RouteComparisonView';
 import { RouteDifference } from './RouteDifference';
 import { RoutePlanner } from './RoutePlanner';
 import { RouteWorkspace } from './RouteWorkspace';
+import { NO_RULES } from './route-facts';
 import { CAMPUS_EXAMPLE } from './verified-example';
 
 vi.mock('maplibre-gl', () => ({
@@ -189,7 +190,7 @@ describe('choosing which route is drawn in front', () => {
     expect(screen.getByTestId('difference-accessible')).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('names the route in front in the map key, and never calls either one cleared', async () => {
+  it('keeps the dock on the profile’s route, whichever is in front, and never calls one cleared', async () => {
     const user = userEvent.setup();
     const fetchImpl = vi.fn(
       async () =>
@@ -218,22 +219,33 @@ describe('choosing which route is drawn in front', () => {
       expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success'),
     );
     // The profile's own route is in front until the viewer chooses otherwise.
-    expect(screen.getByTestId('legend-accessible')).toHaveTextContent(/in front/);
-    expect(screen.getByTestId('legend-standard')).toHaveAttribute('data-dimmed', 'true');
-    expect(screen.getByTestId('focus-note')).toHaveTextContent(
-      'Neither route is certified passable.',
+    expect(screen.getByTestId('difference-accessible')).toHaveAttribute('aria-checked', 'true');
+    const stairs = () => screen.getByTestId('dock-stairs');
+    expect(stairs()).toHaveTextContent(
+      'vs. 4 recorded stairways on shortest path (16 recorded steps).',
     );
 
+    // Bringing the shortest forward moves the map, not the dock's subject: the
+    // dock's sentences all say "on shortest path", and swapping its two routes
+    // once attributed the wheelchair route's figures to the shortest path.
     await user.click(screen.getByTestId('difference-shortest'));
-    expect(screen.getByTestId('legend-standard')).toHaveTextContent(/in front/);
-    expect(screen.getByTestId('legend-accessible')).toHaveAttribute('data-dimmed', 'true');
+    expect(screen.getByTestId('difference-shortest')).toHaveAttribute('aria-checked', 'true');
+    expect(stairs()).toHaveTextContent(
+      'vs. 4 recorded stairways on shortest path (16 recorded steps).',
+    );
+    expect(screen.getByTestId('evidence-dock')).toHaveTextContent(
+      'Comparing the wheelchair route with the shortest pedestrian route',
+    );
+    for (const id of ['plan-journey', 'evidence-dock']) {
+      expect(screen.getByTestId(id)).not.toHaveTextContent(/\bcleared\b|\bcertified\b|\bsafe\b/i);
+    }
 
     // A new request means a new comparison; a stale choice must not carry over.
-    await user.click(screen.getByRole('radio', { name: 'Crutches or cane' }));
+    await user.click(screen.getByRole('radio', { name: /^Crutches or cane/ }));
     await waitFor(() =>
-      expect(screen.getByTestId('legend-accessible')).toHaveTextContent(/in front/),
+      expect(screen.getByTestId('difference-accessible')).toHaveAttribute('aria-checked', 'true'),
     );
-    expect(screen.getByTestId('legend-standard')).not.toHaveTextContent(/in front/);
+    expect(screen.getByTestId('difference-shortest')).toHaveAttribute('aria-checked', 'false');
   });
 });
 
@@ -373,21 +385,22 @@ describe('planner guidance', () => {
   it('shows a half-finished journey as one end named and one end empty', () => {
     render(
       <RoutePlanner
+        layout="plan"
         points={{ origin: ORIGIN, destination: null }}
         profileKey="wheelchair"
         state={{ status: 'idle' }}
         apiBaseUrl="http://api.test"
         region="waterloo"
+        regionName="Waterloo, Ontario"
         example={CAMPUS_EXAMPLE}
         exampleActive={false}
         canCompare={false}
         pendingEdits={false}
         pickTarget={null}
-        submittedSummary="Davis Centre library to Student Life Centre"
+        rules={NO_RULES}
         onRunExample={() => {}}
         onProfileChange={() => {}}
         onCompare={() => {}}
-        onClearPoint={() => {}}
         onClearAll={() => {}}
         onSwapPoints={() => {}}
         onRetry={() => {}}

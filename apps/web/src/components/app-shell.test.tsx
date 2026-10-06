@@ -1,129 +1,66 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it } from 'vitest';
 import { AppHeader } from './AppHeader';
 import { ConfigurationError } from './ConfigurationError';
 
-const READY_BODY = {
-  status: 'ready',
-  service: 'pathable-api',
-  version: '0.1.0',
-  checks: {
-    database: { status: 'ok', detail: 'connected', latency_ms: 4.2 },
-    postgis: { status: 'ok', detail: 'postgis 3.5.0', latency_ms: 1.1 },
-  },
-};
+const READY = { state: 'ready', service: 'pathable-api', version: '0.1.0' } as const;
 
-const NOT_READY_BODY = {
-  status: 'not_ready',
-  service: 'pathable-api',
-  version: '0.1.0',
-  checks: {
-    database: { status: 'unavailable', detail: 'database unreachable', latency_ms: null },
-    postgis: { status: 'unavailable', detail: 'not probed', latency_ms: null },
-  },
-};
-
-function stubFetch(handler: () => Promise<Response>) {
-  vi.stubGlobal('fetch', vi.fn(handler));
-}
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-function renderHeader() {
-  return render(
-    <AppHeader
-      apiBaseUrl="http://api.test"
-      pilotRegionName="Waterloo, Ontario"
-      statusPollIntervalMs={0}
-    />,
-  );
-}
-
+/**
+ * The bar is presentational: the page probes the routing service once and
+ * hands the answer down (the planner page tests cover the probe).
+ */
 describe('AppHeader', () => {
-  it('renders the product identity', () => {
-    stubFetch(async () => jsonResponse(READY_BODY));
-
-    renderHeader();
+  it('renders the product identity, linked home', () => {
+    render(<AppHeader pilotRegionName="Waterloo, Ontario" status={READY} />);
 
     expect(screen.getByText('PathAble')).toBeInTheDocument();
-    expect(screen.getByText('Accessibility-aware pedestrian routing')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'PathAble home' })).toHaveAttribute('href', '/');
   });
 
-  it('shows the configured pilot region', () => {
-    stubFetch(async () => jsonResponse(READY_BODY));
+  it('shows the configured pilot region, shortened as the design does', () => {
+    render(<AppHeader pilotRegionName="Waterloo, Ontario" status={READY} />);
 
-    renderHeader();
-
-    expect(screen.getByTestId('pilot-region')).toHaveTextContent('Waterloo, Ontario');
+    expect(screen.getByTestId('pilot-region')).toHaveTextContent('Waterloo, ON');
   });
 
-  it('starts in a checking state before the probe resolves', () => {
-    stubFetch(async () => jsonResponse(READY_BODY));
-
-    renderHeader();
-
-    expect(screen.getByTestId('system-status')).toHaveAttribute('data-status', 'checking');
-  });
-
-  it('reports a healthy API', async () => {
-    stubFetch(async () => jsonResponse(READY_BODY));
-
-    renderHeader();
-
-    await waitFor(() =>
-      expect(screen.getByTestId('system-status')).toHaveAttribute('data-status', 'ready'),
+  it('says the service state in a word whenever it is not ready', () => {
+    const { rerender } = render(
+      <AppHeader
+        pilotRegionName="Waterloo, Ontario"
+        status={{ ...READY, state: 'preparing', detail: 'loading' }}
+      />,
     );
-    expect(screen.getByTestId('system-status')).toHaveTextContent('API online');
-    expect(screen.getByTestId('system-status')).toHaveTextContent('pathable-api v0.1.0');
-  });
+    expect(screen.getByTestId('pilot-region')).toHaveAttribute('data-status', 'preparing');
+    expect(screen.getByTestId('header-status')).toHaveTextContent('Preparing');
+    expect(screen.getByTestId('header-status')).not.toHaveClass('visually-hidden');
 
-  it('reports an unavailable API', async () => {
-    stubFetch(async () => {
-      throw new TypeError('Failed to fetch');
-    });
-
-    renderHeader();
-
-    await waitFor(() =>
-      expect(screen.getByTestId('system-status')).toHaveAttribute('data-status', 'unreachable'),
+    rerender(
+      <AppHeader
+        pilotRegionName="Waterloo, Ontario"
+        status={{ state: 'unreachable', reason: 'Failed to fetch' }}
+      />,
     );
-    expect(screen.getByTestId('system-status')).toHaveTextContent('API offline');
+    expect(screen.getByTestId('header-status')).toHaveTextContent('Offline');
   });
 
-  it('distinguishes a degraded backend from an offline one', async () => {
-    stubFetch(async () => jsonResponse(NOT_READY_BODY, 503));
-
-    renderHeader();
-
-    await waitFor(() =>
-      expect(screen.getByTestId('system-status')).toHaveAttribute('data-status', 'degraded'),
+  it('sends the search shortcut to the planner’s start field', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <AppHeader pilotRegionName="Waterloo, Ontario" status={READY} searchTargetId="start" />
+        <input id="start" aria-label="Start location" />
+      </>,
     );
-    expect(screen.getByTestId('system-status')).toHaveTextContent('API degraded');
-    expect(screen.getByTestId('system-status')).toHaveTextContent('database and PostGIS');
+
+    await user.click(screen.getByTestId('header-search'));
+    expect(screen.getByLabelText('Start location')).toHaveFocus();
   });
 
-  it('announces status changes politely rather than interrupting', async () => {
-    stubFetch(async () => jsonResponse(READY_BODY));
+  it('offers no search shortcut where there is no field to send it to', () => {
+    render(<AppHeader pilotRegionName="Waterloo, Ontario" status={READY} />);
 
-    renderHeader();
-
-    const badge = screen.getByTestId('system-status');
-    expect(badge).toHaveAttribute('role', 'status');
-    expect(badge).toHaveAttribute('aria-live', 'polite');
-  });
-
-  it('states the status in words, not colour alone', async () => {
-    stubFetch(async () => jsonResponse(NOT_READY_BODY, 503));
-
-    renderHeader();
-
-    // The dot is decorative; the text carries the meaning.
-    await waitFor(() => expect(screen.getByText(/API degraded/)).toBeInTheDocument());
+    expect(screen.queryByTestId('header-search')).not.toBeInTheDocument();
   });
 });
 
