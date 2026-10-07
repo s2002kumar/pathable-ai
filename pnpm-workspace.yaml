@@ -43,6 +43,23 @@ overrides:
   "brace-expansion@>=4.0.0 <5.0.11": "^5.0.11"
   "source-map-js@>=1.0.0 <1.2.2": "^1.2.2"
 
+# Accepted advisories. Each entry is one GHSA id, never a class of advisories:
+# `pnpm audit` still fails on anything else, unfixable or not.
+#
+# GHSA-vfj7-8cjw-p6xm (high): braces <= 3.0.3. Accepted 2026-10-06 by the
+# founder. There is no patched release to move to: the advisory names 3.0.4,
+# but npm's latest braces is 3.0.3 and GitHub's advisory lists no patched
+# version. It reaches us only through a devDependency used for lint, as
+# eslint-config-next -> @next/eslint-plugin-next -> fast-glob -> micromatch ->
+# braces, so it runs only when ESLint runs over our own source tree. Nothing
+# in the production build or runtime loads it.
+#
+# Remove this entry as soon as a patched braces can be installed: a release
+# >= 3.0.4 on npm, or an @next/eslint-plugin-next that no longer depends on it.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
+
 allowBuilds:
   # Native module resolver used by eslint-plugin-import-x (via eslint-config-next).
   # Without its build step, `pnpm lint` fails to resolve any import.
