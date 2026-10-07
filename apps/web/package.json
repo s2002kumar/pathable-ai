@@ -24,7 +24,7 @@
     "@fontsource-variable/jetbrains-mono": "5.3.0",
     "@pathable/contracts": "workspace:*",
     "maplibre-gl": "6.7.0",
-    "next": "16.3.6",
+    "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "4.4.3"
@@ -41,7 +41,7 @@
     "@vitejs/plugin-react": "6.0.5",
     "@vitest/coverage-v8": "4.1.11",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.3.8",
     "jsdom": "30.0.1",
     "typescript": "5.9.3",
     "vitest": "4.1.11"
