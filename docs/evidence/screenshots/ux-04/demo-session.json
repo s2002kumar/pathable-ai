@@ -1,57 +1,57 @@
 {
-  "recordedAt": "2026-10-06T03:23:21.301Z",
+  "recordedAt": "2026-10-07T01:35:47.172Z",
   "viewport": {
     "width": 1280,
     "height": 800
   },
-  "sessionSeconds": 62.57,
+  "sessionSeconds": 63.975,
   "marks": [
     {
-      "at": 0.001,
+      "at": 0.002,
       "step": "landing"
     },
     {
-      "at": 14.056,
+      "at": 14.42,
       "step": "planner"
     },
     {
-      "at": 18.814,
+      "at": 19.423,
       "step": "verified example"
     },
     {
-      "at": 18.878,
+      "at": 19.498,
       "step": "request sent"
     },
     {
-      "at": 18.951,
+      "at": 19.956,
       "step": "response received"
     },
     {
-      "at": 19.046,
+      "at": 20.068,
       "step": "comparison"
     },
     {
-      "at": 26.06,
+      "at": 27.078,
       "step": "recorded stairs"
     },
     {
-      "at": 33.655,
+      "at": 34.702,
       "step": "evidence"
     },
     {
-      "at": 37.763,
+      "at": 38.938,
       "step": "missing evidence"
     },
     {
-      "at": 42.31,
+      "at": 43.489,
       "step": "derived elevation"
     },
     {
-      "at": 46.859,
+      "at": 48.04,
       "step": "details"
     },
     {
-      "at": 62.012,
+      "at": 63.236,
       "step": "stop"
     }
   ],

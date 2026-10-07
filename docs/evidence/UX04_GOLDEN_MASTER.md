@@ -95,6 +95,14 @@ viewer's location, so:
   use the phone's document flow; floating surfaces left the panel no room.
 - **Every new layout opens at the panel's top**, rather than at the scroll
   position the planning form was left at.
+- **The camera re-frames the routes for each view**, measured as it moves, so
+  one route's evidence is framed clear of its own gap dock rather than the
+  comparison's slimmer one.
+- **A place name moves to its point's left** where the right, as the frames
+  draw it, would run under the map's controls or off the map. On a phone the
+  origin lands at the map's right edge, beside the controls. An evidence label
+  that would sit under a control is hidden, as one that would cover another
+  label already is.
 
 ### Rendering
 
@@ -122,11 +130,18 @@ recorded or Your profile rule.
 
 ## Evidence
 
-Captured on 2026-10-06 from the local production envelope: the API and web
-production images built from this branch at `b27d441`, the Waterloo dataset
+Captured from the local production envelope: the Waterloo dataset
 `51585450-8ff5-409d-a02e-66d5a3c5e260` (checksum `51e75f78…`, OpenStreetMap
 published 2026-08-16), routing policy 2, NRCan HRDEM 1 m elevation. Nothing is
 stubbed. Not a deployment: everything ran on one laptop at `localhost`.
+
+- 2026-10-06, API and web images built at `b27d441`: all seven states.
+- 2026-10-07 (UTC), web image rebuilt at `1bcad0d`, the API image unchanged
+  (nothing under `services/` changed in between): the four states the two
+  layout fixes above change — 9:1905, 17:3789, 17:4041, 17:2865 — their
+  side-by-sides, and the demo. The landing and planning states draw no route
+  and no place name, so they were left as captured. `observations.json` gives
+  each state's own capture time; the API's answers did not change.
 
 - `screenshots/ux-04/*.png` — each state at its frame's size, from
   `apps/web/tests/screenshots/ux-04-states.spec.ts`. `observations.json`
@@ -137,10 +152,14 @@ stubbed. Not a deployment: everything ran on one laptop at `localhost`.
   at 1280 × 800, VP8, not edited: landing → Explore Planner → the verified
   example → the comparison → the shortest route's recorded stairs → one
   route's evidence (what is not recorded, the grade derived from HRDEM) →
-  Route Details → stop. `screenshots/ux-04/demo-session.json` gives the time of
-  each step and what the API returned. The recording renders on the machine's
-  GPU: under the suite's software renderer, the recorder stalled the page for
-  tens of seconds, which is not what a viewer sees.
+  Route Details → stop. 63.7 s, 5,874,992 bytes. `screenshots/ux-04/demo-session.json`
+  gives the time of each step and what the API returned. The recording renders
+  on the machine's GPU: under the suite's software renderer, the recorder
+  stalled the page for tens of seconds, which is not what a viewer sees.
+- `media/pathable-ux04-demo-comparison.png` — one frame of that recording, at
+  25.5 s, the comparison on screen: decoded from the WebM by seeking a video
+  element in Chromium and drawing it to a canvas, nothing else done to it. The
+  README shows it, because GitHub will not play a video that size inline.
 
 The map frames carry the credits the media needs: © OpenStreetMap
 contributors, OpenFreeMap © OpenMapTiles, and, in the credit line, the Open
