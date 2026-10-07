@@ -65,6 +65,9 @@ jobs:
         # foundation with no user data and no deployment does not benefit from a
         # red build over a low-severity transitive advisory, and a permanently
         # red pipeline teaches people to ignore it.
+        #
+        # Advisories accepted by id, with their reason and removal condition,
+        # are in pnpm-workspace.yaml under auditConfig.ignoreGhsas.
         run: pnpm audit --audit-level high
 
       - name: Report all advisories for visibility

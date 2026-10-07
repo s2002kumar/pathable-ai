@@ -32,11 +32,11 @@ export const MAP_INIT_TIMEOUT_MS = 30_000;
 
 export const MAP_ERROR_MESSAGE =
   'The map could not be loaded. This is usually a network problem or an unreachable ' +
-  'map style. The pilot area is described in text below.';
+  'map style. You can still name both ends in the planner; every answer is given in text.';
 
 export const MAP_TIMEOUT_MESSAGE =
-  'The map is taking longer than expected to load and may be unavailable. The pilot ' +
-  'area is described in text below.';
+  'The map is taking longer than expected to load and may be unavailable. You can ' +
+  'still name both ends in the planner; every answer is given in text.';
 
 /** True once the map has reached a state that will not change on its own. */
 export function isTerminal(status: MapStatus): boolean {

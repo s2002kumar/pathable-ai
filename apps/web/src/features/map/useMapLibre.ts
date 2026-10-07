@@ -45,6 +45,9 @@ export type MapInstance = {
   readonly remove: () => void;
   /** Screen position of a coordinate; used to place evidence labels over the map. */
   readonly project?: (lngLat: [number, number]) => { x: number; y: number };
+  readonly zoomIn?: () => void;
+  readonly zoomOut?: () => void;
+  readonly resetNorth?: () => void;
 };
 
 export type UseMapLibreResult = {
@@ -138,11 +141,8 @@ export function useMapLibre({
           new maplibre.AttributionControl({ compact: false, customAttribution: attribution }),
           'bottom-right',
         );
-        instance.addControl(
-          new maplibre.NavigationControl({ showCompass: false, visualizePitch: false }),
-          'top-right',
-        );
-        instance.addControl(new maplibre.ScaleControl({ unit: 'metric' }), 'bottom-left');
+        // Zoom and fit are PathAble's own controls (MapControls), drawn to the
+        // Golden Master; MapLibre's navigation and scale chrome is not added.
 
         instance.on('load', () => {
           if (cancelled) return;

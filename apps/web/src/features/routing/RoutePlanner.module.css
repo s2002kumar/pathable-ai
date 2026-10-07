@@ -1132,7 +1132,7 @@ button.option .optionHead {
 }
 
 .categoryChip[data-category='stairs'] {
-  color: #15283a;
+  color: var(--color-barrier);
   background: var(--color-stairs-soft);
 }
 

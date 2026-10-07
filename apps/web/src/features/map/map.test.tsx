@@ -83,10 +83,12 @@ describe('MapStatusOverlay', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading the map');
   });
 
-  it('points at the written description while loading', () => {
+  it('says the planner works without the map while it loads', () => {
+    // The written pilot description is for assistive technology; what a
+    // sighted viewer can use without the map is the planner itself.
     render(<MapStatusOverlay status={INITIAL_MAP_STATUS} />);
 
-    expect(screen.getByRole('status')).toHaveTextContent('written description');
+    expect(screen.getByRole('status')).toHaveTextContent('every answer is given in text');
   });
 
   it('renders nothing once the map is ready', () => {

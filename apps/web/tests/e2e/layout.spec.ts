@@ -1,7 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+  PLANNER,
   hasHorizontalOverflow,
+  isPhone,
+  openJourneyControls,
+  runExample,
   stubHealthyApi,
+  stubNoRoute,
   stubRouteComparison,
   waitForMapReady,
 } from './fixtures';
@@ -10,31 +15,18 @@ import {
  * The map-first layout, in a real browser.
  *
  * Unit tests can say what the panel contains; only a layout engine can say
- * where it is. These assert the two things the layout exists for — the planner
- * never covers the map, and the answer is on screen without scrolling — plus
- * the behaviours that are easy to lose in a restyle: a single map instance,
- * keyboard reach, reduced motion, and reflow at 320 px and 200% zoom.
+ * where it is. These assert what the Golden Master's layout exists for — the
+ * map is the product and the panel never hides what it must not, the answer
+ * is on screen without scrolling on a laptop — plus what is easy to lose in a
+ * restyle: one map instance, keyboard reach, reduced motion, and reflow.
  */
 
-async function runExample(page: Page): Promise<void> {
-  await page.getByTestId('run-verified-example').click();
-  await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
-}
+type Box = { x: number; y: number; width: number; height: number };
 
-/**
- * How much room is left below an element before the viewport ends.
- *
- * "It fits" is not a useful gate on its own: a layout that clears the fold by
- * one pixel here clears it by minus four on a runner whose text metrics
- * differ, which is exactly how CI caught this twice. Asserting the *slack*
- * turns a silent near-miss into a loud one.
- */
-async function roomBelow(page: Page, testId: string): Promise<number> {
-  return page.evaluate((id) => {
-    const element = document.querySelector(`[data-testid="${id}"]`);
-    if (!element) return -1;
-    return Math.round(window.innerHeight - element.getBoundingClientRect().bottom);
-  }, testId);
+function overlapArea(a: Box, b: Box): number {
+  const x = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+  const y = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+  return x * y;
 }
 
 /** Whole element inside the viewport, not merely attached and unhidden. */
@@ -47,18 +39,148 @@ async function fullyInViewport(page: Page, testId: string): Promise<boolean> {
   }, testId);
 }
 
+/**
+ * Which of these sit wholly on screen and inside the panel's visible box —
+ * not merely in the window, where an element scrolled out of the panel still
+ * counts. Elements outside the panel are judged against the window alone.
+ */
+async function visibleIn(page: Page, ids: readonly string[]): Promise<Record<string, boolean>> {
+  return page.evaluate((list) => {
+    const panel = document.querySelector('[aria-label="Route planner"]');
+    const box = panel?.getBoundingClientRect();
+    const result: Record<string, boolean> = {};
+    for (const id of list) {
+      const element = document.querySelector(`[data-testid="${id}"]`);
+      const rect = element?.getBoundingClientRect();
+      if (!element || !rect || rect.height === 0) {
+        result[id] = false;
+        continue;
+      }
+      const inPanel = panel !== null && panel !== undefined && panel.contains(element);
+      const top = inPanel && box ? Math.max(0, box.top) : 0;
+      const bottom = inPanel && box ? Math.min(window.innerHeight, box.bottom) : window.innerHeight;
+      result[id] = rect.top >= top - 1 && rect.bottom <= bottom + 1;
+    }
+    return result;
+  }, ids);
+}
+
+/** Record every map lifecycle transition from now on; a remount passes `initialising`. */
+async function watchMapLifecycle(page: Page): Promise<() => Promise<string[]>> {
+  await page.evaluate(() => {
+    const frame = document.querySelector('[data-testid="map-frame"]');
+    const states: string[] = [];
+    (window as unknown as { __mapStates: string[] }).__mapStates = states;
+    new MutationObserver(() => {
+      states.push(frame?.getAttribute('data-map-state') ?? '');
+    }).observe(frame!, { attributes: true, attributeFilter: ['data-map-state'] });
+  });
+  return () => page.evaluate(() => (window as unknown as { __mapStates: string[] }).__mapStates);
+}
+
+/** Everything drawn over the map's canvas, hidden for `routeUnderSurfaces`'s shot. */
+const OVER_THE_MAP = `
+  [data-testid="map-frame"] > :not([role="region"]),
+  .maplibregl-control-container,
+  aside[aria-label="Route planner"],
+  [data-testid="evidence-dock"],
+  [data-testid="gap-dock"] { visibility: hidden !important; opacity: 0 !important; }
+`;
+
+/**
+ * Whether the map drew anything, and how many of its pixels lie under the
+ * panel or a dock.
+ *
+ * The routes are WebGL, so no DOM box says where they are; the pixels do. The
+ * test style paints only a flat background, so with every surface over the
+ * map hidden for the shot, any pixel unlike the map's corner is a route, a
+ * stairway or an endpoint. Hidden by `visibility` and `opacity`, which move
+ * nothing; `visibility` alone left text inside them drawn.
+ */
+async function routeUnderSurfaces(page: Page): Promise<{ drawn: boolean; covered: number }> {
+  const frame = await page.getByTestId('map-frame').boundingBox();
+  if (frame === null) return { drawn: false, covered: -1 };
+  const surfaces = await page.evaluate(() =>
+    [
+      'aside[aria-label="Route planner"]',
+      '[data-testid="evidence-dock"]',
+      '[data-testid="gap-dock"]',
+    ]
+      .map((selector) => document.querySelector(selector)?.getBoundingClientRect())
+      .filter((rect): rect is DOMRect => rect !== undefined && rect.width > 0)
+      .map(({ left, top, right, bottom }) => ({ left, top, right, bottom })),
+  );
+  const shot = await page.screenshot({ clip: frame, style: OVER_THE_MAP });
+  return page.evaluate(
+    async ({ png, frame, surfaces }) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${png}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d')!;
+      context.drawImage(image, 0, 0);
+      const { data } = context.getImageData(0, 0, image.width, image.height);
+      const scale = image.width / frame.width;
+      const [r, g, b] = [data[0]!, data[1]!, data[2]!];
+      let drawn = 0;
+      let covered = 0;
+      for (let y = 0; y < image.height; y += 1) {
+        for (let x = 0; x < image.width; x += 1) {
+          const i = (y * image.width + x) * 4;
+          if (
+            Math.abs(data[i]! - r) + Math.abs(data[i + 1]! - g) + Math.abs(data[i + 2]! - b) <
+            48
+          ) {
+            continue;
+          }
+          drawn += 1;
+          const px = frame.x + x / scale;
+          const py = frame.y + y / scale;
+          if (surfaces.some((s) => px >= s.left && px < s.right && py >= s.top && py < s.bottom)) {
+            covered += 1;
+          }
+        }
+      }
+      // A route at least a few hundred pixels long, or this proves nothing.
+      return { drawn: drawn > 400 * scale * scale, covered };
+    },
+    { png: shot.toString('base64'), frame, surfaces },
+  );
+}
+
+/** Every visible label on the map whose box crosses one of the map's controls. */
+async function labelsUnderControls(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    // Found as a viewer would name them, not by the attribute the fix added.
+    const controls = [
+      ...document.querySelectorAll(
+        '[data-testid="map-controls"], [data-testid="map-frame"] [role="group"][aria-label="Map view"]',
+      ),
+    ].map((element) => element.getBoundingClientRect());
+    return [...document.querySelectorAll<HTMLElement>('[data-testid="map-evidence"] [data-pin]')]
+      .filter(
+        (label) => label.closest<HTMLElement>('[data-variant]')?.style.visibility === 'visible',
+      )
+      .filter((label) => {
+        const a = label.getBoundingClientRect();
+        return controls.some(
+          (b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom,
+        );
+      })
+      .map((label) => label.dataset.testid ?? '?');
+  });
+}
+
 test.describe('layout', () => {
   test.beforeEach(async ({ page }) => {
     await stubHealthyApi(page);
     await stubRouteComparison(page);
   });
 
-  test('the map fills the window behind the panel', async ({ page }) => {
-    // PA-UX-02A. The previous layout gave the map a column beside the planner
-    // and, below 64rem, a 34dvh strip above it. The map is the product: above
-    // the document-flow fallback it takes the whole workspace and the planner
-    // floats over it.
-    await page.goto('/');
+  test('the map runs the full width, from the bar to the credit line', async ({ page }) => {
+    await page.goto(PLANNER);
     await waitForMapReady(page);
 
     const map = await page.getByTestId('map-frame').boundingBox();
@@ -68,17 +190,27 @@ test.describe('layout', () => {
     if (map === null || viewport === null) return;
 
     expect(map.width).toBe(viewport.width);
-    // Everything but the header row.
-    expect(map.height).toBeGreaterThan(viewport.height * 0.9);
+    // Directly under the 64 px bar.
+    expect(Math.round(map.y)).toBe(64);
+    if (isPhone(page)) {
+      // 17:2865: a map band above the sheet, not a sliver.
+      expect(map.height).toBeGreaterThanOrEqual(300);
+    } else {
+      // 9:1905: everything between the bar and the credit line.
+      const footer = await page.getByTestId('attribution').boundingBox();
+      expect(footer).not.toBeNull();
+      if (footer === null) return;
+      expect(Math.abs(map.y + map.height - footer.y)).toBeLessThanOrEqual(1);
+    }
   });
 
   test('what the panel covers is published to the map chrome', async ({ page }) => {
-    // The panel floats over the map, so the map's own furniture — the scale
-    // bar, the ODbL credit, the map key — and the camera's fit padding all
-    // have to know how much of the map is behind it. That figure is measured
-    // from the panel and written to a custom property; this is the wiring
-    // between the measurement and everything that reads it.
-    await page.goto('/');
+    // The panel floats over the map, so the map's own furniture — the ODbL
+    // credit — and the camera's fit padding have to know how much of the map
+    // is behind it. That figure is measured from the panel and written to a
+    // custom property; this is the wiring between the two.
+    test.skip(isPhone(page), 'the phone sheet starts under the map rather than over it');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
 
     const measured = await page.evaluate(() => {
@@ -86,100 +218,77 @@ test.describe('layout', () => {
       const panel = document.querySelector('[aria-label="Route planner"]');
       const map = document.querySelector('[data-testid="map-frame"]');
       if (!workspace || !panel || !map) return null;
-
       const panelBox = panel.getBoundingClientRect();
       const mapBox = map.getBoundingClientRect();
-      const style = getComputedStyle(workspace);
       return {
-        insetLeft: Number.parseFloat(style.getPropertyValue('--map-inset-left')),
-        insetBottom: Number.parseFloat(style.getPropertyValue('--map-inset-bottom')),
+        insetLeft: Number.parseFloat(
+          getComputedStyle(workspace).getPropertyValue('--map-inset-left'),
+        ),
         panelReachFromLeft: panelBox.right - mapBox.left,
-        panelReachFromBottom: mapBox.bottom - panelBox.top,
       };
     });
     expect(measured).not.toBeNull();
     if (measured === null) return;
-
-    // One of the two axes is the one the panel is anchored to, and that one
-    // has to match what the panel actually covers. Rounded to whole pixels.
-    const insetLeftMatches = Math.abs(measured.insetLeft - measured.panelReachFromLeft) <= 2;
-    const insetBottomMatches = Math.abs(measured.insetBottom - measured.panelReachFromBottom) <= 2;
-    expect(insetLeftMatches || insetBottomMatches).toBe(true);
-    expect(measured.insetLeft + measured.insetBottom).toBeGreaterThan(0);
+    expect(Math.abs(measured.insetLeft - measured.panelReachFromLeft)).toBeLessThanOrEqual(2);
   });
 
-  test('the map key and the ODbL credit stay out from under the panel', async ({ page }) => {
-    // ODbL requires the credit to be visible. A full-bleed map with a panel
-    // over one edge would cover it quietly, and in exactly the screenshot
+  test('the ODbL credit stays out from under the panel, the dock and the pills', async ({
+    page,
+  }) => {
+    // ODbL requires the credit to be visible. A full-bleed map with surfaces
+    // floating over it would cover it quietly, in exactly the screenshot
     // somebody would publish.
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
-    // The map key appears with the routes it explains, so there has to be a
-    // comparison on screen before there is a key to keep clear of the panel.
     await runExample(page);
+    await page.evaluate(() => window.scrollTo(0, 0));
 
-    const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
-    const legend = await page.getByTestId('map-legend').boundingBox();
     const credit = await page.locator('.maplibregl-ctrl-attrib').boundingBox();
-    expect(panel).not.toBeNull();
-    expect(legend).not.toBeNull();
     expect(credit).not.toBeNull();
-    if (panel === null || legend === null || credit === null) return;
-
-    const overlapArea = (a: typeof panel, b: typeof panel) => {
-      const x = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
-      const y = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
-      return x * y;
-    };
-
-    expect(overlapArea(panel, legend)).toBe(0);
-    expect(overlapArea(panel, credit)).toBe(0);
+    if (credit === null) return;
     await expect(page.locator('.maplibregl-ctrl-attrib')).toBeVisible();
+
+    const covers = isPhone(page)
+      ? [page.getByRole('complementary', { name: /route planner/i })]
+      : [
+          page.getByRole('complementary', { name: /route planner/i }),
+          page.getByTestId('evidence-dock'),
+        ];
+    for (const surface of covers) {
+      const box = await surface.boundingBox();
+      expect(box).not.toBeNull();
+      if (box !== null) expect(overlapArea(box, credit)).toBe(0);
+    }
   });
 
-  test('the answer is on screen without scrolling or opening anything', async ({ page }) => {
-    await page.goto('/');
+  test('at the frame’s own size the whole comparison is on screen as drawn', async ({ page }) => {
+    // 9:1905 is 1280 × 1152: both routes in the panel, all four categories in
+    // the dock beneath, nothing scrolled.
+    test.skip(isPhone(page), 'the phone answer is a sheet under the map; see reflow');
+    await page.setViewportSize({ width: 1280, height: 1152 });
+    await page.goto(PLANNER);
     await waitForMapReady(page);
     await runExample(page);
 
-    // Both routes, the extra distance, the reason that decided it and the
-    // uncertainty line, together.
-    expect(await fullyInViewport(page, 'difference-accessible')).toBe(true);
-    expect(await fullyInViewport(page, 'difference-shortest')).toBe(true);
-    expect(await fullyInViewport(page, 'difference-extra')).toBe(true);
-    expect(await fullyInViewport(page, 'main-difference')).toBe(true);
-    expect(await fullyInViewport(page, 'uncertainty-summary')).toBe(true);
-
-    // And nothing had to be opened to see them.
-    await expect(page.getByTestId('route-provenance')).not.toHaveAttribute('open');
-  });
-
-  test('map attribution and controls stay uncovered by the legend', async ({ page }) => {
-    await page.goto('/');
-    await waitForMapReady(page);
-    await runExample(page);
-
-    const legend = await page.getByTestId('map-legend').boundingBox();
-    const attribution = await page.locator('.maplibregl-ctrl-attrib').boundingBox();
-    const zoomIn = await page.getByRole('button', { name: /zoom in/i }).boundingBox();
-    expect(legend).not.toBeNull();
-    expect(attribution).not.toBeNull();
-    expect(zoomIn).not.toBeNull();
-    if (legend === null || attribution === null || zoomIn === null) return;
-
-    const disjoint = (a: typeof legend, b: typeof legend) =>
-      a.x + a.width <= b.x ||
-      b.x + b.width <= a.x ||
-      a.y + a.height <= b.y ||
-      b.y + b.height <= a.y;
-    expect(disjoint(legend, attribution)).toBe(true);
-    expect(disjoint(legend, zoomIn)).toBe(true);
+    const ids = [
+      'difference-accessible',
+      'difference-shortest',
+      'difference-extra',
+      'main-difference',
+      'evidence-dock',
+      'dock-stairs',
+      'dock-grade',
+      'dock-crossings',
+      'dock-surface',
+    ] as const;
+    expect(await visibleIn(page, ids)).toEqual(Object.fromEntries(ids.map((id) => [id, true])));
+    expect(await page.evaluate(() => document.documentElement.scrollTop)).toBe(0);
   });
 
   test('choosing a route is keyboard-operable and never erases the comparison', async ({
     page,
   }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
     await runExample(page);
 
@@ -187,128 +296,100 @@ test.describe('layout', () => {
     const accessible = page.getByTestId('difference-accessible');
     const shortest = page.getByTestId('difference-shortest');
     await expect(accessible).toHaveAttribute('aria-checked', 'true');
+    await expect(shortest).toHaveAttribute('tabindex', '-1');
     await accessible.focus();
-    await expect(accessible).toBeFocused();
 
     await page.keyboard.press('ArrowDown');
     await expect(shortest).toHaveAttribute('aria-checked', 'true');
     await expect(shortest).toBeFocused();
-    await expect(page.getByTestId('legend-standard')).toContainText(/in front/);
-    // The other route stays on the map and in the key, and neither is cleared.
-    await expect(page.getByTestId('legend-accessible')).toBeVisible();
+    // The other route stays on screen, and nothing calls either one cleared.
     await expect(accessible).toBeVisible();
-    await expect(page.getByTestId('focus-note')).toContainText(/neither route is certified/i);
+    await expect(page.getByTestId('plan-journey')).not.toContainText(/\bcleared\b|\bcertified\b/i);
 
     await page.keyboard.press('ArrowUp');
     await expect(accessible).toHaveAttribute('aria-checked', 'true');
     await expect(accessible).toBeFocused();
   });
 
-  test('"Edit journey or profile" reaches the controls without touching the result', async ({
+  test('from "no route", Edit Profile reaches the profile without asking again', async ({
     page,
   }) => {
-    // PA-UX-01F. The answer sits above the planning controls; this is the one
-    // way back down. It moves focus and scrolls; it changes nothing else — no
-    // new request, no map reset, the same comparison still on screen.
+    await stubNoRoute(page);
     const requests: string[] = [];
     page.on('request', (request) => {
       if (request.url().includes('/api/v1/routes/compare')) requests.push(request.url());
     });
 
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
     await runExample(page);
-    const requestsAfterExample = requests.length;
-    await page.evaluate(() => {
-      const frame = document.querySelector('[data-testid="map-frame"]');
-      const states: string[] = [];
-      (window as unknown as { __mapStates: string[] }).__mapStates = states;
-      new MutationObserver(() => {
-        states.push(frame?.getAttribute('data-map-state') ?? '');
-      }).observe(frame!, { attributes: true, attributeFilter: ['data-map-state'] });
-    });
+    await expect(page.getByTestId('route-workspace')).toHaveAttribute('data-layout', 'no-route');
+    const lifecycle = await watchMapLifecycle(page);
+    const asked = requests.length;
 
-    const edit = page.getByRole('button', { name: /edit journey or profile/i });
-    await expect(edit).toBeVisible();
-    await edit.focus();
-    await page.keyboard.press('Enter');
+    await page.getByTestId('edit-profile').click();
 
-    const plan = page.getByTestId('plan-journey');
-    await expect(plan).toBeFocused();
-    await expect(plan).toBeInViewport();
-    // The next stop from the landing is a real control.
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('searchbox', { name: 'Start' })).toBeFocused();
+    await expect(page.getByTestId('route-workspace')).toHaveAttribute('data-layout', 'compare');
+    await expect(page.getByRole('radio', { name: /^Wheelchair/ })).toBeFocused();
+    await expect(page.getByRole('radio', { name: /^Wheelchair/ })).toBeInViewport();
+    // The answer is still the one asked for; nothing was asked again.
+    await expect(page.getByTestId('no-accessible-route')).toBeVisible();
+    expect(requests.length).toBe(asked);
+    expect(await lifecycle()).toEqual([]);
+  });
 
-    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
-    await expect(page.getByTestId('route-difference')).toBeAttached();
-    await expect(page.getByRole('radio', { name: 'Wheelchair', exact: true })).toBeChecked();
-    expect(requests.length).toBe(requestsAfterExample);
-    expect(
-      await page.evaluate(() => (window as unknown as { __mapStates: string[] }).__mapStates),
-    ).toEqual([]);
+  test('Change Destination goes to the destination field', async ({ page }) => {
+    await stubNoRoute(page);
+    await page.goto(PLANNER);
+    await waitForMapReady(page);
+    await runExample(page);
+
+    await page.getByTestId('change-destination').click();
+    await expect(page.getByLabel('Destination')).toBeFocused();
   });
 
   test('ordinary updates never recreate the map', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
-
-    // Record every lifecycle transition from here on. A remount would pass
-    // back through `initialising`.
-    await page.evaluate(() => {
-      const frame = document.querySelector('[data-testid="map-frame"]');
-      const states: string[] = [];
-      (window as unknown as { __mapStates: string[] }).__mapStates = states;
-      new MutationObserver(() => {
-        states.push(frame?.getAttribute('data-map-state') ?? '');
-      }).observe(frame!, { attributes: true, attributeFilter: ['data-map-state'] });
-    });
+    const lifecycle = await watchMapLifecycle(page);
 
     await runExample(page);
-    await page.getByRole('radio', { name: 'Stroller' }).check();
+    await openJourneyControls(page);
+    await page.getByRole('radio', { name: /^Stroller or pram/ }).check();
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+    await openJourneyControls(page);
     await page.getByTestId('swap-points').click();
-    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
 
-    const states = await page.evaluate(
-      () => (window as unknown as { __mapStates: string[] }).__mapStates,
-    );
-    expect(states).toEqual([]);
+    expect(await lifecycle()).toEqual([]);
   });
 
   test('reduced motion removes the transitions', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
     await runExample(page);
 
     const durations = await page.evaluate(() => {
-      const result = document.querySelector('[data-testid="route-difference"]')?.parentElement;
-      const figure = document.querySelector('[data-testid="difference-accessible"]');
+      const dock = document.querySelector('[data-testid="evidence-dock"]');
+      const card = document.querySelector('[data-testid="difference-accessible"]');
       return {
-        animation: result ? getComputedStyle(result).animationDuration : null,
-        transition: figure ? getComputedStyle(figure).transitionDuration : null,
+        animation: dock ? getComputedStyle(dock).animationDuration : '0s',
+        transition: card ? getComputedStyle(card).transitionDuration : '0s',
       };
     });
-    // 0.01ms is what the global reduced-motion rule collapses everything to;
-    // Chromium reports it as "1e-05s". Anything under a frame counts as none.
-    const seconds = (value: string) => Number.parseFloat(value);
-    expect(seconds(durations.animation ?? '1s')).toBeLessThan(0.016);
-    for (const part of (durations.transition ?? '1s').split(',')) {
-      expect(seconds(part)).toBeLessThan(0.016);
+    // The global reduced-motion rule collapses everything to 0.01ms; Chromium
+    // reports it as "1e-05s". Anything under a frame counts as none.
+    for (const part of `${durations.animation},${durations.transition}`.split(',')) {
+      expect(Number.parseFloat(part)).toBeLessThan(0.016);
     }
   });
 
-  test('the planning controls come first for the keyboard, then the example', async ({ page }) => {
-    // The panel is ordered Start → Destination → Profile → Compare → example,
-    // so the example is no longer the first meaningful stop; the controls a
-    // person came to use are. What still has to hold is that everything is
-    // reachable by Tab alone, in that order, without hunting.
-    await page.goto('/');
+  test('the planning form is walked by the keyboard in reading order', async ({ page }) => {
+    await page.goto(PLANNER);
     await waitForMapReady(page);
 
     const stops: string[] = [];
-    for (let i = 0; i < 24; i += 1) {
+    for (let i = 0; i < 40; i += 1) {
       await page.keyboard.press('Tab');
       const id = await page.evaluate(
         () => document.activeElement?.getAttribute('data-testid') ?? '',
@@ -317,19 +398,15 @@ test.describe('layout', () => {
       if (id === 'run-verified-example') break;
     }
 
-    expect(stops).toContain('run-verified-example');
-    // The order the panel reads in is the order the keyboard walks it.
     const at = (id: string) => stops.indexOf(id);
     expect(at('pick-origin')).toBeGreaterThanOrEqual(0);
     expect(at('pick-origin')).toBeLessThan(at('pick-destination'));
-    expect(at('pick-destination')).toBeLessThan(at('run-verified-example'));
+    expect(at('pick-destination')).toBeLessThan(at('uphill-limit-toggle'));
+    expect(at('uphill-limit-toggle')).toBeLessThan(at('run-verified-example'));
 
-    // Compare is deliberately absent from that walk: with no journey drafted
-    // it is disabled, and a disabled control is not a tab stop. It joins the
-    // order as soon as there is something to compare.
+    // Compare is not a stop until there is a journey: a disabled control is
+    // not focusable, and it says so rather than sending half a journey.
     await expect(page.getByTestId('compare-routes')).toBeDisabled();
-    await runExample(page);
-    await expect(page.getByTestId('compare-routes')).toBeEnabled();
   });
 });
 
@@ -339,14 +416,9 @@ test.describe('reflow', () => {
     await stubRouteComparison(page);
   });
 
-  test('an ordinary 1000 px laptop window gets the map-led layout', async ({ page }) => {
-    // The bug the founder was looking at. The two-pane desktop layout was
-    // gated at `min-width: 64rem` — 1024 px at a 16 px root — so a 1000 px
-    // window missed it by 24 px and fell all the way back to the phone
-    // composition: a 34dvh map strip above a long scrolling page. The map
-    // area measured 1000 x 287.
+  test('an ordinary 1000 px laptop window keeps the map-led layout', async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 700 });
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
     await runExample(page);
 
@@ -357,111 +429,149 @@ test.describe('reflow', () => {
     if (map === null || panel === null) return;
 
     expect(map.width).toBe(1000);
-    expect(map.height).toBeGreaterThan(600);
     // Beside the map, not stacked above a page that scrolls.
     expect(panel.width).toBeLessThan(map.width / 2);
-
-    // And the whole answer is on screen at that size, which is the point of
-    // the panel being compact rather than a full-height rail.
     expect(await fullyInViewport(page, 'difference-accessible')).toBe(true);
-    expect(await fullyInViewport(page, 'difference-shortest')).toBe(true);
-    expect(await fullyInViewport(page, 'difference-extra')).toBe(true);
-    expect(await fullyInViewport(page, 'uncertainty-summary')).toBe(true);
-    expect(await roomBelow(page, 'uncertainty-summary')).toBeGreaterThanOrEqual(24);
     expect(await hasHorizontalOverflow(page)).toBe(false);
   });
 
-  test('a phone gets the same map, with the planner as a sheet it can shut', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+  for (const size of [
+    { width: 1280, height: 800 },
+    { width: 1366, height: 768 },
+  ]) {
+    test(`a ${size.width} × ${size.height} laptop shows both routes without scrolling the panel`, async ({
+      page,
+    }) => {
+      // The comparison opened still scrolled to the form's foot, and the frame's
+      // composition left the panel too short to show the shortest route. A
+      // shorter window puts the answer first and slims the dock to one bar.
+      await page.setViewportSize(size);
+      await page.goto(PLANNER);
+      await waitForMapReady(page);
+      await runExample(page);
+
+      const ids = [
+        'difference-accessible',
+        'difference-shortest',
+        'difference-extra',
+        'main-difference',
+        'evidence-dock',
+      ] as const;
+      expect(await visibleIn(page, ids)).toEqual(Object.fromEntries(ids.map((id) => [id, true])));
+      expect(
+        await page
+          .getByRole('complementary', { name: /route planner/i })
+          .evaluate((panel) => panel.scrollTop),
+      ).toBe(0);
+
+      const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+      const dock = await page.getByTestId('evidence-dock').boundingBox();
+      expect(panel).not.toBeNull();
+      expect(dock).not.toBeNull();
+      if (panel !== null && dock !== null) expect(overlapArea(panel, dock)).toBe(0);
+      expect(await fullyInViewport(page, 'evidence-dock')).toBe(true);
+    });
+  }
+
+  test('on a 1280 × 800 laptop, one route’s evidence keeps its panel whole beside its gaps', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(PLANNER);
     await waitForMapReady(page);
     await runExample(page);
+    await page.getByTestId('view-evidence').click();
+    await expect(page.getByTestId('gap-dock')).toBeVisible();
 
-    const viewport = page.viewportSize()!;
-    const map = await page.getByTestId('map-frame').boundingBox();
-    expect(map).not.toBeNull();
-    if (map === null) return;
-    expect(map.width).toBe(viewport.width);
-    expect(map.height).toBeGreaterThan(viewport.height * 0.9);
-
-    // The whole answer, inside the sheet, without scrolling it.
-    expect(await fullyInViewport(page, 'difference-accessible')).toBe(true);
-    expect(await fullyInViewport(page, 'difference-shortest')).toBe(true);
-    expect(await fullyInViewport(page, 'difference-extra')).toBe(true);
-    expect(await fullyInViewport(page, 'uncertainty-summary')).toBe(true);
-    // With room to spare, not by a pixel. See `roomBelow`.
-    expect(await roomBelow(page, 'uncertainty-summary')).toBeGreaterThanOrEqual(24);
-
-    // The control says what it does and does it — the layout this replaced
-    // drew a grip that looked draggable and was not.
-    const toggle = page.getByTestId('sheet-toggle');
-    await expect(toggle).toBeVisible();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-
-    const open = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(toggle).toHaveText(/expand/i);
-    const shut = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
-    expect(open).not.toBeNull();
-    expect(shut).not.toBeNull();
-    if (open === null || shut === null) return;
-    expect(shut.height).toBeLessThan(open.height);
-
-    // And it opens again, with the same answer still in it.
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
-    await expect(page.getByTestId('difference-accessible')).toBeVisible();
+    const ids = ['gap-banner', 'open-route-details', 'toggle-evidence', 'gap-dock'] as const;
+    expect(await visibleIn(page, ids)).toEqual(Object.fromEntries(ids.map((id) => [id, true])));
+    const panel = await page.getByRole('complementary', { name: /route planner/i }).boundingBox();
+    const dock = await page.getByTestId('gap-dock').boundingBox();
+    expect(panel).not.toBeNull();
+    expect(dock).not.toBeNull();
+    if (panel !== null && dock !== null) expect(overlapArea(panel, dock)).toBe(0);
+    expect(await hasHorizontalOverflow(page)).toBe(false);
   });
 
-  test('an answer arriving into a shut sheet still opens it', async ({ page }) => {
-    // A shut sheet has its contents removed from the page, live region and
-    // all. Planning a journey by map click with it pulled down would otherwise
-    // compute a comparison that is announced to nobody and drawn with no
-    // figures beside it.
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+  test('on a 1280 × 800 laptop, neither the panel nor a dock covers the route', async ({
+    page,
+  }) => {
+    // Regression, PA-UX-04: one route's evidence was framed for the
+    // comparison's slim dock, and the far taller gap dock beside the panel
+    // covered most of the route. The camera is immediate under reduced motion.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(PLANNER);
     await waitForMapReady(page);
+    await runExample(page);
+    await expect(page.getByTestId('evidence-dock')).toBeVisible();
+    await expect.poll(() => routeUnderSurfaces(page)).toEqual({ drawn: true, covered: 0 });
 
-    const toggle = page.getByTestId('sheet-toggle');
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-
-    const map = await page.getByTestId('map-frame').boundingBox();
-    expect(map).not.toBeNull();
-    if (map === null) return;
-
-    // Well clear of the collapsed bar along the bottom.
-    await page.mouse.click(map.x + map.width * 0.3, map.y + map.height * 0.25);
-    await expect(page.getByTestId('endpoint-origin-value')).not.toContainText(/not set/i);
-    // Setting only the start leaves it shut: somebody who pulled the sheet
-    // down to see more map is still placing points on it.
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-
-    await page.mouse.click(map.x + map.width * 0.7, map.y + map.height * 0.35);
-
-    // Completing the pair reopens it, because Compare lives inside the sheet:
-    // a shut sheet would leave somebody with a finished journey and no way to
-    // submit it.
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await page.getByTestId('compare-routes').click();
-    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
-    await expect(page.getByTestId('difference-accessible')).toBeVisible();
+    await page.getByTestId('view-evidence').click();
+    await expect(page.getByTestId('gap-dock')).toBeVisible();
+    await expect.poll(() => routeUnderSurfaces(page)).toEqual({ drawn: true, covered: 0 });
   });
 
-  test('320 px wide, nothing overflows and everything is reachable', async ({ page }) => {
+  test('on a 390 px phone, a place name never runs under the map controls', async ({ page }) => {
+    // Regression, PA-UX-04: the origin landed near the map's right edge and
+    // its name ran underneath the controls. Moved up into the controls' band,
+    // then toward them a step at a time, each name has to move to its point's
+    // other side or give way.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(PLANNER);
+    await waitForMapReady(page);
+    await runExample(page);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.locator('.maplibregl-canvas').focus();
+    // The view moves south, so the routes move up, level with the controls.
+    await page.keyboard.press('ArrowDown');
+
+    let turned = false;
+    for (let step = 0; step < 4; step += 1) {
+      await expect.poll(() => labelsUnderControls(page)).toEqual([]);
+      turned ||= await page.evaluate(() =>
+        [
+          ...document.querySelectorAll<HTMLElement>('[data-variant="endpoint"][data-side="left"]'),
+        ].some((element) => element.style.visibility === 'visible'),
+      );
+      // The view moves west, so the routes move right, toward the controls.
+      await page.keyboard.press('ArrowLeft');
+    }
+    // Otherwise nothing above came near the controls and the test proved nothing.
+    expect(turned).toBe(true);
+  });
+
+  test('a phone opens the answer at the map, with the sheet under it', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(PLANNER);
+    await waitForMapReady(page);
+    // The example sits at the foot of the form, so the page is scrolled to press it.
+    await runExample(page);
+
+    // The answer opens at the map, not wherever the form was scrolled to.
+    await expect(page.getByTestId('map-frame')).toBeInViewport({ ratio: 0.9 });
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Wheelchair profile');
+    await expect(page.getByRole('heading', { level: 1 })).toBeInViewport();
+
+    // Both routes and the four categories follow, in reading order.
+    const order = await page.evaluate(() =>
+      ['difference-accessible', 'difference-shortest', 'mobile-stairs', 'mobile-surface'].map(
+        (id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1,
+      ),
+    );
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(await hasHorizontalOverflow(page)).toBe(false);
+  });
+
+  test('320 px wide, nothing overflows and the credit stays on the map', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
     await runExample(page);
 
     expect(await hasHorizontalOverflow(page)).toBe(false);
 
-    // The map's own attribution has to sit inside the map, not under the
-    // sheet. Regression cover: the frame's minimum height was once taller
-    // than the phone-height map area, so the frame overflowed beneath the
-    // sheet and the credit was covered on a 320 px screen.
     await page.evaluate(() => window.scrollTo(0, 0));
     const frame = await page.getByTestId('map-frame').boundingBox();
     const credit = await page.locator('.maplibregl-ctrl-attrib').boundingBox();
@@ -471,34 +581,30 @@ test.describe('reflow', () => {
     expect(sheet).not.toBeNull();
     if (frame === null || credit === null || sheet === null) return;
     expect(credit.y + credit.height).toBeLessThanOrEqual(frame.y + frame.height + 1);
-    expect(credit.y + credit.height).toBeLessThanOrEqual(sheet.y + 1);
+    expect(overlapArea(credit, sheet)).toBe(0);
 
-    await page.getByTestId('route-provenance').scrollIntoViewIfNeeded();
+    await page.getByTestId('attribution').scrollIntoViewIfNeeded();
     await expect(page.getByTestId('attribution')).toBeVisible();
-    await expect(page.locator('.maplibregl-ctrl-attrib')).toBeVisible();
   });
 
-  test('at the width 200% zoom leaves, the page falls back to document flow', async ({ page }) => {
-    // 1440 × 900 at 200% is 720 × 450 CSS pixels: too narrow for a second
-    // column and too short for a fixed two-pane grid. The page must scroll as
-    // a page, with no inner region trapping the wheel.
+  test('at the width 200% zoom leaves, everything is still reachable', async ({ page }) => {
+    // 1440 × 900 at 200% is 720 × 450 CSS pixels.
     await page.setViewportSize({ width: 720, height: 450 });
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
-    await runExample(page);
 
     expect(await hasHorizontalOverflow(page)).toBe(false);
-    const scrollable = await page.evaluate(
-      () => document.documentElement.scrollHeight > document.documentElement.clientHeight,
-    );
-    expect(scrollable).toBe(true);
     await page.getByTestId('run-verified-example').scrollIntoViewIfNeeded();
-    await expect(page.getByTestId('run-verified-example')).toBeVisible();
+    await expect(page.getByTestId('run-verified-example')).toBeInViewport();
+    await runExample(page);
+    await page.getByTestId('difference-shortest').scrollIntoViewIfNeeded();
+    await expect(page.getByTestId('difference-shortest')).toBeInViewport();
+    expect(await hasHorizontalOverflow(page)).toBe(false);
   });
 
-  test('landscape phone keeps the map and reaches the planner by scrolling', async ({ page }) => {
+  test('a landscape phone keeps the map and reaches the answer', async ({ page }) => {
     await page.setViewportSize({ width: 844, height: 390 });
-    await page.goto('/');
+    await page.goto(PLANNER);
     await waitForMapReady(page);
 
     const map = await page.getByTestId('map-frame').boundingBox();
@@ -508,7 +614,7 @@ test.describe('reflow', () => {
 
     await runExample(page);
     expect(await hasHorizontalOverflow(page)).toBe(false);
-    await page.getByTestId('uncertainty-summary').scrollIntoViewIfNeeded();
-    await expect(page.getByTestId('uncertainty-summary')).toBeVisible();
+    await page.getByTestId('difference-shortest').scrollIntoViewIfNeeded();
+    await expect(page.getByTestId('difference-shortest')).toBeInViewport();
   });
 });

@@ -5,7 +5,7 @@
  * less important label gives way rather than covering a more important one.
  */
 import { act, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type MapMarker, MapMarkers } from './MapMarkers';
 import type { MapInstance } from './useMapLibre';
 
@@ -97,5 +97,90 @@ describe('evidence labels on the map', () => {
   it('is hidden from assistive technology, which hears it in the panel', () => {
     render(<MapMarkers map={fakeMap().map} markers={[BARRIER]} />);
     expect(screen.getByTestId('map-evidence')).toHaveAttribute('aria-hidden', 'true');
+  });
+});
+
+describe('labels beside the map’s own controls', () => {
+  // Layout stand-ins for a 390 × 400 phone map: the controls' column at its
+  // right edge (Golden Master 17:2865), and every label 150 × 22 px.
+  const CONTROLS = { left: 334, top: 16, right: 374, bottom: 152 };
+
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const b = this.hasAttribute('data-map-chrome')
+        ? CONTROLS
+        : { left: 0, top: 0, right: 0, bottom: 0 };
+      return {
+        ...b,
+        width: b.right - b.left,
+        height: b.bottom - b.top,
+        x: b.left,
+        y: b.top,
+        toJSON: () => ({}),
+      };
+    });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.hasAttribute('data-pin') ? 150 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.hasAttribute('data-pin') ? 22 : 0;
+    });
+    vi.spyOn(Element.prototype, 'clientWidth', 'get').mockReturnValue(390);
+  });
+
+  function placeName(x: number, y: number): MapMarker {
+    return {
+      id: 'endpoint-origin',
+      variant: 'endpoint',
+      tone: 'origin',
+      position: [x / 10, y / 10],
+      label: 'Davis Centre library',
+      tag: 'Origin',
+    };
+  }
+
+  function renderOverControls(markers: MapMarker[]) {
+    render(
+      <div>
+        <div data-map-chrome="" />
+        <MapMarkers map={fakeMap().map} markers={markers} />
+      </div>,
+    );
+  }
+
+  it('puts a place name on the left where the right would run under the controls', () => {
+    // Regression, PA-UX-04: on a 390 px phone the origin landed near the
+    // map's right edge and its name ran underneath the controls.
+    renderOverControls([placeName(318, 72)]);
+
+    const anchor = anchorOf('map-marker-endpoint-origin');
+    expect(anchor).toHaveAttribute('data-side', 'left');
+    expect(anchor).toHaveStyle({ visibility: 'visible' });
+  });
+
+  it('puts a place name on the left where the right would run off the map', () => {
+    // Clear of the controls vertically, but 18 + 150 px right of x = 300 is
+    // past the map's 390 px edge.
+    renderOverControls([placeName(300, 300)]);
+
+    expect(anchorOf('map-marker-endpoint-origin')).toHaveAttribute('data-side', 'left');
+  });
+
+  it('keeps a place name on the right, as drawn, wherever it fits', () => {
+    renderOverControls([placeName(120, 72)]);
+
+    expect(anchorOf('map-marker-endpoint-origin')).toHaveAttribute('data-side', 'right');
+  });
+
+  it('hides an evidence pin rather than drawing it under the controls', () => {
+    renderOverControls([{ ...BARRIER, position: [35.4, 10] }]);
+
+    expect(anchorOf('map-marker-barrier-steps')).toHaveStyle({ visibility: 'hidden' });
   });
 });

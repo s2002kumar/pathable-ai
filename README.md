@@ -11,20 +11,26 @@ records: steps, surfaces, gradients, kerbs. Where nothing has been recorded, it 
 
 ## Recorded demo
 
-![One press loads a journey from the evaluation corpus. The engine answers live: 287 m with four stairways
-against 354 m with none, a banner saying OpenStreetMap records no accessibility detail for 100% of this route,
-and both routes drawn so they can be told apart without
-colour.](docs/evidence/media/pathable-demo.gif)
+![The planner at 1280 by 800 pixels, answering the verified example live: the wheelchair route, 354 m with no
+recorded stairways, beside the shortest route, 287 m with four recorded stairways that the profile rules out.
+Labels on the map mark the stairways, recorded in OpenStreetMap, and the steepest climb, derived from elevation
+data.](docs/evidence/media/pathable-ux04-demo-comparison.png)
 
-That is a real browser driving the real production containers against the real Waterloo network — thirteen
-seconds of it, from the press to the answer. No response is faked or spliced; the
+That is one frame of [`docs/evidence/media/pathable-ux04-demo.webm`](docs/evidence/media/pathable-ux04-demo.webm),
+63.7 seconds of a real browser driving the production images against the real Waterloo network, recorded by
+Playwright in one session and not edited: the landing page, the verified example computed live, the recorded
+stairs, one route's evidence — what is recorded, what is derived from elevation, what is not recorded — and the
+details sheet. The time of each step and the API's answer are in
+[`demo-session.json`](docs/evidence/screenshots/ux-04/demo-session.json). GitHub cannot preview a video that size
+in the browser, so the link downloads it.
+
+The planner's figures are the API's answer to that request; the
 [full-stack test suite](apps/web/tests/fullstack/recruiter-demo.spec.ts) watches the network and asserts that the
-figures on screen are the ones the API returned.
+figures on screen are the ones the API returned. The landing page is static, so the example it shows is one
+recorded API response, dated and with its dataset checksum, and it says so.
 
-**The whole 67-second recording** is
-[`docs/evidence/media/pathable-demo.webm`](docs/evidence/media/pathable-demo.webm) — 2.23 MB, VP9. GitHub cannot
-preview a video that size in the browser, so that link downloads it; `git clone` brings it down with everything
-else. It carries the same session through to the attribution and the per-category evidence gaps.
+The September recording of the earlier interface,
+[`pathable-demo.webm`](docs/evidence/media/pathable-demo.webm), is kept as history, not as the current demo.
 
 **This is a local production-build demo. PathAble is not deployed anywhere** — there is no live URL, no hosting
 account and no public service. Everything above runs from `docker compose` on one laptop.
@@ -42,8 +48,10 @@ live:
 **+66.67 m (23%) to avoid four stairways.** Every statement beside those numbers is tagged with the kind of claim
 it is — _recorded in OpenStreetMap_, _your profile's rules_, _derived from an elevation model_, _not recorded_ —
 because an observation, an estimate, a policy consequence and an absence are four different things, and the fourth
-must never read as the first. On this journey OpenStreetMap records **no accessibility detail for 100% of the
-route**, and the interface says so above the distances rather than below them.
+must never read as the first. On this journey **at least one assessed accessibility attribute is unrecorded along
+100% of the route** — surface condition is recorded nowhere on it. That is not the same as nothing being known:
+the four stairways are recorded, and surface type is recorded on 82% of the wheelchair route. The interface shows
+each category's gap on its own, labelled _not recorded_, and adds none of them into a score.
 
 There is **no machine learning here**. Every routing decision is a deterministic rule over recorded map
 attributes; every response carries `ml_predictions_used: false`, typed as a literal so a client cannot compile
@@ -68,14 +76,14 @@ is estimated.
 
 Counted separately on purpose — these suites overlap in what they cover, and adding them up would be a bigger
 number describing less. The counts change with every card; these are from CI run
-[36354338655](https://github.com/s2002kumar/pathable-ai/actions/runs/36354338655), on commit `72e7285`.
+[37556411163](https://github.com/s2002kumar/pathable-ai/actions/runs/37556411163), on commit `1bcad0d`.
 
-| Suite                                   | Count                                                             | Command                                                    |
-| --------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------- |
-| Backend, unit + PostGIS integration     | **1,341 passed, 1 skipped**, 88.20% coverage against an 86% floor | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
-| Frontend unit (Vitest)                  | **382 passed**, 92.46% statements against an 80% floor            | `pnpm --filter @pathable/web test:unit`                    |
-| Browser, stubbed API (Playwright + axe) | **124 passed**                                                    | `pnpm --filter @pathable/web test:e2e`                     |
-| Browser, full stack, nothing stubbed    | **7 passed, 9 skipped**: the 9 need the real Waterloo network     | `pnpm --filter @pathable/web test:e2e:fullstack`           |
+| Suite                                   | Count                                                                           | Command                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Backend, unit + PostGIS integration     | **1,418 passed, 1 skipped**, 87.85% coverage against an 86% floor               | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
+| Frontend unit (Vitest)                  | **478 passed**, 93.11% statements against an 80% floor                          | `pnpm --filter @pathable/web test:unit`                    |
+| Browser, stubbed API (Playwright + axe) | **156 passed, 2 skipped**: the 2 are desktop-only layouts, skipped on the phone | `pnpm --filter @pathable/web test:e2e`                     |
+| Browser, full stack, nothing stubbed    | **7 passed, 9 skipped**: the 9 need the real Waterloo network                   | `pnpm --filter @pathable/web test:e2e:fullstack`           |
 
 Coverage is quoted from CI, on Linux. Each platform skips one event-loop test that only applies to the other — on
 Linux, the Windows-only one — so a Windows run reports a slightly different figure. That is a platform difference,

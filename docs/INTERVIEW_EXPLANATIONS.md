@@ -20,8 +20,9 @@ interviewer is one unsupportable sentence in an otherwise good answer.
 > 354 metres with none. Sixty-seven metres to avoid four stairways.
 >
 > The part I'm proudest of isn't the routing. It's that when the map doesn't know something, the product says so
-> instead of guessing. On that same route, OpenStreetMap has no accessibility detail for 100% of it, and the
-> interface tells you that before it tells you the distances.
+> instead of guessing. On that same route, at least one accessibility attribute is unrecorded along all of it —
+> nobody has mapped the surface condition anywhere on it — even though the stairways themselves are recorded. The
+> interface shows each of those gaps by category, and never turns a gap into a clear path.
 >
 > It runs locally against a real 180,000-segment network. It isn't deployed — I have a costed hosting plan and
 > haven't spent the money.

@@ -1,47 +1,50 @@
 import { expect, test } from '@playwright/test';
-import { SCREENSHOT_DIR, hasHorizontalOverflow, stubHealthyApi } from './fixtures';
+import {
+  PLANNER,
+  SCREENSHOT_DIR,
+  hasHorizontalOverflow,
+  isPhone,
+  stubHealthyApi,
+} from './fixtures';
 
-test.describe('application shell', () => {
+test.describe('planner shell', () => {
   test('loads and shows the product identity', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
 
-    // The interface names the product PathAble, with no suffix.
-    await expect(page).toHaveTitle(/^PathAble — /);
+    await expect(page).toHaveTitle('Route Planner — PathAble');
     await expect(page.getByText('PathAble', { exact: true })).toBeVisible();
-    await expect(page.getByTestId('pilot-region')).toContainText('Waterloo, Ontario');
+    await expect(page.getByTestId('pilot-region')).toContainText('Waterloo');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Route Planner');
+    // The brand goes home, to the landing page.
+    await expect(page.getByRole('link', { name: 'PathAble home' })).toHaveAttribute('href', '/');
   });
 
   test('states that missing data is never treated as a clear path', async ({ page }) => {
     // The product's central safety claim, asserted in the shipped page rather
     // than only in a unit test.
-    await page.goto('/');
+    await page.goto(PLANNER);
 
     const description = page.getByTestId('pilot-description');
-    await expect(description).toBeVisible();
     await expect(description).toContainText(
       /missing information is never treated as a clear path/i,
     );
     await expect(description).toContainText(/no route here is a guarantee/i);
+    await expect(description).toContainText(/compares the shortest walking route/i);
   });
 
-  test('describes what the page does in text as well as on the map', async ({ page }) => {
-    await page.goto('/');
+  test('credits the map data, the elevation licence and the tile host', async ({ page }) => {
+    await page.goto(PLANNER);
 
-    await expect(page.getByTestId('pilot-description')).toContainText(
-      /compares the shortest walking route/i,
-    );
+    const credit = page.getByTestId('attribution');
+    await credit.scrollIntoViewIfNeeded();
+    await expect(credit).toBeVisible();
+    await expect(credit).toContainText('OpenStreetMap');
+    await expect(credit).toContainText('Open Government Licence – Canada');
+    await expect(credit).toContainText(/OpenFreeMap, which has not been approved for production/);
   });
 
-  test('shows visible map data attribution', async ({ page }) => {
-    await page.goto('/');
-
-    await expect(page.getByTestId('attribution')).toContainText('OpenStreetMap');
-  });
-
-  test('renders attribution and navigation controls on the map itself', async ({ page }) => {
-    // On a wide screen the panel's written attribution can sit below the fold, so
-    // the on-map control is what actually guarantees attribution stays visible.
-    await page.goto('/');
+  test('draws the credit and its own controls on the map itself', async ({ page }) => {
+    await page.goto(PLANNER);
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
       timeout: 20_000,
     });
@@ -50,13 +53,17 @@ test.describe('application shell', () => {
     await expect(attribution).toBeVisible();
     await expect(attribution).toContainText('OpenStreetMap');
 
-    await expect(page.getByRole('button', { name: /zoom in/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /zoom out/i })).toBeVisible();
-    await expect(page.locator('.maplibregl-ctrl-scale')).toBeVisible();
+    // PathAble's own controls, each one doing something real. MapLibre's
+    // built-in zoom and scale are not added.
+    const ids = isPhone(page)
+      ? ['map-layers', 'toggle-evidence-labels', 'fit-routes']
+      : ['zoom-in', 'zoom-out', 'fit-routes', 'reset-north', 'map-layers'];
+    for (const id of ids) await expect(page.getByTestId(id)).toBeVisible();
+    await expect(page.locator('.maplibregl-ctrl-zoom-in')).toHaveCount(0);
+    await expect(page.locator('.maplibregl-ctrl-scale')).toHaveCount(0);
 
-    // Being in the DOM is not enough. If MapLibre's stylesheet failed to load,
-    // the controls would still report visible while sitting unpositioned outside
-    // the map. Assert they are actually laid out within the map frame.
+    // Being in the DOM is not enough: assert the credit is laid out inside
+    // the map frame, where MapLibre's stylesheet puts it.
     const frame = await page.getByTestId('map-frame').boundingBox();
     const attributionBox = await attribution.boundingBox();
     expect(frame).not.toBeNull();
@@ -73,7 +80,7 @@ test.describe('application shell', () => {
   test('initialises the map against the deterministic offline style', async ({ page }) => {
     // The style has no sources, so reaching `ready` proves the whole MapLibre
     // lifecycle ran without a single network request to a tile server.
-    await page.goto('/');
+    await page.goto(PLANNER);
 
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
       timeout: 20_000,
@@ -82,7 +89,7 @@ test.describe('application shell', () => {
   });
 
   test('exposes the map as a named region', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
 
     await expect(
       page.getByRole('region', { name: /interactive map of waterloo, ontario/i }),
@@ -92,25 +99,18 @@ test.describe('application shell', () => {
   test('serves the MapLibre worker from our own origin', async ({ request }) => {
     // KI-1: MapLibre computes its worker URL from `import.meta.url` and yields an
     // empty string once bundled, so `new Worker("")` loads the HTML page as the
-    // worker. The map then renders nothing, silently. The fix depends on this
-    // asset existing, and the deterministic style has no sources — so nothing
-    // else in this suite would notice if it went missing.
+    // worker. The fix depends on this asset existing.
     const response = await request.get('/maplibre/maplibre-gl-worker.mjs');
 
     expect(response.status()).toBe(200);
     expect(await response.text()).toContain('maplibre-gl-shared.mjs');
-
-    // The worker imports this sibling relatively; both must be served.
     expect((await request.get('/maplibre/maplibre-gl-shared.mjs')).status()).toBe(200);
   });
 
   test('the map container actually fills the map frame', async ({ page }) => {
-    // Regression cover. MapLibre applies `.maplibregl-map { position: relative }`
-    // to this element, which once overrode the absolute positioning and collapsed
-    // it to zero height. Nothing caught it: the frame's own background still
-    // showed, and a source-less style fires `load` at any size, so the lifecycle
-    // reported `ready` over a map that had never rendered a tile.
-    await page.goto('/');
+    // Regression cover: `.maplibregl-map { position: relative }` once collapsed
+    // this element to zero height while the lifecycle still reported `ready`.
+    await page.goto(PLANNER);
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
       timeout: 30_000,
     });
@@ -128,38 +128,39 @@ test.describe('application shell', () => {
   });
 
   test('offers every mobility profile as one group of radio buttons', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
 
-    // Native radio buttons drawn as chips: all five on show, one tab stop,
+    // Native radio buttons drawn as cards: all five on show, one tab stop,
     // and the arrow keys move the choice — the platform's own behaviour.
-    const group = page.getByRole('group', { name: /how do you travel/i });
+    const group = page.getByRole('group', { name: /mobility profile/i });
     await expect(group).toBeVisible();
     await expect(group.getByRole('radio')).toHaveCount(5);
-    const wheelchair = group.getByRole('radio', { name: 'Wheelchair' });
+    const wheelchair = group.getByRole('radio', { name: /^Wheelchair/ });
     await expect(wheelchair).toBeChecked();
 
     await wheelchair.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(group.getByRole('radio', { name: 'Walker' })).toBeChecked();
-    await expect(group.getByRole('radio', { name: 'Walker' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    const walker = group.getByRole('radio', { name: /^Walker or rollator/ });
+    await expect(walker).toBeChecked();
+    await expect(walker).toBeFocused();
   });
 
   test('explains how to start before any point is chosen', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
 
     const status = page.getByTestId('route-status');
     await expect(status).toHaveAttribute('data-route-state', 'idle');
     await expect(status).toContainText(/name both ends to begin/i);
+    await expect(page.getByTestId('compare-routes')).toBeDisabled();
   });
 
   test('gives keyboard focus a visible indicator', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
     await page.keyboard.press('Tab');
 
     const focused = page.locator(':focus-visible');
     await expect(focused).toBeVisible();
-
-    // The first stop must be the skip link, and it must actually be drawn.
+    // The first stop is the skip link, and it is actually drawn.
     await expect(focused).toContainText(/skip to main content/i);
 
     const outlineWidth = await focused.evaluate(
@@ -169,7 +170,7 @@ test.describe('application shell', () => {
   });
 
   test('skip link moves focus to the main region', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
 
@@ -177,8 +178,15 @@ test.describe('application shell', () => {
     await expect(page.locator('#main-content')).toBeVisible();
   });
 
+  test('the header search goes to the start field', async ({ page }) => {
+    await page.goto(PLANNER);
+
+    await page.getByTestId('header-search').click();
+    await expect(page.getByLabel('Start location')).toBeFocused();
+  });
+
   test('does not overflow horizontally', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(PLANNER);
     await expect(page.getByTestId('map-frame')).toBeVisible();
 
     expect(await hasHorizontalOverflow(page)).toBe(false);
@@ -186,9 +194,9 @@ test.describe('application shell', () => {
 });
 
 test.describe('visual evidence', () => {
-  test('captures the application', async ({ page }, testInfo) => {
+  test('captures the planner before a journey', async ({ page }, testInfo) => {
     await stubHealthyApi(page);
-    await page.goto('/');
+    await page.goto(PLANNER);
 
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
       timeout: 20_000,

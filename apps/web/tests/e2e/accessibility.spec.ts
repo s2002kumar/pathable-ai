@@ -1,6 +1,15 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
-import { breakMapStyle, stubHealthyApi, stubRouteComparison } from './fixtures';
+import { expect, test, type Page } from '@playwright/test';
+import {
+  PLANNER,
+  breakMapStyle,
+  isPhone,
+  openJourneyControls,
+  runExample,
+  stubHealthyApi,
+  stubNoRoute,
+  stubRouteComparison,
+} from './fixtures';
 
 /**
  * Automated accessibility checks.
@@ -14,26 +23,22 @@ import { breakMapStyle, stubHealthyApi, stubRouteComparison } from './fixtures';
 
 const SERIOUS = new Set(['serious', 'critical']);
 
-async function scan(page: import('@playwright/test').Page) {
-  return (
-    new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      // MapLibre's own control chrome is third-party markup this project does not
-      // author. It is excluded so the suite reports on the application shell, which
-      // is what the team can actually fix.
-      .exclude('.maplibregl-control-container')
-      .analyze()
-  );
-}
-
 /**
  * Serious and critical violations, one entry per offending element.
  *
- * Reporting the element selector rather than just the rule name is the
- * difference between "fix the contrast somewhere" and a five-second fix.
+ * MapLibre's own control chrome is third-party markup this project does not
+ * author, so it is excluded; PathAble's own map controls and pins are not.
  */
-async function blockingViolations(page: import('@playwright/test').Page): Promise<string[]> {
-  const results = await scan(page);
+async function blockingViolations(page: Page): Promise<string[]> {
+  // Colour is judged as a reader sees it: after entrances have finished, not
+  // halfway through a fade, when every colour on the surface is blended.
+  await page.waitForFunction(() =>
+    document.getAnimations().every((animation) => animation.playState !== 'running'),
+  );
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .exclude('.maplibregl-control-container')
+    .analyze();
   return results.violations
     .filter((violation) => SERIOUS.has(violation.impact ?? ''))
     .flatMap((violation) =>
@@ -45,43 +50,78 @@ async function blockingViolations(page: import('@playwright/test').Page): Promis
     );
 }
 
+async function mapReady(page: Page): Promise<void> {
+  await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
+    timeout: 20_000,
+  });
+}
+
 test.describe('accessibility', () => {
-  test('application shell has no serious or critical violations', async ({ page }) => {
-    await stubHealthyApi(page);
+  test('the landing page has no serious or critical violations', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
-      timeout: 20_000,
-    });
 
     expect(await blockingViolations(page)).toEqual([]);
   });
 
-  test('a comparison, with its evidence and the uphill field open, has none either', async ({
-    page,
-  }) => {
-    // The result is where the new structure lives — the route radio group,
-    // the evidence labels, the coverage bars, the labels pinned to the map —
-    // so it gets the same scan as the empty shell.
+  test('the planning form has none', async ({ page }) => {
+    await stubHealthyApi(page);
+    await page.goto(PLANNER);
+    await mapReady(page);
+
+    expect(await blockingViolations(page)).toEqual([]);
+  });
+
+  test('a comparison, with its controls open, has none either', async ({ page }) => {
+    // The result is where the structure lives — the route radio group, the
+    // evidence labels, the dock, the pins on the map — so it gets the same scan.
     await stubHealthyApi(page);
     await stubRouteComparison(page);
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
-      timeout: 20_000,
-    });
-    await page.getByTestId('run-verified-example').click();
+    await page.goto(PLANNER);
+    await mapReady(page);
+    await runExample(page);
+    await openJourneyControls(page);
+    await page.getByTestId('uphill-limit-toggle').click();
     await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
-    await expect(page.getByTestId('map-marker-barrier-steps')).toBeVisible();
-    await page.getByTestId('uphill-limit-toggle').check();
-    await expect(page.getByTestId('uphill-limit-input')).toBeVisible();
 
     expect(await blockingViolations(page)).toEqual([]);
   });
 
-  test('map failure state has no serious or critical violations', async ({ page }) => {
+  test('one route’s evidence and the full record have none', async ({ page }) => {
+    await stubHealthyApi(page);
+    await stubRouteComparison(page);
+    await page.goto(PLANNER);
+    await mapReady(page);
+    await runExample(page);
+
+    if (!isPhone(page)) {
+      await page.getByTestId('view-evidence').click();
+      await expect(page.getByTestId('gap-dock')).toBeVisible();
+      expect(await blockingViolations(page)).toEqual([]);
+    }
+
+    await page.getByTestId('open-route-details').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    expect(await blockingViolations(page)).toEqual([]);
+  });
+
+  test('"no route" has none', async ({ page }) => {
+    await stubHealthyApi(page);
+    await stubRouteComparison(page);
+    await stubNoRoute(page);
+    await page.goto(PLANNER);
+    await mapReady(page);
+    await runExample(page);
+    await expect(page.getByTestId('no-accessible-route')).toBeVisible();
+
+    expect(await blockingViolations(page)).toEqual([]);
+  });
+
+  test('the map failure state has none', async ({ page }) => {
     // The fallback is exactly the state a screen-reader user is most likely to
     // meet, so it gets the same scrutiny as the happy path.
     await breakMapStyle(page);
-    await page.goto('/');
+    await page.goto(PLANNER);
     await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'error', {
       timeout: 20_000,
     });
@@ -89,21 +129,17 @@ test.describe('accessibility', () => {
     expect(await blockingViolations(page)).toEqual([]);
   });
 
-  test('page declares a language', async ({ page }) => {
-    await page.goto('/');
-
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  });
-
-  test('there is exactly one level-1 heading', async ({ page }) => {
-    await page.goto('/');
-
-    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  test('both pages declare a language and have exactly one level-1 heading', async ({ page }) => {
+    for (const path of ['/', PLANNER]) {
+      await page.goto(path);
+      await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    }
   });
 
   test('zoom is not capped below 500%', async ({ page }) => {
     // Locking zoom shuts out low-vision users; the viewport meta must allow it.
-    await page.goto('/');
+    await page.goto(PLANNER);
 
     const content = await page.locator('meta[name="viewport"]').getAttribute('content');
 

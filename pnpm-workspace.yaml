@@ -20,29 +20,47 @@ packages:
 # Next and Vite, so there is no direct dependency to bump.
 #
 # Remove this once postcss depends on >= 3.3.18.
+# GHSA-rfgv-xxqx-mfg5, GHSA-w293-vg96-wgc3, GHSA-vp8m-p9jh-q5pm: undici < 8.10.2.
+# It reaches us only through jsdom, the unit tests' DOM, so it is dev only.
+#
+# Remove this once jsdom depends on >= 8.10.2.
+# GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p: brace-expansion, through minimatch
+# under ESLint, eslint-config-next and openapi-typescript. Dev only. Each major
+# line is lifted to its own first patched release.
+#
+# Remove these once minimatch's dependants ship the patched releases.
+# GHSA-68fv-2mgg-jv7q: source-map-js < 1.2.2 can stall the event loop on a
+# crafted source map. It reaches us only through postcss under Next, at build
+# time; 1.2.2 is a patch release over the 1.2.1 we resolved.
+#
+# Remove this once postcss depends on >= 1.2.2.
 overrides:
   "js-yaml@>=4.0.0 <4.3.1": "^4.3.1"
   "nanoid@<3.3.18": ">=3.3.18"
+  "undici@>=8.0.0 <8.10.2": "^8.10.2"
+  "brace-expansion@<1.1.20": "^1.1.20"
+  "brace-expansion@>=2.0.0 <2.1.6": "^2.1.6"
+  "brace-expansion@>=4.0.0 <5.0.11": "^5.0.11"
+  "source-map-js@>=1.0.0 <1.2.2": "^1.2.2"
+
+# Accepted advisories. Each entry is one GHSA id, never a class of advisories:
+# `pnpm audit` still fails on anything else, unfixable or not.
+#
+# GHSA-vfj7-8cjw-p6xm (high): braces <= 3.0.3. Accepted 2026-10-06 by the
+# founder. There is no patched release to move to: the advisory names 3.0.4,
+# but npm's latest braces is 3.0.3 and GitHub's advisory lists no patched
+# version. It reaches us only through a devDependency used for lint, as
+# eslint-config-next -> @next/eslint-plugin-next -> fast-glob -> micromatch ->
+# braces, so it runs only when ESLint runs over our own source tree. Nothing
+# in the production build or runtime loads it.
+#
+# Remove this entry as soon as a patched braces can be installed: a release
+# >= 3.0.4 on npm, or an @next/eslint-plugin-next that no longer depends on it.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
 
 allowBuilds:
   # Native module resolver used by eslint-plugin-import-x (via eslint-config-next).
   # Without its build step, `pnpm lint` fails to resolve any import.
   unrs-resolver: true
-
-# Next.js 16.3.5 is younger than pnpm's default release-age gate but fixes two
-# critical unauthenticated RCE advisories (GHSA-p293-qw3h-jr36,
-# GHSA-2xp9-vwfh-vxw4). Waiting out the gate would mean shipping the hole;
-# remove these entries once the version is old enough to pass on its own.
-minimumReleaseAgeExclude:
-  - "@next/env@16.3.5"
-  - "@next/eslint-plugin-next@16.3.5"
-  - "@next/swc-darwin-arm64@16.3.5"
-  - "@next/swc-darwin-x64@16.3.5"
-  - "@next/swc-linux-arm64-gnu@16.3.5"
-  - "@next/swc-linux-arm64-musl@16.3.5"
-  - "@next/swc-linux-x64-gnu@16.3.5"
-  - "@next/swc-linux-x64-musl@16.3.5"
-  - "@next/swc-win32-arm64-msvc@16.3.5"
-  - "@next/swc-win32-x64-msvc@16.3.5"
-  - eslint-config-next@16.3.5
-  - next@16.3.5

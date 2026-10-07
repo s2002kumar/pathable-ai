@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { Icon, type IconName } from '@/components/Icon';
 import type { MapInstance } from './useMapLibre';
 import styles from './MapPanel.module.css';
 
@@ -8,24 +9,100 @@ import styles from './MapPanel.module.css';
  * A short label pinned to a place on the map.
  *
  * `tone` is what kind of mark it is, never how safe anything is: `barrier` is
- * something the chosen profile rules out, `gradient` is a figure about a climb.
+ * something the chosen profile rules out, `gradient` is a figure about a
+ * climb, `unknown` is something nobody recorded.
  */
 export type MapMarker = {
   readonly id: string;
   readonly position: readonly [number, number];
+  /** The first line: what the mark is. */
   readonly label: string;
-  readonly tone: 'barrier' | 'gradient';
+  readonly tone: 'barrier' | 'gradient' | 'unknown' | 'origin' | 'destination';
+  /**
+   * `pin`: the comparison's evidence pins (9:1964). `callout`: the evidence
+   * view's gap callouts (17:3808). `endpoint`: a place name beside A or B
+   * (17:3576). Defaults to `pin`.
+   */
+  readonly variant?: 'pin' | 'callout' | 'endpoint' | 'badge';
+  /** Where the fact came from: "Recorded · OSM", "Derived · HRDEM", "Not recorded". */
+  readonly tag?: string;
+  /** The second line: which route, and why it matters. */
+  readonly detail?: string;
+  readonly icon?: IconName;
+  /** Measurements read in the mono face, as the design sets them. */
+  readonly mono?: boolean;
 };
 
-/** How far above its point a pill sits, matching `.markerPill` in the CSS. */
-const PILL_LIFT_PX = 10;
-/** Space kept clear around a pill before another counts as overlapping it. */
+/** How far above its point a pin sits, matching `.markerPill` in the CSS. */
+const PILL_LIFT_PX = 14;
+/** Space kept clear around a pin before another counts as overlapping it. */
 const PILL_MARGIN_PX = 4;
+/** How far right (or left) of A or B its name starts, matching `.endpointLabel`. */
+const ENDPOINT_OFFSET_PX = 18;
 
 type Box = { left: number; right: number; top: number; bottom: number };
 
+/** Which side of its point a place name is drawn on. */
+type Side = 'right' | 'left';
+
 function overlaps(a: Box, b: Box): boolean {
   return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
+/**
+ * The map's own controls, in the labels' coordinates. A label is never drawn
+ * underneath one: on a phone the controls take the map's right edge, and the
+ * origin's name ran under them whenever the origin landed near it.
+ */
+function chromeBoxes(layer: HTMLElement): Box[] {
+  const frame = layer.parentElement;
+  if (frame === null) return [];
+  const origin = layer.getBoundingClientRect();
+  return [...frame.querySelectorAll('[data-map-chrome]')]
+    .map((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left - origin.left,
+        right: rect.right - origin.left,
+        top: rect.top - origin.top,
+        bottom: rect.bottom - origin.top,
+      };
+    })
+    .filter((box) => box.right > box.left && box.bottom > box.top);
+}
+
+const DEFAULT_ICONS: Readonly<Record<MapMarker['tone'], IconName>> = {
+  barrier: 'pin-stairs',
+  gradient: 'pin-check',
+  unknown: 'pin-question',
+  origin: 'pin-location',
+  destination: 'pin-location',
+};
+
+/** Where a label sits relative to its point, as a box for collision tests. */
+function boxFor(
+  variant: MapMarker['variant'],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  side: Side = 'right',
+): Box {
+  if (variant === 'endpoint') {
+    const start = side === 'right' ? x + ENDPOINT_OFFSET_PX : x - ENDPOINT_OFFSET_PX - width;
+    return {
+      left: start - PILL_MARGIN_PX,
+      right: start + width + PILL_MARGIN_PX,
+      top: y - height / 2 - PILL_MARGIN_PX,
+      bottom: y + height / 2 + PILL_MARGIN_PX,
+    };
+  }
+  return {
+    left: x - width / 2 - PILL_MARGIN_PX,
+    right: x + width / 2 + PILL_MARGIN_PX,
+    top: y - PILL_LIFT_PX - height - PILL_MARGIN_PX,
+    bottom: y - PILL_LIFT_PX + PILL_MARGIN_PX,
+  };
 }
 
 /**
@@ -48,6 +125,7 @@ export function MapMarkers({
   readonly map: MapInstance | null;
   readonly markers: readonly MapMarker[];
 }) {
+  const layerRef = useRef<HTMLDivElement>(null);
   const elements = useRef(new Map<string, HTMLDivElement>());
 
   useEffect(() => {
@@ -56,28 +134,46 @@ export function MapMarkers({
 
     const place = () => {
       // In the order given, which is the order of importance: a label whose
-      // pill would cover one already placed is hidden rather than stacked on
+      // pin would cover one already placed is hidden rather than stacked on
       // it. Zoomed out, a barrier and a climb a few metres apart would
       // otherwise cover each other and neither could be read. Measured from
-      // the pills themselves, because their width is their text.
-      const placed: Box[] = [];
+      // the pins themselves, because their width is their text.
+      //
+      // The map's controls count as placed first. A place name that would
+      // run under them, or off the map, goes on its point's other side.
+      const layer = layerRef.current;
+      const placed: Box[] = layer === null ? [] : chromeBoxes(layer);
+      const width = layer?.clientWidth ?? 0;
       for (const marker of markers) {
         const element = elements.current.get(marker.id);
         if (!element) continue;
         const { x, y } = project.call(map, [marker.position[0], marker.position[1]]);
         element.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
-        const pill = element.firstElementChild as HTMLElement | null;
-        const halfWidth = (pill?.offsetWidth ?? 0) / 2;
-        const height = pill?.offsetHeight ?? 0;
-        const box: Box = {
-          left: x - halfWidth - PILL_MARGIN_PX,
-          right: x + halfWidth + PILL_MARGIN_PX,
-          top: y - PILL_LIFT_PX - height - PILL_MARGIN_PX,
-          bottom: y - PILL_LIFT_PX + PILL_MARGIN_PX,
-        };
-        const collides = placed.some((other) => overlaps(box, other));
-        element.style.visibility = collides ? 'hidden' : 'visible';
-        if (!collides) placed.push(box);
+        const pill = element.querySelector<HTMLElement>('[data-pin]');
+        const sides: readonly Side[] =
+          marker.variant === 'endpoint' ? ['right', 'left'] : ['right'];
+        const clear = sides
+          .map((side) => ({
+            side,
+            box: boxFor(
+              marker.variant,
+              x,
+              y,
+              pill?.offsetWidth ?? 0,
+              pill?.offsetHeight ?? 0,
+              side,
+            ),
+          }))
+          .filter(({ box }) => !placed.some((other) => overlaps(box, other)));
+        // Wholly on the map where either side allows it; a name the map's
+        // edge clips still says more than none.
+        const choice =
+          clear.find(({ box }) => width === 0 || (box.left >= 0 && box.right <= width)) ?? clear[0];
+        element.style.visibility = choice ? 'visible' : 'hidden';
+        if (choice) {
+          placed.push(choice.box);
+          if (marker.variant === 'endpoint') element.dataset.side = choice.side;
+        }
       }
     };
 
@@ -93,7 +189,7 @@ export function MapMarkers({
   if (map === null || map.project === undefined || markers.length === 0) return null;
 
   return (
-    <div className={styles.markers} aria-hidden="true" data-testid="map-evidence">
+    <div className={styles.markers} ref={layerRef} aria-hidden="true" data-testid="map-evidence">
       {markers.map((marker) => (
         <div
           key={marker.id}
@@ -103,14 +199,58 @@ export function MapMarkers({
           }}
           className={styles.marker}
           data-tone={marker.tone}
+          data-variant={marker.variant ?? 'pin'}
           // Placed by the effect once the map can project; until then it would
           // sit in the corner.
           style={{ visibility: 'hidden' }}
         >
-          <span className={styles.markerPill} data-testid={`map-marker-${marker.id}`}>
-            <span className={styles.markerDot} />
-            {marker.label}
-          </span>
+          {marker.variant === 'endpoint' ? null : <span className={styles.markerPoint} />}
+          {marker.variant === 'endpoint' ? (
+            <span
+              className={styles.endpointLabel}
+              data-pin=""
+              data-testid={`map-marker-${marker.id}`}
+            >
+              <span className={styles.endpointLabelDot} />
+              <span className={styles.endpointLabelName}>{marker.label}</span>
+              {marker.tag ? <span className={styles.endpointLabelRole}>{marker.tag}</span> : null}
+            </span>
+          ) : marker.variant === 'badge' ? (
+            <span className={styles.badge} data-pin="" data-testid={`map-marker-${marker.id}`}>
+              <Icon name={marker.icon ?? DEFAULT_ICONS[marker.tone]} size={11} />
+              {marker.label}
+            </span>
+          ) : marker.variant === 'callout' ? (
+            <span className={styles.callout} data-pin="" data-testid={`map-marker-${marker.id}`}>
+              <span className={styles.calloutDot} />
+              <span className={styles.markerText}>
+                <span className={styles.calloutTitle}>{marker.label}</span>
+                {marker.detail ? (
+                  <span className={styles.calloutDetail}>{marker.detail}</span>
+                ) : null}
+              </span>
+              <span className={styles.calloutIcon}>
+                <Icon name={marker.icon ?? 'warning'} />
+              </span>
+            </span>
+          ) : (
+            <span className={styles.markerPill} data-pin="" data-testid={`map-marker-${marker.id}`}>
+              <span className={styles.markerIcon}>
+                <Icon name={marker.icon ?? DEFAULT_ICONS[marker.tone]} size={16} />
+              </span>
+              <span className={styles.markerText}>
+                <span className={styles.markerHead}>
+                  <span className={marker.mono ? styles.markerTitleMono : styles.markerTitle}>
+                    {marker.label}
+                  </span>
+                  {marker.tag ? <span className={styles.markerTag}>{marker.tag}</span> : null}
+                </span>
+                {marker.detail ? (
+                  <span className={styles.markerDetail}>{marker.detail}</span>
+                ) : null}
+              </span>
+            </span>
+          )}
         </div>
       ))}
     </div>

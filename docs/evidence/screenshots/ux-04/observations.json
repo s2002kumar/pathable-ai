@@ -1,0 +1,102 @@
+[
+  {
+    "state": "10-2318-landing-desktop",
+    "url": "http://localhost:3001/",
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "capturedAt": "2026-10-06T03:22:15.511Z",
+    "text": {
+      "hero-visual": "LOCAL DEMO · NOT DEPLOYED /planner?example=campus-library-to-student-life ● VERSIONED_POSTGIS_GRAPH NRCAN_HRDEM_1M ORIGIN: DC LIBRARY DEST: STUDENT LIFE CTR. 4 STAIRWAYS +66.7 M DETOUR Route Evaluation ACTIVE PROFILE Wheelchair Route WHEELCHAIR PROFILE 354 m +66.7 m (+23%) 0 stairways grade: derived gaps shown Shortest (Direct) EXCLUDED BY PROFILE 287 m 4 stairways 16 recorded steps · 2 counts missing WHY THIS ROUTE IS DIFFERENT The wheelchair route is 66.7 m longer (23%) and avoids all 4 stairways recorded on the shortest route. Missing accessibility data remains unknown. Recorded from the routing API on 2026-10-05 · dataset 51e75f78 · routing policy 2. Open the planner to compute it live."
+    }
+  },
+  {
+    "state": "17-3167-landing-phone",
+    "url": "http://localhost:3001/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "capturedAt": "2026-10-06T03:22:18.657Z",
+    "text": {}
+  },
+  {
+    "state": "17-3555-plan-desktop",
+    "url": "http://localhost:3001/planner",
+    "viewport": {
+      "width": 1280,
+      "height": 1204
+    },
+    "capturedAt": "2026-10-06T03:22:30.014Z",
+    "text": {
+      "system-status": "Ready to route • Powered by OpenStreetMap pedestrian topology and NRCan 1m HRDEM elevation data Methodology",
+      "profile-rule": "Hard limit: cannot use steps. Prefers climbs under 8% and paths wider than 0.9 m."
+    }
+  },
+  {
+    "state": "9-1905-compare-desktop",
+    "url": "http://localhost:3001/planner",
+    "viewport": {
+      "width": 1280,
+      "height": 1152
+    },
+    "capturedAt": "2026-10-07T01:33:54.822Z",
+    "text": {
+      "difference-accessible": "WHEELCHAIR ROUTE Est. 6 min 354 m +67 m detour STAIRS 0 recorded EST. GRADE Max 3.4% SURFACE 82% Recorded Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "difference-shortest": "SHORTEST PEDESTRIAN ROUTE Hard barriers 287 m Time unavailable for this profile 4 recorded stairways 3.5% steepest climb Ruled out for the wheelchair profile.",
+      "main-difference": "Avoids 4 recorded stairways on the shortest route (16 steps in total, plus 2 with no recorded step count), which this profile excludes.",
+      "dock-stairs": "STAIRS Recorded · OSM 0 recorded stairways vs. 4 recorded stairways on shortest path (16 recorded steps). Your profile rule",
+      "dock-grade": "MAXIMUM GRADE Derived · HRDEM 3.4% Peak climb vs. 3.5% on shortest path. Profile prefers climbs under 8%",
+      "dock-crossings": "CROSSINGS Recorded · OSM 0 mapped crossings vs. 0 mapped on shortest path. Unmapped crossings not counted",
+      "dock-surface": "SURFACE Recorded · OSM 82% Recorded Surface recorded on 82% of this route; 18% not recorded. Mostly paved where recorded"
+    }
+  },
+  {
+    "state": "17-3789-evidence-desktop",
+    "url": "http://localhost:3001/planner",
+    "viewport": {
+      "width": 1280,
+      "height": 1152
+    },
+    "capturedAt": "2026-10-07T01:34:08.856Z",
+    "text": {
+      "gap-banner": "Route found with accessibility data gaps Missing stays unknown; this is not an accessibility guarantee.",
+      "gap-stairs": "STAIRS Recorded · OSM 0 recorded stairways OSM records no stairways on this route Your profile rule",
+      "gap-grade": "GRADE Derived · HRDEM Grade derived from HRDEM Deterministic elevation-derived grade · peak 3.4% Profile prefers climbs under 8%",
+      "gap-crossings": "CROSSINGS Recorded · OSM No mapped crossings OSM maps no crossing on this route; an unmapped one is not counted. Unmapped crossings not counted",
+      "gap-surface": "SURFACE Recorded · OSM Not recorded Surface evidence is incomplete Some route segments have no surface tag in OpenStreetMap (82% recorded). Missing stays unknown"
+    }
+  },
+  {
+    "state": "17-4041-no-route-desktop",
+    "url": "http://localhost:3001/planner",
+    "viewport": {
+      "width": 1280,
+      "height": 1152
+    },
+    "capturedAt": "2026-10-07T01:34:22.421Z",
+    "text": {
+      "no-accessible-route": "No route satisfies your profile requirements PathAble did not find a route satisfying every hard requirement in the current pedestrian graph. It will not silently relax them. No route satisfies the custom profile between these points.",
+      "requirement-steps": "Recorded stairway evidence RECORDED · OSM The shortest walking route uses 4 recorded stairways; your profile rules out stairs. Violates: 0 recorded stairways [Your profile rule]",
+      "requirement-too_steep": "Derived grade evidence DERIVED · HRDEM 2 segments of the shortest walking route climb more than your limit. Exceeds your custom uphill limit of 1.0% [Your profile rule]"
+    }
+  },
+  {
+    "state": "17-2865-compare-phone",
+    "url": "http://localhost:3001/planner",
+    "viewport": {
+      "width": 390,
+      "height": 1834
+    },
+    "capturedAt": "2026-10-07T01:34:34.872Z",
+    "text": {
+      "difference-accessible": "Wheelchair route 354 m Active Selection +66.7 m • (+23%) vs shortest route 0 Recorded Stairs HRDEM Grade source Explicit Unknowns shown",
+      "difference-shortest": "Shortest pedestrian route 287 m 67 m shorter 4 stairways • Incompatible with Wheelchair profile 4 recorded stairways 16 recorded steps · 2 counts missing",
+      "mobile-stairs": "Stairs Recorded · OSM Your profile rule 0 recorded stairways vs 4 on shortest",
+      "mobile-grade": "Grade Derived · HRDEM Peak 3.4% vs 3.5% on shortest",
+      "mobile-crossings": "Crossings Recorded · OSM No crossing is mapped on this route; an unmapped one is not counted.",
+      "mobile-surface": "Surface Recorded · OSM Not recorded 82% recorded 18% unknown No inference"
+    }
+  }
+]

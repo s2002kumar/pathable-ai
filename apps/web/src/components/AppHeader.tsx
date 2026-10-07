@@ -1,60 +1,84 @@
 'use client';
 
-import { SystemStatusBadge } from '@/features/system-status/SystemStatusBadge';
-import { useSystemStatus } from '@/features/system-status/useSystemStatus';
+import Link from 'next/link';
+import { Icon } from '@/components/Icon';
+import type { SystemStatus } from '@/features/system-status/types';
+import { shortRegionName } from '@/lib/region';
 import styles from './AppHeader.module.css';
 
 export type AppHeaderProps = {
-  readonly apiBaseUrl: string;
   readonly pilotRegionName: string;
-  /** 0 disables polling. The e2e suite uses this for deterministic assertions. */
-  readonly statusPollIntervalMs?: number;
+  /** The API's state: the dot's colour, and a word whenever it is not ready. */
+  readonly status: SystemStatus;
+  /** Where the search button sends focus: the planner's start field. */
+  readonly searchTargetId?: string;
 };
 
-function BrandMark() {
-  return (
-    <svg className={styles.mark} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M6 20c0-5 3-7 6-8.5S18 8 18 4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.25"
-        strokeLinecap="round"
-      />
-      <circle cx="6" cy="20" r="2.5" fill="currentColor" />
-      <circle cx="18" cy="4" r="2.5" fill="currentColor" />
-    </svg>
-  );
-}
-
 /**
- * A compact instrument bar: identity on the left, where the system is and how
- * it is doing on the right. It is deliberately one row high so the map and the
- * planner get the rest of the viewport.
+ * The planner's bar: identity, the region it plans in, and two shortcuts.
+ *
+ * One row, 64 px, as the Golden Master draws it. The dot beside the region is
+ * the API's state as a colour, and the pill says it in a word as well — the
+ * design draws only the ready state, where the word stays for assistive
+ * technology alone. The idle strip and the panel's errors say it in full.
  */
-export function AppHeader({ apiBaseUrl, pilotRegionName, statusPollIntervalMs }: AppHeaderProps) {
-  const { status } = useSystemStatus({
-    apiBaseUrl,
-    ...(statusPollIntervalMs !== undefined ? { pollIntervalMs: statusPollIntervalMs } : {}),
-  });
+const STATE_WORDS: Readonly<Record<SystemStatus['state'], string>> = {
+  ready: 'Ready',
+  checking: 'Checking',
+  preparing: 'Preparing',
+  degraded: 'Degraded',
+  unreachable: 'Offline',
+};
 
+export function AppHeader({ pilotRegionName, status, searchTargetId }: AppHeaderProps) {
+  const word = STATE_WORDS[status.state];
   return (
     <header className={styles.header}>
-      <div className={styles.brand}>
-        <BrandMark />
-        <div className={styles.names}>
-          <p className={styles.productName}>PathAble</p>
-          <p className={styles.mission}>Accessibility-aware pedestrian routing</p>
-        </div>
+      <div className={styles.identity}>
+        <Link href="/" className={styles.brand} aria-label="PathAble home">
+          <span className={styles.mark} aria-hidden="true">
+            <Icon name="brand" />
+          </span>
+          <span className={styles.productName}>PathAble</span>
+        </Link>
+        <p className={styles.region} data-testid="pilot-region" data-status={status.state}>
+          <span className={styles.regionDot} aria-hidden="true" />
+          <span className={styles.regionFull}>{shortRegionName(pilotRegionName)}</span>
+          <span className={styles.regionShort} aria-hidden="true">
+            {pilotRegionName.split(',')[0]}
+          </span>
+          <span
+            className={status.state === 'ready' ? 'visually-hidden' : styles.regionState}
+            data-testid="header-status"
+          >
+            <span className="visually-hidden">Routing service: </span>
+            {word}
+          </span>
+        </p>
       </div>
 
-      <div className={styles.meta}>
-        <p className={styles.pilot} data-testid="pilot-region">
-          <span className={styles.pilotLabel}>Pilot</span>
-          <span>{pilotRegionName}</span>
-        </p>
-        <SystemStatusBadge status={status} />
-      </div>
+      <nav className={styles.actions} aria-label="Planner shortcuts">
+        {searchTargetId ? (
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label="Search for a place"
+            title="Search for a place"
+            onClick={() => document.getElementById(searchTargetId)?.focus()}
+            data-testid="header-search"
+          >
+            <Icon name="search" />
+          </button>
+        ) : null}
+        <Link
+          href="/#how-it-works"
+          className={styles.iconButton}
+          aria-label="About PathAble, its open data and methodology"
+          title="About the data and methodology"
+        >
+          <Icon name="info" />
+        </Link>
+      </nav>
     </header>
   );
 }

@@ -32,7 +32,7 @@ export function MapStatusOverlay({ status }: MapStatusOverlayProps) {
             <span className={styles.spinner} aria-hidden="true" />
             <p className={styles.overlayTitle}>Loading the map…</p>
             <p className={styles.overlayBody}>
-              Preparing the pilot area. A written description is available below.
+              Preparing the pilot area. The planner works without it: every answer is given in text.
             </p>
           </>
         ) : (

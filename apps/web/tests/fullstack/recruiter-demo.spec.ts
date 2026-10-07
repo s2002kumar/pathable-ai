@@ -1,5 +1,5 @@
 /**
- * The sixty-second demo, driven end to end against the real containers.
+ * The demo, driven end to end against the real containers.
  *
  * Nothing is stubbed here and nothing may be: the point of the exercise is that
  * a viewer presses one button and the live engine answers. These tests watch the
@@ -16,6 +16,7 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
 
 const COMPARE_PATH = '/api/v1/routes/compare';
+const PLANNER = '/planner';
 
 /** Matches playwright.fullstack.config.ts, including its Compose override. */
 const API_BASE_URL = process.env.FULLSTACK_API_URL ?? 'http://127.0.0.1:8100';
@@ -26,6 +27,13 @@ const CAMPUS = {
   origin: { longitude: -80.5424, latitude: 43.4728 },
   destination: { longitude: -80.5449, latitude: 43.4715 },
   profile: 'wheelchair',
+};
+
+type Answer = {
+  standard_route: { distance_m: number; stairway_count: number };
+  accessible_route: { distance_m: number; stairway_count: number };
+  extra_distance_m: number;
+  ml_predictions_used: boolean;
 };
 
 /**
@@ -61,8 +69,13 @@ test.beforeEach(() => {
   );
 });
 
+async function openPlanner(page: Page): Promise<void> {
+  await page.goto(PLANNER);
+  await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+}
+
 /** Press the example and return the request the browser actually made. */
-async function runExample(page: Page): Promise<{ request: Request; body: unknown }> {
+async function runExample(page: Page): Promise<{ request: Request; answer: Answer }> {
   const waitForCompare = page.waitForRequest(
     (request) => request.url().includes(COMPARE_PATH) && request.method() === 'POST',
   );
@@ -74,15 +87,15 @@ async function runExample(page: Page): Promise<{ request: Request; body: unknown
 
   const request = await waitForCompare;
   const response = await waitForAnswer;
-  return { request, body: await response.json() };
+  await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+  return { request, answer: (await response.json()) as Answer };
 }
 
 test.describe('the recruiter demo', () => {
   test('one press produces a live comparison, not a recording', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+    await openPlanner(page);
 
-    const { request, body } = await runExample(page);
+    const { request, answer } = await runExample(page);
 
     // The preset supplied inputs, and only inputs.
     const sent = request.postDataJSON() as Record<string, unknown>;
@@ -92,31 +105,24 @@ test.describe('the recruiter demo', () => {
     expect(sent.destination).toEqual(CAMPUS.destination);
 
     // The engine answered, and the answer is a real comparison.
-    const answer = body as {
-      standard_route: { distance_m: number; stairway_count: number };
-      accessible_route: { distance_m: number; stairway_count: number };
-      ml_predictions_used: boolean;
-    };
-    expect(answer.standard_route.stairway_count).toBeGreaterThan(0);
+    const stairways = answer.standard_route.stairway_count;
+    expect(stairways).toBeGreaterThan(0);
     expect(answer.accessible_route.stairway_count).toBe(0);
     expect(answer.accessible_route.distance_m).toBeGreaterThan(answer.standard_route.distance_m);
     expect(answer.ml_predictions_used).toBe(false);
 
     // And the page is showing that answer, not a different one.
-    const difference = page.getByTestId('route-difference');
-    await expect(difference).toBeVisible();
     await expect(page.getByTestId('difference-shortest')).toContainText(
       `${Math.round(answer.standard_route.distance_m)} m`,
     );
     await expect(page.getByTestId('difference-accessible')).toContainText(
       `${Math.round(answer.accessible_route.distance_m)} m`,
     );
-    // The detour is not credited to the stairs alone (D7): the extra-distance
-    // line states the figure, and the reasons — every constraint the engine
-    // found the routes differ on — are listed beneath it, stairs among them.
-    await expect(page.getByTestId('difference-extra')).not.toContainText('to avoid');
-    await expect(page.getByTestId('difference-reasons')).toContainText(
-      `Avoids ${answer.standard_route.stairway_count} recorded stairways`,
+    await expect(page.getByTestId('difference-extra')).toHaveText(
+      `+${Math.round(answer.extra_distance_m)} m detour`,
+    );
+    await expect(page.getByTestId('main-difference')).toContainText(
+      `Avoids ${stairways} recorded stairways`,
     );
 
     // The shortest route crosses stairs a wheelchair cannot use, so it gets no
@@ -125,113 +131,110 @@ test.describe('the recruiter demo', () => {
       'Time unavailable for this profile',
     );
     await expect(page.getByTestId('route-blocked')).toContainText(
-      `Ruled out: ${answer.standard_route.stairway_count} stairways`,
+      `${stairways} recorded stairways`,
     );
-    await expect(page.getByTestId('map-marker-barrier-steps')).toHaveText(
-      `Ruled out: ${answer.standard_route.stairway_count} stairways`,
+    await expect(page.getByTestId('map-marker-barrier-steps')).toContainText(
+      `${stairways} recorded stairways`,
     );
   });
 
-  test('the difference is explained by kind of evidence, and unknowns stay unknown', async ({
+  test('every category is labelled by its evidence, and unknowns stay unknown', async ({
     page,
   }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+    await openPlanner(page);
     await runExample(page);
 
-    // The reason that decided it, labelled with what it rests on.
-    const main = page.getByTestId('main-difference');
-    await expect(main).toBeVisible();
-    await expect(main).toContainText('Stairs');
-    await expect(main.getByText('Recorded', { exact: true })).toBeVisible();
+    // The four categories of the profile's route, each with its label. On this
+    // 900 px window the comparison's dock is a slim bar, so they are read where
+    // View Evidence opens them.
+    await page.getByTestId('view-evidence').click();
+    await expect(page.getByTestId('gap-stairs')).toContainText('Recorded · OSM');
+    await expect(page.getByTestId('gap-stairs')).toContainText('Your profile rule');
+    await expect(page.getByTestId('gap-grade')).toContainText(/Recorded · OSM|Derived · HRDEM/);
+    const dock = page.getByTestId('gap-dock');
+    await expect(dock).not.toContainText(/\b(verified|safe|guaranteed|confident)\b/i);
 
-    // Every statement's label comes from its basis. A reason about missing
-    // records is never labelled as a recorded one (D6), and is filed under
-    // missing information rather than under the topic it is about.
-    const reasons = page.getByTestId('difference-reasons');
+    // The full record: every statement's label comes from its basis. A reason
+    // about missing records is never labelled as a recorded one (D6).
+    await page.getByTestId('open-route-details').click();
+    const sheet = page.getByRole('dialog', { name: 'Route details' });
+    const reasons = sheet.getByTestId('difference-reasons');
     for (const reason of await reasons.locator('li[data-basis="recorded"]').all()) {
       await expect(reason.locator('span').first()).toHaveText('Recorded');
     }
     for (const reason of await reasons.locator('li[data-basis="not_recorded"]').all()) {
       await expect(reason.locator('span').first()).toHaveText('Not recorded');
-      await expect(page.getByTestId('reason-group-missing')).toContainText(
-        (await reason.textContent())!.replace('Not recorded', '').trim(),
-      );
     }
-
-    // The most dangerous possible bug: an absence of data reading as a clearance.
-    const coverage = page.getByTestId('evidence-coverage');
+    const coverage = sheet.getByTestId('evidence-coverage');
     await expect(coverage).toContainText(/not recorded is not the same as clear/i);
     await expect(coverage).not.toContainText(/\b(verified|safe|guaranteed|confident)\b/i);
   });
 
-  test('the incompleteness of the data is visible without scrolling', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+  test('the gaps in the record are on screen without scrolling', async ({ page }) => {
+    await openPlanner(page);
     await runExample(page);
 
-    const summary = page.getByTestId('uncertainty-summary');
-    await expect(summary).toBeVisible();
-    await expect(summary).toContainText('Incomplete data');
-    await expect(summary).not.toContainText(/\b(safe|verified|confident|guaranteed)\b/i);
+    // Per category, never as one figure: the profile route's card says how
+    // much of it has a surface on record, beside the two routes.
+    const card = page.getByTestId('difference-accessible');
+    await expect(card).toContainText(/Surface\s*\d+% Recorded/);
+    await expect(card).toBeInViewport({ ratio: 1 });
 
-    // Visible is not the same as in the viewport: the panel scrolls, and an
-    // element below the fold still reports itself visible to Playwright.
-    const inViewport = await summary.evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      return rect.top >= 0 && rect.bottom > 0 && rect.top < window.innerHeight;
-    });
-    expect(inViewport).toBe(true);
-
-    // And the per-category breakdown is still there, further down, each
-    // category against its own denominator.
-    await expect(page.getByTestId('coverage-width')).toContainText(/not recorded/);
-    await expect(page.getByTestId('coverage-gradient')).toContainText(/estimated/);
-  });
-
-  test('both routes are drawn, and the key names them in words', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
-    await runExample(page);
-
-    // Colour is never the only cue: the legend is real text beside the map.
-    const legend = page.getByTestId('map-legend');
-    await expect(legend).toBeVisible();
-    await expect(legend).toContainText('Route for your profile');
-    await expect(legend).toContainText('Shortest walking route');
-
-    await expect(page.getByTestId('difference-accessible')).toBeVisible();
-    await expect(page.getByTestId('difference-shortest')).toBeVisible();
-  });
-
-  test('the deep link starts the same live request', async ({ page }) => {
-    const waitForCompare = page.waitForRequest(
-      (request) => request.url().includes(COMPARE_PATH) && request.method() === 'POST',
+    // And the route's own record is one press away, with its gaps drawn.
+    await page.getByTestId('view-evidence').click();
+    await expect(page.getByTestId('gap-surface')).toContainText('Not recorded');
+    await expect(page.getByTestId('gap-surface')).toBeInViewport({ ratio: 1 });
+    await expect(page.getByTestId('gap-banner')).toContainText(
+      'Route found with accessibility data gaps',
     );
+    await expect(page.getByTestId('gap-banner')).toContainText('not an accessibility guarantee');
+  });
 
-    await page.goto('/?example=campus-library-to-student-life');
+  test('both routes are drawn, and named in words beside the map', async ({ page }) => {
+    await openPlanner(page);
+    await runExample(page);
 
-    const sent = (await waitForCompare).postDataJSON() as Record<string, unknown>;
-    expect(sent.origin).toEqual(CAMPUS.origin);
-    await expect(page.getByTestId('route-difference')).toBeVisible();
+    // Colour is never the only cue: each line's card names its route.
+    await expect(page.getByTestId('difference-accessible')).toContainText('Wheelchair route');
+    await expect(page.getByTestId('difference-shortest')).toContainText(
+      'Shortest pedestrian route',
+    );
+  });
+
+  test('the deep link, at either address, starts the same live request', async ({ page }) => {
+    for (const address of [
+      '/planner?example=campus-library-to-student-life',
+      '/?example=campus-library-to-student-life',
+    ]) {
+      const waitForCompare = page.waitForRequest(
+        (request) => request.url().includes(COMPARE_PATH) && request.method() === 'POST',
+      );
+      await page.goto(address);
+
+      const sent = (await waitForCompare).postDataJSON() as Record<string, unknown>;
+      expect(sent.origin).toEqual(CAMPUS.origin);
+      await expect(page).toHaveURL(/\/planner\?example=/);
+      await expect(page.getByTestId('route-difference')).toBeVisible();
+    }
   });
 
   test('attribution travels with the result', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+    await openPlanner(page);
     await runExample(page);
 
-    // The map data licence, on the page and in the answer.
-    await expect(page.getByTestId('attribution')).toContainText('OpenStreetMap');
-    await expect(page.getByTestId('attribution')).toContainText('ODbL');
+    // The map data licence and the elevation licence, on the page and in the answer.
+    const credit = page.getByTestId('attribution');
+    await expect(credit).toContainText('OpenStreetMap');
+    await expect(credit).toContainText('ODbL');
+    await expect(credit).toContainText('Open Government Licence – Canada');
+    await page.getByTestId('open-route-details').click();
     await expect(page.getByTestId('elevation-attribution')).toContainText(
       /Open Government Licence/i,
     );
   });
 
   test('a person can still place their own points afterwards', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+    await openPlanner(page);
     await runExample(page);
 
     await page.getByTestId('clear-journey').click();
@@ -245,8 +248,7 @@ test.describe('the recruiter demo', () => {
   });
 
   test('the example is reachable and operable from the keyboard', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+    await openPlanner(page);
 
     const button = page.getByTestId('run-verified-example');
     await button.focus();
@@ -271,26 +273,23 @@ test.describe('the demo on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('the example and the difference are usable at 390 px', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready');
+    await openPlanner(page);
 
     await expect(page.getByTestId('verified-example')).toBeVisible();
-    await runExample(page);
+    const { answer } = await runExample(page);
 
-    const difference = page.getByTestId('route-difference');
-    await expect(difference).toBeVisible();
+    // The answer opens at the map, with the sheet beneath it.
+    await expect(page.getByTestId('map-frame')).toBeInViewport({ ratio: 0.9 });
+    await expect(page.getByTestId('difference-shortest')).toContainText(
+      `${Math.round(answer.standard_route.distance_m)} m`,
+    );
+    await expect(page.getByTestId('route-blocked')).toContainText(
+      `${answer.standard_route.stairway_count} recorded stairways`,
+    );
+    // The surface gap survives the narrow viewport too.
+    await expect(page.getByTestId('mobile-surface')).toContainText(/unknown/);
 
-    // The uncertainty line has to survive the narrow viewport too.
-    const summary = page.getByTestId('uncertainty-summary');
-    await expect(summary).toContainText('Incomplete data');
-    const inViewport = await summary.evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      return rect.top >= 0 && rect.bottom > 0 && rect.top < window.innerHeight;
-    });
-    expect(inViewport).toBe(true);
-
-    // Nothing may overflow the viewport sideways: a horizontal scrollbar on a
-    // phone is how a comparison becomes unreadable.
+    // Nothing may overflow the viewport sideways.
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );

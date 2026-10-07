@@ -1,5 +1,5 @@
 import type { ConfigIssue } from '@/lib/public-config';
-import styles from '@/app/page.module.css';
+import styles from './ConfigurationError.module.css';
 
 export type ConfigurationErrorProps = {
   readonly issues: readonly ConfigIssue[];

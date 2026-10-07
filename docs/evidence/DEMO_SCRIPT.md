@@ -23,6 +23,10 @@ answer.
 
 ## The script
 
+Written for the September interface; the labels and layout have since changed
+(PA-UX-04), and the timings below are from that interface. The current one is
+in the recording under _Recording it_.
+
 **0:00 — What this is.** "PathAble compares an ordinary walking route with one
 that respects how you travel, and explains the difference using what
 OpenStreetMap actually records." The subtitle and the pilot badge say the rest.
@@ -93,13 +97,16 @@ and the depth behind them in the [project defence](../PROJECT_DEFENSE.md).
 
 ## Recording it
 
-**A recording already exists:** [`media/pathable-demo.webm`](media/pathable-demo.webm),
-66.8 s, captured from an earlier version of this script against the production
-containers, with a 13.5-second excerpt at
-[`media/pathable-demo.gif`](media/pathable-demo.gif) for the README. It shows the
-interface before PA-UX-03B; the current one is recorded in
-[`screenshots/ux-03b/`](screenshots/ux-03b/). Give the demo live when you can,
-because a live answer is worth more than a recording of one.
+**The current recording** is
+[`media/pathable-ux04-demo.webm`](media/pathable-ux04-demo.webm), 63.7 s of the
+PA-UX-04 interface against the production images: the landing page, the
+verified example, one route's evidence and the details sheet. How it was made,
+and the spec that re-records it, are in
+[`UX04_GOLDEN_MASTER.md`](UX04_GOLDEN_MASTER.md#evidence). The September
+recording, [`media/pathable-demo.webm`](media/pathable-demo.webm) with its GIF
+excerpt, shows the interface before PA-UX-03B and is kept as history. Give the
+demo live when you can, because a live answer is worth more than a recording of
+one.
 
 `http://localhost:3001/?example=campus-library-to-student-life` preselects the
 journey and issues the same live request on load, which makes a screen recording

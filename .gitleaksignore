@@ -8,3 +8,9 @@
 # in full.
 22c3aa6a1991568a00a98939dd4b1e5e3218127f:services/api/src/pathable_api/routing/activation.py:generic-api-key:141
 22c3aa6a1991568a00a98939dd4b1e5e3218127f:services/api/src/pathable_api/routing/activation.py:generic-api-key:142
+
+# In 3ce3990 DESIGN.md, the frozen Golden Master handoff, names its Figma file
+# ("File key: `…`") and the generic-api-key rule read the key as a credential.
+# A Figma file key identifies a file; it grants no access, which stays with
+# the file's own sharing settings. The file is frozen, so the line stays.
+3ce39907b4923f10d6e8cc693769dbe63e77a8ca:apps/web/DESIGN.md:generic-api-key:20

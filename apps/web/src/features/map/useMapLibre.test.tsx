@@ -138,10 +138,13 @@ describe('useMapLibre', () => {
       await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('ready'));
     });
 
-    it('registers navigation, scale and attribution controls', async () => {
+    it('registers the attribution control, and leaves zoom to the page’s own controls', async () => {
+      // The credit is MapLibre's to draw; zoom, fit and north are PathAble's
+      // MapControls, so the built-in navigation and scale stay off the canvas.
       render(<Harness detect={() => SUPPORTED} />);
 
-      await waitFor(() => expect(lastMap()?.controls).toHaveLength(3));
+      await waitFor(() => expect(lastMap()?.controls).toHaveLength(1));
+      expect((lastMap()?.controls[0] as object).constructor.name).toBe('AttributionControl');
     });
 
     it('fails safely when MapLibre reports an initialisation error', async () => {

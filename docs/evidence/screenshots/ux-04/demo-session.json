@@ -1,0 +1,70 @@
+{
+  "recordedAt": "2026-10-07T01:35:47.172Z",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "sessionSeconds": 63.975,
+  "marks": [
+    {
+      "at": 0.002,
+      "step": "landing"
+    },
+    {
+      "at": 14.42,
+      "step": "planner"
+    },
+    {
+      "at": 19.423,
+      "step": "verified example"
+    },
+    {
+      "at": 19.498,
+      "step": "request sent"
+    },
+    {
+      "at": 19.956,
+      "step": "response received"
+    },
+    {
+      "at": 20.068,
+      "step": "comparison"
+    },
+    {
+      "at": 27.078,
+      "step": "recorded stairs"
+    },
+    {
+      "at": 34.702,
+      "step": "evidence"
+    },
+    {
+      "at": 38.938,
+      "step": "missing evidence"
+    },
+    {
+      "at": 43.489,
+      "step": "derived elevation"
+    },
+    {
+      "at": 48.04,
+      "step": "details"
+    },
+    {
+      "at": 63.236,
+      "step": "stop"
+    }
+  ],
+  "response": {
+    "shortestDistanceM": 287.4,
+    "shortestStairways": 4,
+    "shortestRecordedSteps": 16,
+    "profileDistanceM": 354.1,
+    "profileStairways": 0,
+    "extraDistanceM": 66.67334115625226,
+    "datasetId": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+    "datasetChecksum": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906",
+    "routingPolicyVersion": 2,
+    "mlPredictionsUsed": false
+  }
+}

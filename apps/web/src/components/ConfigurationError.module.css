@@ -1,0 +1,46 @@
+.configError {
+  max-width: 44rem;
+  margin: var(--space-12) auto;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger-border);
+  border-left-width: 4px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.configErrorTitle {
+  font-size: var(--text-xl);
+  color: var(--color-danger-text);
+  margin-bottom: var(--space-3);
+}
+
+.configErrorBody {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.configErrorList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.configErrorItem {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.configErrorHint {
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+}

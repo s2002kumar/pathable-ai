@@ -30,20 +30,17 @@ export function RouteComparisonView({
   comparison,
   selectedRoute,
   onSelectRoute = () => {},
-  onEditJourney,
   journeySummary,
-  pendingEdits = false,
+  profileNote,
 }: {
   readonly comparison: RouteCompareResponse;
   /** Which route the map brings forward; the profile's own route by default. */
   readonly selectedRoute?: RouteVariant;
   readonly onSelectRoute?: (variant: RouteVariant) => void;
-  /** Takes the viewer to the planning controls below, keeping this result. */
-  readonly onEditJourney?: () => void;
   /** The journey this answer belongs to, named. */
   readonly journeySummary?: string;
-  /** True when the panel's draft has moved on from that journey. */
-  readonly pendingEdits?: boolean;
+  /** A rule of the traveller's own on top of the profile, such as an uphill limit. */
+  readonly profileNote?: string;
 }) {
   const { standard_route: standard, accessible_route: accessible } = comparison;
   const bothRoutes = Boolean(standard && accessible);
@@ -63,28 +60,7 @@ export function RouteComparisonView({
           <p className={styles.journeyLine} data-testid="journey-summary">
             <span className={styles.journeyPlaces}>{journeySummary}</span>
             <span className={styles.journeyProfile}>{comparison.profile_display_name}</span>
-            {onEditJourney ? (
-              <button
-                type="button"
-                className={styles.editButton}
-                onClick={onEditJourney}
-                // The accessible name is the full phrase at every width; only
-                // the glyphs shorten, because at 390 px the five-word label
-                // wrapped the journey line to three lines.
-                aria-label="Edit journey or profile"
-                data-testid="edit-journey"
-              >
-                <span className={styles.editLong}>Edit journey or profile</span>
-                <span className={styles.editShort}>Edit</span>
-              </button>
-            ) : null}
-          </p>
-        ) : null}
-
-        {pendingEdits ? (
-          <p className={styles.staleNote} role="status" data-testid="stale-result">
-            You have changed the journey. This answer is still for the one named above — press
-            Compare routes to update it.
+            {profileNote ? <span className={styles.journeyProfile}>{profileNote}</span> : null}
           </p>
         ) : null}
 

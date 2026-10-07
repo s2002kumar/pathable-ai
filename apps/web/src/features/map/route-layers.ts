@@ -22,6 +22,8 @@ export const ACCESSIBLE_LAYER_ID = 'pathable-accessible-route-line';
 export const STAIRS_SOURCE_ID = 'pathable-recorded-stairs';
 export const STAIRS_CASING_LAYER_ID = 'pathable-recorded-stairs-casing';
 export const STAIRS_LAYER_ID = 'pathable-recorded-stairs-line';
+export const GAPS_SOURCE_ID = 'pathable-evidence-gaps';
+export const GAPS_LAYER_ID = 'pathable-evidence-gaps-line';
 export const POINTS_SOURCE_ID = 'pathable-route-points';
 export const POINTS_HALO_LAYER_ID = 'pathable-route-points-halo';
 export const POINTS_LAYER_ID = 'pathable-route-points-circle';
@@ -39,23 +41,25 @@ export const POINTS_LABEL_LAYER_ID = 'pathable-route-points-label';
  * vision deficiency and a greyscale print. Both meet 3:1 against the muted
  * basemap.
  */
-export const STANDARD_COLOUR = '#515c6b';
-export const ACCESSIBLE_COLOUR = '#2456e6';
-export const ORIGIN_COLOUR = '#2456e6';
-export const DESTINATION_COLOUR = '#b3261e';
+export const STANDARD_COLOUR = '#fb923c';
+export const ACCESSIBLE_COLOUR = '#00f090';
+export const ORIGIN_COLOUR = '#00a6e0';
+export const DESTINATION_COLOUR = '#00f090';
 
 /**
  * Recorded stairways, drawn over the route they belong to.
  *
- * Mirrors `--color-stairs`. Chosen to be unmistakable against the cobalt route
+ * Mirrors `--color-stairs`. Chosen to be unmistakable against the emerald route
  * rather than to be pretty, and used for nothing else on the map, so the
  * colour itself carries the meaning. It marks segments OpenStreetMap records
  * as stairways — never a hazard the product inferred, and never a claim about
  * segments whose step state is unknown.
  */
-export const STAIRS_COLOUR = '#b54708';
-/** The page surface, so a cased line reads as drawn on the map rather than glowing. */
-export const CASING_COLOUR = '#ffffff';
+export const STAIRS_COLOUR = '#ff6b5e';
+/** Mirrors `--color-unknown`: a stretch nobody recorded. Used for nothing else. */
+export const GAP_COLOUR = '#ffb783';
+/** The map's ink, so a cased line reads as drawn on the map rather than floating. */
+export const CASING_COLOUR = '#060e20';
 
 /**
  * Camera movement is the one animation on the page longer than a transition,
@@ -374,6 +378,45 @@ export function stairsToGeoJson(stairs: RecordedStairs): LineFeatureCollection {
   };
 }
 
+/**
+ * The stretches of a route whose record has a gap the evidence view draws:
+ * a surface nobody tagged, or a crossing whose kerb nobody recorded.
+ *
+ * Read from each segment's own classes, so a drawn gap is exactly a segment
+ * the response says is unknown — never inferred from a neighbour, and never
+ * from the basemap.
+ */
+export type EvidenceGap = {
+  readonly kind: 'surface' | 'kerb';
+  readonly segment: RouteSegment;
+};
+
+export function evidenceGaps(route: Route | null | undefined): EvidenceGap[] {
+  if (!route) return [];
+  const gaps: EvidenceGap[] = [];
+  for (const segment of route.segments ?? []) {
+    if ((segment.coordinates?.length ?? 0) < 2) continue;
+    if (segment.is_crossing && segment.kerb === 'unknown') gaps.push({ kind: 'kerb', segment });
+    else if (segment.surface_class === 'unknown') gaps.push({ kind: 'surface', segment });
+  }
+  return gaps;
+}
+
+export function gapsToGeoJson(gaps: readonly EvidenceGap[]): LineFeatureCollection {
+  if (gaps.length === 0) return EMPTY_LINES;
+  return {
+    type: 'FeatureCollection',
+    features: gaps.map((gap, index) => ({
+      type: 'Feature',
+      properties: { index, kind: gap.kind, edge_identity: gap.segment.edge_identity },
+      geometry: {
+        type: 'LineString',
+        coordinates: gap.segment.coordinates.map(([longitude, latitude]) => [longitude, latitude]),
+      },
+    })),
+  };
+}
+
 /** Bounding box covering every coordinate, or null when there is nothing to fit. */
 export function boundsOf(
   ...collections: Array<LineFeatureCollection | PointFeatureCollection>
@@ -441,7 +484,7 @@ export function cameraDuration(reducedMotion: boolean): number {
 
 const ROUND_LINE = { 'line-cap': 'round', 'line-join': 'round' } as const;
 
-/** Casing under the standard route, so a grey dash stays visible on a grey road. */
+/** Casing under the standard route, so the dash stays visible over a lit road. */
 export function standardCasingLayer(): Record<string, unknown> {
   return {
     id: STANDARD_CASING_LAYER_ID,
@@ -450,13 +493,13 @@ export function standardCasingLayer(): Record<string, unknown> {
     layout: ROUND_LINE,
     paint: {
       'line-color': CASING_COLOUR,
-      'line-width': 8,
-      'line-opacity': 0.9,
+      'line-width': 7,
+      'line-opacity': 0.8,
     },
   };
 }
 
-/** The standard route: a dashed ink-grey reference line, drawn underneath. */
+/** The standard route: a dashed amber reference line, drawn underneath. */
 export function standardLineLayer(): Record<string, unknown> {
   return {
     id: STANDARD_LAYER_ID,
@@ -465,14 +508,14 @@ export function standardLineLayer(): Record<string, unknown> {
     layout: ROUND_LINE,
     paint: {
       'line-color': STANDARD_COLOUR,
-      'line-width': 4,
+      'line-width': 3.5,
       'line-opacity': 1,
-      'line-dasharray': [1.8, 1.6],
+      'line-dasharray': [2, 1.43],
     },
   };
 }
 
-/** Casing under the accessible route. */
+/** A soft emerald glow under the accessible route, as the Golden Master draws it. */
 export function accessibleCasingLayer(): Record<string, unknown> {
   return {
     id: ACCESSIBLE_CASING_LAYER_ID,
@@ -480,9 +523,10 @@ export function accessibleCasingLayer(): Record<string, unknown> {
     source: ACCESSIBLE_SOURCE_ID,
     layout: ROUND_LINE,
     paint: {
-      'line-color': CASING_COLOUR,
-      'line-width': 10,
-      'line-opacity': 0.9,
+      'line-color': ACCESSIBLE_COLOUR,
+      'line-width': 12,
+      'line-opacity': 0.22,
+      'line-blur': 6,
     },
   };
 }
@@ -496,22 +540,22 @@ export function accessibleLineLayer(): Record<string, unknown> {
     layout: ROUND_LINE,
     paint: {
       'line-color': ACCESSIBLE_COLOUR,
-      'line-width': 5.5,
+      'line-width': 5,
       'line-opacity': 1,
     },
   };
 }
 
-/** A pale halo behind each endpoint, so the marker stays readable over a label. */
+/** A tinted halo behind each endpoint, so the marker stays readable over a label. */
 export function pointHaloLayer(): Record<string, unknown> {
   return {
     id: POINTS_HALO_LAYER_ID,
     type: 'circle',
     source: POINTS_SOURCE_ID,
     paint: {
-      'circle-radius': 14,
-      'circle-color': CASING_COLOUR,
-      'circle-opacity': 0.85,
+      'circle-radius': 15,
+      'circle-color': ['match', ['get', 'role'], 'destination', DESTINATION_COLOUR, ORIGIN_COLOUR],
+      'circle-opacity': 0.25,
     },
   };
 }
@@ -522,7 +566,7 @@ export function pointCircleLayer(): Record<string, unknown> {
     type: 'circle',
     source: POINTS_SOURCE_ID,
     paint: {
-      'circle-radius': 10,
+      'circle-radius': 9,
       'circle-color': [
         'match',
         ['get', 'role'],
@@ -554,8 +598,8 @@ export function stairsCasingLayer(): Record<string, unknown> {
     layout: ROUND_LINE,
     paint: {
       'line-color': CASING_COLOUR,
-      'line-width': 13,
-      'line-opacity': 0.95,
+      'line-width': 12,
+      'line-opacity': 0.9,
     },
   };
 }
@@ -571,6 +615,22 @@ export function stairsLineLayer(): Record<string, unknown> {
       'line-width': 9,
       'line-opacity': 1,
       'line-dasharray': [0.9, 0.7],
+    },
+  };
+}
+
+/** Unrecorded stretches of the shown route: amber, dashed, over the line. */
+export function gapsLineLayer(): Record<string, unknown> {
+  return {
+    id: GAPS_LAYER_ID,
+    type: 'line',
+    source: GAPS_SOURCE_ID,
+    layout: ROUND_LINE,
+    paint: {
+      'line-color': GAP_COLOUR,
+      'line-width': 6,
+      'line-opacity': 1,
+      'line-dasharray': [0.6, 1.1],
     },
   };
 }
@@ -597,6 +657,8 @@ export function pointLabelLayer(): Record<string, unknown> {
       'text-allow-overlap': true,
       'text-ignore-placement': true,
     },
-    paint: { 'text-color': '#ffffff' },
+    // Ink on the bright marker fill: the letter is what a colour-blind reader
+    // uses, so it has to be the highest-contrast thing on the marker.
+    paint: { 'text-color': CASING_COLOUR },
   };
 }

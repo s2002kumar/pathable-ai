@@ -1,226 +1,106 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { VERIFIED_ROUTE } from '@/features/landing/verified-route';
+import { legacyPlannerUrl } from '@/features/routing/legacy-url';
 import HomePage from './page';
 
-vi.mock('maplibre-gl', () => ({
-  // Required since the KI-1 fix: the hook configures the worker URL before
-  // constructing a Map. A mock without it throws.
-  setWorkerUrl: () => {},
-  getWorkerUrl: () => '',
-  Map: class {
-    on() {}
-    off() {}
-    addControl() {}
-    remove() {}
-  },
-  NavigationControl: class {},
-  ScaleControl: class {},
-  AttributionControl: class {},
+// `redirect` ends a server render by throwing; the test only needs to see
+// where it was sent.
+vi.mock('next/navigation', () => ({
+  redirect: vi.fn((url: string) => {
+    throw new Error(`redirect:${url}`);
+  }),
 }));
 
-const VALID_ENV = {
-  NEXT_PUBLIC_API_BASE_URL: 'http://api.test',
-  NEXT_PUBLIC_MAP_STYLE_URL: '/map-styles/offline-test-style.json',
-  NEXT_PUBLIC_PILOT_CENTER_LAT: '43.4668',
-  NEXT_PUBLIC_PILOT_CENTER_LON: '-80.5164',
-  NEXT_PUBLIC_PILOT_ZOOM: '14',
-  NEXT_PUBLIC_PILOT_REGION_NAME: 'Waterloo, Ontario',
-  NEXT_PUBLIC_PILOT_REGION_SLUG: 'waterloo',
-};
-
-function setEnv(values: Record<string, string>) {
-  for (const [key, value] of Object.entries(values)) vi.stubEnv(key, value);
-}
-
-beforeEach(() => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(
-      async () =>
-        new Response(
-          JSON.stringify({
-            status: 'ready',
-            service: 'pathable-api',
-            version: '0.1.0',
-            checks: {
-              database: { status: 'ok', detail: 'connected', latency_ms: 3 },
-              postgis: { status: 'ok', detail: 'postgis 3.5.0', latency_ms: 1 },
-            },
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        ),
-    ),
-  );
-});
-
-/**
- * `HomePage` is an async server component — it resolves the `?example=` deep
- * link before rendering — so a test has to await it rather than render the
- * promise it returns.
- */
+/** `HomePage` is an async server component; await it rather than render the promise. */
 function homePage(searchParams: Record<string, string | string[] | undefined> = {}) {
   return HomePage({ searchParams: Promise.resolve(searchParams) });
 }
 
-describe('HomePage', () => {
-  it('renders the product shell', async () => {
-    setEnv(VALID_ENV);
-
+describe('the landing page', () => {
+  it('says what the product does, and sends the reader to the planner', async () => {
     render(await homePage());
 
-    expect(screen.getByText('PathAble')).toBeInTheDocument();
-    expect(screen.getByRole('main')).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /Waterloo, Ontario/, level: 1 }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /Routes that account for what you can actually traverse/,
+    );
+    expect(screen.getByTestId('hero-explore')).toHaveAttribute('href', '/planner');
+    expect(screen.getByTestId('header-explore')).toHaveAttribute('href', '/planner');
   });
 
-  it('renders the map surface', async () => {
-    setEnv(VALID_ENV);
-
+  it('shows the verified example as the routing API recorded it, and says when', async () => {
+    // The landing page is static and cannot ask the API, so every figure on it
+    // comes from one recorded response — dated, with the dataset it ran on.
     render(await homePage());
 
-    await waitFor(() => expect(screen.getByTestId('map-frame')).toBeInTheDocument());
-  });
-
-  it('describes what the page does in text, not only on the map', async () => {
-    setEnv(VALID_ENV);
-
-    render(await homePage());
-
-    const description = screen.getByTestId('pilot-description');
-    expect(description).toHaveAttribute('id', 'pilot-area-description');
-    expect(description).toHaveTextContent(/compares the shortest walking route/i);
-  });
-
-  it('states that missing data is not evidence of a clear path', async () => {
-    // The product's central safety claim. If this sentence disappears, somebody
-    // can read an unsurveyed route as a checked one.
-    setEnv(VALID_ENV);
-
-    render(await homePage());
-
-    expect(screen.getByTestId('pilot-description')).toHaveTextContent(
-      /missing information is never treated as a clear path/i,
+    const visual = screen.getByTestId('hero-visual');
+    expect(visual).toHaveTextContent(
+      `The wheelchair route is ${VERIFIED_ROUTE.extraDistanceM.toFixed(1)} m longer`,
+    );
+    expect(visual).toHaveTextContent(`avoids all ${VERIFIED_ROUTE.standard.stairways} stairways`);
+    expect(visual).toHaveTextContent('Missing accessibility data remains unknown.');
+    expect(visual).toHaveTextContent(
+      `Recorded from the routing API on ${VERIFIED_ROUTE.recordedOn}`,
+    );
+    expect(visual).toHaveTextContent(`dataset ${VERIFIED_ROUTE.datasetChecksum.slice(0, 8)}`);
+    // And a way to compute it live rather than take the record's word for it.
+    expect(within(visual).getByRole('link', { name: /\/planner\?example=/ })).toHaveAttribute(
+      'href',
+      '/planner?example=campus-library-to-student-life',
     );
   });
 
-  it('never promises that a route is passable', async () => {
-    setEnv(VALID_ENV);
+  it('records a response in which no model took part', () => {
+    expect(VERIFIED_ROUTE.mlPredictionsUsed).toBe(false);
+  });
 
+  it('makes no safety, compliance or machine-learning claim', async () => {
     render(await homePage());
 
-    expect(screen.getByTestId('pilot-description')).toHaveTextContent(
-      /no route here is a guarantee/i,
+    const text = document.body.textContent ?? '';
+    expect(text).not.toMatch(/barrier-free|AODA|\bAI\b|artificial intelligence/i);
+    expect(text).not.toMatch(/guaranteed (safe|accessible)|certified accessible/i);
+    // Nothing is deployed, and the page neither says nor implies otherwise.
+    expect(text).toContain('Local demo · Not deployed');
+    expect(text).not.toMatch(/live demo|deployment pending|try it (live|here)/i);
+    // Machine learning is named only to say that none affects a route.
+    for (const match of text.matchAll(/machine-learning|machine learning/gi)) {
+      const around = text.slice(Math.max(0, (match.index ?? 0) - 40), (match.index ?? 0) + 60);
+      expect(around).toMatch(/\bNo machine-learning prediction currently affects\b/);
+    }
+  });
+
+  it('credits OpenStreetMap and the elevation licence', async () => {
+    render(await homePage());
+
+    const footer = screen.getByTestId('landing-footer');
+    expect(footer).toHaveTextContent('OpenStreetMap contributors');
+    expect(footer).toHaveTextContent('ODbL 1.0');
+    expect(footer).toHaveTextContent('Open Government Licence – Canada');
+    // Source-visible, all rights reserved — never "open source".
+    expect(footer).toHaveTextContent('All rights reserved.');
+    expect(footer).not.toHaveTextContent(/open[- ]source/i);
+  });
+});
+
+describe('the planner’s old address', () => {
+  it('sends a recorded `/?example=` link on to the planner, query intact', async () => {
+    await expect(
+      homePage({ example: 'campus-library-to-student-life', utm_source: 'readme' }),
+    ).rejects.toThrow('redirect:/planner?example=campus-library-to-student-life&utm_source=readme');
+  });
+
+  it('serves the landing page to every other request for /', async () => {
+    render(await homePage({ utm_source: 'readme' }));
+
+    expect(screen.getByTestId('hero-explore')).toBeInTheDocument();
+  });
+
+  it('keeps repeated parameters and drops none', () => {
+    expect(legacyPlannerUrl({ example: 'x', tag: ['a', 'b'], empty: undefined })).toBe(
+      '/planner?example=x&tag=a&tag=b',
     );
-  });
-
-  it('offers all five mobility profiles as one labelled group of radio buttons', async () => {
-    // Real radio buttons, drawn as chips: every profile on show at once, one
-    // tab stop for the group and the arrow keys within it, as the platform
-    // does it. The wheelchair profile is chosen first.
-    setEnv(VALID_ENV);
-
-    render(await homePage());
-
-    const group = screen.getByRole('group', { name: /how do you travel/i });
-    const radios = within(group).getAllByRole('radio');
-    expect(radios.map((radio) => radio.getAttribute('value'))).toEqual([
-      'wheelchair',
-      'walker',
-      'stroller',
-      'crutches',
-      'reduced_mobility',
-    ]);
-    expect(within(group).getByRole('radio', { name: 'Wheelchair' })).toBeChecked();
-    expect(radios.filter((radio) => (radio as HTMLInputElement).checked)).toHaveLength(1);
-  });
-
-  it('explains how to begin before any point is chosen', async () => {
-    setEnv(VALID_ENV);
-
-    render(await homePage());
-
-    expect(screen.getByTestId('route-status')).toHaveAttribute('data-route-state', 'idle');
-
-    // Two ways in, in the order a first-time viewer should meet them: a journey
-    // they can run immediately, and the map they can use instead.
-    expect(screen.getByTestId('run-verified-example')).toBeInTheDocument();
-    expect(screen.getByTestId('route-status')).toHaveTextContent(/name both ends to begin/i);
-  });
-
-  it('holds the map key back until there are route lines to explain', async () => {
-    // The legend is real text outside the canvas — one painted into WebGL
-    // would be invisible to a screen reader and unselectable — but a key to
-    // two lines that do not exist yet is furniture on top of the map. It
-    // appears with the routes it explains; `routing.test.tsx` covers the
-    // wording, and the browser suite covers it appearing after a comparison.
-    setEnv(VALID_ENV);
-
-    render(await homePage());
-
-    expect(screen.queryByTestId('map-legend')).not.toBeInTheDocument();
-  });
-
-  it('shows backend status in the shell', async () => {
-    setEnv(VALID_ENV);
-
-    render(await homePage());
-
-    await waitFor(() =>
-      expect(screen.getByTestId('system-status')).toHaveAttribute('data-status', 'ready'),
-    );
-  });
-
-  it('shows visible OpenStreetMap attribution', async () => {
-    setEnv(VALID_ENV);
-
-    render(await homePage());
-
-    const attribution = screen.getByTestId('attribution');
-    expect(attribution).toHaveTextContent(/OpenStreetMap/);
-    expect(attribution).toHaveTextContent(/ODbL/);
-  });
-
-  it('notes that the development tile provider is not production-approved', async () => {
-    setEnv(VALID_ENV);
-
-    render(await homePage());
-
-    expect(screen.getByTestId('attribution')).toHaveTextContent(
-      /not been approved for production/i,
-    );
-  });
-
-  it('renders the configuration error page instead of a broken shell', async () => {
-    setEnv({ ...VALID_ENV, NEXT_PUBLIC_PILOT_ZOOM: '99' });
-
-    render(await homePage());
-
-    expect(screen.getByTestId('configuration-error')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('NEXT_PUBLIC_PILOT_ZOOM');
-    expect(screen.queryByText('PathAble')).not.toBeInTheDocument();
-  });
-
-  it('reports every configuration problem at once', async () => {
-    setEnv({
-      ...VALID_ENV,
-      NEXT_PUBLIC_PILOT_ZOOM: '99',
-      NEXT_PUBLIC_API_BASE_URL: 'not-a-url',
-    });
-
-    render(await homePage());
-
-    const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent('NEXT_PUBLIC_PILOT_ZOOM');
-    expect(alert).toHaveTextContent('NEXT_PUBLIC_API_BASE_URL');
-  });
-
-  it('rejects a region slug the API could not accept', async () => {
-    setEnv({ ...VALID_ENV, NEXT_PUBLIC_PILOT_REGION_SLUG: 'Waterloo Ontario!' });
-
-    render(await homePage());
-
-    expect(screen.getByRole('alert')).toHaveTextContent('NEXT_PUBLIC_PILOT_REGION_SLUG');
+    expect(legacyPlannerUrl(undefined)).toBeNull();
+    expect(legacyPlannerUrl({})).toBeNull();
   });
 });

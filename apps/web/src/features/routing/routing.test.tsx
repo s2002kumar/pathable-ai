@@ -2,11 +2,13 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { RouteCompareResponse } from '@pathable/contracts';
+import { comparison as fixtureComparison } from '@/test/route-fixtures';
 import { RouteComparisonView } from './RouteComparisonView';
-import { RoutePlanner } from './RoutePlanner';
+import { RoutePlanner, type RoutePlannerProps } from './RoutePlanner';
 import { CAMPUS_EXAMPLE } from './verified-example';
 import { RouteWorkspace } from './RouteWorkspace';
 import { compareRoutes } from './compare-routes';
+import { NO_RULES, type ProfileRules } from './route-facts';
 import {
   formatDistance,
   formatDuration,
@@ -177,23 +179,24 @@ const COMPARISON = {
   ml_predictions_used: false,
 } as unknown as RouteCompareResponse;
 
-function renderPlanner(overrides: Partial<Parameters<typeof RoutePlanner>[0]> = {}) {
+function renderPlanner(overrides: Partial<RoutePlannerProps> = {}) {
   const props = {
+    layout: 'compare' as const,
     points: { origin: ORIGIN, destination: DESTINATION },
     profileKey: 'wheelchair' as const,
     state: { status: 'success' as const, comparison: COMPARISON },
     apiBaseUrl: 'http://api.test',
     region: 'waterloo',
+    regionName: 'Waterloo, Ontario',
     example: CAMPUS_EXAMPLE,
     exampleActive: false,
     canCompare: true,
     pendingEdits: false,
     pickTarget: null,
-    submittedSummary: 'Davis Centre library to Student Life Centre',
+    rules: NO_RULES,
     onRunExample: vi.fn(),
     onProfileChange: vi.fn(),
     onCompare: vi.fn(),
-    onClearPoint: vi.fn(),
     onClearAll: vi.fn(),
     onSwapPoints: vi.fn(),
     onRetry: vi.fn(),
@@ -203,6 +206,17 @@ function renderPlanner(overrides: Partial<Parameters<typeof RoutePlanner>[0]> = 
     ...overrides,
   };
   return { ...render(<RoutePlanner {...props} />), props };
+}
+
+/** The planning form, before any answer: what the workspace shows first. */
+function renderPlanForm(overrides: Partial<RoutePlannerProps> = {}) {
+  return renderPlanner({
+    layout: 'plan',
+    points: { origin: null, destination: null },
+    state: { status: 'idle' },
+    canCompare: false,
+    ...overrides,
+  });
 }
 
 describe('formatting', () => {
@@ -234,19 +248,15 @@ describe('nextRole', () => {
 });
 
 describe('RoutePlanner', () => {
-  it('states the trade-off in the headline', () => {
+  it('states the trade-off on the profile’s own route card', () => {
     renderPlanner();
 
-    expect(screen.getByTestId('route-status')).toHaveTextContent(
-      /wheelchair route is 226 m longer than the shortest walking route/i,
-    );
+    expect(screen.getByTestId('difference-extra')).toHaveTextContent('+226 m detour');
   });
 
   it('shows both routes with their own figures', () => {
     renderPlanner();
 
-    // The figures beside the highlight controls, which is where both routes'
-    // numbers live now that the duplicate pair of cards below them is gone.
     expect(screen.getByTestId('difference-accessible')).toHaveTextContent('709 m');
     expect(screen.getByTestId('difference-shortest')).toHaveTextContent('483 m');
   });
@@ -262,75 +272,47 @@ describe('RoutePlanner', () => {
     expect(screen.getByTestId('difference-shortest')).toHaveTextContent('Est. 8 min');
   });
 
-  it('reports the stairway the shortest route uses, with its step count', () => {
+  it('names the stairway the shortest route uses, and none on the profile’s route', () => {
     renderPlanner();
 
-    // "1 stairway" and "1 stairway (14 recorded steps)" are different facts:
-    // the first means nobody recorded how many steps there are. "recorded"
-    // is load-bearing in the second — step_count sums only the stairways
-    // somebody counted, so it is a floor and never a total.
-    expect(screen.getByTestId('difference-shortest')).toHaveTextContent(
-      '1 stairway · 14 recorded steps',
+    expect(screen.getByTestId('difference-shortest')).toHaveTextContent('1 recorded stairway');
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent(/Stairs\s*0 recorded/);
+  });
+
+  it('leads with the reason the engine gave, in its own words', () => {
+    renderPlanner();
+
+    expect(screen.getByTestId('main-difference')).toHaveTextContent(
+      'Avoids 1 stairway (14 steps in total).',
     );
-    expect(screen.getByTestId('difference-accessible')).toHaveTextContent('No recorded stairs');
   });
 
-  it('lists the evidence-backed reasons for the detour', () => {
+  it('says what the answer rests on, and how old the map is', () => {
     renderPlanner();
 
-    const reasons = within(screen.getByTestId('difference-reasons'));
-    expect(reasons.getByText(/Avoids 1 stairway \(14 steps in total\)/)).toBeInTheDocument();
-    expect(reasons.getByText(/no kerb has been recorded/)).toBeInTheDocument();
+    // The fixture's wheelchair route has a gradient derived from elevation, so
+    // the elevation model is named; the map's age is the publication's.
+    expect(screen.getByText('Evaluated with OpenStreetMap & NRCan HRDEM')).toBeInTheDocument();
+    expect(screen.getByText('Map data 2 days old')).toBeInTheDocument();
   });
 
-  it('shows the missing-data caution without softening it', () => {
-    // The most dangerous possible UI bug here is presenting an unsurveyed route
-    // as a checked one.
-    renderPlanner();
+  it('names no elevation model for an answer that used none', () => {
+    const flat = {
+      ...COMPARISON,
+      standard_route: buildRoute({ gradient: NO_GRADIENT, gradient_source: null }),
+      accessible_route: buildRoute({ gradient: NO_GRADIENT, gradient_source: null }),
+    } as unknown as RouteCompareResponse;
+    renderPlanner({ state: { status: 'success', comparison: flat } });
 
-    expect(
-      screen.getByText(/Missing data is not evidence that a path is clear/),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Evaluated with OpenStreetMap')).toBeInTheDocument();
+    expect(screen.queryByText(/HRDEM/)).not.toBeInTheDocument();
   });
 
-  it('says plainly that no model was involved', () => {
-    renderPlanner();
+  it('shows the grade it has as an estimate, and a missing one as not recorded', () => {
+    const { unmount } = renderPlanner();
+    expect(screen.getByTestId('steepest-climb-tile')).toHaveTextContent('Max 4.0%');
+    unmount();
 
-    expect(
-      screen.getByText(/no predictions, no scoring, no machine learning/i),
-    ).toBeInTheDocument();
-  });
-
-  it('shows the required OpenStreetMap attribution with the route', () => {
-    renderPlanner();
-
-    expect(screen.getByText(/© OpenStreetMap contributors, ODbL 1\.0/)).toBeInTheDocument();
-  });
-
-  it('shows the elevation licence credit whenever the dataset carries one', () => {
-    // Derived gradients come from NRCan's HRDEM under the Open Government
-    // Licence – Canada, which requires its statement wherever a grade is shown.
-    const credit = 'Contains information licensed under the Open Government Licence – Canada.';
-    renderPlanner({
-      state: {
-        status: 'success',
-        comparison: {
-          ...COMPARISON,
-          dataset: { ...COMPARISON.dataset, elevation_attribution: credit },
-        } as unknown as RouteCompareResponse,
-      },
-    });
-
-    expect(screen.getByTestId('elevation-attribution')).toHaveTextContent(credit);
-  });
-
-  it('shows no elevation credit for a dataset that was never sampled', () => {
-    renderPlanner();
-
-    expect(screen.queryByTestId('elevation-attribution')).not.toBeInTheDocument();
-  });
-
-  it('reports unrecorded gradients as unrecorded rather than zero', () => {
     renderPlanner({
       state: {
         status: 'success',
@@ -340,12 +322,9 @@ describe('RoutePlanner', () => {
         } as unknown as RouteCompareResponse,
       },
     });
-
-    // Scoped to the breakdown of the route being described.
-    const breakdown = screen.getByTestId('evidence-coverage');
-    expect(within(breakdown).getByTestId('steepest-climb')).toHaveTextContent('None on record');
-    expect(within(breakdown).getByTestId('steepest-descent')).toHaveTextContent('None on record');
-    expect(within(breakdown).queryByText(/0\.0%/)).not.toBeInTheDocument();
+    const tile = screen.getByTestId('steepest-climb-tile');
+    expect(tile).toHaveTextContent('Not recorded');
+    expect(tile).not.toHaveTextContent(/0\.0%/);
   });
 
   it('explains a profile with no possible route instead of failing silently', () => {
@@ -361,7 +340,8 @@ describe('RoutePlanner', () => {
       },
     });
 
-    expect(screen.getByRole('status')).toHaveTextContent(/No route satisfies the wheelchair/);
+    expect(screen.getByRole('status')).toHaveTextContent(/No route meets the wheelchair profile/);
+    expect(screen.getByRole('status')).toHaveTextContent(/does not loosen your profile’s limits/);
   });
 
   it('surfaces a request failure with a retry', async () => {
@@ -379,7 +359,7 @@ describe('RoutePlanner', () => {
     const user = userEvent.setup();
     const { props } = renderPlanner();
 
-    await user.click(screen.getByRole('radio', { name: 'Crutches or cane' }));
+    await user.click(screen.getByRole('radio', { name: /^Crutches or cane/ }));
 
     expect(props.onProfileChange).toHaveBeenCalledWith('crutches');
   });
@@ -391,53 +371,53 @@ describe('RoutePlanner', () => {
   });
 
   it('marks the status region busy while a request is in flight', () => {
-    renderPlanner({ state: { status: 'loading' } });
+    renderPlanForm({ state: { status: 'loading' } });
 
     expect(screen.getByTestId('route-status')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByTestId('compare-routes')).toBeDisabled();
   });
 
   it('offers nothing to act on until an endpoint exists', () => {
-    renderPlanner({
-      points: { origin: null, destination: null },
-      state: { status: 'idle' },
-      canCompare: false,
-    });
+    renderPlanForm();
 
     expect(screen.getByTestId('swap-points')).toBeDisabled();
-    expect(screen.getByTestId('clear-journey')).toBeDisabled();
+    // Nothing to clear, so there is no control that would pretend otherwise.
+    expect(screen.queryByTestId('clear-journey')).not.toBeInTheDocument();
     // Nothing to compare, so the control that would ask says so rather than
     // sending an incomplete journey.
     expect(screen.getByTestId('compare-routes')).toBeDisabled();
   });
 
-  it('names each endpoint separately instead of one implicit next point', () => {
+  it('clears the journey once there is one to clear', async () => {
+    const user = userEvent.setup();
+    const { props } = renderPlanForm({ points: { origin: ORIGIN, destination: null } });
+
+    await user.click(screen.getByTestId('clear-journey'));
+    expect(props.onClearAll).toHaveBeenCalledOnce();
+  });
+
+  it('names each endpoint separately instead of one implicit next point', async () => {
     // The old planner had a single search that filled "whichever point is
     // empty", so a person searching for their destination had no way to say
     // so. Each end is now its own labelled field with its own state.
-    renderPlanner({
-      points: { origin: null, destination: null },
-      state: { status: 'idle' },
-      canCompare: false,
-    });
+    const user = userEvent.setup();
+    renderPlanForm();
 
     expect(screen.getByTestId('endpoint-origin-value')).toHaveTextContent(/not set/i);
     expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(/not set/i);
-    // Two fields, each with its own label, and two submit controls with
-    // distinct accessible names — a page with two buttons both called
-    // "Search" is a page where neither can be addressed.
-    expect(screen.getByLabelText('Start')).toBeInTheDocument();
-    expect(screen.getByLabelText('Destination')).toBeInTheDocument();
+    expect(screen.getByLabelText('Start location')).toBeInTheDocument();
+    expect(screen.getByLabelText('Target endpoint')).toBeInTheDocument();
+
+    // Each field's search control has its own accessible name — a page with two
+    // buttons both called "Search" is a page where neither can be addressed.
+    await user.type(screen.getByLabelText('Start location'), 'Davis');
     expect(screen.getByRole('button', { name: 'Search for a start' })).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Target endpoint'), 'Student');
     expect(screen.getByRole('button', { name: 'Search for a destination' })).toBeInTheDocument();
   });
 
   it('says which field a map click will fill once one has asked for it', () => {
-    renderPlanner({
-      points: { origin: null, destination: null },
-      state: { status: 'idle' },
-      canCompare: false,
-      pickTarget: 'destination',
-    });
+    renderPlanForm({ pickTarget: 'destination' });
 
     expect(screen.getByTestId('endpoint-destination-value')).toHaveTextContent(
       /click the map to set this point/i,
@@ -447,28 +427,303 @@ describe('RoutePlanner', () => {
   });
 
   it('shows a committed endpoint by name, with the coordinate as detail', () => {
-    renderPlanner({ points: { origin: ORIGIN, destination: null }, canCompare: false });
+    renderPlanForm({ points: { origin: ORIGIN, destination: null } });
 
+    expect(screen.getByLabelText('Start location')).toHaveValue('Davis Centre library');
     const origin = screen.getByTestId('endpoint-origin-value');
     expect(origin).toHaveTextContent('Davis Centre library');
-    // The coordinate stays visible, but as what the name resolved to.
+    // The coordinate stays available, but as what the name resolved to.
     expect(origin).toHaveTextContent('43.47000');
   });
 
-  it('labels the answer with the journey it answered', () => {
+  it('shows the journey the answer belongs to beside it', () => {
     renderPlanner();
+
+    expect(screen.getByLabelText('Origin')).toHaveValue('Davis Centre library');
+    expect(screen.getByLabelText('Destination')).toHaveValue('Student Life Centre');
+  });
+
+  it('says an answer is out of date rather than letting it look current', async () => {
+    // The one way a comparison can mislead without a single wrong number in
+    // it: the figures stay on screen while the journey above them changes.
+    const user = userEvent.setup();
+    const { props } = renderPlanner({ pendingEdits: true });
+
+    expect(screen.getByTestId('stale-result')).toHaveTextContent(
+      /The routes below are still for the previous one/,
+    );
+    await user.click(screen.getByTestId('compare-routes'));
+    expect(props.onCompare).toHaveBeenCalledOnce();
+  });
+
+  it('on a window shorter than the frame, puts the answer before the controls that change it', () => {
+    const { unmount } = renderPlanner();
+    const follows = (first: Element, second: Element) =>
+      Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
+    // The frame's order: profiles, then the two routes.
+    expect(
+      follows(screen.getByTestId('mobility-profile'), screen.getByTestId('route-difference')),
+    ).toBe(true);
+    unmount();
+
+    renderPlanner({ answerFirst: true });
+    // Reading order and visual order agree: the routes come first for both.
+    expect(
+      follows(screen.getByTestId('route-difference'), screen.getByTestId('mobility-profile')),
+    ).toBe(true);
+    expect(
+      follows(screen.getByTestId('endpoint-destination'), screen.getByTestId('route-difference')),
+    ).toBe(true);
+  });
+
+  it('offers no Compare button beside an answer that is still current', () => {
+    renderPlanner();
+
+    expect(screen.queryByTestId('stale-result')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('compare-routes')).not.toBeInTheDocument();
+  });
+
+  it('runs the verified example from the empty form, and says where it came from', async () => {
+    const user = userEvent.setup();
+    const { props } = renderPlanForm();
+
+    expect(screen.getByTestId('verified-example')).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(CAMPUS_EXAMPLE.provenance.slice(0, 24))),
+    ).toBeInTheDocument();
+    await user.click(screen.getByTestId('run-verified-example'));
+    expect(props.onRunExample).toHaveBeenCalledWith(CAMPUS_EXAMPLE);
+  });
+});
+
+/**
+ * One route's record (17:3789): its name, the journey, and whether its record
+ * has gaps — worded as a statement about the record, never a clearance.
+ */
+describe('the evidence panel', () => {
+  it('says the route was found with gaps, and that this is no guarantee', () => {
+    renderPlanner({ layout: 'evidence' });
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Wheelchair route');
+    expect(screen.getByTestId('journey-origin')).toHaveTextContent('Davis Centre library');
+    expect(screen.getByTestId('journey-destination')).toHaveTextContent('Student Life Centre');
+    const banner = screen.getByTestId('gap-banner');
+    expect(banner).toHaveAttribute('data-complete', 'false');
+    expect(banner).toHaveTextContent('Route found with accessibility data gaps');
+    expect(banner).toHaveTextContent('this is not an accessibility guarantee');
+  });
+
+  it('calls a gap-free record a statement about the record, not a certification', () => {
+    const complete = {
+      ...COMPARISON,
+      accessible_route: buildRoute({
+        unknown_data_fraction: 0,
+        unknown_kerb_crossing_count: 0,
+        evidence_coverage: { surface: 0, smoothness: 0, gradient: 0, width: 0, kerb: 0 },
+      }),
+    } as unknown as RouteCompareResponse;
+    renderPlanner({ layout: 'evidence', state: { status: 'success', comparison: complete } });
+
+    const banner = screen.getByTestId('gap-banner');
+    expect(banner).toHaveAttribute('data-complete', 'true');
+    expect(banner).toHaveTextContent('not a certification that the route is passable');
+    expect(banner).not.toHaveTextContent(/accessible route|safe|verified/i);
+  });
+
+  it('describes the shortest route when that is the one chosen', () => {
+    renderPlanner({ layout: 'evidence', selectedRoute: 'standard' });
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Shortest walking route');
+  });
+
+  it('opens the full record and goes back to the comparison', async () => {
+    const user = userEvent.setup();
+    const onRouteDetails = vi.fn();
+    const onShowLayout = vi.fn();
+    renderPlanner({ layout: 'evidence', onRouteDetails, onShowLayout });
+
+    await user.click(screen.getByTestId('open-route-details'));
+    expect(onRouteDetails).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('button', { name: 'Back to the route comparison' }));
+    expect(onShowLayout).toHaveBeenCalledWith('compare');
+  });
+});
+
+/**
+ * No route for the profile (17:4041). The panel states what the response
+ * reports about the shortest route the engine did return — never a diagnosis
+ * of every path it searched — and that the limits were not relaxed.
+ */
+describe('the no-route panel', () => {
+  const blocked = fixtureComparison({
+    accessible_route: null,
+    accessible_failure: 'No route satisfies the wheelchair profile.',
+    extra_distance_m: null,
+    extra_distance_fraction: null,
+    explanations: [],
+  });
+  const STEP_FREE: ProfileRules = { excludesSteps: true, uphillLimit: null, prefersUnder: 8 };
+
+  it('says no route satisfies the profile and that nothing was relaxed', () => {
+    renderPlanner({
+      layout: 'no-route',
+      state: { status: 'success', comparison: blocked },
+      rules: STEP_FREE,
+    });
+
+    const status = screen.getByTestId('no-accessible-route');
+    expect(status).toHaveAttribute('role', 'status');
+    expect(status).toHaveTextContent('No route satisfies your profile requirements');
+    expect(status).toHaveTextContent('It will not silently relax them.');
+    // The API's own reason, verbatim.
+    expect(status).toHaveTextContent('No route satisfies the wheelchair profile.');
+    // Not styled or announced as a failure of the service.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('names the rule the shortest route breaks, from its recorded stairway', () => {
+    renderPlanner({
+      layout: 'no-route',
+      state: { status: 'success', comparison: blocked },
+      rules: STEP_FREE,
+    });
+
+    const stairs = screen.getByTestId('requirement-steps');
+    expect(stairs).toHaveTextContent('Recorded stairway evidence');
+    expect(stairs).toHaveTextContent('Recorded · OSM');
+    expect(stairs).toHaveTextContent(
+      'The shortest walking route uses 1 recorded stairway; your profile rules out stairs.',
+    );
+    expect(stairs).toHaveTextContent('[Your profile rule]');
+    expect(screen.getByText('0 Recorded Stairs')).toBeInTheDocument();
+  });
+
+  it('states a custom uphill limit as the traveller set it', () => {
+    renderPlanner({
+      layout: 'no-route',
+      state: { status: 'success', comparison: blocked },
+      rules: { ...STEP_FREE, uphillLimit: 4.5 },
+    });
+
+    expect(screen.getByText('Max 4.5% Uphill')).toBeInTheDocument();
+  });
+
+  it('sends the traveller back to the profile or the destination', async () => {
+    const user = userEvent.setup();
+    const onEditJourney = vi.fn();
+    renderPlanner({
+      layout: 'no-route',
+      state: { status: 'success', comparison: blocked },
+      rules: STEP_FREE,
+      onEditJourney,
+    });
+
+    await user.click(screen.getByTestId('edit-profile'));
+    expect(onEditJourney).toHaveBeenLastCalledWith('profile');
+    await user.click(screen.getByTestId('change-destination'));
+    expect(onEditJourney).toHaveBeenLastCalledWith('destination');
+  });
+});
+
+/**
+ * The details sheet's text: everything the panel summarises, in full. The
+ * sheet is modal, so it has to state the whole answer itself.
+ */
+describe('the full answer, as the details sheet states it', () => {
+  it('states the trade-off in the headline', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      /wheelchair route is 226 m longer than the shortest walking route/i,
+    );
+  });
+
+  it('lists the evidence-backed reasons for the detour', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    const reasons = within(screen.getByTestId('difference-reasons'));
+    expect(reasons.getByText(/Avoids 1 stairway \(14 steps in total\)/)).toBeInTheDocument();
+    expect(reasons.getByText(/no kerb has been recorded/)).toBeInTheDocument();
+  });
+
+  it('shows the missing-data caution without softening it', () => {
+    // The most dangerous possible UI bug here is presenting an unsurveyed route
+    // as a checked one.
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    expect(
+      screen.getByText(/Missing data is not evidence that a path is clear/),
+    ).toBeInTheDocument();
+  });
+
+  it('says plainly that no model was involved', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    expect(
+      screen.getByText(/no predictions, no scoring, no machine learning/i),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the required OpenStreetMap attribution with the route', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    expect(screen.getByText(/© OpenStreetMap contributors, ODbL 1\.0/)).toBeInTheDocument();
+  });
+
+  it('shows the elevation licence credit whenever the dataset carries one', () => {
+    // Derived gradients come from NRCan's HRDEM under the Open Government
+    // Licence – Canada, which requires its statement wherever a grade is shown.
+    const credit = 'Contains information licensed under the Open Government Licence – Canada.';
+    render(
+      <RouteComparisonView
+        comparison={
+          {
+            ...COMPARISON,
+            dataset: { ...COMPARISON.dataset, elevation_attribution: credit },
+          } as unknown as RouteCompareResponse
+        }
+      />,
+    );
+
+    expect(screen.getByTestId('elevation-attribution')).toHaveTextContent(credit);
+  });
+
+  it('shows no elevation credit for a dataset that was never sampled', () => {
+    render(<RouteComparisonView comparison={COMPARISON} />);
+
+    expect(screen.queryByTestId('elevation-attribution')).not.toBeInTheDocument();
+  });
+
+  it('reports unrecorded gradients as unrecorded rather than zero', () => {
+    render(
+      <RouteComparisonView
+        comparison={
+          {
+            ...COMPARISON,
+            accessible_route: buildRoute({ steepest_incline_percent: null, gradient: NO_GRADIENT }),
+          } as unknown as RouteCompareResponse
+        }
+      />,
+    );
+
+    // Scoped to the breakdown of the route being described.
+    const breakdown = screen.getByTestId('evidence-coverage');
+    expect(within(breakdown).getByTestId('steepest-climb')).toHaveTextContent('None on record');
+    expect(within(breakdown).getByTestId('steepest-descent')).toHaveTextContent('None on record');
+    expect(within(breakdown).queryByText(/0\.0%/)).not.toBeInTheDocument();
+  });
+
+  it('labels the answer with the journey it answered', () => {
+    render(
+      <RouteComparisonView
+        comparison={COMPARISON}
+        journeySummary="Davis Centre library to Student Life Centre"
+      />,
+    );
 
     expect(screen.getByTestId('journey-summary')).toHaveTextContent(
       'Davis Centre library to Student Life Centre',
     );
-  });
-
-  it('says an answer is out of date rather than letting it look current', () => {
-    // The one way a comparison can mislead without a single wrong number in
-    // it: the figures stay on screen while the journey above them changes.
-    renderPlanner({ pendingEdits: true });
-
-    expect(screen.getByTestId('stale-result')).toHaveTextContent(/press compare routes to update/i);
   });
 });
 
@@ -596,12 +851,12 @@ describe('RouteWorkspace', () => {
     expect(urls).toContain('http://api.test/api/v1/routes/profiles');
   });
 
-  it('shows no map key until there are routes for it to explain', () => {
-    // A key to two lines that do not exist yet is furniture, and on a phone it
-    // is furniture sitting on the map.
+  it('opens on the planning form, with no answer to explain yet', () => {
+    // Nothing is drawn or described until a journey has been asked about.
     render(<RouteWorkspace {...config} fetchImpl={vi.fn() as unknown as typeof fetch} />);
 
-    expect(screen.queryByTestId('map-legend')).not.toBeInTheDocument();
+    expect(screen.getByTestId('plan-journey')).toHaveAttribute('data-layout', 'plan');
+    expect(screen.queryByTestId('route-difference')).not.toBeInTheDocument();
   });
 });
 
@@ -743,9 +998,9 @@ describe('draft versus submitted journey', () => {
   });
 });
 
-describe('stairs, as the route cards state them', () => {
+describe('stairs, as the details sheet states them', () => {
   it('says how many, and that the step total is a floor', () => {
-    renderPlanner();
+    render(<RouteComparisonView comparison={COMPARISON} />);
 
     // "recorded" is load-bearing: step_count sums only the stairways somebody
     // counted, so it is a floor and never a total.
@@ -763,12 +1018,24 @@ describe('stairs, as the route cards state them', () => {
       accessible_route: { ...COMPARISON.accessible_route, segments: [], stairway_count: 0 },
     } as unknown as RouteCompareResponse;
 
-    renderPlanner({ state: { status: 'success', comparison: noStairs } });
+    render(<RouteComparisonView comparison={noStairs} />);
 
     for (const id of ['difference-shortest', 'difference-accessible']) {
       expect(screen.getByTestId(id)).toHaveTextContent('No recorded stairs');
       expect(screen.getByTestId(id)).not.toHaveTextContent(/\bno stairs\b/i);
     }
+  });
+
+  it('counts recorded stairways on the cards, never "no stairs"', () => {
+    const noStairs = {
+      ...COMPARISON,
+      standard_route: { ...COMPARISON.standard_route, segments: [], stairway_count: 0 },
+    } as unknown as RouteCompareResponse;
+
+    renderPlanner({ state: { status: 'success', comparison: noStairs } });
+
+    expect(screen.getByTestId('difference-accessible')).toHaveTextContent(/Stairs\s*0 recorded/);
+    expect(screen.getByTestId('plan-journey')).not.toHaveTextContent(/\bno stairs\b/i);
   });
 });
 
@@ -807,8 +1074,7 @@ describe('the uphill limit', () => {
   it('keeps Compare unavailable while the limit on screen cannot be sent', async () => {
     const user = userEvent.setup();
     const onUphillLimitChange = vi.fn();
-    renderPlanner({
-      state: { status: 'idle' },
+    renderPlanForm({
       uphillLimit: { enabled: true, text: '' },
       onUphillLimitChange,
     });
@@ -821,7 +1087,7 @@ describe('the uphill limit', () => {
   });
 
   it('shows no number and no field while the limit is off', () => {
-    renderPlanner({ state: { status: 'idle' } });
+    renderPlanForm();
 
     expect(screen.getByTestId('uphill-limit-toggle')).not.toBeChecked();
     expect(screen.queryByTestId('uphill-limit-input')).not.toBeInTheDocument();

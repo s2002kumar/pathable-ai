@@ -70,8 +70,8 @@ describe('basemap tone', () => {
 
   it('leaves labels, attribution and one-way arrows to the style', () => {
     // Pedestrian detail is what a route is read against. Recolouring a label
-    // is fine; hiding one is not, and nothing here touches visibility except
-    // the extrusion.
+    // or its halo is fine (the dark ground needs both); hiding one is not, and
+    // nothing here touches visibility except the extrusion.
     const hidden = BASEMAP_LAYOUT.filter((override) => override.property === 'visibility');
     expect(hidden.map((override) => override.layer)).toEqual(['building-3d']);
 
@@ -83,6 +83,7 @@ describe('basemap tone', () => {
       'line-color',
       'line-width',
       'text-color',
+      'text-halo-color',
     ]);
   });
 
