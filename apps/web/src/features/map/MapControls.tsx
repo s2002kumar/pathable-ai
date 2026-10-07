@@ -114,6 +114,9 @@ function LayersMenu({
  * Layers, an evidence-label toggle, zoom, fit and north. Fit replaces the
  * design's locate glyph — PathAble does not read the viewer's location — and
  * re-frames what the map is showing instead.
+ *
+ * Each group is marked `data-map-chrome`, which is how the map's labels know
+ * to stay out from under it (MapMarkers).
  */
 export function MapControls({
   map,
@@ -190,7 +193,12 @@ export function MapControls({
 
   if (layout === 'phone') {
     return (
-      <div className={styles.hud} data-layout={layout} data-testid="map-controls">
+      <div
+        className={styles.hud}
+        data-layout={layout}
+        data-testid="map-controls"
+        data-map-chrome=""
+      >
         <LayersMenu layers={layers} onLayersChange={onLayersChange} label="Layers" iconOnly round />
         <button
           type="button"
@@ -210,7 +218,12 @@ export function MapControls({
 
   if (layout === 'compare') {
     return (
-      <div className={styles.hud} data-layout={layout} data-testid="map-controls">
+      <div
+        className={styles.hud}
+        data-layout={layout}
+        data-testid="map-controls"
+        data-map-chrome=""
+      >
         <LayersMenu layers={layers} onLayersChange={onLayersChange} label="Layers" />
         <div className={styles.hudGroup} role="group" aria-label="Map view">
           {zoomIn}
@@ -224,7 +237,12 @@ export function MapControls({
   if (layout === 'evidence') {
     return (
       <>
-        <div className={styles.hud} data-layout={layout} data-testid="map-controls">
+        <div
+          className={styles.hud}
+          data-layout={layout}
+          data-testid="map-controls"
+          data-map-chrome=""
+        >
           <p className={styles.hudLegend}>
             <span className="visually-hidden">Map key: </span>
             <span className={styles.hudLegendItem}>
@@ -239,7 +257,7 @@ export function MapControls({
           {fit(styles.hudSquare)}
           <LayersMenu layers={layers} onLayersChange={onLayersChange} label="Layers" iconOnly />
         </div>
-        <div className={styles.hudStack} role="group" aria-label="Map view">
+        <div className={styles.hudStack} role="group" aria-label="Map view" data-map-chrome="">
           {zoomIn}
           {zoomOut}
         </div>
@@ -250,7 +268,12 @@ export function MapControls({
   // plan and no-route: a labelled bar top right, a stack bottom right.
   return (
     <>
-      <div className={styles.hud} data-layout={layout} data-testid="map-controls">
+      <div
+        className={styles.hud}
+        data-layout={layout}
+        data-testid="map-controls"
+        data-map-chrome=""
+      >
         <div className={styles.hudBar}>
           {layout === 'plan' ? (
             <>
@@ -265,7 +288,7 @@ export function MapControls({
           )}
         </div>
       </div>
-      <div className={styles.hudStack} role="group" aria-label="Map view">
+      <div className={styles.hudStack} role="group" aria-label="Map view" data-map-chrome="">
         {layout === 'no-route' ? fit(styles.hudIcon) : null}
         {zoomIn}
         {zoomOut}

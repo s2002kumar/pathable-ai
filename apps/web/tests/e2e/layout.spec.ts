@@ -150,6 +150,29 @@ async function routeUnderSurfaces(page: Page): Promise<{ drawn: boolean; covered
   );
 }
 
+/** Every visible label on the map whose box crosses one of the map's controls. */
+async function labelsUnderControls(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    // Found as a viewer would name them, not by the attribute the fix added.
+    const controls = [
+      ...document.querySelectorAll(
+        '[data-testid="map-controls"], [data-testid="map-frame"] [role="group"][aria-label="Map view"]',
+      ),
+    ].map((element) => element.getBoundingClientRect());
+    return [...document.querySelectorAll<HTMLElement>('[data-testid="map-evidence"] [data-pin]')]
+      .filter(
+        (label) => label.closest<HTMLElement>('[data-variant]')?.style.visibility === 'visible',
+      )
+      .filter((label) => {
+        const a = label.getBoundingClientRect();
+        return controls.some(
+          (b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom,
+        );
+      })
+      .map((label) => label.dataset.testid ?? '?');
+  });
+}
+
 test.describe('layout', () => {
   test.beforeEach(async ({ page }) => {
     await stubHealthyApi(page);
@@ -487,6 +510,36 @@ test.describe('reflow', () => {
     await page.getByTestId('view-evidence').click();
     await expect(page.getByTestId('gap-dock')).toBeVisible();
     await expect.poll(() => routeUnderSurfaces(page)).toEqual({ drawn: true, covered: 0 });
+  });
+
+  test('on a 390 px phone, a place name never runs under the map controls', async ({ page }) => {
+    // Regression, PA-UX-04: the origin landed near the map's right edge and
+    // its name ran underneath the controls. Moved up into the controls' band,
+    // then toward them a step at a time, each name has to move to its point's
+    // other side or give way.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(PLANNER);
+    await waitForMapReady(page);
+    await runExample(page);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.locator('.maplibregl-canvas').focus();
+    // The view moves south, so the routes move up, level with the controls.
+    await page.keyboard.press('ArrowDown');
+
+    let turned = false;
+    for (let step = 0; step < 4; step += 1) {
+      await expect.poll(() => labelsUnderControls(page)).toEqual([]);
+      turned ||= await page.evaluate(() =>
+        [
+          ...document.querySelectorAll<HTMLElement>('[data-variant="endpoint"][data-side="left"]'),
+        ].some((element) => element.style.visibility === 'visible'),
+      );
+      // The view moves west, so the routes move right, toward the controls.
+      await page.keyboard.press('ArrowLeft');
+    }
+    // Otherwise nothing above came near the controls and the test proved nothing.
+    expect(turned).toBe(true);
   });
 
   test('a phone opens the answer at the map, with the sheet under it', async ({ page }) => {

@@ -307,6 +307,12 @@
   transform: translateY(-50%);
 }
 
+/* Near the map's right edge or its controls, the name goes on the left. */
+.marker[data-side='left'] .endpointLabel {
+  right: 18px;
+  left: auto;
+}
+
 .endpointLabelDot {
   width: 6px;
   height: 6px;

@@ -37,13 +37,38 @@ export type MapMarker = {
 const PILL_LIFT_PX = 14;
 /** Space kept clear around a pin before another counts as overlapping it. */
 const PILL_MARGIN_PX = 4;
-/** How far right of A or B its name starts, matching `.endpointLabel`. */
+/** How far right (or left) of A or B its name starts, matching `.endpointLabel`. */
 const ENDPOINT_OFFSET_PX = 18;
 
 type Box = { left: number; right: number; top: number; bottom: number };
 
+/** Which side of its point a place name is drawn on. */
+type Side = 'right' | 'left';
+
 function overlaps(a: Box, b: Box): boolean {
   return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
+/**
+ * The map's own controls, in the labels' coordinates. A label is never drawn
+ * underneath one: on a phone the controls take the map's right edge, and the
+ * origin's name ran under them whenever the origin landed near it.
+ */
+function chromeBoxes(layer: HTMLElement): Box[] {
+  const frame = layer.parentElement;
+  if (frame === null) return [];
+  const origin = layer.getBoundingClientRect();
+  return [...frame.querySelectorAll('[data-map-chrome]')]
+    .map((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left - origin.left,
+        right: rect.right - origin.left,
+        top: rect.top - origin.top,
+        bottom: rect.bottom - origin.top,
+      };
+    })
+    .filter((box) => box.right > box.left && box.bottom > box.top);
 }
 
 const DEFAULT_ICONS: Readonly<Record<MapMarker['tone'], IconName>> = {
@@ -61,11 +86,13 @@ function boxFor(
   y: number,
   width: number,
   height: number,
+  side: Side = 'right',
 ): Box {
   if (variant === 'endpoint') {
+    const start = side === 'right' ? x + ENDPOINT_OFFSET_PX : x - ENDPOINT_OFFSET_PX - width;
     return {
-      left: x + ENDPOINT_OFFSET_PX - PILL_MARGIN_PX,
-      right: x + ENDPOINT_OFFSET_PX + width + PILL_MARGIN_PX,
+      left: start - PILL_MARGIN_PX,
+      right: start + width + PILL_MARGIN_PX,
       top: y - height / 2 - PILL_MARGIN_PX,
       bottom: y + height / 2 + PILL_MARGIN_PX,
     };
@@ -98,6 +125,7 @@ export function MapMarkers({
   readonly map: MapInstance | null;
   readonly markers: readonly MapMarker[];
 }) {
+  const layerRef = useRef<HTMLDivElement>(null);
   const elements = useRef(new Map<string, HTMLDivElement>());
 
   useEffect(() => {
@@ -110,17 +138,42 @@ export function MapMarkers({
       // it. Zoomed out, a barrier and a climb a few metres apart would
       // otherwise cover each other and neither could be read. Measured from
       // the pins themselves, because their width is their text.
-      const placed: Box[] = [];
+      //
+      // The map's controls count as placed first. A place name that would
+      // run under them, or off the map, goes on its point's other side.
+      const layer = layerRef.current;
+      const placed: Box[] = layer === null ? [] : chromeBoxes(layer);
+      const width = layer?.clientWidth ?? 0;
       for (const marker of markers) {
         const element = elements.current.get(marker.id);
         if (!element) continue;
         const { x, y } = project.call(map, [marker.position[0], marker.position[1]]);
         element.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
         const pill = element.querySelector<HTMLElement>('[data-pin]');
-        const box = boxFor(marker.variant, x, y, pill?.offsetWidth ?? 0, pill?.offsetHeight ?? 0);
-        const collides = placed.some((other) => overlaps(box, other));
-        element.style.visibility = collides ? 'hidden' : 'visible';
-        if (!collides) placed.push(box);
+        const sides: readonly Side[] =
+          marker.variant === 'endpoint' ? ['right', 'left'] : ['right'];
+        const clear = sides
+          .map((side) => ({
+            side,
+            box: boxFor(
+              marker.variant,
+              x,
+              y,
+              pill?.offsetWidth ?? 0,
+              pill?.offsetHeight ?? 0,
+              side,
+            ),
+          }))
+          .filter(({ box }) => !placed.some((other) => overlaps(box, other)));
+        // Wholly on the map where either side allows it; a name the map's
+        // edge clips still says more than none.
+        const choice =
+          clear.find(({ box }) => width === 0 || (box.left >= 0 && box.right <= width)) ?? clear[0];
+        element.style.visibility = choice ? 'visible' : 'hidden';
+        if (choice) {
+          placed.push(choice.box);
+          if (marker.variant === 'endpoint') element.dataset.side = choice.side;
+        }
       }
     };
 
@@ -136,7 +189,7 @@ export function MapMarkers({
   if (map === null || map.project === undefined || markers.length === 0) return null;
 
   return (
-    <div className={styles.markers} aria-hidden="true" data-testid="map-evidence">
+    <div className={styles.markers} ref={layerRef} aria-hidden="true" data-testid="map-evidence">
       {markers.map((marker) => (
         <div
           key={marker.id}
