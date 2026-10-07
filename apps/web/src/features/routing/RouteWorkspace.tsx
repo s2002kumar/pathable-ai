@@ -528,11 +528,12 @@ export function RouteWorkspace({
           origin={points.origin?.position ?? null}
           destination={points.destination?.position ?? null}
           focusedRoute={mapFocus}
-          fitPadding={fit.padding}
+          fitPadding={fit.measurePadding}
           stairs={stairs}
           gaps={gaps}
           markers={markers}
           fitRequest={fitRequest}
+          fitScope={layout}
           onSelectPoint={handleSelectPoint}
           veil={layout === 'plan'}
           controls={{

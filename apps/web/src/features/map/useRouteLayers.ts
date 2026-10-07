@@ -59,11 +59,12 @@ export type UseRouteLayersOptions = {
   readonly focus?: RouteFocus;
   /**
    * Room to leave around a fitted route, measured from the floating panel by
-   * the workspace. Deliberately not a dependency of the fitting effect: a
-   * viewer who resizes the window, or opens a disclosure that makes the panel
-   * taller, has not asked for the camera to move.
+   * the workspace — or a function that measures it, called as the camera
+   * moves. Deliberately not a dependency of the fitting effect: a viewer who
+   * resizes the window, or opens a disclosure that makes the panel taller,
+   * has not asked for the camera to move.
    */
-  readonly fitPadding?: Padding;
+  readonly fitPadding?: Padding | (() => Padding);
   /**
    * Recorded stairways to draw over the route, or null to draw none. Paint and
    * data only — showing them never moves the camera, because a viewer asking
@@ -76,6 +77,13 @@ export type UseRouteLayersOptions = {
    * for something other than a new answer.
    */
   readonly fitRequest?: number;
+  /**
+   * The view the routes are framed for. A new one re-frames them even when
+   * they have not changed: one route's evidence leaves less of the map clear
+   * than the comparison does, and the comparison's frame left the route under
+   * the evidence view's taller dock.
+   */
+  readonly fitScope?: string;
   /** Unrecorded stretches of the shown route, drawn over it; paint and data only. */
   readonly gaps?: LineFeatureCollection | null;
 };
@@ -99,11 +107,12 @@ export function useRouteLayers({
   fitPadding,
   stairs = null,
   fitRequest = 0,
+  fitScope = '',
   gaps = null,
 }: UseRouteLayersOptions): void {
-  // The last bounds we fitted to. Refitting on every render would fight the user
-  // for control of the viewport; refitting only when the route actually changes
-  // keeps their pan and zoom.
+  // The last bounds we fitted to, and the view they were fitted for. Refitting
+  // on every render would fight the user for control of the viewport;
+  // refitting only when the route or the view changes keeps their pan and zoom.
   const lastFitted = useRef<string | null>(null);
   const lastFitRequest = useRef(fitRequest);
 
@@ -111,7 +120,7 @@ export function useRouteLayers({
   // an effect rather than during render, and declared before the effect that
   // reads it so a commit that changes both has the new padding by the time the
   // camera moves.
-  const padding = useRef<Padding>({ ...FIT_PADDING });
+  const padding = useRef<Padding | (() => Padding)>({ ...FIT_PADDING });
   useEffect(() => {
     padding.current = fitPadding ?? { ...FIT_PADDING };
   }, [fitPadding]);
@@ -135,19 +144,29 @@ export function useRouteLayers({
       return;
     }
 
-    const signature = JSON.stringify(bounds);
+    const signature = JSON.stringify([fitScope, bounds]);
     const asked = fitRequest !== lastFitRequest.current;
     lastFitRequest.current = fitRequest;
     if (signature === lastFitted.current && !asked) return;
     lastFitted.current = signature;
 
+    const room = padding.current;
     map.fitBounds(bounds, {
-      padding: padding.current,
+      padding: typeof room === 'function' ? room() : room,
       maxZoom: 17,
       // Capped, and nothing at all for a viewer who asked for less motion.
       duration: cameraDuration(prefersReducedMotion()),
     });
-  }, [map, standardRoute, accessibleRoute, origin, destination, showStandardRoute, fitRequest]);
+  }, [
+    map,
+    standardRoute,
+    accessibleRoute,
+    origin,
+    destination,
+    showStandardRoute,
+    fitRequest,
+    fitScope,
+  ]);
 
   // The stairway overlay, like focus, is data and paint only: no camera move,
   // no refit. Setting the source to an empty collection is what removes it,

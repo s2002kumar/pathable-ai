@@ -78,6 +78,78 @@ async function watchMapLifecycle(page: Page): Promise<() => Promise<string[]>> {
   return () => page.evaluate(() => (window as unknown as { __mapStates: string[] }).__mapStates);
 }
 
+/** Everything drawn over the map's canvas, hidden for `routeUnderSurfaces`'s shot. */
+const OVER_THE_MAP = `
+  [data-testid="map-frame"] > :not([role="region"]),
+  .maplibregl-control-container,
+  aside[aria-label="Route planner"],
+  [data-testid="evidence-dock"],
+  [data-testid="gap-dock"] { visibility: hidden !important; opacity: 0 !important; }
+`;
+
+/**
+ * Whether the map drew anything, and how many of its pixels lie under the
+ * panel or a dock.
+ *
+ * The routes are WebGL, so no DOM box says where they are; the pixels do. The
+ * test style paints only a flat background, so with every surface over the
+ * map hidden for the shot, any pixel unlike the map's corner is a route, a
+ * stairway or an endpoint. Hidden by `visibility` and `opacity`, which move
+ * nothing; `visibility` alone left text inside them drawn.
+ */
+async function routeUnderSurfaces(page: Page): Promise<{ drawn: boolean; covered: number }> {
+  const frame = await page.getByTestId('map-frame').boundingBox();
+  if (frame === null) return { drawn: false, covered: -1 };
+  const surfaces = await page.evaluate(() =>
+    [
+      'aside[aria-label="Route planner"]',
+      '[data-testid="evidence-dock"]',
+      '[data-testid="gap-dock"]',
+    ]
+      .map((selector) => document.querySelector(selector)?.getBoundingClientRect())
+      .filter((rect): rect is DOMRect => rect !== undefined && rect.width > 0)
+      .map(({ left, top, right, bottom }) => ({ left, top, right, bottom })),
+  );
+  const shot = await page.screenshot({ clip: frame, style: OVER_THE_MAP });
+  return page.evaluate(
+    async ({ png, frame, surfaces }) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${png}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d')!;
+      context.drawImage(image, 0, 0);
+      const { data } = context.getImageData(0, 0, image.width, image.height);
+      const scale = image.width / frame.width;
+      const [r, g, b] = [data[0]!, data[1]!, data[2]!];
+      let drawn = 0;
+      let covered = 0;
+      for (let y = 0; y < image.height; y += 1) {
+        for (let x = 0; x < image.width; x += 1) {
+          const i = (y * image.width + x) * 4;
+          if (
+            Math.abs(data[i]! - r) + Math.abs(data[i + 1]! - g) + Math.abs(data[i + 2]! - b) <
+            48
+          ) {
+            continue;
+          }
+          drawn += 1;
+          const px = frame.x + x / scale;
+          const py = frame.y + y / scale;
+          if (surfaces.some((s) => px >= s.left && px < s.right && py >= s.top && py < s.bottom)) {
+            covered += 1;
+          }
+        }
+      }
+      // A route at least a few hundred pixels long, or this proves nothing.
+      return { drawn: drawn > 400 * scale * scale, covered };
+    },
+    { png: shot.toString('base64'), frame, surfaces },
+  );
+}
+
 test.describe('layout', () => {
   test.beforeEach(async ({ page }) => {
     await stubHealthyApi(page);
@@ -396,6 +468,25 @@ test.describe('reflow', () => {
     expect(dock).not.toBeNull();
     if (panel !== null && dock !== null) expect(overlapArea(panel, dock)).toBe(0);
     expect(await hasHorizontalOverflow(page)).toBe(false);
+  });
+
+  test('on a 1280 × 800 laptop, neither the panel nor a dock covers the route', async ({
+    page,
+  }) => {
+    // Regression, PA-UX-04: one route's evidence was framed for the
+    // comparison's slim dock, and the far taller gap dock beside the panel
+    // covered most of the route. The camera is immediate under reduced motion.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(PLANNER);
+    await waitForMapReady(page);
+    await runExample(page);
+    await expect(page.getByTestId('evidence-dock')).toBeVisible();
+    await expect.poll(() => routeUnderSurfaces(page)).toEqual({ drawn: true, covered: 0 });
+
+    await page.getByTestId('view-evidence').click();
+    await expect(page.getByTestId('gap-dock')).toBeVisible();
+    await expect.poll(() => routeUnderSurfaces(page)).toEqual({ drawn: true, covered: 0 });
   });
 
   test('a phone opens the answer at the map, with the sheet under it', async ({ page }) => {

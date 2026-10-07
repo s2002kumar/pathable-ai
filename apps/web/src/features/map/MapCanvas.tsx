@@ -33,8 +33,9 @@ export type MapCanvasProps = {
   /** Which route to bring forward on the map, if the viewer asked for one. */
   readonly focusedRoute?: RouteFocus;
   /** Room to leave around a fitted route, so the panel floating over the map
-   *  never sits on top of the answer. */
-  readonly fitPadding?: Padding;
+   *  never sits on top of the answer; a function is measured as the camera
+   *  moves. */
+  readonly fitPadding?: Padding | (() => Padding);
   /** Recorded stairways to draw over the route, or null for none. */
   readonly stairs?: RecordedStairs | null;
   /** Unrecorded stretches of the shown route, for the evidence view. */
@@ -43,6 +44,8 @@ export type MapCanvasProps = {
   readonly markers?: readonly MapMarker[];
   /** Incremented to re-frame the routes on request. */
   readonly fitRequest?: number;
+  /** The view the routes are framed for; a new one re-frames them. */
+  readonly fitScope?: string;
   /**
    * Called with the clicked position. Absent when the map is decorative, which
    * is what keeps this component usable outside the planner.
@@ -82,6 +85,7 @@ export function MapCanvas({
   gaps = null,
   markers = NO_MARKERS,
   fitRequest = 0,
+  fitScope,
   onSelectPoint,
   controls,
   veil = false,
@@ -108,6 +112,7 @@ export function MapCanvas({
     ...(fitPadding ? { fitPadding } : {}),
     stairs,
     fitRequest,
+    ...(fitScope !== undefined ? { fitScope } : {}),
     gaps,
   });
   useMapClick(map, onSelectPoint ?? noop);

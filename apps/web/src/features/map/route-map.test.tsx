@@ -107,9 +107,12 @@ class FakeMap {
     this.layout.push({ layer, name, value });
   }
 
-  fitBounds(bounds: [[number, number], [number, number]]) {
+  fitBounds(bounds: [[number, number], [number, number]], options: { padding?: unknown } = {}) {
     this.fitted.push(bounds);
+    this.fitPadding.push(options.padding);
   }
+
+  fitPadding: unknown[] = [];
 
   /** A flat projection is enough to place a label; nothing here measures it. */
   project([lng, lat]: [number, number]) {
@@ -286,6 +289,12 @@ function respondWithComparison() {
   ) as unknown as typeof fetch;
 }
 
+function box(left: number, top: number, right: number, bottom: number): DOMRect {
+  const width = right - left;
+  const height = bottom - top;
+  return { left, top, right, bottom, width, height, x: left, y: top, toJSON: () => ({}) };
+}
+
 async function clickMap(map: FakeMap, lng: number, lat: number) {
   await act(async () => {
     map.emit('click', { lngLat: { lng, lat } });
@@ -380,6 +389,72 @@ describe('route layers', () => {
     await clickMap(map, -80.54, 43.47);
 
     await waitFor(() => expect(map.fitted.length).toBeGreaterThan(0));
+  });
+
+  // Regression, PA-UX-04: on a 1280 × 800 window the gap dock covered most of
+  // one route's evidence. Two ways in. Where showing one route changed the
+  // bounds, the camera used the comparison's padding: the map's effect runs
+  // before the workspace's, so the dock drawn in the same commit had not been
+  // measured. Where it did not change them, the camera did not move at all.
+  it.each([
+    ['a shortest route reaching beyond the profile’s', [-80.538, 43.4715]],
+    ['a shortest route inside the profile’s', [-80.538, 43.47]],
+  ] as const)('frames one route’s evidence clear of its gap dock, for %s', async (_, middle) => {
+    // These boxes stand in for a layout engine: the map under the bar, the
+    // panel top left, and each dock where that window puts it.
+    const boxes: Array<[(element: HTMLElement) => boolean, DOMRect]> = [
+      [
+        (e) => e.firstElementChild?.getAttribute('data-testid') === 'map-frame',
+        box(0, 64, 1280, 700),
+      ],
+      [(e) => e.matches('aside[aria-label="Route planner"]'), box(24, 88, 434, 400)],
+      [
+        (e) => e.firstElementChild?.getAttribute('data-testid') === 'evidence-dock',
+        box(64, 612, 1216, 676),
+      ],
+      [
+        (e) => e.firstElementChild?.getAttribute('data-testid') === 'gap-dock',
+        box(458, 338, 1256, 676),
+      ],
+    ];
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return boxes.find(([matches]) => matches(this))?.[1] ?? box(0, 0, 0, 0);
+    });
+    const comparison = {
+      ...COMPARISON,
+      standard_route: {
+        ...COMPARISON.standard_route,
+        coordinates: [[-80.54, 43.47], middle, [-80.536, 43.47]],
+      },
+    };
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(JSON.stringify(comparison), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    ) as unknown as typeof fetch;
+
+    render(<RouteWorkspace {...CONFIG} fetchImpl={fetchImpl} />);
+    await waitFor(() => expect(FakeMap.instances[0]?.layerIds.length).toBeGreaterThan(0));
+    const map = FakeMap.instances[0]!;
+    await clickMap(map, -80.54, 43.47);
+    await clickMap(map, -80.536, 43.47);
+    await compare();
+    const dock = await screen.findByTestId('evidence-dock');
+
+    const before = map.fitPadding.length;
+    await act(async () => {
+      dock.querySelector<HTMLElement>('[data-testid="view-evidence"]')!.click();
+    });
+    await screen.findByTestId('gap-dock');
+
+    expect(map.fitPadding.length).toBe(before + 1);
+    // Above the gap dock (700 − 338 = 362 px of it, plus the usual 72) and
+    // right of the panel (434 + 64), not above the comparison's slim dock.
+    expect(map.fitPadding.at(-1)).toEqual({ top: 72, bottom: 434, left: 498, right: 72 });
   });
 
   it('cases each line directly beneath it, and halos the markers', async () => {
