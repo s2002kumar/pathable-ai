@@ -80,6 +80,18 @@ NODES: dict[int, tuple[float, float, Tags]] = {
     73: (-80.5300, 43.4700, {}),
     74: (-80.5410, 43.4710, {}),
     75: (-80.5410, 43.4712, {}),
+    # Erb Street, and one block of its sidewalk mapped as a separate line about
+    # 20 m north — its midpoint in a different cell from the road's.
+    80: (-80.5440, 43.4720, {}),
+    81: (-80.5400, 43.4720, {}),
+    82: (-80.5440, 43.47218, {}),
+    83: (-80.5432, 43.47218, {}),
+    # Long Road: a short way inside the region and a long one running out of it.
+    84: (-80.5320, 43.4745, {}),
+    85: (-80.5320, 43.4900, {}),
+    86: (-80.5330, 43.4745, {}),
+    # An information board named after the park, in the park's own cell.
+    87: (-80.5401, 43.4664, {"tourism": "information", "name": "Waterloo Park"}),
 }
 
 WAYS: list[tuple[int, Tags, list[int]]] = [
@@ -103,6 +115,10 @@ WAYS: list[tuple[int, Tags, list[int]]] = [
     (203, {"highway": "footway", "name": "Laurel Trail"}, [70, 71]),
     (204, {"highway": "motorway", "name": "Conestoga Parkway"}, [72, 73]),
     (205, {"highway": "steps", "name": "Library Steps"}, [74, 75]),
+    (210, {"highway": "secondary", "name": "Erb Street"}, [80, 81]),
+    (211, {"highway": "footway", "footway": "sidewalk", "name": "Erb Street"}, [82, 83]),
+    (220, {"highway": "secondary", "name": "Long Road"}, [84, 85]),
+    (221, {"highway": "secondary", "name": "Long Road"}, [86, 84]),
     # The park's outline, in two untagged pieces.
     (300, {}, [50, 51, 52]),
     (301, {}, [52, 53, 50]),
@@ -226,7 +242,9 @@ class TestAddresses:
 
         assert cafe.kind is PlaceKind.PLACE
         assert "200 university avenue west" in cafe.search_text
-        assert only(entries, "200 University Avenue West, Waterloo").kind is PlaceKind.ADDRESS
+        # Regression: every University of Waterloo building shares one address, so
+        # a separate address entry per building put five identical lines in a list.
+        assert labelled(entries, "200 University Avenue West, Waterloo") == []
 
 
 class TestStreets:
@@ -261,6 +279,26 @@ class TestStreets:
     def test_a_named_footway_is_a_path(self, entries: list[PlaceEntry]) -> None:
         assert only(entries, "Laurel Trail").category == "path"
 
+    def test_a_sidewalk_named_after_its_road_is_the_same_street(
+        self, entries: list[PlaceEntry]
+    ) -> None:
+        # Regression: sidewalks and cycle tracks mapped beside a road share no
+        # node with it, and grouping by shared nodes alone split Erb Street West
+        # into five results. The point goes on the road, not the sidewalk.
+        erb = only(entries, "Erb Street")
+
+        assert (erb.osm_id, erb.category) == (210, "street")
+
+    def test_a_street_leaving_the_region_is_placed_on_its_part_inside(
+        self, entries: list[PlaceEntry]
+    ) -> None:
+        # Regression: King Street North vanished from the index because its
+        # longest way runs out of town and that way's midpoint was outside.
+        long_road = only(entries, "Long Road")
+
+        assert long_road.osm_id == 221
+        assert long_road.latitude <= BOUNDS[3]
+
     def test_nobody_is_routed_to_a_motorway_or_a_flight_of_steps(
         self, entries: list[PlaceEntry]
     ) -> None:
@@ -278,7 +316,7 @@ class TestProvenance:
         assert result.configuration["source_timestamp_from"] == "pbf-header"
         assert result.configuration["provider"] == "geofabrik"
         assert result.configuration["attribution"] == "© OpenStreetMap contributors, ODbL 1.0"
-        assert result.count(PlaceKind.STREET) == 3
+        assert result.count(PlaceKind.STREET) == 5
 
     def test_a_date_given_explicitly_wins(self, extract: Path) -> None:
         given = dt.datetime(2026, 8, 17, tzinfo=dt.UTC)
@@ -361,3 +399,12 @@ class TestDeduplication:
         kept = deduplicate([entry(1, -80.53451), entry(2, -80.53452), entry(3, -80.5200)])
 
         assert [item.osm_id for item in kept] == [1, 3]
+
+    def test_a_place_beats_an_incidental_feature_that_shares_its_name(
+        self, entries: list[PlaceEntry]
+    ) -> None:
+        # Regression: the University of Waterloo campus was dropped because its
+        # information board, read first, shares its name and its cell.
+        park = only(entries, "Waterloo Park")
+
+        assert (park.osm_type, park.category) == ("relation", "park")

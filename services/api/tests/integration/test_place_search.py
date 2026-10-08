@@ -67,6 +67,10 @@ ENTRIES = [
     entry(ADDRESS, "200 University Avenue West, Waterloo", "address", -80.5390, 43.4725),
     entry(ADDRESS, "1200 University Avenue West, Waterloo", "address", -80.5600, 43.4800),
     entry(PLACE, "Davis Centre", "university", -80.5420, 43.4728),
+    # Three features that share a name, as at the real Waterloo Public Square.
+    entry(PLACE, "Waterloo Public Square", "information", -80.5226, 43.4641),
+    entry(PLACE, "Waterloo Public Square", "transit station", -80.5228, 43.4642),
+    entry(PLACE, "Waterloo Public Square, 75 King Street South", "square", -80.5224, 43.4638),
     *(
         entry(PLACE, f"Coffee Shop {index}", "cafe", -80.52 - index / 1000, 43.47)
         for index in range(6)
@@ -175,6 +179,28 @@ class TestRanking:
     ) -> None:
         assert await labels(db_session, index, "Conestoga Station") == ["Conestoga Station"]
 
+    async def test_the_place_comes_before_what_is_named_after_it(
+        self, db_session: AsyncSession, index: GazetteerBuild
+    ) -> None:
+        # Regression: on the real index, "Davis Centre" put a taxi stand first,
+        # because an exact name outranked everything. The square comes first,
+        # then the stop that serves it, then the information board.
+        found = await labels(db_session, index, "Waterloo Public Square")
+
+        assert found == [
+            "Waterloo Public Square, 75 King Street South",
+            "Waterloo Public Square",
+            "Waterloo Public Square",
+        ]
+        [square, stop, board] = await search_gazetteer(
+            db_session, index.id, "Waterloo Public Square", limit=5
+        )
+        assert (square.category, stop.category, board.category) == (
+            "square",
+            "transit station",
+            "information",
+        )
+
     async def test_a_misspelling_still_finds_the_place(
         self, db_session: AsyncSession, index: GazetteerBuild
     ) -> None:
@@ -224,7 +250,7 @@ class TestReplacement:
         assert stored is not None
         assert stored.file_sha256 == "a" * 64
         assert stored.source_timestamp == AS_OF
-        assert (stored.place_count, stored.address_count, stored.street_count) == (10, 2, 2)
+        assert (stored.place_count, stored.address_count, stored.street_count) == (13, 2, 2)
 
 
 # --- Through the HTTP API -------------------------------------------------------

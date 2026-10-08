@@ -69,3 +69,61 @@ def query_terms(text: str) -> tuple[str, ...]:
         if term not in terms:
             terms.append(term)
     return tuple(terms[:MAX_QUERY_TERMS])
+
+
+# --- What a result is -------------------------------------------------------------
+#
+# Many small features are named after the place they serve: the taxi stand at the
+# Davis Centre is called "Davis Centre", the information board on campus is called
+# "University of Waterloo". Matched on text alone they outrank the place itself.
+# A tier puts them after it without hiding them.
+
+#: Stops and stations carry the name of what they serve; a person searching for
+#: the square usually wants the square, and the stop beside it is still offered.
+TRANSIT_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "transit stop",
+        "transit station",
+        "transit platform",
+        "bus station",
+        "station",
+        "halt",
+        "tram stop",
+    }
+)
+
+#: Features that are rarely where somebody means to go, however well they match.
+INCIDENTAL_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "artwork",
+        "atm",
+        "bench",
+        "bicycle parking",
+        "charging station",
+        "clock",
+        "drinking water",
+        "information",
+        "motorcycle parking",
+        "parcel locker",
+        "parking",
+        "parking entrance",
+        "parking space",
+        "post box",
+        "recycling",
+        "shelter",
+        "taxi",
+        "telephone",
+        "toilets",
+        "vending machine",
+        "waste basket",
+    }
+)
+
+
+def category_tier(category: str | None) -> int:
+    """0 for a place someone is likely going to, 1 for transit, 2 for incidentals."""
+    if category in INCIDENTAL_CATEGORIES:
+        return 2
+    if category in TRANSIT_CATEGORIES:
+        return 1
+    return 0

@@ -4,9 +4,12 @@ Matching is deliberately plain. Every word typed must start a word in the entry
 (a house number must match whole, so "200" never finds "1200"); results rank an
 exact match, then an entry that starts with the query, then places before
 streets before addresses — or addresses first when the query starts with a
-number — then trigram similarity. Only when that finds nothing does a
-typo-tolerant pass run, on ``pg_trgm`` word similarity, so "Konestoga Mall" still
-finds the mall without letting fuzzy matches crowd out exact ones.
+number — then trigram similarity. Features named after the place they serve
+(a taxi stand, an information board, a stop) rank after that place; see
+:func:`~pathable_api.geo.place_text.category_tier`. Only when nothing matches
+does a typo-tolerant pass run, on ``pg_trgm`` word similarity, so
+"Konestoga Mall" still finds the mall without letting fuzzy matches crowd out
+exact ones.
 """
 
 from __future__ import annotations
@@ -22,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pathable_api.geo.enums import PlaceKind
 from pathable_api.geo.models import SRID, GazetteerBuild, GazetteerEntry, PilotRegion
-from pathable_api.geo.place_text import query_terms
+from pathable_api.geo.place_text import INCIDENTAL_CATEGORIES, TRANSIT_CATEGORIES, query_terms
 
 if TYPE_CHECKING:
     # The extract reader imports osmium; the API only ever searches.
@@ -99,20 +102,39 @@ class GazetteerMatch:
     latitude: float
 
 
-_SELECT = """
-SELECT label, category, kind, ST_X(geometry) AS longitude, ST_Y(geometry) AS latitude
-FROM gazetteer_entries
+_CANDIDATES = """
+SELECT label, category, kind, longitude, latitude FROM (
+  SELECT
+    id, label, category, kind, search_text,
+    ST_X(geometry) AS longitude,
+    ST_Y(geometry) AS latitude,
+    CASE
+      WHEN category = ANY (CAST(:incidental AS text[])) THEN 2
+      WHEN category = ANY (CAST(:transit AS text[])) THEN 1
+      ELSE 0
+    END AS tier
+  FROM gazetteer_entries
+  WHERE build_id = :build_id AND {condition}
+) AS matched
 """
 
+_KIND = (
+    "CASE kind WHEN 'place' THEN :place_rank WHEN 'street' THEN :street_rank ELSE :address_rank END"
+)
+
+# An exact or prefix match lifts an entry only when it is something a person is
+# likely going to, or a stop serving it — never a taxi stand that shares the name.
 _EXACT = (
-    _SELECT
-    + """
-WHERE build_id = :build_id
-  AND search_text ~ ALL (CAST(:patterns AS text[]))
+    _CANDIDATES.format(condition="search_text ~ ALL (CAST(:patterns AS text[]))")
+    + f"""
 ORDER BY
-  search_text = :query DESC,
-  search_text LIKE :prefix DESC,
-  CASE kind WHEN 'place' THEN :place_rank WHEN 'street' THEN :street_rank ELSE :address_rank END,
+  CASE
+    WHEN tier < 2 AND search_text = :query THEN tier * 2
+    WHEN tier < 2 AND search_text LIKE :prefix THEN tier * 2 + 1
+    ELSE 4
+  END,
+  {_KIND},
+  tier,
   similarity(search_text, :query) DESC,
   char_length(search_text),
   id
@@ -121,11 +143,9 @@ LIMIT :limit
 )
 
 _FUZZY = (
-    _SELECT
-    + """
-WHERE build_id = :build_id
-  AND :query <% search_text
-ORDER BY word_similarity(:query, search_text) DESC, char_length(search_text), id
+    _CANDIDATES.format(condition=":query <% search_text")
+    + f"""
+ORDER BY word_similarity(:query, search_text) DESC, {_KIND}, tier, char_length(search_text), id
 LIMIT :limit
 """
 )
@@ -161,18 +181,15 @@ async def search_gazetteer(
     parameters: dict[str, Any] = {
         "build_id": build_id,
         "query": normalised,
-        "prefix": f"{normalised}%",
-        "patterns": match_patterns(terms),
         "limit": limit,
+        "incidental": sorted(INCIDENTAL_CATEGORIES),
+        "transit": sorted(TRANSIT_CATEGORIES),
         **_ranks(terms),
     }
-    rows = (await session.execute(text(_EXACT), parameters)).all()
+    exact = {**parameters, "prefix": f"{normalised}%", "patterns": match_patterns(terms)}
+    rows = (await session.execute(text(_EXACT), exact)).all()
     if not rows:
-        rows = (
-            await session.execute(
-                text(_FUZZY), {"build_id": build_id, "query": normalised, "limit": limit}
-            )
-        ).all()
+        rows = (await session.execute(text(_FUZZY), parameters)).all()
     return [
         GazetteerMatch(
             label=row.label,

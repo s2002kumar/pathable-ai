@@ -37,13 +37,14 @@ from pathlib import Path
 from typing import Any
 
 import osmium
-from shapely.geometry import LineString, Polygon
+from shapely import STRtree
+from shapely.geometry import LineString, MultiLineString, Polygon
 from shapely.ops import polygonize, unary_union
 
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.enums import PlaceKind
 from pathable_api.geo.pbf import CLIP_MARGIN_DEGREES, EXCLUDED_HIGHWAYS, file_sha256
-from pathable_api.geo.place_text import normalise_text
+from pathable_api.geo.place_text import category_tier, normalise_text
 
 logger = get_logger(__name__)
 
@@ -197,7 +198,10 @@ def _entries_for(
             )
         )
 
-    if address is not None:
+    # A named place already carries its address in its label and its search text.
+    # A second, nameless entry for the same door would only repeat it — on a
+    # campus where every building shares one address, five times over.
+    if address is not None and not entries:
         housenumber, street, city = address
         label = f"{housenumber} {street}" + (f", {city}" if city else "")
         entries.append(
@@ -309,6 +313,64 @@ def _components(ways: list[_StreetWay]) -> list[list[_StreetWay]]:
     return list(groups.values())
 
 
+#: Same-named ways closer than this are one street. OpenStreetMap often names a
+#: sidewalk or a cycle track after the road beside it and maps it as its own line,
+#: sharing no node with the road; grouped by shared nodes alone, one street became
+#: a dozen results. About 65 m at this latitude — a sidewalk's distance from its
+#: road, and far less than the gap between two different streets of one name.
+_SAME_STREET_DEGREES = 0.0006
+
+
+def _stretches(ways: list[_StreetWay]) -> list[list[_StreetWay]]:
+    """Connected groups of a name, joined again where they run alongside each other."""
+    components = _components(ways)
+    if len(components) < 2:
+        return components
+    # Longitude scaled for latitude, so the distance threshold means the same
+    # thing east-west as north-south.
+    scale = math.cos(math.radians(components[0][0].coordinates[0][1]))
+    shapes = [
+        MultiLineString([[(x * scale, y) for x, y in way.coordinates] for way in component])
+        for component in components
+    ]
+    parent = list(range(len(components)))
+
+    def find(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    pairs = STRtree(shapes).query(shapes, predicate="dwithin", distance=_SAME_STREET_DEGREES)
+    for left, right in zip(pairs[0].tolist(), pairs[1].tolist(), strict=True):
+        parent[find(left)] = find(right)
+
+    groups: dict[int, list[_StreetWay]] = defaultdict(list)
+    for index, component in enumerate(components):
+        groups[find(index)].extend(component)
+    return list(groups.values())
+
+
+def _representative(
+    stretch: list[_StreetWay], bounds: tuple[float, float, float, float]
+) -> tuple[_StreetWay, tuple[float, float]] | None:
+    """The way a street's point goes on: a road before a path, the longest first.
+
+    Only a way whose midpoint lies inside the region qualifies. A street that
+    runs out of town, as King Street North does, otherwise put its point on the
+    long rural stretch beyond the boundary and vanished from the index.
+    """
+    ordered = sorted(
+        stretch,
+        key=lambda way: (street_category(way.tags) == "path", -_planar_length(way.coordinates)),
+    )
+    for way in ordered:
+        point = way_point(way.coordinates)
+        if point is not None and _inside(point, bounds):
+            return way, point
+    return None
+
+
 #: How far around a stretch of street an address may be and still say which city
 #: the street is in. About 300 m at this latitude.
 _CITY_SEARCH_DEGREES = 0.003
@@ -321,29 +383,29 @@ def _street_entries(
 ) -> list[PlaceEntry]:
     entries: list[PlaceEntry] = []
     for key, ways in streets.items():
-        for component in _components(ways):
-            longest = max(component, key=lambda way: _planar_length(way.coordinates))
-            point = way_point(longest.coordinates)
-            if point is None or not _inside(point, bounds):
+        for stretch in _stretches(ways):
+            chosen = _representative(stretch, bounds)
+            if chosen is None:
                 continue
-            name = _name(longest.tags) or key
+            way, point = chosen
+            name = _name(way.tags) or key
             label = name
             # Two stretches of "Queen Street" read identically in a list; the city
             # the neighbouring addresses give is what tells them apart.
-            city = _city_near(component, cities_by_street.get(key, ()))
+            city = _city_near(stretch, cities_by_street.get(key, ()))
             if city is not None:
                 label = f"{name}, {city}"
             entries.append(
                 PlaceEntry(
                     kind=PlaceKind.STREET,
                     label=label,
-                    category=street_category(longest.tags),
-                    search_text=_search_text(label, longest.tags),
+                    category=street_category(way.tags),
+                    search_text=_search_text(label, way.tags),
                     longitude=point[0],
                     latitude=point[1],
                     osm_type="way",
-                    osm_id=longest.way_id,
-                    osm_version=longest.osm_version,
+                    osm_id=way.way_id,
+                    osm_version=way.osm_version,
                 )
             )
     return entries
@@ -524,8 +586,16 @@ _DUPLICATE_CELL_DEGREES = 0.002
 
 
 def deduplicate(entries: Iterable[PlaceEntry]) -> list[PlaceEntry]:
-    """Drop repeats, keeping the first: nodes are read first and are the most specific."""
-    seen: set[tuple[PlaceKind, str, int, int]] = set()
+    """Drop repeats, keeping the one somebody is more likely to be going to.
+
+    Ties keep the first, which is a node — read first, and usually the more
+    specific of a shop and the building around it. But a node is not always the
+    better of two: the University of Waterloo's information board shares the
+    campus's name and lands in the same cell as the campus's own point, and
+    keeping the first dropped the campus from the index. The lower
+    :func:`~pathable_api.geo.place_text.category_tier` wins.
+    """
+    position: dict[tuple[PlaceKind, str, int, int], int] = {}
     kept: list[PlaceEntry] = []
     for entry in entries:
         key = (
@@ -534,10 +604,12 @@ def deduplicate(entries: Iterable[PlaceEntry]) -> list[PlaceEntry]:
             round(entry.longitude / _DUPLICATE_CELL_DEGREES),
             round(entry.latitude / _DUPLICATE_CELL_DEGREES),
         )
-        if key in seen:
-            continue
-        seen.add(key)
-        kept.append(entry)
+        index = position.get(key)
+        if index is None:
+            position[key] = len(kept)
+            kept.append(entry)
+        elif category_tier(entry.category) < category_tier(kept[index].category):
+            kept[index] = entry
     return kept
 
 
