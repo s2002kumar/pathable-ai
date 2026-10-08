@@ -498,20 +498,40 @@ def plan_overlay(
 
 
 def shadow_graph(baseline: RoutableGraph, plan: OverlayPlan) -> RoutableGraph:
-    """A second graph: the baseline with only the planned segments' surfaces replaced.
+    """A second graph: the baseline with only the planned segments' surfaces replaced."""
+    by_identity = {e.identity: e for e in baseline.segments}
+    replacements = {
+        identity: replace(
+            by_identity[identity].features, surface=fill.surface, surface_class=fill.surface_class
+        )
+        for identity, fill in plan.fills.items()
+        if identity in by_identity
+    }
+    return substitute_features(baseline, replacements, policy=plan.policy, digest=plan.digest)
+
+
+def substitute_features(
+    baseline: RoutableGraph,
+    replacements: Mapping[str, EdgeFeatures],
+    *,
+    policy: str,
+    digest: str,
+) -> RoutableGraph:
+    """A second graph: the baseline with only the named segments' features replaced.
 
     The baseline object is not changed. Unchanged segments are shared — they
     are immutable — and the adjacency is copied, so each replaced directed
     entry is written into the copy only, and only where it is the segment's own.
+    PA-GEO-07 replaces surfaces this way and PA-GEO-09 kerbs; the mechanism is
+    the same and lives once.
     """
     graph = baseline.graph.copy()
     segments = []
     for edge in baseline.segments:
-        fill = plan.fills.get(edge.identity)
-        if fill is None:
+        features = replacements.get(edge.identity)
+        if features is None:
             segments.append(edge)
             continue
-        features = replace(edge.features, surface=fill.surface, surface_class=fill.surface_class)
         changed = replace(edge, features=features)
         for source, target, directed in (
             (edge.source_u, edge.source_v, DirectedEdge(changed, features, reversed=False)),
@@ -522,9 +542,9 @@ def shadow_graph(baseline: RoutableGraph, plan: OverlayPlan) -> RoutableGraph:
                 data["edge"] = directed
         segments.append(changed)
     return RoutableGraph(
-        dataset_id=uuid.uuid5(baseline.dataset_id, plan.digest),
-        region_slug=f"{baseline.region_slug}:{plan.policy}",
-        checksum=f"{plan.policy}:{plan.digest}",
+        dataset_id=uuid.uuid5(baseline.dataset_id, digest),
+        region_slug=f"{baseline.region_slug}:{policy}",
+        checksum=f"{policy}:{digest}",
         graph=graph,
         node_positions=baseline.node_positions,
         segment_count=baseline.segment_count,

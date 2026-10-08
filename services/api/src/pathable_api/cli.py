@@ -75,6 +75,12 @@ from pathable_api.geo.kitchener.arcgis import (
 from pathable_api.geo.kitchener.audit import AuditError, run_audit
 from pathable_api.geo.kitchener.audit import write_outputs as write_kitchener_outputs
 from pathable_api.geo.kitchener.conflation import load_inputs as load_conflation_inputs
+from pathable_api.geo.kitchener.curb_ramp_page import render_page as render_curb_ramp_page
+from pathable_api.geo.kitchener.curb_ramp_reconciliation import CurbRampError
+from pathable_api.geo.kitchener.curb_ramp_run import reconcile as reconcile_curb_ramps
+from pathable_api.geo.kitchener.curb_ramp_run import rejected_examples
+from pathable_api.geo.kitchener.curb_ramp_run import run_study as run_curb_ramp_study
+from pathable_api.geo.kitchener.curb_ramp_run import shadow_evidence as curb_ramp_evidence
 from pathable_api.geo.kitchener.evaluation import (
     BenchmarkError,
     load_label_sets,
@@ -1034,6 +1040,43 @@ def build_parser() -> argparse.ArgumentParser:
         help="An earlier run's evidence: record whether every outcome is identical.",
     )
 
+    curb = kitchener_actions.add_parser(
+        "curb-ramp-shadow-routing",
+        help=(
+            "Run PA-GEO-09's offline curb-ramp study: reconcile matcher v2's way-extent curb "
+            "ramps, map each to the crossing segment where routing charges a kerb, and route "
+            "deterministic journeys on the active graph and on a shadow copy. Reads the "
+            "database only, in READ ONLY transactions."
+        ),
+    )
+    curb.add_argument("--region", default="waterloo")
+    curb.add_argument("--normalized", type=Path, required=True)
+    curb.add_argument("--extract", type=Path, required=True)
+    curb.add_argument("--extract-manifest", type=Path, required=True)
+    curb.add_argument(
+        "--evidence-dir",
+        type=Path,
+        required=True,
+        help="The folder holding PA-GEO-08's committed evidence.",
+    )
+    curb.add_argument(
+        "--artifact-dir",
+        type=Path,
+        required=True,
+        help="Where to write the reconciliation rows: the ignored data folder.",
+    )
+    curb.add_argument("--broad-size", type=int, default=300)
+    curb.add_argument("--per-stratum", type=int, default=12)
+    curb.add_argument("--seed", default="pathable-pa-geo-07-v1")
+    curb.add_argument("--json", type=Path, required=True)
+    curb.add_argument("--html", type=Path, default=None)
+    curb.add_argument(
+        "--compare-to",
+        type=Path,
+        default=None,
+        help="An earlier run's evidence: record whether every outcome is identical.",
+    )
+
     return parser
 
 
@@ -1103,6 +1146,8 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _kitchener_lineage_extract(database, args)
             case "kitchener" if args.kitchener_command == "shadow-routing":
                 return await _kitchener_shadow_routing(database, args)
+            case "kitchener" if args.kitchener_command == "curb-ramp-shadow-routing":
+                return await _kitchener_curb_ramp_shadow_routing(database, args)
             case "kitchener":
                 return await _kitchener_audit(database, args)
             case "datasets" if args.dataset_command == "seal":
@@ -2562,6 +2607,101 @@ async def _kitchener_shadow_routing(database: Database, args: argparse.Namespace
             print(f"  {corpus:<9}{key:<40}{block['categories']}")
     print(f"  database unchanged: {isolation['database']['unchanged']}")
     print(f"  baseline graph unchanged: {isolation['baseline_graph_unchanged']}")
+    if "determinism" in document["run"]:
+        print(f"  identical to {args.compare_to}: {document['run']['determinism']}")
+    print(f"Wrote {args.json}")
+    return EXIT_OK
+
+
+async def _kitchener_curb_ramp_shadow_routing(database: Database, args: argparse.Namespace) -> int:
+    started = time.perf_counter()
+    try:
+        reconciled = reconcile_curb_ramps(
+            normalized=args.normalized,
+            extract_path=args.extract,
+            extract_manifest=args.extract_manifest,
+            evidence_dir=args.evidence_dir,
+            artifact_dir=args.artifact_dir,
+            attribution=KITCHENER_OSM_ATTRIBUTION,
+            progress=print,
+        )
+    except (CurbRampError, ExtractSourceError, NormalizationError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    manifest = json.loads(args.extract_manifest.read_text("utf-8"))
+    reconciled_at = time.perf_counter()
+    async with database.session() as session:
+        await read_only(session)
+        before = await active_dataset(session, args.region)
+        graph, sources = await load_active(session, before, args.region)
+        await session.rollback()
+    if str(before.dataset_id) != manifest["dataset"]["dataset_id"]:
+        print("error: the OSM study extract was not cut for the active dataset.", file=sys.stderr)
+        return EXIT_FAILED
+    loaded = time.perf_counter()
+    print(
+        f"graph: {graph.segment_count} segments, loaded read-only in {loaded - reconciled_at:.1f} s"
+    )
+    output = run_curb_ramp_study(
+        graph,
+        sources,
+        reconciled,
+        bounds=tuple(manifest["dataset"]["source_bbox"]),
+        broad_size=args.broad_size,
+        seed=args.seed,
+        per_stratum=args.per_stratum,
+        progress=print,
+    )
+    async with database.session() as session:
+        await read_only(session)
+        after = await active_dataset(session, args.region)
+        await session.rollback()
+    document = curb_ramp_evidence(
+        reconciled=reconciled,
+        output=output,
+        dataset_before=before,
+        dataset_after=after,
+        extract_sha256=manifest["output"]["sha256"],
+        seed=args.seed,
+        attribution=KITCHENER_OSM_ATTRIBUTION,
+    )
+    document["run"]["timings_s"]["load_graph_s"] = round(loaded - reconciled_at, 2)
+    document["run"]["timings_s"]["total_s"] = round(time.perf_counter() - started, 2)
+    document["run"].update(_run_measurements())
+    if args.compare_to is not None:
+        earlier = json.loads(args.compare_to.read_text("utf-8"))
+        document["run"]["determinism"] = compare_shadow_runs(
+            earlier, document, args.compare_to.name
+        )
+    document["content_sha256"] = content_sha256(document)
+    write_json(args.json, document)
+    if args.html is not None:
+        page = render_curb_ramp_page(
+            output.results,
+            output.pairs,
+            {p.key: p for p in output.profiles},
+            output.plan.substitutions,
+            rejected_examples(reconciled, output.plan, graph),
+            KITCHENER_OSM_ATTRIBUTION,
+        )
+        args.html.parent.mkdir(parents=True, exist_ok=True)
+        args.html.write_text(page, encoding="utf-8", newline="\n")
+    isolation = document["production_isolation"]
+    funnel = document["input_funnel"]
+    print(f"\nCurb-ramp shadow study: {len(output.results)} journey-profile pairs")
+    print(
+        f"  funnel: {funnel['candidates_for_routing_mapping']} candidates -> "
+        f"{funnel['final_shadow_eligible_assertions']} eligible on "
+        f"{funnel['final_affected_crossing_segments']} crossing segments"
+    )
+    for corpus, profiles in document["results"].items():
+        for key, block in profiles.items():
+            print(f"  {corpus:<9}{key:<20}{block['categories']}")
+    print(f"  defects: {document['defects']}")
+    print(f"  database unchanged: {isolation['database']['unchanged']}")
+    print(f"  baseline graph unchanged: {isolation['baseline_graph_unchanged']}")
+    agreement = document["algorithm_agreement"]
+    print(f"  dijkstra/a* agree: {agreement['agree']} of {agreement['checked']}")
     if "determinism" in document["run"]:
         print(f"  identical to {args.compare_to}: {document['run']['determinism']}")
     print(f"Wrote {args.json}")
