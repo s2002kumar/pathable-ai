@@ -1,9 +1,9 @@
-# Defending this project
+# Engineering review
 
-Written to be interrogated. Every section says what was built, why that way, what it cost, and where it stops.
-If an interviewer pushes on any claim here, the answer should be a file, a command or a number — never a
-adjective. Where something is not known or not done, this document says so rather than reaching for a phrase
-that sounds like it was.
+What was built, why it was built that way, what it cost, and where it stops — written for a technical reviewer
+who wants to check the work rather than take it on trust. Every claim here resolves to a file, a command or a
+number, never an adjective. Where something is not known or not done, this document says so rather than
+reaching for a phrase that sounds like it was.
 
 The companion documents are the [claims ledger](CLAIMS_LEDGER.md), which fixes the exact wording that may be
 used for each claim, and the [evidence index](evidence/README.md), which holds the numbers.
@@ -408,7 +408,7 @@ functions and free database tiers that pause were ruled out on the measurements 
 
 ---
 
-## 20. Trade-offs I would defend
+## 20. Trade-offs, and what they cost
 
 | Decision                             | Cost                                                                   | Why it is still right                                                                                           |
 | ------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -454,50 +454,3 @@ architecture rather than the sizing. Predictions are already designed to live in
 source identity, never as columns on `graph_edges`, so a model's belief can never be mistaken for a surveyor's
 assertion. Evidence freshness (KI-7) stops being deferrable the moment a second source of evidence exists,
 because "how old is this claim?" becomes a question about more than one thing at once.
-
----
-
-## What I must understand without AI
-
-This section is for me, not for a reader. If I cannot explain these from memory, in my own words, at a whiteboard,
-I should not be claiming them.
-
-**Concepts**
-
-- Why `unknown ≠ false`, and one concrete way conflating them injures somebody.
-- Physical segments versus directed edges, and why 180,554 becomes 361,108.
-- Hard constraint versus penalty, and what "effective metres" means.
-- Why a random split leaks and a geographic hold-out does not (relevant to Gate C, not yet implemented).
-- Why A\* expanded 3.8× fewer nodes and still was not faster.
-- What ODbL share-alike attaches to (the derived database), versus what only needs attribution (a produced work).
-- Why an in-memory graph is safe to cache: dataset immutability plus version-keyed cache.
-
-**Code paths I should be able to trace on a whiteboard**
-
-- `POST /api/v1/routes/compare` → `GraphRepository.active_graph` → `load_graph` → snap → `compute_route` ×2 →
-  `compare_routes` → explanation assembly → response.
-- `pathable ingest pbf` → `geo/pbf.py` → `normalise_edge` → validation → `ingest_network` (a draft) →
-  `elevation apply` → `datasets seal` (`geo/lifecycle.py`) → `datasets evaluate` / `accept` / `activate`
-  (`routing/activation.py`).
-- Startup: entrypoint → alembic → lifespan → `GraphWarmup.start` → readiness flipping 503 → 200.
-- `load_graph`'s Core-column select, and why each of the 34 columns is there.
-
-**Commands I should be able to run and interpret from memory**
-
-- `pathable ingest pbf`, `pathable elevation apply`, `pathable evaluate --algorithms --ablate`,
-  `pathable benchmark load`, `pathable coverage`.
-- `docker compose -f infra/production-smoke/compose.yaml up -d` and what readiness reports while it starts.
-- `uv run pytest --cov=src/pathable_api --cov-fail-under=86`, and the four browser/unit suites separately.
-- `infra/production-smoke/restore-dataset.sh` and why `--disable-triggers` is absent from it.
-
-**Numbers I should know cold**
-
-155,714 / 180,554 / 361,108. 287.4 m with 4 stairways versus 354.1 m with 0, +66.67 m (23%). 46.83 s → 22.14 s,
-1,381.3 MB → 700.7 MB. 997 MB steady, 1,064 MB peak, 18.7 s to ready. OSM `incline` on 0.03% of segments.
-18 of 20 journeys change. USD 45.15/month proposed.
-
-**Weaknesses I must volunteer before being asked**
-
-The cost weights are judgement, not validation. Nobody has walked the routes. One city. One worker. The
-unknown-data penalty is carried by a single term. Not deployed. The A\* result is a wash. All of these are more
-persuasive said first than extracted.

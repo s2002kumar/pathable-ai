@@ -43,7 +43,7 @@ type Answer = {
  * skip would let the demo rot unnoticed.
  *
  * Where they do run: locally, against the production-smoke stack, which is the
- * environment the demo is actually given in. See docs/evidence/DEMO_SCRIPT.md.
+ * environment the demo is actually given in. See docs/evidence/DEMO.md.
  */
 let waterlooLoaded = false;
 
