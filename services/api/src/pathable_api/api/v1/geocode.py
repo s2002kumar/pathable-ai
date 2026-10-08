@@ -4,9 +4,11 @@ A POST, like route comparison, and for the same reason: "wheelchair-accessible
 entrance, 200 King Street" is a statement about a person, and it does not belong
 in a URL, an access log or browser history.
 
-Search is optional. When no provider is configured the endpoint says so plainly
-rather than returning an empty list, because "we found nothing" and "we did not
-look" lead a user to do different things.
+By default it searches the pilot region's own place index, read from the same
+OpenStreetMap extract as the routing network (ADR 0005). When there is nothing to
+search — no provider configured, or no index built for the region — the endpoint
+says so plainly rather than returning an empty list, because "we found nothing"
+and "we did not look" lead a user to do different things.
 """
 
 from __future__ import annotations
@@ -58,20 +60,24 @@ class GeocodeMatch(BaseModel):
 class GeocodeResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    provider: str = Field(description="Which geocoder answered, or 'disabled'.")
+    provider: str = Field(
+        description="Which geocoder answered: 'local', 'nominatim', or 'disabled'."
+    )
     enabled: bool = Field(
         description=(
-            "False when no geocoder is configured. An empty `matches` with `enabled: false` "
-            "means nothing was searched, not that nothing was found."
+            "False when nothing was searched: no geocoder is configured, or the region has "
+            "no place index yet. An empty `matches` with `enabled: false` means nothing was "
+            "searched, not that nothing was found."
         )
     )
     matches: list[GeocodeMatch]
     attribution: str | None = Field(
-        default=None, description="Credit the provider's licence requires."
+        default=None,
+        description=(
+            "Credit the data's licence requires, and for the local index the date its "
+            "OpenStreetMap data is current to."
+        ),
     )
-
-
-NOMINATIM_ATTRIBUTION = "Search by Nominatim, © OpenStreetMap contributors, ODbL 1.0"
 
 
 @router.post(
@@ -79,9 +85,10 @@ NOMINATIM_ATTRIBUTION = "Search by Nominatim, © OpenStreetMap contributors, ODb
     response_model=GeocodeResponse,
     summary="Find coordinates for a place name",
     description=(
-        "Searches for a place within a pilot region's extent. Submit-only: there is no "
-        "as-you-type endpoint, because per-keystroke queries against a donated geocoding "
-        "service are forbidden by its usage policy. Nothing about the request is stored."
+        "Searches for a place, address or street within a pilot region's extent, and "
+        "returns at most five. Submit-only: there is no as-you-type endpoint, so the same "
+        "client works against any provider, including a donated one whose usage policy "
+        "forbids per-keystroke queries. Nothing about the request is stored."
     ),
     operation_id="searchPlaces",
     responses={
@@ -101,13 +108,8 @@ async def search(payload: GeocodeRequest, request: Request) -> GeocodeResponse:
             message=f"Pilot region {payload.region!r} does not exist.",
         ) from error
 
-    if not provider.enabled:
-        return GeocodeResponse(provider=provider.name, enabled=False, matches=[])
-
     try:
-        results = await provider.search(
-            payload.query, bounds=definition.bounds, limit=payload.limit
-        )
+        outcome = await provider.search(payload.query, region=definition, limit=payload.limit)
     except GeocodingError as error:
         raise ApiError(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
@@ -118,12 +120,17 @@ async def search(payload: GeocodeRequest, request: Request) -> GeocodeResponse:
     # The query itself is deliberately absent from this log line.
     logger.info(
         "Place search served",
-        extra={"region": payload.region, "provider": provider.name, "matches": len(results)},
+        extra={
+            "region": payload.region,
+            "provider": provider.name,
+            "searched": outcome.searched,
+            "matches": len(outcome.matches),
+        },
     )
 
     return GeocodeResponse(
         provider=provider.name,
-        enabled=True,
+        enabled=outcome.searched,
         matches=[
             GeocodeMatch(
                 label=result.label,
@@ -131,7 +138,7 @@ async def search(payload: GeocodeRequest, request: Request) -> GeocodeResponse:
                 latitude=result.latitude,
                 category=result.category,
             )
-            for result in results
+            for result in outcome.matches
         ],
-        attribution=NOMINATIM_ATTRIBUTION if provider.name == "nominatim" else None,
+        attribution=outcome.attribution if outcome.searched else None,
     )

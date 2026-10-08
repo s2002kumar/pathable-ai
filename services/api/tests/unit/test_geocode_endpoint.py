@@ -1,7 +1,9 @@
-"""The geocoding endpoint, with no provider configured.
+"""The geocoding endpoint, where there is nothing to search.
 
-Covers the default deployment: search is off, and the response has to say so
-rather than looking like a search that found nothing.
+Search off, or the local index with no database behind it: either way the
+response has to say nothing was searched rather than look like a search that
+found nothing. Searching a built index is covered against real PostGIS in
+tests/integration/test_place_search.py.
 """
 
 from __future__ import annotations
@@ -12,7 +14,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from pathable_api.main import create_app
-from tests.conftest import build_settings
+from tests.conftest import build_settings, settings_from
 
 SEARCH = "/api/v1/geocode/search"
 
@@ -42,6 +44,20 @@ class TestDisabledProvider:
         assert "enabled" in body
 
 
+class TestLocalProviderWithoutAnIndex:
+    def test_it_reports_that_nothing_was_searched(self) -> None:
+        with TestClient(create_app(build_settings(geocoding_provider="local"))) as client:
+            response = client.post(SEARCH, json={"region": "waterloo", "query": "Davis Centre"})
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["provider"] == "local"
+        assert body["enabled"] is False
+        assert body["matches"] == []
+        # Nothing was read, so there is nothing to credit.
+        assert body["attribution"] is None
+
+
 class TestValidation:
     def test_an_empty_query_is_rejected(self, client: TestClient) -> None:
         response = client.post(SEARCH, json={"region": "waterloo", "query": ""})
@@ -67,6 +83,13 @@ class TestValidation:
 
 
 class TestConfiguration:
+    def test_the_default_provider_is_the_local_index(self) -> None:
+        # It calls no third party, so it is safe to have on without asking.
+        assert settings_from({}).geocoding_provider == "local"
+
+    def test_local_needs_no_contact_address(self) -> None:
+        assert build_settings(geocoding_provider="local").geocoding_contact == ""
+
     def test_nominatim_requires_a_contact_address(self) -> None:
         # Configuring the provider without one would mean being blocked by
         # Nominatim rather than throttled, so it fails at startup instead.

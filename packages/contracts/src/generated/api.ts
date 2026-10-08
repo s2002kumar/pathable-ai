@@ -26,7 +26,7 @@ export interface paths {
         put?: never;
         /**
          * Find coordinates for a place name
-         * @description Searches for a place within a pilot region's extent. Submit-only: there is no as-you-type endpoint, because per-keystroke queries against a donated geocoding service are forbidden by its usage policy. Nothing about the request is stored.
+         * @description Searches for a place, address or street within a pilot region's extent, and returns at most five. Submit-only: there is no as-you-type endpoint, so the same client works against any provider, including a donated one whose usage policy forbids per-keystroke queries. Nothing about the request is stored.
          */
         post: operations["searchPlaces"];
         delete?: never;
@@ -407,19 +407,19 @@ export interface components {
         GeocodeResponse: {
             /**
              * Attribution
-             * @description Credit the provider's licence requires.
+             * @description Credit the data's licence requires, and for the local index the date its OpenStreetMap data is current to.
              */
             attribution?: string | null;
             /**
              * Enabled
-             * @description False when no geocoder is configured. An empty `matches` with `enabled: false` means nothing was searched, not that nothing was found.
+             * @description False when nothing was searched: no geocoder is configured, or the region has no place index yet. An empty `matches` with `enabled: false` means nothing was searched, not that nothing was found.
              */
             enabled: boolean;
             /** Matches */
             matches: components["schemas"]["GeocodeMatch"][];
             /**
              * Provider
-             * @description Which geocoder answered, or 'disabled'.
+             * @description Which geocoder answered: 'local', 'nominatim', or 'disabled'.
              */
             provider: string;
         };

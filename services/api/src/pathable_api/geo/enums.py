@@ -177,3 +177,16 @@ class SourceType(StrEnum):
 
     OSM = "osm"
     SYNTHETIC = "synthetic"
+
+
+class PlaceKind(StrEnum):
+    """What a place-search entry names.
+
+    Kept apart because they answer different questions and rank differently: a
+    query that starts with a house number is looking for an address, not a
+    shop that happens to share a word with the street.
+    """
+
+    PLACE = "place"
+    ADDRESS = "address"
+    STREET = "street"

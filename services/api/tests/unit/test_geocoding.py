@@ -17,13 +17,14 @@ import requests
 
 from pathable_api.geo.geocoding import (
     MAX_QUERY_LENGTH,
+    NOMINATIM_ATTRIBUTION,
     DisabledGeocoder,
     GeocodingError,
+    LocalGazetteer,
     NominatimGeocoder,
     build_geocoder,
 )
-
-WATERLOO_BOUNDS = (-80.59, 43.42, -80.46, 43.52)
+from pathable_api.geo.regions import WATERLOO
 
 SAMPLE = [
     {
@@ -87,8 +88,9 @@ class TestDisabledByDefault:
         assert build_geocoder("", contact="", user_agent="x").enabled is False
 
     async def test_it_returns_nothing_rather_than_pretending(self) -> None:
-        results = await DisabledGeocoder().search("anywhere", bounds=WATERLOO_BOUNDS)
-        assert results == []
+        outcome = await DisabledGeocoder().search("anywhere", region=WATERLOO)
+        assert outcome.matches == []
+        assert outcome.searched is False
 
     def test_an_unknown_provider_is_a_configuration_error(self) -> None:
         # A silent fallback would let a deployment that meant to enable search
@@ -106,7 +108,7 @@ class TestNominatimPolicy:
 
     async def test_it_identifies_itself_and_its_contact(self) -> None:
         session = FakeSession()
-        await nominatim(session).search("Waterloo Park", bounds=WATERLOO_BOUNDS)
+        await nominatim(session).search("Waterloo Park", region=WATERLOO)
 
         agent = session.calls[0]["headers"]["User-Agent"]
         assert "pathable-api/0.1.0" in agent
@@ -114,7 +116,7 @@ class TestNominatimPolicy:
 
     async def test_it_bounds_the_search_to_the_region(self) -> None:
         session = FakeSession()
-        await nominatim(session).search("King Street", bounds=WATERLOO_BOUNDS)
+        await nominatim(session).search("King Street", region=WATERLOO)
 
         params = session.calls[0]["params"]
         assert params["bounded"] == "1"
@@ -122,7 +124,7 @@ class TestNominatimPolicy:
 
     async def test_it_caps_the_number_of_results_requested(self) -> None:
         session = FakeSession()
-        await nominatim(session).search("Waterloo", bounds=WATERLOO_BOUNDS, limit=500)
+        await nominatim(session).search("Waterloo", region=WATERLOO, limit=500)
 
         assert int(session.calls[0]["params"]["limit"]) <= 5
 
@@ -132,8 +134,8 @@ class TestNominatimPolicy:
         provider = nominatim(session)
 
         started = asyncio.get_running_loop().time()
-        await provider.search("first", bounds=WATERLOO_BOUNDS)
-        await provider.search("second", bounds=WATERLOO_BOUNDS)
+        await provider.search("first", region=WATERLOO)
+        await provider.search("second", region=WATERLOO)
         elapsed = asyncio.get_running_loop().time() - started
 
         assert len(session.calls) == 2
@@ -141,14 +143,15 @@ class TestNominatimPolicy:
 
     async def test_it_sets_a_request_timeout(self) -> None:
         session = FakeSession()
-        await nominatim(session).search("Waterloo", bounds=WATERLOO_BOUNDS)
+        await nominatim(session).search("Waterloo", region=WATERLOO)
 
         assert session.calls[0]["timeout"] > 0
 
 
 class TestNominatimResults:
     async def test_it_parses_matches(self) -> None:
-        results = await nominatim(FakeSession()).search("Waterloo", bounds=WATERLOO_BOUNDS)
+        outcome = await nominatim(FakeSession()).search("Waterloo", region=WATERLOO)
+        results = outcome.matches
 
         assert len(results) == 2
         assert results[0].label.startswith("Waterloo Public Square")
@@ -160,13 +163,13 @@ class TestNominatimResults:
         # Politeness *and* correctness: an empty search has no answer worth a
         # request to somebody else's server.
         session = FakeSession()
-        assert await nominatim(session).search("   ", bounds=WATERLOO_BOUNDS) == []
+        assert (await nominatim(session).search("   ", region=WATERLOO)).matches == []
         assert session.calls == []
 
     async def test_an_overlong_query_is_rejected_locally(self) -> None:
         session = FakeSession()
         with pytest.raises(GeocodingError, match="longer than"):
-            await nominatim(session).search("x" * (MAX_QUERY_LENGTH + 1), bounds=WATERLOO_BOUNDS)
+            await nominatim(session).search("x" * (MAX_QUERY_LENGTH + 1), region=WATERLOO)
         assert session.calls == []
 
     async def test_malformed_entries_are_skipped_rather_than_crashing(self) -> None:
@@ -180,13 +183,13 @@ class TestNominatimResults:
             )
         )
 
-        results = await nominatim(session).search("anything", bounds=WATERLOO_BOUNDS)
+        results = (await nominatim(session).search("anything", region=WATERLOO)).matches
 
         assert [result.label for result in results] == ["Good"]
 
     async def test_an_unexpected_payload_shape_yields_no_matches(self) -> None:
         session = FakeSession(FakeResponse({"error": "unavailable"}))
-        assert await nominatim(session).search("x", bounds=WATERLOO_BOUNDS) == []
+        assert (await nominatim(session).search("x", region=WATERLOO)).matches == []
 
 
 class TestNominatimFailures:
@@ -194,19 +197,19 @@ class TestNominatimFailures:
         session = FakeSession(FakeResponse([], status_code=429))
 
         with pytest.raises(GeocodingError, match="rate-limiting"):
-            await nominatim(session).search("Waterloo", bounds=WATERLOO_BOUNDS)
+            await nominatim(session).search("Waterloo", region=WATERLOO)
 
     async def test_a_server_error_names_the_status(self) -> None:
         session = FakeSession(FakeResponse([], status_code=503))
 
         with pytest.raises(GeocodingError, match="503"):
-            await nominatim(session).search("Waterloo", bounds=WATERLOO_BOUNDS)
+            await nominatim(session).search("Waterloo", region=WATERLOO)
 
     async def test_a_network_failure_does_not_leak_the_underlying_error(self) -> None:
         session = FakeSession(error=requests.ConnectionError("dns exploded at 10.0.0.1"))
 
         with pytest.raises(GeocodingError) as failure:
-            await nominatim(session).search("Waterloo", bounds=WATERLOO_BOUNDS)
+            await nominatim(session).search("Waterloo", region=WATERLOO)
 
         assert "10.0.0.1" not in str(failure.value)
 
@@ -214,4 +217,46 @@ class TestNominatimFailures:
         session = FakeSession(FakeResponse("not json at all"))
 
         with pytest.raises(GeocodingError, match="could not be read"):
-            await nominatim(session).search("Waterloo", bounds=WATERLOO_BOUNDS)
+            await nominatim(session).search("Waterloo", region=WATERLOO)
+
+
+class TestNominatimAttribution:
+    async def test_every_result_set_carries_the_licence_credit(self) -> None:
+        outcome = await nominatim(FakeSession()).search("Waterloo", region=WATERLOO)
+
+        assert outcome.searched is True
+        assert outcome.attribution == NOMINATIM_ATTRIBUTION
+
+
+class TestLocalGazetteer:
+    """The default provider, where no database is involved.
+
+    Searching a built index is covered against real PostGIS in
+    tests/integration/test_place_search.py.
+    """
+
+    def test_it_is_what_local_builds(self) -> None:
+        provider = build_geocoder("local", contact="", user_agent="x")
+
+        assert isinstance(provider, LocalGazetteer)
+        assert provider.enabled is True
+        assert provider.name == "local"
+
+    def test_it_needs_no_contact_address(self) -> None:
+        # It calls nobody, so there is nobody to identify itself to.
+        build_geocoder("local", contact="", user_agent="x")
+
+    async def test_without_a_database_it_says_it_did_not_look(self) -> None:
+        outcome = await LocalGazetteer(None).search("Davis Centre", region=WATERLOO)
+
+        assert outcome.searched is False
+        assert outcome.matches == []
+        assert outcome.attribution is None
+
+    async def test_an_overlong_query_is_rejected_before_any_lookup(self) -> None:
+        with pytest.raises(GeocodingError, match="longer than"):
+            await LocalGazetteer(None).search("x" * (MAX_QUERY_LENGTH + 1), region=WATERLOO)
+
+    def test_an_unknown_provider_lists_local_among_the_choices(self) -> None:
+        with pytest.raises(GeocodingError, match="local"):
+            build_geocoder("pelias", contact="", user_agent="x")

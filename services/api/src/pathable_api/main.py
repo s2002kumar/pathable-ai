@@ -1,7 +1,7 @@
 """FastAPI application factory.
 
-Phase 0 exposes health and readiness only. There is no routing engine, no
-pedestrian graph and no machine learning in this service — see docs/product/PHASES.md.
+Health and readiness, routing over the active pedestrian network, and place
+search. There is no machine learning in this service — see docs/product/PHASES.md.
 """
 
 from __future__ import annotations
@@ -64,8 +64,8 @@ OPENAPI_TAGS = [
     {
         "name": "geocoding",
         "description": (
-            "Optional place-name search, restricted to a pilot region. Disabled unless a "
-            "provider is configured."
+            "Place, address and street search within a pilot region, from the region's own "
+            "OpenStreetMap place index. Says so when there is nothing to search."
         ),
     },
 ]
@@ -92,18 +92,6 @@ def _build_lifespan(
         # requests instead of being rebuilt per call.
         app.state.graph_repository = GraphRepository()
 
-        # Built once so the geocoder's rate limiter is process-wide. One per
-        # request would let N concurrent requests each think they had a slot.
-        app.state.geocoder = build_geocoder(
-            settings.geocoding_provider,
-            contact=settings.geocoding_contact,
-            user_agent=f"{settings.service_name}/{settings.app_version}",
-        )
-        logger.info(
-            "Geocoding configured",
-            extra={"provider": app.state.geocoder.name, "enabled": app.state.geocoder.enabled},
-        )
-
         if settings.database_url:
             app.state.database = build_database(settings)
         else:
@@ -112,6 +100,20 @@ def _build_lifespan(
                 "DATABASE_URL is not configured; readiness will report not_ready. "
                 "Liveness is unaffected."
             )
+
+        # Built once so a rate-limited provider's throttle is process-wide. One
+        # per request would let N concurrent requests each think they had a slot.
+        # The local gazetteer reads the same database the routing graph does.
+        app.state.geocoder = build_geocoder(
+            settings.geocoding_provider,
+            contact=settings.geocoding_contact,
+            user_agent=f"{settings.service_name}/{settings.app_version}",
+            database=app.state.database,
+        )
+        logger.info(
+            "Geocoding configured",
+            extra={"provider": app.state.geocoder.name, "enabled": app.state.geocoder.enabled},
+        )
 
         # Preloading runs in the background so liveness answers at once; readiness
         # reports "loading" until every configured region is routable. See

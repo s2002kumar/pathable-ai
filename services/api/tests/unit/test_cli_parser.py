@@ -143,6 +143,25 @@ class TestBenchmark:
         assert region.grid is None
 
 
+class TestGazetteer:
+    def test_a_build_needs_a_region_and_a_file(self) -> None:
+        args = parse("gazetteer", "build", "--region", "waterloo", "--file", "ontario.osm.pbf")
+
+        assert args.gazetteer_command == "build"
+        assert args.provider == "geofabrik"
+        # Absent means "take it from the extract's header", never "now".
+        assert args.source_timestamp is None
+
+    def test_a_build_for_a_region_nobody_configured_is_refused(self) -> None:
+        with pytest.raises(SystemExit):
+            parse("gazetteer", "build", "--region", "atlantis", "--file", "x.osm.pbf")
+
+    def test_a_search_cannot_ask_for_more_than_the_api_returns(self) -> None:
+        assert parse("gazetteer", "search", "--region", "waterloo", "park").limit == 5
+        with pytest.raises(SystemExit):
+            parse("gazetteer", "search", "--region", "waterloo", "park", "--limit", "6")
+
+
 class TestNoDefaultCommand:
     def test_running_it_with_nothing_is_an_error(self) -> None:
         # Never guess at an operation that writes to a database.

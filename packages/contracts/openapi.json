@@ -510,11 +510,11 @@
                 "type": "null"
               }
             ],
-            "description": "Credit the provider's licence requires.",
+            "description": "Credit the data's licence requires, and for the local index the date its OpenStreetMap data is current to.",
             "title": "Attribution"
           },
           "enabled": {
-            "description": "False when no geocoder is configured. An empty `matches` with `enabled: false` means nothing was searched, not that nothing was found.",
+            "description": "False when nothing was searched: no geocoder is configured, or the region has no place index yet. An empty `matches` with `enabled: false` means nothing was searched, not that nothing was found.",
             "title": "Enabled",
             "type": "boolean"
           },
@@ -526,7 +526,7 @@
             "type": "array"
           },
           "provider": {
-            "description": "Which geocoder answered, or 'disabled'.",
+            "description": "Which geocoder answered: 'local', 'nominatim', or 'disabled'.",
             "title": "Provider",
             "type": "string"
           }
@@ -1486,7 +1486,7 @@
   "paths": {
     "/api/v1/geocode/search": {
       "post": {
-        "description": "Searches for a place within a pilot region's extent. Submit-only: there is no as-you-type endpoint, because per-keystroke queries against a donated geocoding service are forbidden by its usage policy. Nothing about the request is stored.",
+        "description": "Searches for a place, address or street within a pilot region's extent, and returns at most five. Submit-only: there is no as-you-type endpoint, so the same client works against any provider, including a donated one whose usage policy forbids per-keystroke queries. Nothing about the request is stored.",
         "operationId": "searchPlaces",
         "requestBody": {
           "content": {
@@ -1737,7 +1737,7 @@
       "name": "routing"
     },
     {
-      "description": "Optional place-name search, restricted to a pilot region. Disabled unless a provider is configured.",
+      "description": "Place, address and street search within a pilot region, from the region's own OpenStreetMap place index. Says so when there is nothing to search.",
       "name": "geocoding"
     }
   ]
