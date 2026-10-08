@@ -57,15 +57,16 @@ export type PlaceSearchProps = {
  * Place-name search, drawn as the Golden Master's field: a small caps label
  * over the value, inside one surface.
  *
- * Submit-only, on purpose. As-you-type search would mean one request per
- * keystroke against a donated geocoding service, which its usage policy forbids
- * — and which the backend's one-request-per-second throttle would queue into a
- * uselessly laggy experience anyway. The submit button appears once there is
- * something new to search for; Enter submits as well.
+ * Submit-only, on purpose: one request per search, not one per keystroke. The
+ * default provider is PathAble's own place index, which could take the load,
+ * but the same client must stay correct against any provider — including a
+ * donated one whose usage policy forbids as-you-type queries. The submit button
+ * appears once there is something new to search for; Enter submits as well.
  *
- * Search is also optional: when no provider is configured the API says so, and
- * this says so too rather than reporting "no results", which would send someone
- * off to rephrase a query that was never sent.
+ * When there is nothing to search — no provider, or no index built for the
+ * region — the API says so, and this says so too rather than reporting "no
+ * results", which would send someone off to rephrase a query that was never
+ * looked at.
  */
 export function PlaceSearch({
   apiBaseUrl,
@@ -210,7 +211,7 @@ export function PlaceSearch({
 
         {state.status === 'disabled' ? (
           <p className={styles.note}>
-            Place search is not enabled on this deployment. Click the map to choose points.
+            Place search is not available here. Click the map to choose points.
           </p>
         ) : null}
 
@@ -234,6 +235,11 @@ export function PlaceSearch({
                   <button
                     type="button"
                     className={styles.match}
+                    // Said as one phrase. Left to the two lines below, some
+                    // browsers run the name and the category together.
+                    {...(match.category
+                      ? { 'aria-label': `${match.label}, ${match.category}` }
+                      : {})}
                     onClick={() => {
                       onSelect(
                         { longitude: match.longitude, latitude: match.latitude },
@@ -243,7 +249,12 @@ export function PlaceSearch({
                       setDraft(null);
                     }}
                   >
-                    {match.label}
+                    <span>{match.label}</span>
+                    {/* What the map calls it — a library, a street, an address —
+                        because two results can share a name. */}
+                    {match.category ? (
+                      <span className={styles.matchCategory}>{match.category}</span>
+                    ) : null}
                   </button>
                 </li>
               ))}
