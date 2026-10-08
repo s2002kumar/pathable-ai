@@ -12,6 +12,13 @@ import {
   waitForMapReady,
 } from './fixtures';
 
+type PlaceMatch = {
+  label: string;
+  longitude: number;
+  latitude: number;
+  category: string;
+};
+
 /**
  * The routing journey in a real browser.
  *
@@ -315,7 +322,68 @@ test.describe('route comparison', () => {
     expect(searches).toHaveLength(0);
 
     await page.getByRole('button', { name: 'Search for a start' }).click();
-    await expect(page.getByText(/not enabled on this deployment/i)).toBeVisible();
+    await expect(page.getByText(/place search is not available here/i)).toBeVisible();
+  });
+
+  test('a place found by search becomes the endpoint the route is asked for', async ({ page }) => {
+    // The local index's answers, stubbed at the network layer like every other
+    // response here; the index itself is tested against real PostGIS.
+    const places: Record<string, PlaceMatch> = {
+      'Davis Centre': {
+        label: 'Davis Centre',
+        longitude: -80.5422,
+        latitude: 43.4729,
+        category: 'university',
+      },
+      'Waterloo Park': {
+        label: 'Waterloo Park',
+        longitude: -80.5302,
+        latitude: 43.4662,
+        category: 'park',
+      },
+    };
+    await page.route('**/api/v1/geocode/search', async (route) => {
+      const { query } = JSON.parse(route.request().postData() ?? '{}') as { query?: string };
+      const match = query === undefined ? undefined : places[query];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          provider: 'local',
+          enabled: true,
+          matches: match === undefined ? [] : [match],
+          attribution:
+            'Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0',
+        }),
+      });
+    });
+    const bodies: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/api/v1/routes/compare')) bodies.push(String(request.postData()));
+    });
+
+    await page.goto(PLANNER);
+    await waitForMapReady(page);
+
+    await page.getByLabel('Start location').fill('Davis Centre');
+    await page.getByRole('button', { name: 'Search for a start' }).click();
+    await expect(page.getByTestId('search-attribution')).toContainText('as of 2026-08-16');
+    await page.getByRole('button', { name: 'Davis Centre, university' }).click();
+    await expect(page.getByTestId('endpoint-origin-value')).toContainText('Davis Centre');
+    await expect(page.getByLabel('Start location')).toHaveValue('Davis Centre');
+
+    await page.getByLabel('Target endpoint').fill('Waterloo Park');
+    await page.getByRole('button', { name: 'Search for a destination' }).click();
+    await page.getByRole('button', { name: 'Waterloo Park, park' }).click();
+    await expect(page.getByTestId('endpoint-destination-value')).toContainText('Waterloo Park');
+
+    // Choosing a place drafts the journey; the press is still the request.
+    expect(bodies).toHaveLength(0);
+    await page.getByTestId('compare-routes').click();
+    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+    const sent = JSON.parse(bodies[0]!);
+    expect(sent.origin).toEqual({ longitude: -80.5422, latitude: 43.4729 });
+    expect(sent.destination).toEqual({ longitude: -80.5302, latitude: 43.4662 });
   });
 });
 

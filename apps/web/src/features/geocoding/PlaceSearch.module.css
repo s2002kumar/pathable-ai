@@ -128,6 +128,9 @@
 /* A full-width button, not a link: choosing a result performs an action on this
    page rather than navigating anywhere. */
 .match {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   width: 100%;
   min-height: 2.5rem;
   padding: var(--space-2) var(--space-3);
@@ -142,6 +145,11 @@
 
 .match:hover {
   background: var(--color-surface-high);
+}
+
+.matchCategory {
+  color: var(--color-text-subtle);
+  font-size: var(--text-xs);
 }
 
 .attribution {

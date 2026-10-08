@@ -476,3 +476,36 @@ was recorded from its rows afterwards and it is not claimed to have been
 validated under the sealing rules — `validated_content_checksum` stays null.
 The triggers protect against the application and accidents, not against a
 database owner, who can drop them.
+
+---
+
+## KI-11 — Place search knows what the extract names, as of the extract's date
+
+**Status: Open, by design** · 2026-10-07 · [ADR 0005](../adr/0005-map-and-geocoding-providers.md)
+
+Search answers from a place index built from the same OpenStreetMap extract as
+the routing network. That makes it free, private and policy-safe, and it bounds
+what it can find:
+
+1. **Only what is mapped.** A shop, building or address that OpenStreetMap does
+   not name or number is not found. There is no address interpolation: if a
+   street's numbers 10 and 20 are mapped, 14 is not. No postcodes.
+2. **Only as current as the extract.** The index records the date its data is
+   current to, and every result set says it. It is rebuilt by
+   `pathable gazetteer build`, separately from a network import; the command
+   reports whether the extract matches the live network's, but nothing forces
+   the two to move together.
+3. **Streets are one point per stretch**, placed halfway along the stretch's
+   longest road way inside the region. Ways sharing a node, and same-named ways
+   within about 65 m — a sidewalk named after its road — count as one stretch.
+   A long street gives a start somewhere in the middle of it, not at a door.
+   Where a stretch has addresses nearby that name a city, the label carries it;
+   where two stretches share a name and a city, they read the same.
+4. **One region.** Points outside the pilot extent are not indexed, so a place
+   just across the boundary is not found even if the route could reach it.
+
+None of these changes how a route is computed: a search result is only a
+coordinate, snapped to the network like a map click. They can make the
+_endpoint_ wrong — the middle of a street is not the door somebody meant — which
+is why the chosen place is named in its field and labelled on the map before
+anything is routed.

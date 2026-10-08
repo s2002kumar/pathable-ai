@@ -1,10 +1,11 @@
-# PathAble AI
+# PathAble
 
 **Pedestrian routing that compares the shortest walk against one you can actually make — and shows its working.**
 
-Pick two points in Waterloo, Ontario and a mobility profile. PathAble returns the ordinary shortest walking route
-alongside a route that respects that profile, and explains the difference using what OpenStreetMap actually
-records: steps, surfaces, gradients, kerbs. Where nothing has been recorded, it says so.
+Choose a start and a destination in Waterloo, Ontario — search for a place, an address or a street, or click the
+map — and a mobility profile. PathAble returns the ordinary shortest walking route alongside a route that respects
+that profile, and explains the difference using what OpenStreetMap actually records: steps, surfaces, gradients,
+kerbs. Where nothing has been recorded, it says so.
 
 [![CI](https://github.com/s2002kumar/pathable-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/s2002kumar/pathable-ai/actions/workflows/ci.yml)
 [![Security](https://github.com/s2002kumar/pathable-ai/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/s2002kumar/pathable-ai/actions/workflows/security.yml)
@@ -16,24 +17,17 @@ recorded stairways, beside the shortest route, 287 m with four recorded stairway
 Labels on the map mark the stairways, recorded in OpenStreetMap, and the steepest climb, derived from elevation
 data.](docs/evidence/media/pathable-ux04-demo-comparison.png)
 
-That is one frame of [`docs/evidence/media/pathable-ux04-demo.webm`](docs/evidence/media/pathable-ux04-demo.webm),
-63.7 seconds of a real browser driving the production images against the real Waterloo network, recorded by
-Playwright in one session and not edited: the landing page, the verified example computed live, the recorded
-stairs, one route's evidence — what is recorded, what is derived from elevation, what is not recorded — and the
-details sheet. The time of each step and the API's answer are in
-[`demo-session.json`](docs/evidence/screenshots/ux-04/demo-session.json). GitHub cannot preview a video that size
-in the browser, so the link downloads it.
+One frame of [`pathable-ux04-demo.webm`](docs/evidence/media/pathable-ux04-demo.webm): 63.7 seconds of a real
+browser driving the production images against the real Waterloo network, recorded by Playwright in one session and
+not edited. GitHub cannot preview a video that size, so the link downloads it; the time of each step and the API's
+answer are in [`demo-session.json`](docs/evidence/screenshots/ux-04/demo-session.json). The figures on screen are the
+API's answer, and the [full-stack test suite](apps/web/tests/fullstack/recruiter-demo.spec.ts) asserts that they
+are. The landing page is static, so its example is one recorded response, dated and with its dataset checksum, and
+it says so.
 
-The planner's figures are the API's answer to that request; the
-[full-stack test suite](apps/web/tests/fullstack/recruiter-demo.spec.ts) watches the network and asserts that the
-figures on screen are the ones the API returned. The landing page is static, so the example it shows is one
-recorded API response, dated and with its dataset checksum, and it says so.
-
-The September recording of the earlier interface,
-[`pathable-demo.webm`](docs/evidence/media/pathable-demo.webm), is kept as history, not as the current demo.
-
-**This is a local production-build demo. PathAble is not deployed anywhere** — there is no live URL, no hosting
-account and no public service. Everything above runs from `docker compose` on one laptop.
+**PathAble is not deployed anywhere.** There is no live URL, no hosting account and no public service: this is a
+local production build, run with `docker compose` on one laptop. [Running the demo](docs/evidence/DEMO.md)
+reproduces it.
 
 ## What the comparison actually says
 
@@ -62,36 +56,16 @@ against anything else.
 Every figure below links to the evidence that produced it and the conditions it was measured under. Nothing here
 is estimated.
 
-| Fact                                                                                                                                                                                         | Evidence                                                                                                                                                                           |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **155,714 nodes · 180,554 physical segments · 361,108 directed edges** ingested from a published OpenStreetMap extract, with 1 m LiDAR elevation                                             | [evidence index](docs/evidence/README.md) · [`production-envelope.json`](docs/evidence/production-envelope.json)                                                                   |
-| **Graph load: 46.83 s → 22.14 s median, peak Python heap 1,381.3 MB → 700.7 MB (−49%)** after replacing ORM entity construction with narrow Core columns                                     | [`waterloo-graph-load.json`](docs/evidence/waterloo-graph-load.json) vs [`-before.json`](docs/evidence/waterloo-graph-load-before.json) · [KI-6](docs/development/KNOWN_ISSUES.md) |
-| **Routes unchanged by that optimisation** — identical node and segment SHA-256 fingerprints, identical answers on all 20 corpus journeys                                                     | [`waterloo-routes.json`](docs/evidence/waterloo-routes.json)                                                                                                                       |
-| **18 of 20 corpus journeys route differently** for a wheelchair profile; 1 has no route at all and says why                                                                                  | [`waterloo-routes.json`](docs/evidence/waterloo-routes.json)                                                                                                                       |
-| **A\* is not faster here**: 1,970 expanded nodes against Dijkstra's 7,409, but 195 ms against 213 ms at p50 — reported as a wash, not a win                                                  | [`waterloo-performance.json`](docs/evidence/waterloo-performance.json)                                                                                                             |
-| **Production container envelope**: one API worker holds 997 MB steady / 1,064 MB peak and is routable 18.7 s after start; the frontend fits 512 MiB with 92% headroom over three cold starts | [`production-envelope.json`](docs/evidence/production-envelope.json) · [ADR 0009](docs/adr/0009-deployment-architecture.md)                                                        |
-| **Dataset bootstrap needs no PostgreSQL superuser** — verified against a role with `superuser=f`, after the obvious `pg_restore --disable-triggers` was shown to fail on one                 | [`restore-dataset.sh`](infra/production-smoke/restore-dataset.sh) · [KI-8](docs/development/KNOWN_ISSUES.md)                                                                       |
-
-### Tests, by suite
-
-Counted separately on purpose — these suites overlap in what they cover, and adding them up would be a bigger
-number describing less. The counts change with every card; these are from CI run
-[37556411163](https://github.com/s2002kumar/pathable-ai/actions/runs/37556411163), on commit `1bcad0d`.
-
-| Suite                                   | Count                                                                           | Command                                                    |
-| --------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Backend, unit + PostGIS integration     | **1,418 passed, 1 skipped**, 87.85% coverage against an 86% floor               | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
-| Frontend unit (Vitest)                  | **478 passed**, 93.11% statements against an 80% floor                          | `pnpm --filter @pathable/web test:unit`                    |
-| Browser, stubbed API (Playwright + axe) | **156 passed, 2 skipped**: the 2 are desktop-only layouts, skipped on the phone | `pnpm --filter @pathable/web test:e2e`                     |
-| Browser, full stack, nothing stubbed    | **7 passed, 9 skipped**: the 9 need the real Waterloo network                   | `pnpm --filter @pathable/web test:e2e:fullstack`           |
-
-Coverage is quoted from CI, on Linux. Each platform skips one event-loop test that only applies to the other — on
-Linux, the Windows-only one — so a Windows run reports a slightly different figure. That is a platform difference,
-not a discrepancy to choose between.
-
-The backend integration tests run against real PostgreSQL/PostGIS, never a mock. The full-stack suite drives a
-real browser through real containers. Nine of its sixteen tests need the real Waterloo network and
-[skip with a printed reason](docs/evidence/DEMO_SCRIPT.md) where it is absent, which includes CI.
+| Fact                                                                                                                                                                                                                                                                                                      | Evidence                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **155,714 nodes · 180,554 physical segments · 361,108 directed edges** ingested from a published OpenStreetMap extract, with 1 m LiDAR elevation                                                                                                                                                          | [evidence index](docs/evidence/README.md) · [`production-envelope.json`](docs/evidence/production-envelope.json)                                                                   |
+| **Place search from the network's own extract: 5,232 places, 26,201 addresses, 1,792 streets**, no third-party service; a journey chosen entirely by search — Davis Centre Library to the Student Life Centre — routes live at 406.4 m with 4 stairways (shortest) against 490.2 m with none (wheelchair) | [`waterloo-place-search.json`](docs/evidence/waterloo-place-search.json) · [ADR 0005](docs/adr/0005-map-and-geocoding-providers.md)                                                |
+| **Graph load: 46.83 s → 22.14 s median, peak Python heap 1,381.3 MB → 700.7 MB (−49%)** after replacing ORM entity construction with narrow Core columns                                                                                                                                                  | [`waterloo-graph-load.json`](docs/evidence/waterloo-graph-load.json) vs [`-before.json`](docs/evidence/waterloo-graph-load-before.json) · [KI-6](docs/development/KNOWN_ISSUES.md) |
+| **Routes unchanged by that optimisation** — identical node and segment SHA-256 fingerprints, identical answers on all 20 corpus journeys                                                                                                                                                                  | [`waterloo-routes.json`](docs/evidence/waterloo-routes.json)                                                                                                                       |
+| **18 of 20 corpus journeys route differently** for a wheelchair profile; 1 has no route at all and says why                                                                                                                                                                                               | [`waterloo-routes.json`](docs/evidence/waterloo-routes.json)                                                                                                                       |
+| **A\* is not faster here**: 1,970 expanded nodes against Dijkstra's 7,409, but 195 ms against 213 ms at p50 — reported as a wash, not a win                                                                                                                                                               | [`waterloo-performance.json`](docs/evidence/waterloo-performance.json)                                                                                                             |
+| **Production container envelope**: one API worker holds 997 MB steady / 1,064 MB peak and is routable 18.7 s after start; the frontend fits 512 MiB with 92% headroom over three cold starts                                                                                                              | [`production-envelope.json`](docs/evidence/production-envelope.json) · [ADR 0009](docs/adr/0009-deployment-architecture.md)                                                        |
+| **Dataset bootstrap needs no PostgreSQL superuser** — verified against a role with `superuser=f`, after the obvious `pg_restore --disable-triggers` was shown to fail on one                                                                                                                              | [`restore-dataset.sh`](infra/production-smoke/restore-dataset.sh) · [KI-8](docs/development/KNOWN_ISSUES.md)                                                                       |
 
 ## How it fits together
 
@@ -105,10 +79,11 @@ flowchart LR
     HRDEM["NRCan HRDEM<br/>1 m LiDAR"] --> ELEV["Sample elevation,<br/>derive gradient"]
     ELEV --> WRITE
     WRITE --> ACT["Activate in one<br/>transaction"]
+    OSM --> GAZ["Place index for search<br/>names · addresses · streets"]
   end
 
   subgraph store["Storage"]
-    PG[("PostgreSQL 17 + PostGIS 3.5<br/>nodes · segments · versions")]
+    PG[("PostgreSQL 17 + PostGIS 3.5<br/>nodes · segments · versions<br/>place index")]
   end
 
   subgraph request["Every route request"]
@@ -121,6 +96,7 @@ flowchart LR
   end
 
   ACT --> PG
+  GAZ --> PG
   PG -->|"loaded once at startup"| GRAPH
 
   classDef future stroke-dasharray: 5 5
@@ -136,16 +112,53 @@ A dataset is built as a candidate, enriched, sealed, and routed against the live
 corpus before it can go live; from the moment it is sealed PostgreSQL refuses any change to its rows, which is what
 the cached graph relies on ([ADR 0010](docs/adr/0010-dataset-lifecycle.md)).
 
+## Tests, by suite
+
+Counted separately on purpose — these suites overlap in what they cover, and adding them up would be a bigger
+number describing less. The counts change with every card; these are from CI run
+[37844124869](https://github.com/s2002kumar/pathable-ai/actions/runs/37844124869), on commit `a9d7fe0`.
+
+| Suite                                   | Count                                                                              | Command                                                    |
+| --------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Backend, unit + PostGIS integration     | **1,500 passed, 1 skipped**, 88.15% coverage against an 86% floor                  | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
+| Frontend unit (Vitest)                  | **479 passed**, 93.11% statements against an 80% floor                             | `pnpm --filter @pathable/web test:unit`                    |
+| Browser, stubbed API (Playwright + axe) | **158 passed, 2 skipped**: the 2 are desktop-only layouts, skipped on the phone    | `pnpm --filter @pathable/web test:e2e`                     |
+| Browser, full stack, nothing stubbed    | **7 passed, 10 skipped**: the 10 need the real Waterloo network or its place index | `pnpm --filter @pathable/web test:e2e:fullstack`           |
+
+Coverage is quoted from CI, on Linux. Each platform skips one event-loop test that only applies to the other — on
+Linux, the Windows-only one — so a Windows run reports a slightly different figure. That is a platform difference,
+not a discrepancy to choose between.
+
+The backend integration tests run against real PostgreSQL/PostGIS, never a mock. The full-stack suite drives a
+real browser through real containers. Ten of its seventeen tests need the real Waterloo network or its place index and
+[skip with a printed reason](docs/evidence/DEMO.md) where they are absent, which includes CI.
+
+## What it is not
+
+- **One city.** Waterloo, Ontario. The pilot region is configuration, but no second region has been run.
+- **Not deployed.** No URL, no users, no production traffic. The hosting plan in
+  [ADR 0009](docs/adr/0009-deployment-architecture.md) is costed and has not been bought.
+- **Not validated with the people it is for.** The cost weights are engineering judgement, not tested with
+  people who use mobility aids, and nobody has walked these routes.
+- **Advice, not certification.** No route is certified accessible. PathAble separates what is recorded, what is
+  derived, what the profile decided and what is missing — it does not promise a journey is passable.
+- **Only as complete and as current as the OpenStreetMap extract.** A missing attribute is shown as not recorded,
+  never as clear. Freshness is known per extract, not per element on a route
+  ([KI-7](docs/development/KNOWN_ISSUES.md)). Place search finds what the extract names and numbers — no address
+  interpolation ([KI-11](docs/development/KNOWN_ISSUES.md)).
+- **No manual screen-reader pass yet.** The browser suite runs automated axe checks; a screen-reader session is a
+  pre-deployment item.
+
 ## Where to go next
 
-| If you want to…                        | Read                                                                                                     |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Run it yourself                        | [Local setup](docs/development/LOCAL_SETUP.md) · [production smoke](docs/deployment/PRODUCTION_SMOKE.md) |
-| See the numbers and how they were made | [Evidence index](docs/evidence/README.md)                                                                |
-| Understand the engineering decisions   | [Architecture](docs/architecture/OVERVIEW.md) · [ADRs](docs/adr/)                                        |
-| Interrogate the claims                 | [Project defence](docs/PROJECT_DEFENSE.md) · [claims ledger](docs/CLAIMS_LEDGER.md)                      |
-| Know what is deliberately missing      | [Known issues](docs/development/KNOWN_ISSUES.md) · [phases](docs/product/PHASES.md)                      |
-| Give the demo                          | [Demo script](docs/evidence/DEMO_SCRIPT.md)                                                              |
+| If you want to…                        | Read                                                                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Run it yourself                        | [Local setup](docs/development/LOCAL_SETUP.md) · [production smoke](docs/deployment/PRODUCTION_SMOKE.md)             |
+| See the numbers and how they were made | [Evidence index](docs/evidence/README.md)                                                                            |
+| Understand the engineering decisions   | [Engineering review](docs/ENGINEERING_REVIEW.md) · [architecture](docs/architecture/OVERVIEW.md) · [ADRs](docs/adr/) |
+| Check the claims                       | [Claims ledger](docs/CLAIMS_LEDGER.md) — every claim, its evidence, and the overstatement it avoids                  |
+| Know what is deliberately missing      | [Known issues](docs/development/KNOWN_ISSUES.md) · [phases](docs/product/PHASES.md)                                  |
+| Reproduce the demo                     | [Running the demo](docs/evidence/DEMO.md)                                                                            |
 
 ## Status, licence and attribution
 
@@ -374,6 +387,13 @@ uv run pathable datasets activate <candidate-id>
 uv run pathable datasets rollback --region waterloo --reason "Why, in a sentence."
 uv run pathable datasets history --region waterloo
 
+# Read places, addresses and streets from the same extract into the region's
+# place index, which search answers from. Replaced whole, and outside the
+# lifecycle above: a search result is only a coordinate to route from. The
+# command says whether this is the extract the live network came from.
+uv run pathable gazetteer build --region waterloo --file .osm-data/ontario-latest.osm.pbf
+uv run pathable gazetteer search --region waterloo "Davis Centre"
+
 # Or load the deterministic test fixture instead — a nine-node network built
 # around one stairway-versus-ramp comparison. Useful for development and for
 # demonstrating the product without touching a public service.
@@ -511,16 +531,18 @@ Copy `.env.example` to `.env`. `.env` is git-ignored and must never be committed
 
 ### Backend
 
-| Variable                    | Default       | Notes                                                    |
-| --------------------------- | ------------- | -------------------------------------------------------- |
-| `ENVIRONMENT`               | `development` | `development` \| `test` \| `production`                  |
-| `API_HOST`                  | `127.0.0.1`   | `0.0.0.0` inside a container                             |
-| `API_PORT`                  | `8000`        | 1–65535                                                  |
-| `DATABASE_URL`              | —             | `postgresql://` is normalised to `postgresql+psycopg://` |
-| `ALLOWED_ORIGINS`           | —             | Comma-separated exact origins, no trailing slashes       |
-| `LOG_LEVEL`                 | `INFO`        | `DEBUG` … `CRITICAL`                                     |
-| `LOG_FORMAT`                | `json`        | `json` \| `console`                                      |
-| `READINESS_TIMEOUT_SECONDS` | `2.0`         | Bound on the database probe, 0 < value ≤ 30              |
+| Variable                    | Default       | Notes                                                       |
+| --------------------------- | ------------- | ----------------------------------------------------------- |
+| `ENVIRONMENT`               | `development` | `development` \| `test` \| `production`                     |
+| `API_HOST`                  | `127.0.0.1`   | `0.0.0.0` inside a container                                |
+| `API_PORT`                  | `8000`        | 1–65535                                                     |
+| `DATABASE_URL`              | —             | `postgresql://` is normalised to `postgresql+psycopg://`    |
+| `ALLOWED_ORIGINS`           | —             | Comma-separated exact origins, no trailing slashes          |
+| `LOG_LEVEL`                 | `INFO`        | `DEBUG` … `CRITICAL`                                        |
+| `LOG_FORMAT`                | `json`        | `json` \| `console`                                         |
+| `READINESS_TIMEOUT_SECONDS` | `2.0`         | Bound on the database probe, 0 < value ≤ 30                 |
+| `GRAPH_PRELOAD_REGIONS`     | —             | Regions whose graph loads at startup, holding readiness     |
+| `GEOCODING_PROVIDER`        | `local`       | `local` (the region's place index) \| `none` \| `nominatim` |
 
 In `production` the service refuses to start unless `DATABASE_URL` is set,
 `ALLOWED_ORIGINS` names at least one explicit origin, no origin is `*`, and
@@ -584,7 +606,7 @@ pathable-ai/
 | End-to-end + axe     | `pnpm test:e2e`           | Chromium; **no** backend, **no** internet |
 | Full stack, no stubs | `pnpm test:e2e:fullstack` | Chromium + real API + real PostGIS        |
 
-Coverage floors are enforced: 85% on backend authored code, 80% on frontend
+Coverage floors are enforced: 86% on backend authored code, 80% on frontend
 authored code. Full detail, including what the accessibility tests do and do not
 prove, is in [`docs/development/TESTING.md`](docs/development/TESTING.md).
 
@@ -628,16 +650,8 @@ Start the database and export the URL:
 
 ## Current limitations
 
-- No machine learning of any kind: every routing decision is a deterministic
-  rule over recorded OpenStreetMap attributes.
-- No imagery, no user reports, and no per-element edit times — evidence
-  freshness is a dataset-level fact.
-- No user accounts and no authentication.
-- The default map style (OpenFreeMap) is a development convenience and **has not
-  been approved for production**. See
-  [`docs/licensing/DATA_SOURCES.md`](docs/licensing/DATA_SOURCES.md).
-- No deployment target exists; everything runs locally.
-- The baseline migration creates the PostGIS extension and nothing else.
+See [What it is not](#what-it-is-not) above, and the
+[known issues](docs/development/KNOWN_ISSUES.md) for each one in detail.
 
 ---
 

@@ -42,8 +42,8 @@ function renderSearch(fetchImpl: typeof fetch, onSelect = vi.fn()) {
 
 describe('PlaceSearch', () => {
   it('does not search while the user is typing', async () => {
-    // Per-keystroke geocoding is forbidden by the provider's usage policy, and
-    // the backend's one-per-second throttle would make it useless anyway.
+    // One request per search, so the client stays correct against a donated
+    // provider whose usage policy forbids per-keystroke queries.
     const user = userEvent.setup();
     const fetchImpl = jsonFetch({ provider: 'nominatim', enabled: true, matches: MATCHES });
     renderSearch(fetchImpl);
@@ -89,6 +89,29 @@ describe('PlaceSearch', () => {
     );
   });
 
+  it('shows what kind of place each match is, and says it to a screen reader', async () => {
+    const user = userEvent.setup();
+    const fetchImpl = jsonFetch({
+      provider: 'local',
+      enabled: true,
+      matches: [
+        { label: 'Davis Centre', longitude: -80.542, latitude: 43.4728, category: 'university' },
+        { label: 'Davis Street', longitude: -80.5, latitude: 43.45, category: null },
+      ],
+      attribution:
+        'Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0',
+    });
+    renderSearch(fetchImpl);
+
+    await user.type(screen.getByRole('searchbox'), 'Davis');
+    await user.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(await screen.findByRole('button', { name: 'Davis Centre, university' })).toBeVisible();
+    // A match with no category is named by its label alone, with no dangling comma.
+    expect(screen.getByRole('button', { name: 'Davis Street' })).toBeVisible();
+    expect(screen.getByTestId('search-attribution')).toHaveTextContent('as of 2026-08-16');
+  });
+
   it('distinguishes "search is off" from "nothing matched"', async () => {
     // Telling somebody their query found nothing, when it was never sent, sends
     // them off rephrasing a search that cannot work.
@@ -99,7 +122,7 @@ describe('PlaceSearch', () => {
     await user.type(screen.getByRole('searchbox'), 'Waterloo');
     await user.click(screen.getByRole('button', { name: 'Search' }));
 
-    expect(await screen.findByText(/not enabled on this deployment/i)).toBeInTheDocument();
+    expect(await screen.findByText(/place search is not available here/i)).toBeInTheDocument();
   });
 
   it('says so when nothing matched inside the region', async () => {

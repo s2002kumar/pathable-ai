@@ -15,6 +15,12 @@ The lifecycle, as commands::
     pathable datasets accept <run> --reason "..."        # only if routes changed
     pathable datasets activate <candidate>               # the short switch
     pathable datasets rollback --region waterloo --reason "..."
+
+Place search reads the same extract into the region's place index, which is
+replaced whole and is not part of the lifecycle above::
+
+    pathable gazetteer build --region waterloo --file ...
+    pathable gazetteer search --region waterloo "Davis Centre"
 """
 
 from __future__ import annotations
@@ -53,6 +59,13 @@ from pathable_api.geo.elevation import build_provider
 from pathable_api.geo.elevation_apply import summarise
 from pathable_api.geo.enums import SourceType
 from pathable_api.geo.fixtures import load_synthetic_dataset
+from pathable_api.geo.gazetteer import import_gazetteer
+from pathable_api.geo.gazetteer_store import attribution as gazetteer_attribution
+from pathable_api.geo.gazetteer_store import (
+    gazetteer_build,
+    replace_gazetteer,
+    search_gazetteer,
+)
 from pathable_api.geo.kitchener.arcgis import (
     DEFAULT_CHUNK_SIZE,
     ArcGISClient,
@@ -500,6 +513,47 @@ def build_parser() -> argparse.ArgumentParser:
     history.add_argument(
         "--region", required=True, choices=[definition.slug for definition in PILOT_REGIONS]
     )
+
+    gazetteer = subcommands.add_parser(
+        "gazetteer",
+        help="Build or query a region's place index for search. Not a routing dataset.",
+    )
+    gazetteer_actions = gazetteer.add_subparsers(dest="gazetteer_command", required=True)
+    gazetteer_build_command = gazetteer_actions.add_parser(
+        "build",
+        help=(
+            "Read places, addresses and streets from a local OpenStreetMap extract and "
+            "replace the region's place index with them."
+        ),
+    )
+    gazetteer_build_command.add_argument(
+        "--region", required=True, choices=[definition.slug for definition in PILOT_REGIONS]
+    )
+    gazetteer_build_command.add_argument(
+        "--file",
+        required=True,
+        type=Path,
+        help="Path to a .osm.pbf extract, the one the active network was built from.",
+    )
+    gazetteer_build_command.add_argument(
+        "--provider", default="geofabrik", help="Who published the extract. Recorded."
+    )
+    gazetteer_build_command.add_argument(
+        "--source-timestamp",
+        default=None,
+        help=(
+            "When the extract's data is current to (ISO 8601). Defaults to the extract's own "
+            "header; left unknown if neither says."
+        ),
+    )
+    gazetteer_search_command = gazetteer_actions.add_parser(
+        "search", help="Search a region's place index exactly as the API does."
+    )
+    gazetteer_search_command.add_argument(
+        "--region", required=True, choices=[definition.slug for definition in PILOT_REGIONS]
+    )
+    gazetteer_search_command.add_argument("query", help="Place name, address or street.")
+    gazetteer_search_command.add_argument("--limit", type=int, default=5, choices=range(1, 6))
 
     overture = subcommands.add_parser(
         "overture",
@@ -1039,6 +1093,10 @@ async def _dispatch(args: argparse.Namespace) -> int:
                 return await _benchmark_load(database, args)
             case "benchmark":
                 return await _benchmark(database, args)
+            case "gazetteer" if args.gazetteer_command == "build":
+                return await _gazetteer_build(database, args)
+            case "gazetteer":
+                return await _gazetteer_search(database, args)
             case "overture":
                 return await _overture_link(database, args)
             case "kitchener" if args.kitchener_command == "lineage-extract":
@@ -1142,6 +1200,99 @@ async def _ingest_osm(database: Database, args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _source_timestamp(value: str | None) -> dt.datetime | None:
+    """An ISO 8601 argument as an aware datetime; naive input is taken as UTC."""
+    if not value:
+        return None
+    parsed = dt.datetime.fromisoformat(value)
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=dt.UTC)
+
+
+async def _gazetteer_build(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    path = Path(args.file)
+    if not path.is_file():
+        print(f"error: {path} does not exist.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+    try:
+        source_timestamp = _source_timestamp(args.source_timestamp)
+    except ValueError:
+        print("error: --source-timestamp must be ISO 8601.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
+    # Checked before the read, which takes minutes on a province-sized extract.
+    async with database.session() as session:
+        try:
+            await require_region(session, definition.slug)
+        except DatasetLifecycleError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_MISCONFIGURED
+
+    size_mb = path.stat().st_size / (1024 * 1024)
+    print(f"Reading places from {path.name} ({size_mb:.0f} MB) for {definition.display_name}...")
+    started = time.perf_counter()
+    extract = import_gazetteer(
+        path,
+        definition.bounds,
+        region_slug=definition.slug,
+        provider=args.provider,
+        source_timestamp=source_timestamp,
+    )
+    read_seconds = time.perf_counter() - started
+    extract.configuration["read_seconds"] = round(read_seconds, 2)
+
+    async with database.session() as session:
+        region = await require_region(session, definition.slug)
+        build = await replace_gazetteer(
+            session,
+            region=region,
+            source_name=f"openstreetmap-pbf:{definition.slug}",
+            extract=extract,
+        )
+        active = await get_active_dataset(session, region.id)
+        await session.commit()
+
+    print(f"Place index for {definition.display_name} replaced; read took {read_seconds:.1f}s.")
+    print(f"  places     {build.place_count}")
+    print(f"  addresses  {build.address_count}")
+    print(f"  streets    {build.street_count}")
+    print(f"  source     {extract.file_name}")
+    print(f"  sha256     {extract.file_sha256}")
+    as_of = extract.source_timestamp.isoformat() if extract.source_timestamp else "unknown"
+    told_by = extract.configuration["source_timestamp_from"] or "unrecorded"
+    print(f"  data as of {as_of} ({told_by})")
+    # Search and routing should describe the same map. Reported, not enforced:
+    # the index decides no route, and an operator may rebuild either one first.
+    network_sha = active.ingestion_configuration.get("file_sha256") if active else None
+    if network_sha is None:
+        print("  network    no active network records an extract to compare with")
+    elif network_sha == extract.file_sha256:
+        print("  network    built from the same extract as the active network")
+    else:
+        print(f"  network    WARNING: the active network came from {network_sha[:16]}, not this")
+    return EXIT_OK
+
+
+async def _gazetteer_search(database: Database, args: argparse.Namespace) -> int:
+    definition = region_definition(args.region)
+    async with database.session() as session:
+        build = await gazetteer_build(session, definition.slug)
+        if build is None:
+            print(
+                f"error: {definition.display_name} has no place index. "
+                "Run `pathable gazetteer build` first.",
+                file=sys.stderr,
+            )
+            return EXIT_FAILED
+        matches = await search_gazetteer(session, build.id, args.query, limit=args.limit)
+    if not matches:
+        print("No matches.")
+    for match in matches:
+        category = f"  [{match.category}]" if match.category else ""
+        print(f"{match.latitude:.6f},{match.longitude:.6f}  {match.label}{category}")
+    print(gazetteer_attribution(build))
+    return EXIT_OK
+
+
 async def _ingest_pbf(database: Database, args: argparse.Namespace) -> int:
     definition = region_definition(args.region)
     path = Path(args.file)
@@ -1149,15 +1300,11 @@ async def _ingest_pbf(database: Database, args: argparse.Namespace) -> int:
         print(f"error: {path} does not exist.", file=sys.stderr)
         return EXIT_MISCONFIGURED
 
-    source_timestamp: dt.datetime | None = None
-    if args.source_timestamp:
-        try:
-            source_timestamp = dt.datetime.fromisoformat(args.source_timestamp)
-        except ValueError:
-            print("error: --source-timestamp must be ISO 8601.", file=sys.stderr)
-            return EXIT_MISCONFIGURED
-        if source_timestamp.tzinfo is None:
-            source_timestamp = source_timestamp.replace(tzinfo=dt.UTC)
+    try:
+        source_timestamp = _source_timestamp(args.source_timestamp)
+    except ValueError:
+        print("error: --source-timestamp must be ISO 8601.", file=sys.stderr)
+        return EXIT_MISCONFIGURED
 
     size_mb = path.stat().st_size / (1024 * 1024)
     print(f"Reading {path.name} ({size_mb:.0f} MB) for {definition.display_name}...")

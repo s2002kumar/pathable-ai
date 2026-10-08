@@ -65,6 +65,9 @@ services:
       # Load the pilot region's graph at startup and hold readiness until it is
       # routable. Set to an empty string to measure the lazy path instead.
       GRAPH_PRELOAD_REGIONS: ${ENVELOPE_PRELOAD_REGIONS:-waterloo}
+      # Place search from the region's own index in this database, built once
+      # with `pathable gazetteer build` (see PRODUCTION_SMOKE.md). Calls nobody.
+      GEOCODING_PROVIDER: local
     # Overridable so the worker-count measurement can start the same image with
     # `uvicorn pathable_api.main:app --workers 2 ...` and nothing else changed.
     command: ${ENVELOPE_API_COMMAND:-python -m pathable_api}

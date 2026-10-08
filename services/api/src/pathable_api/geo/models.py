@@ -17,10 +17,12 @@ from typing import Any
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
+    Identity,
     Index,
     Integer,
     SmallInteger,
@@ -39,6 +41,7 @@ from pathable_api.geo.enums import (
     InclineDirection,
     IngestionStatus,
     KerbType,
+    PlaceKind,
     SmoothnessClass,
     SourceType,
     SurfaceClass,
@@ -548,4 +551,82 @@ class DatasetActivationEvent(Base):
             f"reason IS NULL OR {_REASON_CHECK}", name="activation_reason_is_a_sentence"
         ),
         Index("ix_dataset_activation_events_region", "pilot_region_id", "occurred_at"),
+    )
+
+
+# --- Place search ---------------------------------------------------------------
+#
+# Deliberately outside the dataset lifecycle above. A place index is read from
+# the same extract as a network, but it decides nothing about a route: a search
+# result is a coordinate, which the routing endpoint snaps to the network like a
+# map click. So it is not sealed, not checksummed with the network, and never
+# joined to an edge. It is replaced whole, in one transaction, and records the
+# extract it came from so a stale index can be recognised as one.
+
+
+class GazetteerBuild(Base):
+    """The place index currently serving one region, and where it came from."""
+
+    __tablename__ = "gazetteer_builds"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    pilot_region_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("pilot_regions.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    file_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    file_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: When the OSM data is current to, from the extract's header. NULL when the
+    #: extract does not say, which is shown as unknown rather than guessed.
+    source_timestamp: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    built_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+    place_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    address_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    street_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    configuration: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+    __table_args__ = (
+        # One index per region: a rebuild replaces it rather than accumulating.
+        UniqueConstraint("pilot_region_id", name="uq_gazetteer_builds_region"),
+        CheckConstraint(
+            "place_count >= 0 AND address_count >= 0 AND street_count >= 0",
+            name="counts_non_negative",
+        ),
+    )
+
+
+class GazetteerEntry(Base):
+    """One searchable place, address or street, as a single point."""
+
+    __tablename__ = "gazetteer_entries"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    build_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("gazetteer_builds.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[PlaceKind] = mapped_column(String(8), nullable=False)
+    label: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str | None] = mapped_column(String(64))
+    #: Normalised text the search matches against; see geo/gazetteer.py.
+    search_text: Mapped[str] = mapped_column(Text, nullable=False)
+    geometry: Mapped[Any] = mapped_column(
+        Geometry("POINT", srid=SRID, spatial_index=False), nullable=False
+    )
+    osm_type: Mapped[str] = mapped_column(String(8), nullable=False)
+    osm_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    osm_version: Mapped[int | None] = mapped_column(Integer)
+
+    __table_args__ = (
+        _enum_check("kind", PlaceKind, "kind"),
+        CheckConstraint("osm_type IN ('node', 'way', 'relation')", name="osm_type"),
+        CheckConstraint("char_length(search_text) > 0", name="searchable"),
+        Index("ix_gazetteer_entries_build", "build_id"),
+        Index(
+            "ix_gazetteer_entries_search_text_trgm",
+            "search_text",
+            postgresql_using="gin",
+            postgresql_ops={"search_text": "gin_trgm_ops"},
+        ),
     )

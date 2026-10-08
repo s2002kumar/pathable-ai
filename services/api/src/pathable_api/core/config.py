@@ -20,7 +20,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 Environment = Literal["development", "test", "production"]
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LogFormat = Literal["json", "console"]
-GeocodingProviderName = Literal["none", "nominatim"]
+GeocodingProviderName = Literal["local", "none", "nominatim"]
 
 #: SQLAlchemy driver PathAble standardises on. Psycopg 3 serves both the async
 #: application engine and Alembic's synchronous engine from one URL, which is why
@@ -78,10 +78,12 @@ class Settings(BaseSettings):
     db_pool_max_overflow: Annotated[int, Field(ge=0, le=50)] = 5
 
     # --- Geocoding --------------------------------------------------------
-    # Disabled by default: address search is a convenience on top of the
-    # map-click flow, and a deployment should opt into calling somebody else's
-    # donated service rather than doing it by accident.
-    geocoding_provider: GeocodingProviderName = "none"
+    # The region's own place index by default: it is built from the routing
+    # network's source extract and calls no third party, so turning it on costs
+    # nothing and breaks no usage policy. Until the index is built, search says
+    # it did not look. "nominatim" calls a donated public service and is for
+    # development only; "none" turns search off.
+    geocoding_provider: GeocodingProviderName = "local"
     #: Required by Nominatim's usage policy so an operator can reach whoever is
     #: responsible for the traffic instead of blocking it.
     geocoding_contact: str = ""

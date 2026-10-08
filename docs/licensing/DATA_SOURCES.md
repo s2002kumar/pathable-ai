@@ -46,8 +46,9 @@ Three obligations:
 
 ### What this means for PathAble
 
-- The Phase 0.5 pedestrian graph will be a **derived database**. If PathAble is
-  publicly deployed, that graph must be available under ODbL. This is a
+- The pedestrian graph is a **derived database**, and so is the place index
+  search uses (§4). If PathAble is publicly deployed, both must be available
+  under ODbL. This is a
   deliberate consequence, not an accident — it should be treated as a
   contribution back rather than an obligation to work around.
 - **Produced Works** — a rendered map image, or a route displayed to a user — do
@@ -65,6 +66,8 @@ Three obligations:
   route without holding the credit; `dataset.elevation_attribution` carries the
   Open Government Licence – Canada statement whenever a derived grade is present
   (§5).
+- In every place-search result set: `attribution`, with the date the extract is
+  current to (§4).
 - In the repository: the README and `docs/evidence/README.md`.
 
 ---
@@ -117,40 +120,40 @@ server.**
 
 ---
 
-## 4. Geocoding — implemented, optional, and off by default
+## 4. Geocoding — a local gazetteer from the pilot extract
 
-Place-name search exists behind a provider abstraction and is **disabled unless a
-deployment turns it on** (`GEOCODING_PROVIDER`). Choosing points on the map needs
-no geocoder, so search is a convenience rather than a dependency.
+Place search answers from a **place index read out of the same OpenStreetMap
+extract the routing network was built from** (`GEOCODING_PROVIDER=local`, the
+default; [ADR 0005](../adr/0005-map-and-geocoding-providers.md)). It calls no
+third-party service, so no usage policy, rate limit, account or cost applies.
 
-One provider is implemented: public Nominatim. This revises the Phase 0
-assessment below, which recorded a blanket "no" for it. The
-[usage policy](https://operations.osmfoundation.org/policies/nominatim/) does not
-forbid application traffic outright — it forbids **bulk** geocoding and
-**autocomplete**, and requires at most one request per second and an identifying
-User-Agent. PathAble's implementation is built to those terms:
+**Licence.** The index is a second **derived database** of OSM data under ODbL
+1.0, in the same position as the pedestrian graph (§2): attribution always, and
+share-alike if it is publicly used. It is built only from the extract, so it
+inherits nothing beyond ODbL. Every result set carries "Places from
+OpenStreetMap as of _date_. © OpenStreetMap contributors, ODbL 1.0", returned by
+the API so a client cannot show results without the credit, and shown under the
+results in the interface.
 
-- one request per second, process-wide, enforced by a lock rather than by
-  convention;
-- **submit-only** — there is no as-you-type endpoint, and the UI does not search
-  on keystrokes;
-- every request carries a User-Agent naming the project and a contact address,
-  and startup fails if that contact is not configured;
-- searches are bounded to the pilot region's viewbox.
+**Provenance.** `gazetteer_builds` records the extract's file name, SHA-256 and
+the date its data is current to (from the extract's own
+`osmosis_replication_timestamp` header; unknown when the header is absent, never
+the read time). Each entry keeps the OSM element type, id and version it came from.
 
-**This is adequate for a pilot and not for public launch.** Real user traffic at
-any volume needs self-hosted Nominatim or Photon, or a local gazetteer built from
-the pilot extract. Attribution — "Search by Nominatim, © OpenStreetMap
-contributors, ODbL 1.0" — is returned with every result set so a client cannot
-display results without it.
+Public Nominatim remains implemented, opt-in, for development comparison only.
+Its [usage policy](https://operations.osmfoundation.org/policies/nominatim/)
+forbids bulk geocoding and autocomplete and allows at most one request per
+second with an identifying User-Agent; the implementation enforces those terms
+(a process-wide lock, submit-only, a required contact address, a bounded
+viewbox), and it is not used for application traffic.
 
-| Option                                     | Licence                              | Viable?                                                                                       |
-| ------------------------------------------ | ------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Public Nominatim                           | Data ODbL; service under OSMF policy | **For a pilot**, within the rate and identification terms above. Not for public launch volume |
-| Self-hosted Nominatim                      | ODbL data, GPL software              | Yes; heavy to operate                                                                         |
-| Self-hosted Photon                         | ODbL data, Apache-2.0 software       | Yes; lighter, good for autocomplete                                                           |
-| Local gazetteer from the pilot OSM extract | ODbL                                 | Yes; likely the pragmatic Phase 1 answer for a single city                                    |
-| Google / Mapbox geocoding                  | Proprietary                          | No — cost, credentials, and terms restricting storage of results                              |
+| Option                                     | Licence                              | Status                                                                     |
+| ------------------------------------------ | ------------------------------------ | -------------------------------------------------------------------------- |
+| Local gazetteer from the pilot OSM extract | ODbL                                 | **In use** — the default provider                                          |
+| Public Nominatim                           | Data ODbL; service under OSMF policy | Development only; not for application traffic                              |
+| Self-hosted Nominatim                      | ODbL data, GPL software              | Not needed for one city; a second stateful service                         |
+| Self-hosted Photon                         | ODbL data, Apache-2.0 software       | Not needed for one city; would be the choice if autocomplete were required |
+| Google / Mapbox geocoding                  | Proprietary                          | No — cost, credentials, and terms restricting storage of results           |
 
 Note the trap in proprietary geocoders: several forbid storing results, which is
 incompatible with caching an origin/destination pair — and caching is exactly

@@ -1,7 +1,7 @@
 # ADR 0005 — Map tile and geocoding providers
 
-**Status:** Accepted for development · **Production provider is an open decision**
-· 2026-08-05 · Phase 0 (P0-A01)
+**Status:** Accepted · tiles: a development choice, production provider still open ·
+geocoding: decided 2026-10-07, a bounded local gazetteer · 2026-08-05 · Phase 0 (P0-A01)
 
 ## Context
 
@@ -52,21 +52,64 @@ because a tile server is having a bad day.
 
 No test in this repository depends on public tile availability.
 
-### Geocoding: deferred to Phase 1, not decided
+### Geocoding: a bounded local gazetteer (decided 2026-10-07)
 
-Phase 0 has no search. When it arrives, the leading candidates are:
+Phase 0 had no search, and until 2026-10-07 the only implemented provider was
+public Nominatim behind an opt-in flag. With the default off, the planner's
+origin and destination fields looked searchable and were not, which is worse
+than having no field.
 
-| Option                | Notes                                                                                                                |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Self-hosted Nominatim | Full control, no rate limit, no third-party dependency. Heavy to operate.                                            |
-| Self-hosted Photon    | Lighter than Nominatim, good for autocomplete. Still an OSM extract to maintain.                                     |
-| Public Nominatim      | **Not acceptable for application traffic** — its usage policy is explicit that it is for occasional, low-volume use. |
-| Pelias                | Flexible, heavier operationally.                                                                                     |
+**Decision.** Search answers from a **place index for the pilot region, read out
+of the same OpenStreetMap extract the routing network was built from**, stored in
+PostGIS beside the network, and queried by the API itself. It is the default
+provider (`GEOCODING_PROVIDER=local`).
 
-Because the pilot is a single city, the pragmatic Phase 1 answer is likely a
-**bounded local gazetteer** built from the same OSM extract that produces the
-pedestrian graph: no external service, no rate limit, and it only needs to cover
-the pilot region. Recorded here as a lead, not a decision.
+- **What it holds.** Named places (amenities, shops, parks, campus buildings,
+  stations, squares — from nodes, ways and multipolygon relations), addresses
+  (house number and street wherever mapped, except on a named place, which
+  carries its own), and named streets — one entry per stretch, counting a
+  sidewalk named after its road as part of the road. Each is one point: a node,
+  a point guaranteed inside an outline, or the middle of a road. Only points
+  inside the region's extent.
+- **What ranks first.** Features named after the place they serve — a taxi
+  stand, an information board, a stop — rank after that place, so "Davis
+  Centre" finds the building before its taxi stand.
+- **How it matches.** Stored names and queries are normalised the same way
+  (accents, punctuation, `St`/`Ave`/`N`/`W`). Every word typed must start a word
+  in the entry, and a house number must match whole. Exact, then prefix, then
+  places before streets before addresses (addresses first when the query starts
+  with a number), then trigram similarity. A `pg_trgm` word-similarity pass runs
+  only when that finds nothing, so a typo still finds the place without fuzzy
+  matches crowding out exact ones. At most five results.
+- **Kept apart from routing.** A result is a coordinate, which the routing
+  endpoint snaps like a map click. The index is not part of a dataset version,
+  is not sealed or checksummed with the network, and references no edge. It is
+  replaced whole, in one transaction, by `pathable gazetteer build`.
+- **Provenance.** The index records the extract's file name, SHA-256 and the
+  date its data is current to (from the extract's own header, never the read
+  time). Every result set carries "Places from OpenStreetMap as of _date_.
+  © OpenStreetMap contributors, ODbL 1.0", and the build reports whether the
+  extract is the one the active network came from.
+- **Still submit-only.** One request per search, not per keystroke, so the same
+  client stays correct against any provider.
+
+**Why this and not a service.** It is the lead this ADR recorded in August, and
+it needs nothing new: the data is already held and already licensed (ODbL, with
+attribution already shown), PostgreSQL and `pg_trgm` already run, and nobody
+else's servers are called. `pg_trgm` is a trusted extension from PostgreSQL 13,
+so the managed-hosting restore path (KI-8) still needs no superuser.
+
+| Option                         | Why not, for one pilot city                                                                                         |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Public Nominatim               | Its usage policy rules out application traffic. Kept as an opt-in development provider only.                        |
+| Self-hosted Nominatim / Photon | A second stateful service with its own index and update cycle: changes the costed operations in ADR 0009.           |
+| Pelias                         | Heavier still to operate.                                                                                           |
+| Paid (Geoapify, LocationIQ, …) | Costs money, needs an account, and their terms restrict storing or displaying results. Would need founder approval. |
+
+**What it does not do.** No address interpolation along a street, so a house
+number nobody mapped is not found. No postcodes. No as-you-type suggestions.
+Coverage and freshness are exactly the extract's — see
+[KI-11](../development/KNOWN_ISSUES.md).
 
 ## Consequences
 
@@ -84,10 +127,12 @@ the pilot region. Recorded here as a lead, not a decision.
   here, rather than quietly assumed.
 - Vector tiles need WebGL 2, which some managed and older machines lack. Handled
   by an explicit unsupported state with a written description, not a blank canvas.
-- The geocoding decision is deferred, so Phase 1 begins with an open question.
+- Place search is one more thing built from each extract: `pathable gazetteer build`
+  after an import, or search keeps describing the previous map (KI-11).
 
-**Reversibility.** High for tiles — one environment variable. Lower for
-geocoding, since self-hosting implies infrastructure.
+**Reversibility.** High for tiles — one environment variable. High for
+geocoding too: the provider is a setting, and the index is two tables that
+nothing else references.
 
 ## Open decision for the founder
 
@@ -96,9 +141,11 @@ Before any public deployment:
 1. **Production tile provider.** Self-host (control, operational cost) or use a
    free public service (no cost, no guarantee) or a paid provider (cost, needs
    approval)?
-2. **Geocoding.** Same question, plus the operational weight of an OSM extract.
+2. ~~**Geocoding.**~~ Decided 2026-10-07 (above): the local gazetteer needs no
+   provider, account or spend. Revisit only if search must cover more than the
+   pilot region or needs address interpolation.
 
-Neither blocks Phase 0 or Phase 1 development.
+The tile decision does not block development.
 
 ## Attribution obligations
 

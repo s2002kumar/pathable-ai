@@ -19,6 +19,8 @@ setting makes the API refuse to start without an explicit origin list, JSON
 logs and a database URL, which is the contract a real deployment has to meet.
 `GRAPH_PRELOAD_REGIONS=waterloo` loads the pilot region's graph at startup, so
 `/health/ready` stays 503 until routes can actually be served.
+`GEOCODING_PROVIDER=local` answers place search from the region's own index in
+this database ([Place search](#place-search)); it calls no third party.
 
 | Knob                                           | Default                  | Use                                                      |
 | ---------------------------------------------- | ------------------------ | -------------------------------------------------------- |
@@ -39,7 +41,7 @@ docker compose -f infra/production-smoke/compose.yaml up -d db
 # The API entrypoint waits for the database, runs `alembic upgrade head`, then
 # execs whatever command it was given — here, a query of the current revision.
 docker compose -f infra/production-smoke/compose.yaml run --rm --no-deps api alembic current
-# -> 0005_kerb_tiers (head)
+# -> 0007_place_search (head)
 
 # Run it again: an already-migrated database is a no-op, not an error.
 docker compose -f infra/production-smoke/compose.yaml run --rm --no-deps api alembic current
@@ -183,6 +185,37 @@ constraints in place, PostGIS 3.5.2, 186 MB. The synthetic fixture rows ride
 along because they live in the same tables; they are 9 nodes and 13 segments
 in their own region. Keep the dump outside the repository and delete it
 afterwards.
+
+### Place search
+
+The data-only restore above carries the routing tables, not the place index,
+and `restore-dataset.sh` refuses an archive with tables it does not know. Build
+the index once from the same extract, from the host, against this stack's
+database. The API needs no restart: each search reads the current index, and a
+rebuild replaces it in one transaction.
+
+```bash
+cd services/api
+DATABASE_URL=postgresql+psycopg://pathable:pathable_envelope_only@127.0.0.1:5434/pathable \
+  uv run pathable gazetteer build --region waterloo --file .osm-data/ontario-latest.osm.pbf
+# -> places / addresses / streets, the extract's SHA-256, the date its data is
+#    current to, and whether it is the extract the live network came from.
+
+curl -s -X POST http://127.0.0.1:8001/api/v1/geocode/search \
+  -H 'Content-Type: application/json' -d '{"region":"waterloo","query":"Davis Centre"}'
+```
+
+Until it is built, search answers `"enabled": false` and the field says search
+is not available here; the map still works.
+
+**What the recorded build produced** (2026-10-08): 5,232 places, 26,201
+addresses and 1,792 streets — 33,225 entries — from `ontario-latest.osm.pbf`,
+SHA-256 `cee90e37…5ef3`, data as of 2026-08-16 20:21:06Z, the same extract as
+the live network. The read took 1,823 s on this laptop while other suites ran
+on it; treat that as a shape. What the API container then answered for twelve
+real queries, and a journey whose two ends were chosen by search and routed
+live, are in
+[`waterloo-place-search.json`](../evidence/waterloo-place-search.json).
 
 ## 3. Measure
 

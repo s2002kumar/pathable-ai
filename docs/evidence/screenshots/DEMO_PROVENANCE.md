@@ -86,5 +86,5 @@ DEMO_SHOTS=../../docs/evidence/screenshots \
 
 The capture script is kept with the PA-RR-06 working notes rather than committed:
 it is a one-off measurement harness, not a supported command, and
-[`DEMO_SCRIPT.md`](../DEMO_SCRIPT.md) plus the full-stack Playwright suite are
+[`DEMO.md`](../DEMO.md) plus the full-stack Playwright suite are
 the maintained ways to reproduce the journey.

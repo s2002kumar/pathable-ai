@@ -5,9 +5,17 @@ the part of this system most likely to need a different supplier — every optio
 has different licensing, coverage and cost — and PathAble must be able to run
 with no geocoder at all, because the map-click flow does not need one.
 
-The default provider is therefore :class:`DisabledGeocoder`, which returns
-nothing and says why. Nominatim is opt-in, and when it is on, its usage policy is
-enforced here rather than trusted to callers:
+The default provider is :class:`LocalGazetteer`: a place index for the pilot
+region, read from the same OpenStreetMap extract as the routing network and
+stored beside it (ADR 0005). It calls nobody, so it has no usage policy to break
+and no rate limit to queue behind, which is what makes it suitable for
+application traffic. Until an index has been built for a region it says that
+nothing was searched, rather than that nothing was found.
+
+:class:`DisabledGeocoder` turns search off entirely. Public Nominatim remains
+opt-in for development only — its usage policy rules it out for application
+traffic — and when it is on, that policy is enforced here rather than trusted to
+callers:
 
 * **One request per second, process-wide.** Enforced by a lock, not a comment.
 * **Submit-only.** There is no as-you-type endpoint, because autocomplete against
@@ -22,14 +30,20 @@ from __future__ import annotations
 
 import asyncio
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 import requests
+from sqlalchemy.exc import SQLAlchemyError
 
 from pathable_api.core.logging import get_logger
+from pathable_api.db.session import Database
+from pathable_api.geo.gazetteer_store import attribution, gazetteer_build, search_gazetteer
+from pathable_api.geo.regions import RegionDefinition
 
 logger = get_logger(__name__)
+
+NOMINATIM_ATTRIBUTION = "Search by Nominatim, © OpenStreetMap contributors, ODbL 1.0"
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
@@ -60,34 +74,57 @@ class GeocodeResult:
     category: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class SearchOutcome:
+    """What a search did, not only what it found.
+
+    ``searched`` is False when nothing was looked at — no provider, or no index
+    for this region — because "we found nothing" and "we did not look" send a
+    person off to do different things.
+    """
+
+    matches: list[GeocodeResult] = field(default_factory=list)
+    searched: bool = True
+    #: The credit the data's licence requires, shown with every result set.
+    attribution: str | None = None
+
+
+NOT_SEARCHED = SearchOutcome(searched=False)
+
+
 class GeocodingError(RuntimeError):
     """Raised when a lookup could not be completed."""
+
+
+def _checked(query: str) -> str:
+    text = query.strip()
+    if len(text) > MAX_QUERY_LENGTH:
+        msg = f"Search text is longer than {MAX_QUERY_LENGTH} characters."
+        raise GeocodingError(msg)
+    return text
 
 
 class GeocodingProvider(Protocol):
     """What PathAble needs from any geocoder."""
 
     name: str
+    #: Whether this provider can search at all. A provider that can may still
+    #: report that it did not, for a region it has no data for.
     enabled: bool
 
     async def search(
         self,
         query: str,
         *,
-        bounds: tuple[float, float, float, float],
+        region: RegionDefinition,
         limit: int = MAX_RESULTS,
-    ) -> list[GeocodeResult]:
-        """Find candidate locations for a place name inside ``bounds``."""
+    ) -> SearchOutcome:
+        """Find candidate locations for a place name inside ``region``."""
         ...
 
 
 class DisabledGeocoder:
-    """The default: no geocoding at all.
-
-    Chosen as the default deliberately. Search is a convenience on top of the
-    map-click flow, and a deployment should have to opt into calling somebody
-    else's donated service rather than doing it by accident.
-    """
+    """No geocoding at all: every search reports that nothing was searched."""
 
     name = "disabled"
     enabled = False
@@ -96,20 +133,76 @@ class DisabledGeocoder:
         self,
         query: str,
         *,
-        bounds: tuple[float, float, float, float],
+        region: RegionDefinition,
         limit: int = MAX_RESULTS,
-    ) -> list[GeocodeResult]:
-        del query, bounds, limit
-        return []
+    ) -> SearchOutcome:
+        del query, region, limit
+        return NOT_SEARCHED
+
+
+class LocalGazetteer:
+    """The pilot region's own place index, in PostGIS.
+
+    Built offline from the routing network's source extract by
+    ``pathable gazetteer build``. Searching it is two indexed queries against
+    the application's own database, so it needs no throttle, no contact address
+    and no third party's permission.
+    """
+
+    name = "local"
+    enabled = True
+
+    def __init__(self, database: Database | None) -> None:
+        self._database = database
+
+    async def search(
+        self,
+        query: str,
+        *,
+        region: RegionDefinition,
+        limit: int = MAX_RESULTS,
+    ) -> SearchOutcome:
+        text = _checked(query)
+        if self._database is None:
+            return NOT_SEARCHED
+        try:
+            async with self._database.session() as session:
+                build = await gazetteer_build(session, region.slug)
+                if build is None:
+                    return NOT_SEARCHED
+                found = (
+                    await search_gazetteer(
+                        session, build.id, text, limit=max(1, min(limit, MAX_RESULTS))
+                    )
+                    if text
+                    else []
+                )
+        except SQLAlchemyError as error:
+            logger.warning("Place index query failed", extra={"provider": self.name})
+            msg = "Place search is unavailable right now."
+            raise GeocodingError(msg) from error
+
+        return SearchOutcome(
+            matches=[
+                GeocodeResult(
+                    label=match.label,
+                    longitude=match.longitude,
+                    latitude=match.latitude,
+                    category=match.category,
+                )
+                for match in found
+            ],
+            attribution=attribution(build),
+        )
 
 
 class NominatimGeocoder:
     """OpenStreetMap's own geocoder, used within its usage policy.
 
-    Free and requires no account, which is why it is the one provider
-    implemented. It is also strictly rate-limited and run on donated
-    infrastructure, so the throttle below is not optional politeness — exceeding
-    it gets an application blocked.
+    Free and requires no account. It is also strictly rate-limited and run on
+    donated infrastructure, so the throttle below is not optional politeness —
+    exceeding it gets an application blocked — and its policy rules it out for
+    an application's traffic. Kept for development comparisons only.
     """
 
     name = "nominatim"
@@ -141,17 +234,14 @@ class NominatimGeocoder:
         self,
         query: str,
         *,
-        bounds: tuple[float, float, float, float],
+        region: RegionDefinition,
         limit: int = MAX_RESULTS,
-    ) -> list[GeocodeResult]:
-        text = query.strip()
+    ) -> SearchOutcome:
+        text = _checked(query)
         if not text:
-            return []
-        if len(text) > MAX_QUERY_LENGTH:
-            msg = f"Search text is longer than {MAX_QUERY_LENGTH} characters."
-            raise GeocodingError(msg)
+            return SearchOutcome(attribution=NOMINATIM_ATTRIBUTION)
 
-        min_lon, min_lat, max_lon, max_lat = bounds
+        min_lon, min_lat, max_lon, max_lat = region.bounds
         params = {
             "q": text,
             "format": "jsonv2",
@@ -188,7 +278,7 @@ class NominatimGeocoder:
             msg = "The geocoding service returned a response that could not be read."
             raise GeocodingError(msg) from error
 
-        return _parse_nominatim(payload)
+        return SearchOutcome(matches=_parse_nominatim(payload), attribution=NOMINATIM_ATTRIBUTION)
 
     def _get(self, params: dict[str, str]) -> requests.Response:
         return self._session.get(
@@ -246,6 +336,7 @@ def build_geocoder(
     *,
     contact: str,
     user_agent: str,
+    database: Database | None = None,
 ) -> GeocodingProvider:
     """Construct the configured provider.
 
@@ -256,8 +347,10 @@ def build_geocoder(
     normalised = provider.strip().lower()
     if normalised in {"", "none", "disabled"}:
         return DisabledGeocoder()
+    if normalised == "local":
+        return LocalGazetteer(database)
     if normalised == "nominatim":
         return NominatimGeocoder(contact=contact, user_agent=user_agent)
 
-    msg = f"Unknown geocoding provider {provider!r}. Supported: none, nominatim."
+    msg = f"Unknown geocoding provider {provider!r}. Supported: local, none, nominatim."
     raise GeocodingError(msg)
