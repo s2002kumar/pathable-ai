@@ -1,0 +1,602 @@
+{
+  "what": "Place search answered by the production-smoke API container from the local Waterloo place index, and one journey whose two ends were chosen by search, routed live.",
+  "captured_at": "2026-10-08T04:00:08+00:00",
+  "environment": {
+    "stack": "infra/production-smoke/compose.yaml (pathable-envelope), ENVIRONMENT=production",
+    "api": "http://127.0.0.1:8001",
+    "geocoding_provider": "local",
+    "migration": "0007_place_search",
+    "machine": "one Windows laptop under heavy memory pressure; round-trip times are a shape, not a service level"
+  },
+  "index": {
+    "source_name": "openstreetmap-pbf:waterloo",
+    "file_name": "ontario-latest.osm.pbf",
+    "file_sha256": "cee90e3725139c41ef939f726730b4dfb6fd45e624d2797dac4be38a69145ef3",
+    "data_as_of": "2026-08-16T20:21:06+00:00",
+    "data_as_of_from": "pbf-header",
+    "built_at": "2026-10-08T03:59:08.795771+00:00",
+    "gazetteer_version": 1,
+    "places": 5232,
+    "addresses": 26201,
+    "streets": 1792,
+    "entries": 33225,
+    "read_seconds": 1823.14,
+    "read_seconds_note": "Wall clock to read the 969,572,077-byte Ontario extract, measured while other test suites ran on the same memory-starved laptop.",
+    "same_extract_as_active_network": true,
+    "active_network": {
+      "dataset_id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+      "checksum": "51e75f7896ab725d29120fe4363c607bea68eed260d830482d6677f827d2e906"
+    }
+  },
+  "searches": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Davis Centre"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 352.6,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Davis Centre Library",
+            "longitude": -80.5419973,
+            "latitude": 43.4724277,
+            "category": "library"
+          },
+          {
+            "label": "William G. Davis Computer Research Centre",
+            "longitude": -80.5420406353373,
+            "latitude": 43.47250185,
+            "category": "university building"
+          },
+          {
+            "label": "FedBus Davis Centre",
+            "longitude": -80.5414448,
+            "latitude": 43.4729462,
+            "category": "transit stop"
+          },
+          {
+            "label": "Davis Centre",
+            "longitude": -80.541051,
+            "latitude": 43.4722101,
+            "category": "taxi"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Student Life Centre"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 96.9,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Student Life Centre",
+            "longitude": -80.54521281370106,
+            "latitude": 43.47197215,
+            "category": "university building"
+          },
+          {
+            "label": "W Store Essentials - Student Life Centre",
+            "longitude": -80.5453504,
+            "latitude": 43.4718714,
+            "category": "stationery"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "University of Waterloo"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 113.4,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "University of Waterloo",
+            "longitude": -80.54524293779451,
+            "latitude": 43.4701994,
+            "category": "university"
+          },
+          {
+            "label": "University of Waterloo Campus Police Station",
+            "longitude": -80.5427185,
+            "latitude": 43.4743473,
+            "category": "police"
+          },
+          {
+            "label": "University of Waterloo",
+            "longitude": -80.5412782,
+            "latitude": 43.473362,
+            "category": "transit station"
+          },
+          {
+            "label": "University of Waterloo Station",
+            "longitude": -80.5413839,
+            "latitude": 43.473858,
+            "category": "transit stop"
+          },
+          {
+            "label": "University of Waterloo Station",
+            "longitude": -80.5409241,
+            "latitude": 43.4740364,
+            "category": "transit stop"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Waterloo Public Square"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 86.2,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Waterloo Public Square, 75 King Street South",
+            "longitude": -80.52236656614274,
+            "latitude": 43.463771949999995,
+            "category": "square"
+          },
+          {
+            "label": "Waterloo Public Square",
+            "longitude": -80.5228034,
+            "latitude": 43.4641863,
+            "category": "transit station"
+          },
+          {
+            "label": "Waterloo Public Square Station",
+            "longitude": -80.5221674,
+            "latitude": 43.4648291,
+            "category": "transit stop"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Conestoga Mall"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 64.7,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Conestoga Mall, 550 King Street North",
+            "longitude": -80.52644767051109,
+            "latitude": 43.4975167,
+            "category": "mall"
+          },
+          {
+            "label": "Conestoga Mall Food Court, 550 King Street North",
+            "longitude": -80.5265479,
+            "latitude": 43.4969696,
+            "category": "food court"
+          },
+          {
+            "label": "Conestoga Mall Lane",
+            "longitude": -80.5237067743959,
+            "latitude": 43.49773988779892,
+            "category": "street"
+          },
+          {
+            "label": "Conestoga Mall Lane",
+            "longitude": -80.52863389986291,
+            "latitude": 43.497071362543814,
+            "category": "street"
+          },
+          {
+            "label": "Davenport / Conestoga Mall",
+            "longitude": -80.52344264999999,
+            "latitude": 43.49745385,
+            "category": "transit stop"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Waterloo Park"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 73.1,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Waterloo Park",
+            "longitude": -80.53247716680652,
+            "latitude": 43.4668963,
+            "category": "park"
+          },
+          {
+            "label": "Waterloo Park Dental",
+            "longitude": -80.5376065,
+            "latitude": 43.4623031,
+            "category": "dentist"
+          },
+          {
+            "label": "Waterloo Public Library - McCormick Branch, 500 Parkside Drive",
+            "longitude": -80.5441828,
+            "latitude": 43.4891793,
+            "category": "library"
+          },
+          {
+            "label": "Laurier - Waterloo Park",
+            "longitude": -80.5346697,
+            "latitude": 43.4690103,
+            "category": "transit station"
+          },
+          {
+            "label": "Laurier - Waterloo Park Station",
+            "longitude": -80.5346283,
+            "latitude": 43.4693423,
+            "category": "transit stop"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Dana Porter"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 48.5,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Dana Porter Library",
+            "longitude": -80.542270824307,
+            "latitude": 43.46973295,
+            "category": "library"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "200 University Ave W"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 50.4,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "200 University Avenue West, Waterloo",
+            "longitude": -80.5436347,
+            "latitude": 43.4720135,
+            "category": "address"
+          },
+          {
+            "label": "200 University Avenue West, Waterloo",
+            "longitude": -80.54524293779451,
+            "latitude": 43.4701994,
+            "category": "address"
+          },
+          {
+            "label": "POETS, 200 University Avenue West",
+            "longitude": -80.5393071,
+            "latitude": 43.4706599,
+            "category": "lounge"
+          },
+          {
+            "label": "Flock Stop, 200 University Avenue West",
+            "longitude": -80.5454297,
+            "latitude": 43.4713308,
+            "category": "convenience"
+          },
+          {
+            "label": "Bike Centre, 200 University Avenue West",
+            "longitude": -80.5456543,
+            "latitude": 43.4713861,
+            "category": "bicycle"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "King St N"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 53.9,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "King Street North, Waterloo",
+            "longitude": -80.54073825954782,
+            "latitude": 43.50819767529473,
+            "category": "street"
+          },
+          {
+            "label": "King Street North Service Road",
+            "longitude": -80.528274358816,
+            "latitude": 43.48944090517428,
+            "category": "street"
+          },
+          {
+            "label": "308 King, 308 King Street North",
+            "longitude": -80.52475659366429,
+            "latitude": 43.478444249999995,
+            "category": "apartments building"
+          },
+          {
+            "label": "CIBC, 27 King Street North",
+            "longitude": -80.52281099903404,
+            "latitude": 43.46578875,
+            "category": "bank"
+          },
+          {
+            "label": "loop, 13 King Street North",
+            "longitude": -80.52276810000004,
+            "latitude": 43.465444899999994,
+            "category": "clothes"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Erb St W"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 49.4,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Erb Street West, Waterloo",
+            "longitude": -80.54712722093193,
+            "latitude": 43.454681532434684,
+            "category": "street"
+          },
+          {
+            "label": "Zehrs, 450 Erb Street West",
+            "longitude": -80.5557573,
+            "latitude": 43.4533214,
+            "category": "supermarket"
+          },
+          {
+            "label": "RideCo, 57 Erb Street West",
+            "longitude": -80.5252332945004,
+            "latitude": 43.46390145,
+            "category": "company"
+          },
+          {
+            "label": "Costco, 930 Erb Street West",
+            "longitude": -80.58036456928409,
+            "latitude": 43.445548599999995,
+            "category": "wholesale"
+          },
+          {
+            "label": "Wok Box, 922 Erb Street West",
+            "longitude": -80.5795536,
+            "latitude": 43.4440359,
+            "category": "fast food"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Konestoga Mall"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 292.6,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Conestoga Mall, 550 King Street North",
+            "longitude": -80.52644767051109,
+            "latitude": 43.4975167,
+            "category": "mall"
+          },
+          {
+            "label": "Conestoga Mall Food Court, 550 King Street North",
+            "longitude": -80.5265479,
+            "latitude": 43.4969696,
+            "category": "food court"
+          },
+          {
+            "label": "Davenport / Conestoga Mall",
+            "longitude": -80.52344264999999,
+            "latitude": 43.49745385,
+            "category": "transit stop"
+          },
+          {
+            "label": "Conestoga Mall Lane",
+            "longitude": -80.5237067743959,
+            "latitude": 43.49773988779892,
+            "category": "street"
+          },
+          {
+            "label": "Conestoga Mall Lane",
+            "longitude": -80.52863389986291,
+            "latitude": 43.497071362543814,
+            "category": "street"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/geocode/search",
+        "body": {
+          "region": "waterloo",
+          "query": "Atlantis Boulevard"
+        }
+      },
+      "status": 200,
+      "round_trip_ms": 250.4,
+      "response": {
+        "provider": "local",
+        "enabled": true,
+        "matches": [
+          {
+            "label": "Atlantic Park, 934 Atlantic Boulevard",
+            "longitude": -80.5057072840211,
+            "latitude": 43.515515449999995,
+            "category": "park"
+          },
+          {
+            "label": "Atlantic Link, 904 Atlantic Boulevard",
+            "longitude": -80.50412752160328,
+            "latitude": 43.51617375,
+            "category": "park"
+          },
+          {
+            "label": "Atlantic Boulevard, Waterloo",
+            "longitude": -80.50452461888929,
+            "latitude": 43.515750299941665,
+            "category": "street"
+          },
+          {
+            "label": "889 Atlantic Boulevard",
+            "longitude": -80.50364725,
+            "latitude": 43.51596675,
+            "category": "address"
+          },
+          {
+            "label": "887 Atlantic Boulevard",
+            "longitude": -80.5035659,
+            "latitude": 43.51590815,
+            "category": "address"
+          }
+        ],
+        "attribution": "Places from OpenStreetMap as of 2026-08-16. © OpenStreetMap contributors, ODbL 1.0"
+      }
+    }
+  ],
+  "searched_journey": {
+    "start": {
+      "label": "Davis Centre Library",
+      "longitude": -80.5419973,
+      "latitude": 43.4724277,
+      "category": "library"
+    },
+    "destination": {
+      "label": "Student Life Centre",
+      "longitude": -80.54521281370106,
+      "latitude": 43.47197215,
+      "category": "university building"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/routes/compare",
+      "body": {
+        "region": "waterloo",
+        "origin": {
+          "longitude": -80.5419973,
+          "latitude": 43.4724277
+        },
+        "destination": {
+          "longitude": -80.54521281370106,
+          "latitude": 43.47197215
+        },
+        "profile": "wheelchair"
+      }
+    },
+    "status": 200,
+    "standard_route": {
+      "distance_m": 406.4,
+      "stairway_count": 4
+    },
+    "accessible_route": {
+      "distance_m": 490.2,
+      "stairway_count": 0
+    },
+    "ml_predictions_used": false
+  },
+  "attribution": "Place data © OpenStreetMap contributors, ODbL 1.0. This file is OSM-derived data."
+}

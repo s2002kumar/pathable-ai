@@ -96,19 +96,19 @@ effectively the entire network.
 
 **Delivered**
 
-| Area        | What exists                                                                         |
-| ----------- | ----------------------------------------------------------------------------------- |
-| Selection   | Click the map to set a start and an end; optional place search                      |
-| Profiles    | Wheelchair, walker, crutches, stroller, reduced mobility, and narrow custom         |
-| Routing     | Shortest walking route and an accessibility-aware route from one engine             |
-| Algorithms  | Dijkstra as the correctness baseline, A\* alongside it, proven to agree on cost     |
-| Snapping    | To the nearest point _along_ a segment the profile can actually use                 |
-| Cost model  | Hard constraints vs penalties, in effective metres — see ADR 0008                   |
-| Explanation | Evidence-derived: each statement names something on the route it avoided            |
-| Uncertainty | Per-category: "Surface data is missing for 38% of this route", never one score      |
-| Provenance  | A gradient says whether a mapper recorded it or a terrain model inferred it         |
-| No route    | A profile with no possible route still shows the shortest route and what blocked it |
-| Comparison  | Drawn on the map _and_ written out, so the map is never the only way to read it     |
+| Area        | What exists                                                                          |
+| ----------- | ------------------------------------------------------------------------------------ |
+| Selection   | Click the map, or search a Waterloo place, address or street (local index, ADR 0005) |
+| Profiles    | Wheelchair, walker, crutches, stroller, reduced mobility, and narrow custom          |
+| Routing     | Shortest walking route and an accessibility-aware route from one engine              |
+| Algorithms  | Dijkstra as the correctness baseline, A\* alongside it, proven to agree on cost      |
+| Snapping    | To the nearest point _along_ a segment the profile can actually use                  |
+| Cost model  | Hard constraints vs penalties, in effective metres — see ADR 0008                    |
+| Explanation | Evidence-derived: each statement names something on the route it avoided             |
+| Uncertainty | Per-category: "Surface data is missing for 38% of this route", never one score       |
+| Provenance  | A gradient says whether a mapper recorded it or a terrain model inferred it          |
+| No route    | A profile with no possible route still shows the shortest route and what blocked it  |
+| Comparison  | Drawn on the map _and_ written out, so the map is never the only way to read it      |
 
 **Still does not exist.**
 
@@ -218,11 +218,10 @@ migration `0005_kerb_tiers`, 155,714 nodes and 180,554 segments. See
 records what changed, at which viewports it was checked, and against which
 build.
 
-**Not verified here.** Live place-name search. The envelope API answers
-`{"provider":"disabled","enabled":false}` by design — `GEOCODING_PROVIDER` is
-unset — and choosing a provider is a founder decision ADR 0005 leaves open.
-The search fields are covered by stubbed provider responses and degrade
-honestly in the preview.
+**Not verified here.** Live place-name search. The envelope API answered
+`{"provider":"disabled","enabled":false}` by design at the time — no provider
+was configured. _Superseded on 2026-10-07:_ search now answers from a local
+place index; see "Place search and public documentation" below.
 
 **Next executable action.** PA-UX-02C, when it is scheduled.
 
@@ -609,11 +608,40 @@ PathAble. Routing is untouched: no backend file changed. Evidence:
 #64's final commit; its PR was stacked on PR #65 and retargeted to `main` when
 #65 merged.
 
-**Still open.** A production geocoder and a production tile provider (ADR 0005)
-— the dark Stitch basemap is a second style for that decision, and the dark
+**Still open.** A production tile provider (ADR 0005; geocoding was decided on
+2026-10-07) — the dark Stitch basemap is a second style for that decision, and the dark
 panel theme was not adopted with it. The name is corrected in the interface
 only; these documents, the changelog and the README still say "PathAble AI" in
 places, and a repository-wide rename was deliberately not part of 03B.
+
+---
+
+## Place search and public documentation (2026-10-07)
+
+A small card after PA-UX-04. It adds no routing capability and moves no phase
+gate.
+
+**Place search.** The planner's fields looked searchable and were not: the only
+provider was public Nominatim, off by default because its usage policy rules out
+application traffic. Search now answers from a local place index read from the
+same OpenStreetMap extract as the network ([ADR 0005](../adr/0005-map-and-geocoding-providers.md),
+[KI-11](../development/KNOWN_ISSUES.md)): 5,232 places, 26,201 addresses and
+1,792 streets for Waterloo, data as of 2026-08-16. Building it on the real
+extract found faults the fixture had not — the campus missing, a street
+missing, streets split by their sidewalks, a taxi stand ranked first — each now
+a regression test. On the production-smoke stack a journey whose two ends were
+chosen by search routes live
+([`waterloo-place-search.json`](../evidence/waterloo-place-search.json)).
+
+**Public documentation.** Interview coaching left the public tree. The
+engineering review (formerly `PROJECT_DEFENSE.md`) and the demo reproduction
+guide (formerly `DEMO_SCRIPT.md`) stay. The README leads with the product, the
+comparison and the evidence, and says plainly what PathAble is not.
+
+**Branch.** `feat/recruiter-readiness-search`, from `main` at `c091cf2`.
+
+**Not verified here.** A manual screen-reader pass over the search results.
+As-you-type suggestions do not exist, by design.
 
 ---
 

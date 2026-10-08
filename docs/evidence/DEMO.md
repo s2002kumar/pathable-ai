@@ -64,7 +64,9 @@ screen are the ones the API returned.
 It needs the real Waterloo network. CI loads the nine-node synthetic fixture —
 ingesting a 970 MB extract on every pull request would be absurd — so these
 tests **skip in CI with a printed reason** and run here, against the stack
-above. Everything that does not need Waterloo, including the whole unit suite
+above. `place-search.spec.ts` does the same for search: it searches the real
+Waterloo index, chooses both ends, and checks the route request carries
+exactly the coordinates the search returned. Everything that does not need Waterloo, including the whole unit suite
 and the stubbed browser suite, runs in CI as usual.
 
 ## The manual path still works

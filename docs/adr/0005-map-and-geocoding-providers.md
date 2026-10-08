@@ -66,9 +66,14 @@ provider (`GEOCODING_PROVIDER=local`).
 
 - **What it holds.** Named places (amenities, shops, parks, campus buildings,
   stations, squares — from nodes, ways and multipolygon relations), addresses
-  (house number and street wherever mapped), and named streets, one entry per
-  connected stretch. Each is one point: a node, a point guaranteed inside an
-  outline, or the middle of a street. Only points inside the region's extent.
+  (house number and street wherever mapped, except on a named place, which
+  carries its own), and named streets — one entry per stretch, counting a
+  sidewalk named after its road as part of the road. Each is one point: a node,
+  a point guaranteed inside an outline, or the middle of a road. Only points
+  inside the region's extent.
+- **What ranks first.** Features named after the place they serve — a taxi
+  stand, an information board, a stop — rank after that place, so "Davis
+  Centre" finds the building before its taxi stand.
 - **How it matches.** Stored names and queries are normalised the same way
   (accents, punctuation, `St`/`Ave`/`N`/`W`). Every word typed must start a word
   in the entry, and a house number must match whole. Exact, then prefix, then

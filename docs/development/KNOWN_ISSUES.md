@@ -495,10 +495,12 @@ what it can find:
    `pathable gazetteer build`, separately from a network import; the command
    reports whether the extract matches the live network's, but nothing forces
    the two to move together.
-3. **Streets are one point per connected stretch**, placed halfway along its
-   longest way. A long street gives a start somewhere in the middle of it, not
-   at a door. Where a stretch has addresses nearby that name a city, the label
-   carries it; where two stretches share a name and a city, they read the same.
+3. **Streets are one point per stretch**, placed halfway along the stretch's
+   longest road way inside the region. Ways sharing a node, and same-named ways
+   within about 65 m — a sidewalk named after its road — count as one stretch.
+   A long street gives a start somewhere in the middle of it, not at a door.
+   Where a stretch has addresses nearby that name a city, the label carries it;
+   where two stretches share a name and a city, they read the same.
 4. **One region.** Points outside the pilot extent are not indexed, so a place
    just across the boundary is not found even if the route could reach it.
 

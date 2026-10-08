@@ -1,10 +1,11 @@
 # Changelog
 
-Notable changes to PathAble AI. Format loosely follows
+Notable changes to PathAble. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
-[semantic versioning](https://semver.org/) once releases begin.
+[semantic versioning](https://semver.org/), tagged `vX.Y.Z-slug`.
 
-This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
+The repository has been public and source-visible since 2026-09-14
+(`v0.3.0-public-release`); it is not open source. See [`LICENSING.md`](LICENSING.md).
 
 ---
 
@@ -12,6 +13,31 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Added
 
+- **Place search that works, from a local Waterloo place index.** The
+  planner's origin and destination fields looked searchable and were not: the
+  only provider was public Nominatim, off by default because its usage policy
+  rules out application traffic.
+  - `pathable gazetteer build` reads named places, addresses and named streets
+    from the same OpenStreetMap extract as the network into PostGIS
+    (migration 0007), one point each, inside the region, replaced whole. It
+    records the extract's SHA-256 and the date its data is current to, and
+    reports whether it is the extract the live network came from.
+  - Search normalises both sides, needs every word, matches house numbers
+    whole, ranks exact, prefix, then kind, and falls back to `pg_trgm` word
+    similarity only when nothing matched. At most five results, each with what
+    kind of place it is, and an attribution carrying the extract's date.
+  - `GEOCODING_PROVIDER` defaults to `local`; the production-smoke stack uses
+    it. No query leaves the system. Nominatim stays, opt-in, for development.
+  - Outside the dataset lifecycle on purpose: a result is a coordinate snapped
+    like a map click, never a routing fact. Limits are KI-11; the decision is
+    ADR 0005.
+  - Built on the real extract, the index showed faults the fixture had not:
+    the University of Waterloo campus missing (its information board won
+    deduplication; its relation also holds the Cambridge and Stratford
+    sites), King Street North missing (its longest way runs out of town),
+    streets split by sidewalks mapped under their name, a taxi stand ranked
+    first for "Davis Centre", and repeated address lines. Each is fixed and
+    has a regression test that fails on the old code.
 - **Accessibility conflation matcher v2, measured once on a new held-out
   benchmark (PA-GEO-08).**
   - PA-GEO-05's spent holdout becomes development data. A new 186-record
@@ -167,6 +193,13 @@ This project is private and unreleased. See [`LICENSING.md`](LICENSING.md).
 
 ### Changed
 
+- **Public documentation is engineering documentation.** Interview coaching
+  left the public tree: `docs/INTERVIEW_EXPLANATIONS.md` is removed,
+  `docs/PROJECT_DEFENSE.md` is now `docs/ENGINEERING_REVIEW.md` without its
+  personal study checklist, and `docs/evidence/DEMO_SCRIPT.md` is now
+  `docs/evidence/DEMO.md` without its timed talk track. The README leads with
+  the product, the comparison and the evidence; test counts follow the
+  architecture, and a plain list says what PathAble is not.
 - **Explanations are read from the cost model, constraint by constraint.** Both
   routes are costed under the chosen profile and one statement is made for every
   constraint on which they differ — each hard limit the shortest route breaks,
