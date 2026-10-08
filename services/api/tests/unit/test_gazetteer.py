@@ -36,6 +36,9 @@ DAVIS = [(-80.5350, 43.4690), (-80.5340, 43.4690), (-80.5340, 43.4700), (-80.535
 ENGINEERING = [(-80.5440, 43.4730), (-80.5430, 43.4730), (-80.5430, 43.4740), (-80.5440, 43.4740)]
 HOUSE = [(-80.5373, 43.4682), (-80.5371, 43.4682), (-80.5371, 43.4684), (-80.5373, 43.4684)]
 PARK = [(-80.5420, 43.4655), (-80.5380, 43.4655), (-80.5380, 43.4675), (-80.5420, 43.4675)]
+CAMPUS = [(-80.5449, 43.4655), (-80.5430, 43.4655), (-80.5430, 43.4670), (-80.5449, 43.4670)]
+#: A second site of the same campus, in another city far outside the region.
+FAR_SITE = [(-79.5000, 43.0000), (-79.4900, 43.0000), (-79.4900, 43.0100), (-79.5000, 43.0100)]
 
 NODES: dict[int, tuple[float, float, Tags]] = {
     1: (-80.5420, 43.4698, {"amenity": "library", "name": "Porter Library"}),
@@ -65,6 +68,8 @@ NODES: dict[int, tuple[float, float, Tags]] = {
     **{20 + index: (lon, lat, {}) for index, (lon, lat) in enumerate(ENGINEERING)},
     **{30 + index: (lon, lat, {}) for index, (lon, lat) in enumerate(HOUSE)},
     **{50 + index: (lon, lat, {}) for index, (lon, lat) in enumerate(PARK)},
+    **{90 + index: (lon, lat, {}) for index, (lon, lat) in enumerate(CAMPUS)},
+    **{94 + index: (lon, lat, {}) for index, (lon, lat) in enumerate(FAR_SITE)},
     # Seagram Drive, first stretch: two ways sharing node 62.
     60: (-80.5380, 43.4680, {}),
     61: (-80.5370, 43.4680, {}),
@@ -122,6 +127,9 @@ WAYS: list[tuple[int, Tags, list[int]]] = [
     # The park's outline, in two untagged pieces.
     (300, {}, [50, 51, 52]),
     (301, {}, [52, 53, 50]),
+    # The campus's two sites, untagged.
+    (303, {}, [90, 91, 92, 93, 90]),
+    (304, {}, [94, 95, 96, 97, 94]),
     # Untagged and nobody's member: pure geometry.
     (302, {}, [60, 70]),
 ]
@@ -131,6 +139,11 @@ RELATIONS: list[tuple[int, Tags, list[tuple[str, int, str]]]] = [
         400,
         {"type": "multipolygon", "leisure": "park", "name": "Waterloo Park"},
         [("w", 300, "outer"), ("w", 301, "outer")],
+    ),
+    (
+        401,
+        {"type": "multipolygon", "amenity": "university", "name": "Split Campus"},
+        [("w", 303, "outer"), ("w", 304, "outer")],
     ),
 ]
 
@@ -219,6 +232,16 @@ class TestPlaces:
         assert (park.osm_type, park.osm_id, park.osm_version) == ("relation", 400, 5)
         assert park.category == "park"
         assert Polygon(PARK).contains(Point(park.longitude, park.latitude))
+
+    def test_a_campus_with_a_site_far_away_is_placed_on_its_site_here(
+        self, entries: list[PlaceEntry]
+    ) -> None:
+        # Regression: the University of Waterloo's campus relation also holds
+        # its Cambridge and Stratford sites, and requiring every ring dropped it.
+        campus = only(entries, "Split Campus")
+
+        assert (campus.osm_type, campus.osm_id) == ("relation", 401)
+        assert Polygon(CAMPUS).contains(Point(campus.longitude, campus.latitude))
 
     def test_an_outline_with_a_missing_corner_is_not_guessed(
         self, entries: list[PlaceEntry]

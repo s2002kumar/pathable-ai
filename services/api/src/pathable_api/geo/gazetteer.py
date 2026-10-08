@@ -559,8 +559,13 @@ def read_places(
 
     # --- Relations, now their members have shape ----------------------------------
     for relation_id, (tags, outer, osm_version) in pending.relations.items():
+        # Only the outer ways read in full. A place can span cities — the
+        # University of Waterloo's campus relation also holds its Cambridge and
+        # Stratford sites — and requiring every ring dropped the campus from the
+        # index. A ring cut by the reading margin is still left out: it no longer
+        # closes, so it contributes no area rather than a guessed one.
         rings = [pending.member_rings[ref] for ref in outer if ref in pending.member_rings]
-        if len(rings) != len(outer):
+        if not rings:
             continue
         at = relation_point(rings)
         if at is not None and _inside(at, bounds):
