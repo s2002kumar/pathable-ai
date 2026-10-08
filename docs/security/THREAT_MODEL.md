@@ -231,13 +231,16 @@ becomes a PathAble outage.
 
 - OSM-operated tile and Nominatim services are explicitly not used for
   application traffic ([ADR 0005](../adr/0005-map-and-geocoding-providers.md)).
+- Place search answers from the region's own index in PostGIS, so a search
+  query — often a statement about where somebody is going — never leaves the
+  system, and search has no third-party outage mode. The query is not logged.
 - The tile provider is configuration, so switching is a `.env` change.
 - The map has a documented failure state with a written fallback, so a tile
   outage degrades rather than breaks the page.
 - No test depends on public tile availability.
 
-**Residual.** The default provider has no SLA. Flagged as a founder decision
-before any public deployment.
+**Residual.** The default tile provider has no SLA. Flagged as a founder
+decision before any public deployment.
 
 ---
 
