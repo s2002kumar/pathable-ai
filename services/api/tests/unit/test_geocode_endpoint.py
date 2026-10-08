@@ -13,6 +13,8 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from pathable_api.geo.geocoding import GeocodingError, SearchOutcome
+from pathable_api.geo.regions import RegionDefinition
 from pathable_api.main import create_app
 from tests.conftest import build_settings, settings_from
 
@@ -104,3 +106,26 @@ class TestConfiguration:
 
     def test_search_is_disabled_by_default(self) -> None:
         assert build_settings().geocoding_provider == "none"
+
+
+class _FailingProvider:
+    name = "local"
+    enabled = True
+
+    async def search(
+        self, query: str, *, region: RegionDefinition, limit: int = 5
+    ) -> SearchOutcome:
+        del query, region, limit
+        raise GeocodingError("Place search is unavailable right now.")
+
+
+class TestProviderFailure:
+    def test_it_is_a_503_that_says_what_happened(self) -> None:
+        app = create_app(build_settings(geocoding_provider="local"))
+        with TestClient(app) as client:
+            app.state.geocoder = _FailingProvider()
+            response = client.post(SEARCH, json={"region": "waterloo", "query": "Davis Centre"})
+
+        assert response.status_code == 503
+        assert response.json()["code"] == "geocoding_unavailable"
+        assert response.json()["message"] == "Place search is unavailable right now."

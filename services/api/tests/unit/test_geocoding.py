@@ -14,6 +14,7 @@ from typing import Any
 
 import pytest
 import requests
+from sqlalchemy.exc import OperationalError
 
 from pathable_api.geo.geocoding import (
     MAX_QUERY_LENGTH,
@@ -260,3 +261,31 @@ class TestLocalGazetteer:
     def test_an_unknown_provider_lists_local_among_the_choices(self) -> None:
         with pytest.raises(GeocodingError, match="local"):
             build_geocoder("pelias", contact="", user_agent="x")
+
+
+class _UnreachableSession:
+    async def __aenter__(self) -> None:
+        raise OperationalError("SELECT 1", {}, Exception("connection refused at 10.0.0.5"))
+
+    async def __aexit__(self, *exc: object) -> None:
+        return None
+
+
+class _UnreachableDatabase:
+    """A database whose every session fails, as when PostgreSQL is down."""
+
+    def session(self) -> _UnreachableSession:
+        return _UnreachableSession()
+
+
+class TestLocalGazetteerFailures:
+    async def test_a_database_failure_is_a_search_failure_that_names_nothing_internal(
+        self,
+    ) -> None:
+        provider = LocalGazetteer(_UnreachableDatabase())  # type: ignore[arg-type]
+
+        with pytest.raises(GeocodingError) as failure:
+            await provider.search("Davis Centre", region=WATERLOO)
+
+        assert str(failure.value) == "Place search is unavailable right now."
+        assert "10.0.0.5" not in str(failure.value)
