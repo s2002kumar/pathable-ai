@@ -116,22 +116,22 @@ the cached graph relies on ([ADR 0010](docs/adr/0010-dataset-lifecycle.md)).
 
 Counted separately on purpose — these suites overlap in what they cover, and adding them up would be a bigger
 number describing less. The counts change with every card; these are from CI run
-[37556411163](https://github.com/s2002kumar/pathable-ai/actions/runs/37556411163), on commit `1bcad0d`.
+[37844124869](https://github.com/s2002kumar/pathable-ai/actions/runs/37844124869), on commit `a9d7fe0`.
 
-| Suite                                   | Count                                                                           | Command                                                    |
-| --------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Backend, unit + PostGIS integration     | **1,418 passed, 1 skipped**, 87.85% coverage against an 86% floor               | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
-| Frontend unit (Vitest)                  | **478 passed**, 93.11% statements against an 80% floor                          | `pnpm --filter @pathable/web test:unit`                    |
-| Browser, stubbed API (Playwright + axe) | **156 passed, 2 skipped**: the 2 are desktop-only layouts, skipped on the phone | `pnpm --filter @pathable/web test:e2e`                     |
-| Browser, full stack, nothing stubbed    | **7 passed, 9 skipped**: the 9 need the real Waterloo network                   | `pnpm --filter @pathable/web test:e2e:fullstack`           |
+| Suite                                   | Count                                                                              | Command                                                    |
+| --------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Backend, unit + PostGIS integration     | **1,500 passed, 1 skipped**, 88.15% coverage against an 86% floor                  | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
+| Frontend unit (Vitest)                  | **479 passed**, 93.11% statements against an 80% floor                             | `pnpm --filter @pathable/web test:unit`                    |
+| Browser, stubbed API (Playwright + axe) | **158 passed, 2 skipped**: the 2 are desktop-only layouts, skipped on the phone    | `pnpm --filter @pathable/web test:e2e`                     |
+| Browser, full stack, nothing stubbed    | **7 passed, 10 skipped**: the 10 need the real Waterloo network or its place index | `pnpm --filter @pathable/web test:e2e:fullstack`           |
 
 Coverage is quoted from CI, on Linux. Each platform skips one event-loop test that only applies to the other — on
 Linux, the Windows-only one — so a Windows run reports a slightly different figure. That is a platform difference,
 not a discrepancy to choose between.
 
 The backend integration tests run against real PostgreSQL/PostGIS, never a mock. The full-stack suite drives a
-real browser through real containers. Nine of its sixteen tests need the real Waterloo network and
-[skip with a printed reason](docs/evidence/DEMO.md) where it is absent, which includes CI.
+real browser through real containers. Ten of its seventeen tests need the real Waterloo network or its place index and
+[skip with a printed reason](docs/evidence/DEMO.md) where they are absent, which includes CI.
 
 ## What it is not
 
