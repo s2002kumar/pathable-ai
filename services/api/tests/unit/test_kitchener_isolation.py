@@ -13,7 +13,8 @@ test happens to run:
   artifacts or the folder they live in, so nothing that serves routes can
   open them;
 - PA-GEO-07's shadow router imports routing, never the reverse, and reads the
-  database only inside read-only transactions.
+  database only inside read-only transactions; PA-GEO-09's curb-ramp study is
+  held to the same rule.
 """
 
 from __future__ import annotations
@@ -46,6 +47,8 @@ ARTIFACT_MARKERS = (
     "kitchener-geo06-artifact",
     "surface-shadow-policy",
     "kitchener-geo08-matcher-v2",
+    "curb-ramp-shadow-policy",
+    "kitchener-geo09",
 )
 
 
@@ -95,7 +98,16 @@ def test_nothing_that_serves_routes_names_the_research_artifacts() -> None:
 #: PA-GEO-07's shadow study routes with the production router, so it imports
 #: routing; the reverse direction is what must never exist. Only the module
 #: that reads the active dataset touches the database, and never the API.
-SHADOW_MODULES = ("shadow_overlay.py", "shadow_study.py", "shadow_page.py")
+SHADOW_MODULES = (
+    "shadow_overlay.py",
+    "shadow_study.py",
+    "shadow_page.py",
+    "curb_ramp_reconciliation.py",
+    "curb_ramp_shadow.py",
+    "curb_ramp_study.py",
+    "curb_ramp_page.py",
+    "curb_ramp_run.py",
+)
 SHADOW_RUN = "shadow_run.py"
 
 

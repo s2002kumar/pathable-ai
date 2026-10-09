@@ -395,7 +395,9 @@ safety-relevant: 1,152 City curb cuts with no OSM kerb node, and stairs OSM
 draws as plain footways, where a missing stair is a hard constraint for
 several profiles. Matcher v2 remains planned only and needs a new, untouched
 holdout. PA-GEO-08 has since built and measured it:
-[`KITCHENER_MATCHER_V2.md`](KITCHENER_MATCHER_V2.md).
+[`KITCHENER_MATCHER_V2.md`](KITCHENER_MATCHER_V2.md), and PA-GEO-09 studied the
+curb-ramp class the same way:
+[`CURB_RAMP_SHADOW_ROUTING.md`](CURB_RAMP_SHADOW_ROUTING.md).
 
 ## 13. Limitations
 
