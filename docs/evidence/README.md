@@ -100,6 +100,8 @@ believed.
 | `kitchener-geo08-matcher-v2.json`                                                    | PA-GEO-08's evidence: the development check, candidate recall, baselines, matcher v1 frozen, matcher v2 and its ablations per class and stratum, every failure with its cause, repeat-label consistency, and the full-pilot dry run with its potential evidence. Produced by `pathable kitchener matcher-v2-benchmark`.                                                                                                                                                                                                                                                                                                                                                                  |
 | `kitchener-geo08-failure-analysis.json`                                              | One cause for each of matcher v2's 37 held-out failures, written after the single evaluation and bound to its decisions by hash.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `kitchener-geo08-errors.html`                                                        | Every matcher-v2 held-out failure drawn: the City record, what the labeller named, what v2 named.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `kitchener-geo09-curb-ramp-shadow-routing.json`                                      | PA-GEO-09's evidence: the PA-GEO-08 evidence it is bound to, how kerb evidence enters routing today, the input funnel from 3,192 City curb cuts to 201 shadow-eligible assertions, every candidate's routing-location outcome, both corpora, every journey-profile category, every route change with its cause and City records, algorithm agreement, production isolation and timings. Produced by `pathable kitchener curb-ramp-shadow-routing`.                                                                                                                                                                                                                                       |
+| `kitchener-geo09-route-changes.html`                                                 | Representative curb-ramp shadow route changes and refused mappings drawn over OSM geometry, watermarked as a research counterfactual on unvalidated municipal assertions. Open it in a browser.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `waterloo-geometry-inspection.json`                                                  | Every routable journey checked against its own geometry: continuity, seams, drawn-vs-reported length, and profile violations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `waterloo-dataset-lifecycle.json`                                                    | PA-GEO-02 on the real dataset, in a disposable database: the 0006 upgrade over the legacy rows, the legacy content checksum recorded from its rows, a candidate rebuilt from the same extract with OSM edit provenance, refused a seal until elevated, sealed to the legacy checksum exactly, judged identical on 120 route comparisons, activated, rolled back, the database refusing edits to sealed rows, and the restore script run as a role that is not a superuser. Every figure is parsed from the run's own command output or read back from the database, none typed in; the procedure is the command sequence in the README. ODbL-derived.                                    |
 | `waterloo-place-search.json`                                                         | Place search on the production-smoke stack: the local index's provenance (5,232 places, 26,201 addresses, 1,792 streets from the same extract as the live network, data as of 2026-08-16), what the API container answered for twelve real queries — including a misspelling and a street that does not exist — and one journey whose two ends were chosen by search, routed live. Captured 2026-10-08 with the requests it records.                                                                                                                                                                                                                                                     |
@@ -322,6 +324,29 @@ decisions, every metric and the pilot's decisions (`06440e4f…`).
 **Scope.** 186 records weighted to what matcher v1 could not settle, scored
 against blind AI labels, not people. Nothing is field-verified, no figure is a
 population rate, and nothing reaches routing.
+
+## Municipal curb-ramp evidence shadow routing (PA-GEO-09)
+
+**Reproducing.** The command is in
+[`CURB_RAMP_SHADOW_ROUTING.md`](../architecture/CURB_RAMP_SHADOW_ROUTING.md)
+§15. Its first stage re-makes matcher v2's pilot decisions and refuses to
+continue unless they hash to the digest PA-GEO-08's committed evidence records
+(`06440e4f…`); its second reads the active dataset inside read-only
+transactions and writes nothing to the database.
+
+**Which run produced what.** Both files come from one run, from `9506409` on
+a clean tree: content hash `b0e8ed88…`, results digest `d3cdcfa0…`. Its
+`run.determinism` compares it with an earlier run from `5c4a141`, also clean:
+every journey-profile outcome, route change and corpus is identical, and the
+results digests are equal. That earlier run is not committed.
+
+**Scope.** A counterfactual: City curb ramps at matcher-v2 way extents are
+treated as accepted only to measure what accepting them would do, and only
+where one named extent lies on one crossing segment at its end. None is
+validated, both corpora are engineering samples rather than trips, and no
+shadow route is advice. The evidence names OSM segments and City record
+numbers but holds no City geometry; the page draws routes and named extents
+over OSM geometry.
 
 ---
 

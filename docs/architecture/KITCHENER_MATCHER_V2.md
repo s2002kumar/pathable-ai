@@ -377,6 +377,9 @@ labeller abstained, against 7). PA-GEO-06 excluded pieces of 5 m or less from
 surface reconciliation for exactly that reason. A later card may revisit that
 exclusion on this evidence; this one does not.
 
+PA-GEO-09 has since reconciled this class and measured its routing impact:
+[`CURB_RAMP_SHADOW_ROUTING.md`](CURB_RAMP_SHADOW_ROUTING.md).
+
 Any change to v2 is a new policy version and needs another untouched held-out
 sample. **This one is spent.** The follow-angle boundary, the perpendicular
 touch rule and the quarter-share rule for a crossing continuation are all

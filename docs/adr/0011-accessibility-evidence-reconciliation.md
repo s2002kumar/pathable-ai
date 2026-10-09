@@ -68,3 +68,7 @@ Three easy designs would each lose something that cannot be recovered:
   a consumer must read relationships and lineage, not one value.
 - Matcher v2 must implement decision 4 with a new, untouched held-out sample.
   PA-GEO-05's holdout is spent.
+- PA-GEO-09 extends decision 5 for research only: a curb ramp may be held at
+  the local way extent matcher v2 names, as a candidate, and reaches a routing
+  question only where that extent lies on a crossing segment at its end.
+  Nothing routes.

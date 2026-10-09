@@ -551,6 +551,50 @@ OSM kerb node, on conditions. Stairs are not established on six records.
 - Reconciliation of the newly matched curb ramps or stairs.
 - Labels by a person, or any field check.
 
+### PA-GEO-09 — Municipal curb-ramp evidence reconciliation and shadow-routing impact study _(PR #90)_
+
+**Delivered** —
+[`CURB_RAMP_SHADOW_ROUTING.md`](../architecture/CURB_RAMP_SHADOW_ROUTING.md)
+
+| Area           | What exists                                                                                                                                                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reconciliation | `kitchener-geo09-curb-ramp-reconciliation-v1`: curb cuts matcher v2 locates at way extents, with no kerb node and no kerb tag, as research rows under PA-GEO-08's conditions; every set possibly incomplete; `not_routing_eligible` throughout |
+| Mapping        | An assertion reaches a routing location only where one named extent lies on one crossing segment of the production graph, within 2 m of its end, with an unknown kerb; a sidewalk extent is never a crossing, and nothing is inferred          |
+| Policy         | `curb-ramp-shadow-policy-v1`: the shadow costs that segment as the cost model costs a dropped kerb, which every profile charges as it charges a flush kerb; nothing else changes                                                               |
+| Study          | The routing API's own comparison for the standard baseline and the five presets kerb evidence can move, over PA-GEO-07's broad corpus extended to 300 journeys and a targeted corpus across the substituted crossings                          |
+| Command        | `pathable kitchener curb-ramp-shadow-routing`: evidence JSON and a watermarked page of representative route changes and refused mappings                                                                                                       |
+
+**What it measured.** An engineering counterfactual, not validation.
+
+- **Funnel:** of 813 candidate assertions, 609 name only sidewalk or path
+  extents and reach no routing location; 201 reach one crossing segment each,
+  1,195 m, 2.9% of the graph's unknown-kerb crossings.
+- **Why:** the matcher's named sets omit the crossing the piece runs onto,
+  PA-GEO-08's commonest failure, at scale; the mapping infers nothing from an
+  omitted element, by condition.
+- **Broad corpus**, 300 journeys: routes change for 11 of them (33
+  journey-profile pairs; wheelchair 10, median move 19.7 m).
+- **Targeted corpus**, 48 journeys crossing City evidence: routes change for
+  9 (31 pairs).
+- **Direction:** all 64 changes come from the new path getting cheaper, the
+  direction in which a wrong assertion does harm. No feasibility change is
+  possible: no hard limit reads a kerb.
+- **Isolation:** the database checksum and the loaded graph's fingerprints are
+  unchanged; Dijkstra and A\* agree on all 243 checked pairs; two clean runs
+  gave identical results.
+
+**Decision: LIMITED GO** to external validation of the 22 City records that
+moved a route and to matcher research on set completeness with a new held-out
+sample. Not a routing policy, not integration.
+
+**Still does not exist.**
+
+- Any Kitchener value in production routing, the API or the application.
+- A licensing decision for combining Kitchener and OSM-derived data.
+- Validation of any City curb ramp, or a routing policy for municipal
+  evidence.
+- A matcher that names the crossing for the 609.
+
 ---
 
 ## Stitch Route Planner integration (PA-UX-03)
