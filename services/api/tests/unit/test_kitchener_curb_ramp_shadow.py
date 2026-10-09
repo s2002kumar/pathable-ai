@@ -939,6 +939,10 @@ def test_the_whole_study_runs_and_writes_evidence_that_admits_nothing(tmp_path: 
     assert serialised["input_funnel"]["exact_routing_location_mapping_failures"] == {
         str(Outcome.NO_CROSSING_EXTENT): 1
     }
+    rows_by_id = {r["record_id"]: r for r in serialised["routing_mapping"]["records"]}
+    assert rows_by_id[1]["outcome"] == str(Outcome.ELIGIBLE)
+    assert rows_by_id[3]["outcome"] == str(Outcome.NO_CROSSING_EXTENT)
+    assert rows_by_id[3]["placements"][0]["placement"] == "sidewalk_or_path_segment"
     assert serialised["defects"] == {
         "unexplained_changes": 0,
         "feasibility_changes": 0,

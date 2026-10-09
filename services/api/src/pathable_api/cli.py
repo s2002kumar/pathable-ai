@@ -78,7 +78,7 @@ from pathable_api.geo.kitchener.conflation import load_inputs as load_conflation
 from pathable_api.geo.kitchener.curb_ramp_page import render_page as render_curb_ramp_page
 from pathable_api.geo.kitchener.curb_ramp_reconciliation import CurbRampError
 from pathable_api.geo.kitchener.curb_ramp_run import reconcile as reconcile_curb_ramps
-from pathable_api.geo.kitchener.curb_ramp_run import rejected_examples
+from pathable_api.geo.kitchener.curb_ramp_run import rejected_examples, write_mapping_artifact
 from pathable_api.geo.kitchener.curb_ramp_run import run_study as run_curb_ramp_study
 from pathable_api.geo.kitchener.curb_ramp_run import shadow_evidence as curb_ramp_evidence
 from pathable_api.geo.kitchener.evaluation import (
@@ -2664,6 +2664,9 @@ async def _kitchener_curb_ramp_shadow_routing(database: Database, args: argparse
         extract_sha256=manifest["output"]["sha256"],
         seed=args.seed,
         attribution=KITCHENER_OSM_ATTRIBUTION,
+    )
+    document["routing_mapping"]["artifact_file"] = write_mapping_artifact(
+        args.artifact_dir, output.plan
     )
     document["run"]["timings_s"]["load_graph_s"] = round(loaded - reconciled_at, 2)
     document["run"]["timings_s"]["total_s"] = round(time.perf_counter() - started, 2)

@@ -27,6 +27,7 @@ from pathable_api.geo.kitchener.conflation import load_inputs
 from pathable_api.geo.kitchener.correspondence import to_native
 from pathable_api.geo.kitchener.curb_ramp_page import DrawnSegment, RejectedExample
 from pathable_api.geo.kitchener.curb_ramp_reconciliation import (
+    ARTIFACT_VERSION,
     MAX_RECORD_LENGTH_M,
     RECONCILIATION_VERSION,
     CurbRampCorrespondence,
@@ -85,6 +86,7 @@ from pathable_api.geo.kitchener.shadow_study import (
     compare_on,
     corpus_digest,
 )
+from pathable_api.geo.overture.evidence import write_json
 from pathable_api.routing.comparison import RouteComparison
 from pathable_api.routing.engine import RoutingError, compute_route
 from pathable_api.routing.graph import RoutableGraph
@@ -591,6 +593,34 @@ def changed_routes(
     return found
 
 
+def mapping_rows(plan: CurbRampPlan) -> list[dict[str, Any]]:
+    """Every candidate's routing-location outcome, with each extent's placement: the per-record blockers."""
+    return [plan.mappings[record_id].as_dict() for record_id in sorted(plan.mappings)]
+
+
+def write_mapping_artifact(folder: Path, plan: CurbRampPlan) -> dict[str, Any]:
+    """The routing-mapping rows beside the reconciliation rows, in the ignored data folder."""
+    path = folder / "routing_mapping.json"
+    write_json(
+        path,
+        {
+            "version": ARTIFACT_VERSION,
+            "policy": plan.policy,
+            "plan_sha256": plan.digest,
+            "rows": mapping_rows(plan),
+            "substitutions": [
+                s.as_dict() for s in sorted(plan.substitutions.values(), key=lambda s: s.identity)
+            ],
+        },
+    )
+    return {
+        "file": path.name,
+        "rows": len(plan.mappings),
+        "bytes": path.stat().st_size,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
+
+
 def records_that_moved_routes(results: Sequence[Result]) -> list[dict[str, Any]]:
     moved: Counter[int] = Counter()
     journeys: dict[int, set[str]] = defaultdict(set)
@@ -742,6 +772,7 @@ def shadow_evidence(
                 s.as_dict()
                 for s in sorted(output.plan.substitutions.values(), key=lambda s: s.identity)
             ],
+            "records": mapping_rows(output.plan),
         },
         "network": output.network,
         "corpora": {
