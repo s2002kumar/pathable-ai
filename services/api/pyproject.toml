@@ -52,8 +52,8 @@ dev = [
     # so it never reaches a container image or a production path.
     # Provenance verified in docs/development/DEPENDENCY_DECISIONS.md.
     "httpx2>=2.9.1,<3.0.0",
-    "mypy>=1.14.0,<2.0.0",
-    "ruff>=0.9.0,<0.15.0",
+    "mypy>=1.14.0,<3.0.0",
+    "ruff>=0.9.0,<0.17.0",
     "types-shapely>=2.1.0.20260728",
     "types-networkx>=3.6.1.20260728",
 ]
