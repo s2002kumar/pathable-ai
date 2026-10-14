@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   COMPARE_PATTERN,
   PLANNER,
@@ -8,8 +8,43 @@ import {
   stubRouteComparison,
 } from './fixtures';
 
+const STORY_STEPS = ['together', 'stairs', 'rule', 'unknown'] as const;
+
 /**
- * The landing page (Golden Master 10:2318, phone 17:3167).
+ * Wait until every time-based animation and transition has finished.
+ *
+ * Scroll-driven animations (the pipeline line) are excluded: one tied to the
+ * scroll position reports itself as running for as long as it exists, so
+ * waiting for it to stop would wait forever.
+ */
+async function settled(page: Page): Promise<void> {
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .filter((animation) => animation.timeline === document.timeline)
+      .every((animation) => animation.playState !== 'running'),
+  );
+}
+
+/**
+ * Scroll as a reader would until a story step's title crosses the band of the
+ * viewport the page watches (LandingMotion.tsx), then let the stage settle.
+ */
+async function readStep(page: Page, step: string): Promise<void> {
+  await page.evaluate((name) => {
+    const element = document.querySelector(`[data-story-step="${name}"]`);
+    if (!element) throw new Error(`no story step ${name}`);
+    const wide = window.matchMedia('(min-width: 64rem) and (min-height: 40rem)').matches;
+    const top = element.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo(0, top - window.innerHeight * (wide ? 0.42 : 0.6));
+  }, step);
+  await expect(page.locator('[data-story-root]')).toHaveAttribute('data-step', step);
+  await settled(page);
+}
+
+/**
+ * The landing page (PA-UX-05; first built from Golden Master 10:2318 and
+ * phone 17:3167).
  *
  * It is static — it cannot ask the API — so what is under test is that it
  * says what the product does, shows the verified example as the API recorded
@@ -40,10 +75,127 @@ test.describe('landing page', () => {
     await expect(callout).toBeVisible();
     await expect(callout).toContainText('One journey, not typical of all.');
 
-    const caption = page.getByText(/Recorded from the routing API on 2026-10-05/);
-    if (await caption.isVisible()) {
-      await expect(caption).toContainText('dataset 51e75f78');
+    const source = page.getByTestId('hero-readout');
+    await expect(source).toBeVisible();
+    await expect(source).toContainText('Recorded from the routing API on 2026-10-13');
+    await expect(source).toContainText('dataset 51e75f78');
+  });
+
+  test('the stage follows the story as it is read, by ordinary scrolling', async ({ page }) => {
+    await page.goto('/');
+    const root = page.locator('[data-story-root]');
+    await expect(root).toHaveAttribute('data-step', 'overview');
+
+    for (const step of STORY_STEPS) {
+      await readStep(page, step);
     }
+    // Back up to the hero and the whole answer returns.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(root).toHaveAttribute('data-step', 'overview');
+  });
+
+  test('every label the stage shows stays inside it, at every step', async ({ page }) => {
+    // A label pushed off the drawing is cut mid-word — found on the phone
+    // stage while building this page; held here at both sizes.
+    await page.goto('/');
+    await settled(page);
+
+    for (const step of ['overview', ...STORY_STEPS]) {
+      if (step !== 'overview') await readStep(page, step);
+      const outside = await page.evaluate(() => {
+        const stage = document
+          .querySelector('[data-testid="hero-visual"]')!
+          .getBoundingClientRect();
+        return Array.from(
+          document.querySelectorAll<HTMLElement>('[data-testid="hero-visual"] [data-show]'),
+        )
+          .filter((label) => Number(getComputedStyle(label).opacity) > 0.5)
+          .filter((label) => getComputedStyle(label).display !== 'none')
+          .map((label) => ({ text: label.textContent, box: label.getBoundingClientRect() }))
+          .filter(
+            ({ box }) =>
+              box.left < stage.left - 1 ||
+              box.right > stage.right + 1 ||
+              box.top < stage.top - 1 ||
+              box.bottom > stage.bottom + 1,
+          )
+          .map(({ text }) => text);
+      });
+      expect(outside, `labels outside the stage at "${step}"`).toEqual([]);
+    }
+  });
+
+  test('reduced motion: the stage still follows the story, but the camera never moves', async ({
+    page,
+  }) => {
+    // Regression: the reduced-motion override was less specific than each
+    // step's camera rule, so with reduced motion on the stage still zoomed to
+    // 1.18× on the stairs step. Found by this test while building PA-UX-05.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const camera = page.locator('[data-testid="hero-visual"] > div > div').first();
+    const atRest = await camera.evaluate((element) => getComputedStyle(element).transform);
+
+    for (const step of STORY_STEPS) {
+      await readStep(page, step);
+      expect(await camera.evaluate((element) => getComputedStyle(element).transform)).toBe(atRest);
+    }
+    // And nothing waits to be revealed.
+    expect(await page.locator('html[data-reveal-armed]').count()).toBe(0);
+  });
+
+  test('evidence lenses work from the keyboard alone', async ({ page }) => {
+    await page.goto('/');
+    const stairs = page.getByRole('radio', { name: 'Stairs' });
+    await stairs.focus();
+    await page.keyboard.press('ArrowRight');
+
+    await expect(page.getByRole('radio', { name: 'Gradient' })).toBeChecked();
+    await expect(page.locator('[data-lens-panel="gradient"]')).toBeVisible();
+    await expect(page.locator('[data-lens-panel="stairs"]')).toBeHidden();
+    await expect(page.locator('[data-lens-panel="gradient"]')).toContainText('never flat');
+
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('[data-lens-panel="surface"]')).toContainText('not recorded on 65 m');
+  });
+
+  test('“Compute this journey live” carries the reader into the planner, which routes it', async ({
+    page,
+  }) => {
+    await stubHealthyApi(page);
+    await stubRouteComparison(page);
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'Compute this journey live' }).click();
+    await expect(page).toHaveURL(/\/planner\?example=campus-library-to-student-life$/);
+    await expect(page.getByTestId('route-status')).toHaveAttribute('data-route-state', 'success');
+  });
+
+  test('a fast scroll to the bottom leaves nothing waiting to be revealed', async ({ page }) => {
+    // Regression: under load, blocks in a section the browser skips
+    // (content-visibility) went by too fast to be reported on screen and
+    // stayed hidden above the reader. Whether a fade has finished off screen
+    // is invisible by definition, so what is held is the state: nothing the
+    // reader has passed is still waiting, and what is on screen is opaque.
+    await page.goto('/');
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.documentElement.scrollHeight; y += window.innerHeight / 2) {
+        window.scrollTo(0, y);
+        await new Promise((resolve) => setTimeout(resolve, 60));
+      }
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    });
+    await settled(page);
+
+    const waiting = await page.evaluate(() =>
+      Array.from(document.querySelectorAll<HTMLElement>('[data-reveal="pending"]')).map(
+        (element) => element.className,
+      ),
+    );
+    expect(waiting).toEqual([]);
+    const cta = page.locator('[data-reveal]').last();
+    await expect(cta).toBeInViewport();
+    expect(Number(await cta.evaluate((element) => getComputedStyle(element).opacity))).toBe(1);
   });
 
   test('makes no safety, compliance or machine-learning claim', async ({ page }) => {
@@ -130,5 +282,29 @@ test.describe('landing page', () => {
     const path = `${SCREENSHOT_DIR}/${testInfo.project.name}-landing.png`;
     await page.screenshot({ path, fullPage: false });
     await testInfo.attach('landing', { path, contentType: 'image/png' });
+  });
+});
+
+test.describe('landing page with JavaScript off', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('every word is there and the stage shows the whole answer', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.locator('[data-story-root]')).toHaveAttribute('data-step', 'overview');
+    await expect(page.locator('html[data-reveal-armed]')).toHaveCount(0);
+    for (const heading of [
+      'What nobody recorded stays unknown.',
+      'PathAble shows what it knows — and what it doesn’t.',
+      'Measured, with the conditions attached.',
+    ]) {
+      const element = page.getByRole('heading', { name: heading });
+      await element.scrollIntoViewIfNeeded();
+      await expect(element).toBeVisible();
+    }
+    // The lens is CSS, not script: it still switches.
+    await page.locator('label[for="lens-surface"]').click();
+    await expect(page.locator('[data-lens-panel="surface"]')).toBeVisible();
+    await expect(page.locator('[data-lens-panel="stairs"]')).toBeHidden();
   });
 });
