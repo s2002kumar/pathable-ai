@@ -834,6 +834,11 @@
   display: none;
 }
 
+.legend .legendCredit {
+  color: var(--color-text-subtle);
+  font-size: 10.5px;
+}
+
 /* --- Stage states -------------------------------------------------------------- */
 
 .split[data-step='overview'] .pin[data-show~='overview'],

@@ -62,8 +62,10 @@ describe('the landing page', () => {
     expect(stage).toHaveAccessibleName(/takes 4 recorded stairways/);
     expect(stage).toHaveAccessibleName(/66\.7 m longer/);
     expect(stage).toHaveAttribute('data-testid', 'hero-visual');
-    // The backdrop is the generated network file, not a third-party tile.
+    // The backdrop is the generated network file, not a third-party tile, and
+    // it is OpenStreetMap data: the credit is on the drawing, not only the footer.
     expect(stage.querySelector('image')).toHaveAttribute('href', '/landing/campus-paths.svg');
+    expect(stage).toHaveTextContent('Paths © OpenStreetMap contributors');
   });
 
   it('tells the story in four steps, every figure from the record', async () => {

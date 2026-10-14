@@ -318,6 +318,8 @@ export function RouteStage() {
           <span className={styles.legendLine} data-kind="missing" />
           Not recorded
         </li>
+        {/* The backdrop is OpenStreetMap data: ODbL wants the credit where the map is. */}
+        <li className={styles.legendCredit}>Paths © OpenStreetMap contributors</li>
       </ul>
     </div>
   );
