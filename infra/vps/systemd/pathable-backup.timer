@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily PathAble database backup
+
+[Timer]
+# 07:15 UTC is 03:15 in Waterloo (EDT), before the 08:30 UTC reboot window.
+OnCalendar=*-*-* 07:15:00 UTC
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

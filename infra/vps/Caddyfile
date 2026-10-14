@@ -1,0 +1,80 @@
+# PathAble AI — the only process on the host that faces the internet.
+#
+# One origin for everything: /api/v1/* goes to the API, every other path to the
+# Next.js server (including its own /api/healthz). The web image is built with
+# NEXT_PUBLIC_API_BASE_URL set to this same origin, so the browser never makes a
+# cross-origin call.
+#
+# PATHABLE_PUBLIC_URL is the site address, scheme included (https://host).
+# PATHABLE_TLS_PROFILE picks the Let's Encrypt profile: "classic" (90-day) for
+# a domain name; "shortlived" (6-day) is the only profile Let's Encrypt issues
+# IP-address certificates under. Caddy renews either on its own.
+
+{
+	# Caddy's admin API listens inside the container only; nothing publishes it.
+	servers {
+		timeouts {
+			read_header 10s
+			read_body 30s
+			idle 2m
+		}
+	}
+}
+
+{$PATHABLE_PUBLIC_URL} {
+	tls {
+		issuer acme {
+			profile {$PATHABLE_TLS_PROFILE}
+		}
+	}
+
+	encode zstd gzip
+
+	# Route and search requests are a few hundred bytes of JSON; the API also
+	# enforces its own limit.
+	request_body {
+		max_size 1MB
+	}
+
+	header {
+		-Server
+		-X-Powered-By
+	}
+
+	handle /api/v1/* {
+		reverse_proxy api:8000 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 60s
+			}
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	# Access logs to stdout, as JSON, rotated by Docker. Client addresses are
+	# truncated before they are written: enough to see a flood come from one
+	# network, not enough to identify a person. Request bodies — the only place
+	# a route's origin and destination appear — are never logged.
+	log {
+		output stdout
+		format filter {
+			wrap json
+			request>remote_ip ip_mask {
+				ipv4 24
+				ipv6 48
+			}
+			request>client_ip ip_mask {
+				ipv4 24
+				ipv6 48
+			}
+		}
+	}
+}

@@ -1,0 +1,194 @@
+# PathAble AI — the public Waterloo pilot on a single VPS.
+#
+# Driven by infra/vps/deploy.sh, never by hand-typed `docker compose` with ad hoc
+# variables: the script supplies three env files and is what records which Git
+# revision is running. See docs/deployment/VPS.md.
+#
+#   /srv/pathable/secrets/pathable.env  database passwords (0600, never leaves the host)
+#   /srv/pathable/site.env              public URL and TLS profile (not secret)
+#   /srv/pathable/release.env           the revision being served (written by deploy.sh)
+#
+# The same images as infra/production-smoke/compose.yaml, with the production
+# differences that matter on a public host:
+#   * only Caddy publishes ports (80, 443). The database, API and web server have
+#     no host port at all, and the database's network has no route out.
+#   * the API connects as a role that is not a superuser and owns only its own
+#     database (the managed-hosting path PRODUCTION_SMOKE.md proves).
+#   * memory limits from the measured envelope, sized for a 3.7 GiB host.
+
+name: pathable
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      # The superuser exists for initdb, backups and restores, all of which run
+      # through `docker exec` over the local socket. Nothing logs in as it over TCP.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?set in /srv/pathable/secrets/pathable.env}
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      # Read only by db-init/20-pathable.sh, on the first start of an empty volume.
+      PATHABLE_DB_NAME: pathable
+      PATHABLE_DB_USER: pathable_app
+      PATHABLE_DB_PASSWORD: ${PATHABLE_DB_PASSWORD:?set in /srv/pathable/secrets/pathable.env}
+    # Sized for a ~200 MB database on a host where the API owns most of the RAM.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=40
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - log_min_duration_statement=1000
+    # The default 64 MB /dev/shm is too small for parallel query workers.
+    shm_size: 256m
+    volumes:
+      - pathable-db-data:/var/lib/postgresql/data
+      # One file, not the directory: the image's own 10_postgis.sh must still run.
+      - ./db-init/20-pathable.sh:/docker-entrypoint-initdb.d/20-pathable.sh:ro
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pathable"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    logging: *logging
+
+  api:
+    image: pathable-api:${PATHABLE_REVISION:?written by deploy.sh}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      # Reported by /api/v1/health/live and /ready, so the running revision can be
+      # read from outside the host.
+      APP_VERSION: ${PATHABLE_APP_VERSION:?written by deploy.sh}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      DATABASE_URL: postgresql+psycopg://pathable_app:${PATHABLE_DB_PASSWORD}@db:5432/pathable
+      ALLOWED_ORIGINS: ${PATHABLE_PUBLIC_URL:?set in /srv/pathable/site.env}
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      READINESS_TIMEOUT_SECONDS: "2.0"
+      GRAPH_PRELOAD_REGIONS: waterloo
+      GEOCODING_PROVIDER: local
+    # One worker: every worker holds its own ~1 GB copy of the graph (ADR 0009).
+    command: ["python", "-m", "pathable_api"]
+    networks: [data, edge]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=3).status==200 else 1)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    deploy:
+      resources:
+        limits:
+          # Measured: ~1.0 GB steady, 1.06 GB lifetime peak; 1 GB ran with 6%
+          # headroom and was rejected. 1.5 GB is the smallest size ADR 0009 accepts.
+          memory: 1536m
+    logging: *logging
+
+  web:
+    image: pathable-web:${PATHABLE_REVISION:?written by deploy.sh}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    networks: [edge]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('node:http').get('http://127.0.0.1:3000/api/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    deploy:
+      resources:
+        limits:
+          # Measured: 93 MB peak after full-stack browser traffic (ADR 0009).
+          memory: 512m
+    logging: *logging
+
+  caddy:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    depends_on: [api, web]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      PATHABLE_PUBLIC_URL: ${PATHABLE_PUBLIC_URL}
+      PATHABLE_TLS_PROFILE: ${PATHABLE_TLS_PROFILE:-classic}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and the ACME account. Losing it only costs a re-issue.
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [edge]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    logging: *logging
+
+networks:
+  # Caddy, web and API. Has a route out, which Caddy needs for ACME.
+  edge: {}
+  # API and database only. `internal` means no route to the internet at all.
+  data:
+    internal: true
+
+volumes:
+  pathable-db-data:
+    name: pathable-db-data
+  caddy-data:
+    name: pathable-caddy-data
+  caddy-config:
+    name: pathable-caddy-config
