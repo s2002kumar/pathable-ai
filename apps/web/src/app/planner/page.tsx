@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ConfigurationError } from '@/components/ConfigurationError';
+import { PageTransition, TO_PLANNER } from '@/components/PageTransition';
 import { PlannerScreen } from '@/features/routing/PlannerScreen';
 import { exampleFromSearchParams } from '@/features/routing/verified-example';
 import { getPublicConfig } from '@/lib/public-config';
@@ -35,17 +36,21 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
 
   const { config } = result;
 
+  // Only an entrance, and only when arriving by one of the landing page's
+  // links; the planner itself is untouched.
   return (
-    <PlannerScreen
-      apiBaseUrl={config.apiBaseUrl}
-      region={config.pilotRegionSlug}
-      mapStyleUrl={config.mapStyleUrl}
-      centerLat={config.pilotCenterLat}
-      centerLon={config.pilotCenterLon}
-      zoom={config.pilotZoom}
-      regionName={config.pilotRegionName}
-      attribution={MAP_ATTRIBUTION}
-      initialExample={example}
-    />
+    <PageTransition enter={{ [TO_PLANNER]: 'pa-enter-planner', default: 'none' }} default="none">
+      <PlannerScreen
+        apiBaseUrl={config.apiBaseUrl}
+        region={config.pilotRegionSlug}
+        mapStyleUrl={config.mapStyleUrl}
+        centerLat={config.pilotCenterLat}
+        centerLon={config.pilotCenterLon}
+        zoom={config.pilotZoom}
+        regionName={config.pilotRegionName}
+        attribution={MAP_ATTRIBUTION}
+        initialExample={example}
+      />
+    </PageTransition>
   );
 }
