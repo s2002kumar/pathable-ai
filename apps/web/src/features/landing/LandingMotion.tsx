@@ -68,10 +68,26 @@ export function LandingMotion() {
       // included, in one long task during hydration. Something reported off
       // screen can be hidden without anyone seeing it go; something on screen
       // is never touched.
+      const blocks = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
+      // The sections they sit in. A section the browser skips (content-
+      // visibility) still has a box, so it is always reported; a block that
+      // went by too fast to be seen is released when its section is passed.
+      const sections = new Set(
+        blocks
+          .map((block) => block.closest('section'))
+          .filter((section): section is HTMLElement => section !== null),
+      );
       const reveal = new IntersectionObserver((entries) => {
         for (const entry of entries) {
           const element = entry.target as HTMLElement;
-          if (entry.isIntersecting) {
+          if (sections.has(element)) {
+            const passed = entry.boundingClientRect.bottom <= (entry.rootBounds?.top ?? 0);
+            if (!entry.isIntersecting && passed) {
+              element
+                .querySelectorAll<HTMLElement>('[data-reveal="pending"]')
+                .forEach((block) => (block.dataset.reveal = 'shown'));
+            }
+          } else if (entry.isIntersecting) {
             element.dataset.reveal = 'shown';
             reveal.unobserve(element);
           } else if (element.dataset.reveal === '') {
@@ -80,9 +96,8 @@ export function LandingMotion() {
         }
       });
       html.dataset.revealArmed = '';
-      document
-        .querySelectorAll<HTMLElement>('[data-reveal]')
-        .forEach((element) => reveal.observe(element));
+      blocks.forEach((block) => reveal.observe(block));
+      sections.forEach((section) => reveal.observe(section));
       cleanups.push(() => {
         reveal.disconnect();
         delete html.dataset.revealArmed;

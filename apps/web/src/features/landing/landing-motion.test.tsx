@@ -111,6 +111,55 @@ describe('LandingMotion', () => {
     expect(measure).not.toHaveBeenCalled();
   });
 
+  it('releases every waiting block in a section the reader has scrolled past', () => {
+    // Found in the browser suite: blocks in a section the browser skips can
+    // go by too fast to be reported on screen, and stayed hidden above the
+    // reader. The section's own box is always reported, so passing it is
+    // enough.
+    document.body.innerHTML = `
+      <section id="evidence">
+        <div id="head" data-reveal=""></div>
+        <div id="kinds" data-reveal=""></div>
+      </section>`;
+    vi.stubGlobal('matchMedia', matchMedia({}));
+    render(<LandingMotion />);
+    const section = document.getElementById('evidence')!;
+    const head = document.getElementById('head')!;
+    const kinds = document.getElementById('kinds')!;
+    const reveal = ObserverDouble.all.find((o) => o.observed.has(section))!;
+
+    reveal.fire(head, false);
+    reveal.fire(kinds, false);
+    expect(kinds.dataset.reveal).toBe('pending');
+
+    // Still below the reader: nothing changes.
+    act(() =>
+      reveal.callback([
+        {
+          target: section,
+          isIntersecting: false,
+          boundingClientRect: { bottom: 2400 } as DOMRect,
+          rootBounds: { top: 0 } as DOMRect,
+        },
+      ]),
+    );
+    expect(kinds.dataset.reveal).toBe('pending');
+
+    // Above the reader: everything in it is shown.
+    act(() =>
+      reveal.callback([
+        {
+          target: section,
+          isIntersecting: false,
+          boundingClientRect: { bottom: -40 } as DOMRect,
+          rootBounds: { top: 0 } as DOMRect,
+        },
+      ]),
+    );
+    expect(head.dataset.reveal).toBe('shown');
+    expect(kinds.dataset.reveal).toBe('shown');
+  });
+
   it('does not hide a block again once it has been shown', () => {
     page();
     vi.stubGlobal('matchMedia', matchMedia({}));
