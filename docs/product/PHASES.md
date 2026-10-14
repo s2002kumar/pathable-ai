@@ -689,6 +689,39 @@ As-you-type suggestions do not exist, by design.
 
 ---
 
+## Premium landing experience (PA-UX-05, 2026-10-13)
+
+A presentation card. It adds no routing capability, changes no API, dataset or
+evidence rule, and moves no phase gate. The planner is untouched apart from an
+entrance animation when it is opened from the landing page.
+
+**What changed.** The landing page tells the verified journey on one stage: the
+recorded routes drawn over the routing graph PathAble ingested around them,
+following four story steps as the reader scrolls (the routes leave together,
+the shortest takes four recorded stairways, the wheelchair profile rules them
+out, what nobody recorded stays unknown). An evidence explorer draws both
+routes to scale, segment by segment, under four lenses. Engineering figures are
+the claims ledger's, with its conditions, and a unit test fails on any number
+the ledger does not hold. The page's own links carry a view transition into the
+planner. `DESIGN.md` records that this card overrides the Golden Master's
+pixel-parity and motion rules for the landing page only.
+
+**Data.** `scripts/landing-data.mjs` regenerates the record (now with
+per-segment evidence) and the network backdrop from the local production
+envelope. The 2026-10-13 record reproduced the 2026-10-05 one.
+
+**Evidence.** [`UX05_LANDING.md`](../evidence/UX05_LANDING.md): design
+rationale, before and after captures, interleaved performance measurement,
+accessibility verification, a recording of one session.
+
+**Branch.** `feat/premium-landing`, from `main` at `a3f6448`. Draft PR; not
+merged.
+
+**Not verified here.** A manual screen-reader pass; Safari and Firefox (the
+browser suites run Chromium only).
+
+---
+
 ## Standing rules
 
 1. **Never claim a capability before the phase that builds it.**

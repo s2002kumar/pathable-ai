@@ -1,8 +1,15 @@
 # PathAble Frontend Golden Master — v1
 
-Status: **FROZEN FOR PA-UX-04 IMPLEMENTATION**
+Status: **FROZEN FOR PA-UX-04 IMPLEMENTATION** — except the landing page, redesigned by PA-UX-05 (2026-10-13)
 
 This file is the semantic handoff for the approved PathAble frontend family. It does not authorize redesign.
+
+**PA-UX-05 override.** The PA-UX-05 task card asked for the landing page to be brought to the
+quality of a strong 2026 product site, with spatial storytelling and restrained motion. That card
+overrides the pixel-parity contract and the motion limits below **for the landing page only**
+(`/`, frames `10:2318` and `17:3167`, now historical). The planner frames stay frozen. The landing
+keeps this file's palette, type, evidence vocabulary and product-truth rules; its motion is
+specified in "Landing motion (PA-UX-05)".
 
 ## Source-of-truth precedence
 
@@ -24,9 +31,9 @@ Canonical frames:
 | State                                         | Node      | Reference size |
 | --------------------------------------------- | --------- | -------------: |
 | Desktop planner — route comparison            | `9:1905`  |    1280 × 1152 |
-| Desktop landing page                          | `10:2318` |    1280 × 4855 |
+| Desktop landing page (historical, PA-UX-05)   | `10:2318` |    1280 × 4855 |
 | Mobile planner — route comparison             | `17:2865` |     390 × 1549 |
-| Mobile landing page                           | `17:3167` |    390 × ~3254 |
+| Mobile landing page (historical, PA-UX-05)    | `17:3167` |    390 × ~3254 |
 | Desktop planner — idle/planning               | `17:3555` |    1280 × 1204 |
 | Desktop planner — incomplete data             | `17:3789` |    1280 × 1152 |
 | Desktop planner — no route / hard requirement | `17:4041` |    1280 × 1152 |
@@ -168,6 +175,40 @@ Motion is restrained and functional:
 - no looping glow, parallax, bouncing or large spring animation.
 
 `prefers-reduced-motion` removes nonessential transitions and makes camera movement effectively immediate.
+
+### Landing motion (PA-UX-05)
+
+The landing page tells one recorded journey on one stage. Its motion, all CSS except one small
+script that reports which story step is on screen:
+
+- **Stage settle, once on load:** the drawing pitches down from a tilted view to plan view
+  (1.2 s, decelerating, transform only — the stage is painted from the first frame). Routes then
+  draw once — the shortest first, then the profile route — and the stairway markers and labels
+  arrive as their line reaches them. Everything has finished by about 2.7 s, inside WCAG 2.2.2's
+  five seconds, and nothing loops. On a phone-width stage the routes are not drawn by stroke
+  (that repaints on the main thread every frame, which measurably slowed a throttled phone); they
+  are simply there, and only the settle plays.
+- **The headline is never faded in.** It is the page's largest paint; the rest of the hero copy
+  rises in after it.
+- **Story camera:** as the reader scrolls the four story steps, the stage eases to each step's
+  view (650 ms, ease-out, zoom ≤ 1.18; on a phone-width stage the camera holds still, because
+  there is no room to move into without cropping a label). Scrolling drives the state; the state
+  never drives scrolling. No scroll hijacking, no snapping.
+- **Highlights:** layers cross-fade 320 ms; stairway markers pulse once on entering the stairs
+  step; the profile route redraws once on entering the rule step.
+- **Section reveals:** once, 520–640 ms, only for content that starts below the fold, and only
+  after the script has run — with no script nothing is ever hidden.
+- **Pipeline line:** tied to scroll position where the browser supports scroll-driven
+  animation; elsewhere simply drawn.
+- **Into the planner:** the landing page's own links carry a view-transition type; the landing
+  recedes (240 ms) and the planner arrives (460 ms). Any other navigation is not animated.
+- **No parallax.** The backdrop is the real routing graph; moving it against the routes would
+  put a route on the wrong path. Depth comes from the camera, not from layers sliding apart.
+- **No glow, orbs or decorative AI imagery.** The only imagery is the recorded journey and the
+  network it ran on.
+
+Under `prefers-reduced-motion`: no settle, draw, pulse or reveal; the stage still follows the
+story, but every change is instant and the camera never moves; view transitions are off.
 
 ## Accessibility implementation expectations
 

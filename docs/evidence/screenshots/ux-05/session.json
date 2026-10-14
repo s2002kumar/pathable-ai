@@ -1,0 +1,75 @@
+{
+  "baseUrl": "http://127.0.0.1:3001",
+  "recordedAt": "2026-10-14T03:42:03.509Z",
+  "viewport": "1280x800",
+  "steps": [
+    {
+      "atMs": 1059,
+      "what": "landing loaded"
+    },
+    {
+      "atMs": 5269,
+      "what": "stage settled"
+    },
+    {
+      "atMs": 6705,
+      "what": "story step together"
+    },
+    {
+      "atMs": 10444,
+      "what": "story step stairs"
+    },
+    {
+      "atMs": 14172,
+      "what": "story step rule"
+    },
+    {
+      "atMs": 17910,
+      "what": "story step unknown"
+    },
+    {
+      "atMs": 23469,
+      "what": "evidence explorer"
+    },
+    {
+      "atMs": 24870,
+      "what": "lens gradient"
+    },
+    {
+      "atMs": 26650,
+      "what": "lens surface"
+    },
+    {
+      "atMs": 28429,
+      "what": "lens width"
+    },
+    {
+      "atMs": 31755,
+      "what": "engineering"
+    },
+    {
+      "atMs": 34987,
+      "what": "principles"
+    },
+    {
+      "atMs": 38019,
+      "what": "call to action"
+    },
+    {
+      "atMs": 39314,
+      "what": "open the verified journey"
+    },
+    {
+      "atMs": 39996,
+      "what": "planner answered live: 287.4 m / 354.1 m, dataset 51e75f78"
+    },
+    {
+      "atMs": 43155,
+      "what": "planner map ready"
+    },
+    {
+      "atMs": 47663,
+      "what": "end"
+    }
+  ]
+}
