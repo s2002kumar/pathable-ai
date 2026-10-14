@@ -1,41 +1,53 @@
 import Link from 'next/link';
-import { Icon, type IconName } from '@/components/Icon';
+import { Icon } from '@/components/Icon';
+import { TO_PLANNER } from '@/components/PageTransition';
 import { LINKS } from '@/lib/links';
 import { EXAMPLE_QUERY_PARAM } from '@/features/routing/verified-example';
-import { RouteVisual } from './RouteVisual';
-import { VERIFIED_ROUTE } from './verified-route';
+import { EvidenceExplorer } from './EvidenceExplorer';
+import { EvidenceTag, type EvidenceKind } from './EvidenceTag';
+import { FIGURES, ROUTE, journeyGeometry, metres, percent, sharedLengths } from './journey';
+import { bounds, pathData } from './stage-frame';
+import { LandingMotion } from './LandingMotion';
+import { RouteStage, type StageStep } from './RouteStage';
 import styles from './Landing.module.css';
 
+const PLANNER = '/planner';
 const PLANNER_EXAMPLE = `/planner?${EXAMPLE_QUERY_PARAM}=campus-library-to-student-life`;
-
-const route = VERIFIED_ROUTE;
-const extra = route.extraDistanceM.toFixed(1);
-const percent = Math.round(route.extraDistanceFraction * 100);
-const missingShare = Math.round(route.accessible.unknownDataFraction * 100);
+const INTO_PLANNER = [TO_PLANNER];
 
 /**
- * The product's front door (Golden Master 10:2318, phone 17:3167).
+ * The product's front door.
  *
  * Every figure on it is one of three kinds, and only these: the verified
- * example as the routing API recorded it (`verified-route.ts`, dated, with the
- * dataset checksum), counts from the claims ledger (180,554 segments, 1 m
- * HRDEM), or statements of how the system behaves. No user counts, no
- * benchmarks that were not run, no "AI".
+ * example as the routing API recorded it (`verified-route.ts`, dated, with
+ * the dataset checksum, read through `journey.ts`), measurements quoted from
+ * the claims ledger with their conditions, or statements of how the system
+ * behaves. No user counts, no benchmark that was not run, no "AI".
+ *
+ * One stage carries the visual story: it sits beside the hero and the four
+ * story steps (above them on a phone) and follows whichever step is being
+ * read. Everything it shows is also written down, so the page reads the same
+ * with motion reduced, with script off, or with a screen reader.
  */
 export function LandingPage() {
   return (
     <div className={styles.page}>
       <LandingHeader />
       <main id="main-content">
-        <Hero />
-        <Comparison />
-        <EvidenceModel />
+        <div className={styles.split} data-story-root="" data-step={'overview' satisfies StageStep}>
+          <Hero />
+          <div className={styles.stageColumn}>
+            <RouteStage />
+          </div>
+          <Story />
+        </div>
+        <Evidence />
         <Engineering />
-        <Architecture />
         <Integrity />
         <FinalCta />
       </main>
       <LandingFooter />
+      <LandingMotion />
     </div>
   );
 }
@@ -57,15 +69,12 @@ function LandingHeader() {
             <span className={styles.brandDot} aria-hidden="true" />
             <Brand />
           </Link>
-          <span className={styles.regionChip}>
-            <span className={styles.chipDot} aria-hidden="true" />
-            Waterloo, ON
-          </span>
+          <span className={styles.regionChip}>Waterloo, ON</span>
           <nav className={styles.nav} aria-label="Sections">
-            <a href="#how-it-works">How It Works</a>
-            <a href="#evidence">Evidence Model</a>
-            <a href="#architecture">Architecture</a>
-            <a href="#integrity">Integrity Principles</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#evidence">Evidence</a>
+            <a href="#engineering">Engineering</a>
+            <a href="#integrity">Principles</a>
           </nav>
         </div>
         <div className={styles.headerActions}>
@@ -75,10 +84,16 @@ function LandingHeader() {
             target="_blank"
             rel="noreferrer noopener"
           >
-            <span className={styles.mono}>src/</span> GitHub
+            <span className={styles.mono}>src/</span>
+            <span className={styles.githubText}>GitHub</span>
           </a>
-          <Link href="/planner" className={styles.plannerButton} data-testid="header-explore">
-            <span className={styles.plannerLong}>Explore Planner</span>
+          <Link
+            href={PLANNER}
+            className={styles.plannerButton}
+            data-testid="header-explore"
+            transitionTypes={INTO_PLANNER}
+          >
+            <span className={styles.plannerLong}>Open planner</span>
             <span className={styles.plannerShort}>Planner</span>
           </Link>
         </div>
@@ -88,405 +103,209 @@ function LandingHeader() {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Hero (10:2323, 17:3169)
+// Hero
 // ---------------------------------------------------------------------------
 
 function Hero() {
   return (
-    <section className={styles.heroField} aria-labelledby="hero-heading">
-      <div className={styles.glow} aria-hidden="true" />
-      <div className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrowBadge}>
-            <span className={styles.chipDot} aria-hidden="true" />
-            Accessibility-aware pedestrian routing · Waterloo, ON
-          </p>
-          <h1 className={styles.heroTitle} id="hero-heading">
-            Routes that account for what you can <em>actually</em> <em>traverse</em>.
-          </h1>
-          <p className={styles.heroLead}>
-            Compare the shortest pedestrian route with one adapted to your mobility needs — and see
-            exactly why they differ.
-          </p>
-          <div className={styles.ctaRow}>
-            <Link href="/planner" className={styles.primaryCta} data-testid="hero-explore">
-              Explore Planner
-              <Icon name="arrow-right" />
-            </Link>
-            <a
-              className={styles.secondaryCta}
-              href={LINKS.repository}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              <span className={styles.monoGreen}>git::</span> View GitHub
-            </a>
-            <p className={styles.pilotNote}>
-              <span className={styles.pilotDot} aria-hidden="true" />
-              Waterloo pilot · 180,554 segments
-            </p>
-          </div>
+    <section className={styles.hero} aria-labelledby="hero-heading" data-story-step="overview">
+      <div className={styles.heroCopy}>
+        <p className={styles.eyebrowBadge}>
+          <span className={styles.liveDot} aria-hidden="true" />
+          Accessibility-aware pedestrian routing · Waterloo pilot
+        </p>
+        <h1 className={styles.heroTitle} id="hero-heading">
+          Routes that account for what you can <em>actually traverse</em>.
+        </h1>
+        <p className={styles.heroLead}>
+          Compare the shortest pedestrian route with one adapted to your mobility needs — and see
+          exactly why they differ.
+        </p>
+        <div className={styles.ctaRow}>
+          <Link
+            href={PLANNER}
+            className={styles.primaryCta}
+            data-testid="hero-explore"
+            transitionTypes={INTO_PLANNER}
+          >
+            Open the planner
+            <Icon name="arrow-right" />
+          </Link>
+          <a
+            className={styles.secondaryCta}
+            href={LINKS.repository}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <span className={styles.monoGreen}>git::</span> View the source
+          </a>
         </div>
+      </div>
 
-        <figure className={styles.visual} data-testid="hero-visual">
-          <div className={styles.visualBar}>
-            <span className={styles.windowDots} aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </span>
-            <span className={styles.visualTitle}>Local demo · Not deployed</span>
-            <Link href={PLANNER_EXAMPLE} className={styles.visualPath}>
-              {PLANNER_EXAMPLE}
-            </Link>
-            <span className={styles.visualTags}>
-              <span className={styles.monoGreen}>● VERSIONED_POSTGIS_GRAPH</span>
-              <span>NRCAN_HRDEM_1M</span>
-            </span>
+      <div className={styles.readout} data-testid="hero-readout">
+        <dl className={styles.readoutRows}>
+          <div className={styles.readoutRow} data-route="standard">
+            <dt>
+              <span className={styles.legendLine} data-kind="standard" />
+              Shortest walking route
+            </dt>
+            <dd className={styles.readoutFigure}>{FIGURES.standardDistance}</dd>
+            <dd className={styles.readoutDetail} data-tone="barrier">
+              {ROUTE.standard.stairways} recorded stairways
+            </dd>
           </div>
-          <div className={styles.visualCanvas}>
-            <RouteVisual
-              width={1184}
-              height={560}
-              box={{ x: 470, y: 70, width: 640, height: 330 }}
-            />
-            <HeroHud />
-            <div className={styles.visualDock}>
-              <p className={styles.visualDockTitle}>
-                <Icon name="fork" size={13} />
-                Why this route is different
-              </p>
-              <p className={styles.visualDockText}>
-                The wheelchair route is {extra} m longer ({percent}%) and avoids all{' '}
-                {route.standard.stairways} stairways recorded on the shortest route. Missing
-                accessibility data remains unknown.
-              </p>
-            </div>
+          <div className={styles.readoutRow} data-route="accessible">
+            <dt>
+              <span className={styles.legendLine} data-kind="accessible" />
+              Wheelchair profile route
+            </dt>
+            <dd className={styles.readoutFigure}>{FIGURES.accessibleDistance}</dd>
+            <dd className={styles.readoutDetail} data-tone="good">
+              {ROUTE.accessible.stairways} recorded stairways
+            </dd>
           </div>
-          <figcaption className={styles.visualCaption}>
-            Recorded from the routing API on {route.recordedOn} · dataset{' '}
-            {route.datasetChecksum.slice(0, 8)} · routing policy {route.routingPolicyVersion}. Open
-            the planner to compute it live.
-          </figcaption>
-        </figure>
-
-        {/* 17:3193 — the phone's compact presentation card. */}
-        <figure className={styles.phoneVisual}>
-          <div className={styles.phoneCanvas}>
-            <RouteVisual
-              width={358}
-              height={320}
-              compact
-              box={{ x: 40, y: 50, width: 270, height: 190 }}
-            />
-            <div className={styles.phoneChips}>
-              <span className={styles.phoneChip}>
-                <span className={styles.chipDot} aria-hidden="true" />
-                Verified Waterloo example
-              </span>
-              <span className={styles.phoneChipMono}>1m HRDEM</span>
-            </div>
-            <div className={styles.phoneCompare}>
-              <span className={styles.phoneOption}>
-                <span className={styles.phoneOptionHead} data-tone="good">
-                  <Icon name="profile-wheelchair" size={11} /> Adaptive
-                </span>
-                <span className={styles.phoneOptionFigure}>
-                  {Math.round(route.accessible.distanceM)}
-                  <small>m</small> <span>{route.accessible.stairways} stairways</span>
-                </span>
-              </span>
-              <span className={styles.phoneOption}>
-                <span className={styles.phoneOptionHead} data-tone="barrier">
-                  <Icon name="profile-walking" size={11} /> Shortest
-                </span>
-                <span className={styles.phoneOptionFigure}>
-                  {Math.round(route.standard.distanceM)}
-                  <small>m</small> <span>{route.standard.stairways} stairways</span>
-                </span>
-              </span>
-            </div>
-          </div>
-          <figcaption className={styles.phoneStrip}>
-            <span className={styles.phoneStripHead}>
-              <span>Active constraint evaluation</span>
-              <span className={styles.monoGreen}>Wheelchair profile</span>
-            </span>
-            <span className={styles.phoneStripLine}>
-              <Icon name="fork" size={12} />+{extra} m (+{percent}%) to avoid{' '}
-              {route.standard.stairways} stairways
-            </span>
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-  );
-}
-
-function HeroHud() {
-  return (
-    <div className={styles.hud}>
-      <div className={styles.hudHead}>
-        <span className={styles.hudTitle}>Route Evaluation</span>
-        <span className={styles.hudTag}>Active profile</span>
-      </div>
-      <div className={styles.hudCard}>
-        <div className={styles.hudCardHead}>
-          <span className={styles.hudName}>
-            <span className={styles.hudDot} aria-hidden="true" />
-            Wheelchair Route
-          </span>
-          <span className={styles.monoGreenSmall}>Wheelchair profile</span>
-        </div>
-        <p className={styles.hudFigures}>
-          <span className={styles.hudDistance}>{Math.round(route.accessible.distanceM)} m</span>
-          <span>
-            +{extra} m (+{percent}%)
-          </span>
+        </dl>
+        <p className={styles.readoutSummary}>
+          The wheelchair route is {FIGURES.extra} longer ({FIGURES.extraPercent}) and avoids all{' '}
+          {ROUTE.standard.stairways} stairways recorded on the shortest route. Missing accessibility
+          data remains unknown.
         </p>
-        <p className={styles.hudPills}>
-          <span>{route.accessible.stairways} stairways</span>
-          <span>grade: derived</span>
-          <span className={styles.monoGreenSmall}>gaps shown</span>
+        <p className={styles.readoutSource}>
+          Recorded from the routing API on {ROUTE.recordedOn} · dataset {FIGURES.datasetShort} ·
+          routing policy {ROUTE.routingPolicyVersion}.{' '}
+          <Link href={PLANNER_EXAMPLE} transitionTypes={INTO_PLANNER}>
+            Compute this journey live
+          </Link>
         </p>
       </div>
-      <div className={styles.hudCardMuted}>
-        <div className={styles.hudCardHead}>
-          <span className={styles.hudNameMuted}>
-            <span className={styles.hudDotBarrier} aria-hidden="true" />
-            Shortest (Direct)
-          </span>
-          <span className={styles.barrierSmall}>Excluded by profile</span>
-        </div>
-        <p className={styles.hudFiguresMuted}>
-          <span className={styles.hudDistance}>{Math.round(route.standard.distanceM)} m</span>
-          <span>{route.standard.stairways} stairways</span>
-        </p>
-        <p className={styles.hudWarning}>
-          <Icon name="cancel-circle" size={12} />
-          {route.standard.recordedSteps} recorded steps · {route.standard.stairwaysWithoutStepCount}{' '}
-          counts missing
-        </p>
-      </div>
-    </div>
-  );
-}
 
-// ---------------------------------------------------------------------------
-// 2. Comparison (10:2455, 17:3257)
-// ---------------------------------------------------------------------------
-
-function SectionHead({
-  eyebrow,
-  title,
-  lead,
-  phoneTitle,
-  phoneLead,
-  id,
-}: {
-  readonly eyebrow: string;
-  readonly title: string;
-  readonly lead: string;
-  readonly phoneTitle?: string;
-  readonly phoneLead?: string;
-  readonly id: string;
-}) {
-  return (
-    <div className={styles.sectionHead}>
-      <p className={styles.eyebrow}>{eyebrow}</p>
-      <h2 className={styles.sectionTitle} id={id}>
-        <span className={phoneTitle ? styles.desktopOnly : undefined}>{title}</span>
-        {phoneTitle ? <span className={styles.phoneOnly}>{phoneTitle}</span> : null}
-      </h2>
-      <p className={styles.sectionLead}>
-        <span className={phoneLead ? styles.desktopOnly : undefined}>{lead}</span>
-        {phoneLead ? <span className={styles.phoneOnly}>{phoneLead}</span> : null}
+      <p className={styles.truthLine}>
+        <span>Local demo · Not deployed</span>
+        <span aria-hidden="true">·</span>
+        <span>It advises; it does not certify.</span>
       </p>
-    </div>
+    </section>
   );
 }
 
-function Fact({
-  icon,
-  title,
-  detail,
-  tone,
-}: {
-  readonly icon: IconName;
+// ---------------------------------------------------------------------------
+// Story — the stage follows these four steps
+// ---------------------------------------------------------------------------
+
+type StoryStep = {
+  readonly step: Exclude<StageStep, 'overview'>;
   readonly title: string;
-  readonly detail: string;
-  readonly tone: 'barrier' | 'good' | 'derived' | 'neutral';
-}) {
-  return (
-    <li className={styles.fact}>
-      <span className={styles.factIcon} data-tone={tone}>
-        <Icon name={icon} size={16} />
-      </span>
-      <span>
-        <span className={styles.factTitle}>{title}</span>
-        <span className={styles.factDetail}>{detail}</span>
-      </span>
-    </li>
-  );
+  readonly body: string;
+  readonly tags: readonly EvidenceKind[];
+  readonly facts: readonly string[];
+};
+
+function storySteps(): readonly StoryStep[] {
+  const shared = sharedLengths();
+  const { standard, accessible } = ROUTE;
+  const counted = standard.stairways - standard.stairwaysWithoutStepCount;
+  return [
+    {
+      step: 'together',
+      title: 'Both routes leave the library together.',
+      body:
+        `They share the first ${metres(shared.startM, 0)} and the last ${metres(shared.endM, 0)}. ` +
+        'PathAble computes the shortest walk on every request, beside the profile’s route, so ' +
+        'every difference is measured against it.',
+      tags: [],
+      facts: [
+        `${metres(shared.startM, 0)} shared at the start`,
+        `${metres(shared.endM, 0)} at the end`,
+      ],
+    },
+    {
+      step: 'stairs',
+      title: `The shortest route takes ${standard.stairways} recorded stairways.`,
+      body:
+        `OpenStreetMap records ${standard.recordedSteps} steps across ${counted} of them. The ` +
+        `other ${standard.stairwaysWithoutStepCount} have no recorded step count — unknown, ` +
+        'not zero.',
+      tags: ['recorded'],
+      facts: [
+        `${standard.stairways} stairways`,
+        `${standard.recordedSteps} recorded steps`,
+        `${standard.stairwaysWithoutStepCount} counts missing`,
+      ],
+    },
+    {
+      step: 'rule',
+      title: 'The wheelchair profile rules every one of them out.',
+      body:
+        'A recorded stairway is a hard limit for this profile, and PathAble never relaxes a hard ' +
+        `limit to find a route. Its route goes around: ${FIGURES.accessibleDistance} with no ` +
+        `recorded stairways, ${FIGURES.extra} (${FIGURES.extraPercent}) longer.`,
+      tags: ['profile'],
+      facts: [
+        `+${FIGURES.extra}`,
+        `${FIGURES.extraPercent} longer`,
+        `${accessible.stairways} recorded stairways`,
+      ],
+    },
+    {
+      step: 'unknown',
+      title: 'What nobody recorded stays unknown.',
+      body:
+        `No surface is recorded on ${FIGURES.surfaceMissing.accessible} of the wheelchair route, ` +
+        'and no width or smoothness on any of it. PathAble reports each gap and adds a cost for ' +
+        'it; a missing tag is never read as a clear path. Gradient is estimated from the 1 m ' +
+        `elevation model on ${percent(accessible.gradient.estimatedFraction)} of the route, ` +
+        'because OpenStreetMap records none here.',
+      tags: ['missing', 'derived'],
+      facts: [
+        `Surface missing on ${FIGURES.surfaceMissing.accessible}`,
+        `Gradient derived on ${percent(accessible.gradient.estimatedFraction)}`,
+      ],
+    },
+  ];
 }
 
-function Comparison() {
+function Story() {
   return (
-    <section className={styles.sectionDark} id="how-it-works" aria-labelledby="comparison-heading">
-      <div className={styles.container}>
-        <SectionHead
-          id="comparison-heading"
-          eyebrow="Reroute analysis"
-          title="The real trade-offs ordinary pedestrian routers hide."
-          lead="Shortest-path routing can prefer a physically shorter path that conflicts with a mobility profile. PathAble exposes the recorded barriers and the distance trade-off."
-          phoneTitle="Direct Route vs. Wheelchair Route"
-          phoneLead="Verified Waterloo example from the implemented routing API."
-        />
-
-        <div className={styles.tradeGrid}>
-          <article className={styles.tradeCard} data-variant="standard">
-            <header className={styles.tradeHead}>
-              <h3>
-                <span className={styles.tradeDot} data-variant="standard" aria-hidden="true" />
-                Shortest pedestrian route
-              </h3>
-              <span className={styles.tradeTag} data-variant="standard">
-                <span className={styles.desktopOnly}>Direct / naïve</span>
-                <span className={styles.phoneOnly}>Shortest baseline</span>
-              </span>
-            </header>
-            <p className={styles.tradeFigure}>
-              <span>{Math.round(route.standard.distanceM)} m</span>
-              <small>{route.standard.stairways} stairways</small>
-            </p>
-            <ul className={`${styles.factList} ${styles.desktopOnly}`}>
-              <Fact
-                icon="stairs"
-                tone="barrier"
-                title={`${route.standard.stairways} recorded stairways`}
-                detail="On the shortest route; each one ruled out by the wheelchair profile"
-              />
-              <Fact
-                icon="trending-up"
-                tone="barrier"
-                title={`${route.standard.recordedSteps} recorded steps`}
-                detail={`Plus ${route.standard.stairwaysWithoutStepCount} stairways with no recorded step count`}
-              />
-              <Fact
-                icon="ruler"
-                tone="neutral"
-                title="Shortest-distance baseline"
-                detail="Computed on every request, beside the profile's route"
-              />
+    <section className={styles.story} id="how-it-works" aria-labelledby="story-heading">
+      <div className={styles.storyHead}>
+        <p className={styles.eyebrow}>How it works</p>
+        <h2 className={styles.sectionTitle} id="story-heading">
+          One journey, taken apart.
+        </h2>
+        <p className={styles.sectionLead}>
+          Four things happen between the Davis Centre library and the Student Life Centre on the
+          University of Waterloo campus. Every figure here comes from the recorded response.
+        </p>
+      </div>
+      <ol className={styles.steps}>
+        {storySteps().map((step, index) => (
+          <li key={step.step} className={styles.step} data-story-step={step.step}>
+            <p className={styles.stepIndex}>{String(index + 1).padStart(2, '0')}</p>
+            <h3 className={styles.stepTitle}>{step.title}</h3>
+            <p className={styles.stepBody}>{step.body}</p>
+            {step.tags.length > 0 ? (
+              <p className={styles.stepTags}>
+                {step.tags.map((tag) => (
+                  <EvidenceTag key={tag} kind={tag} />
+                ))}
+              </p>
+            ) : null}
+            <ul className={styles.stepFacts}>
+              {step.facts.map((fact) => (
+                <li key={fact}>{fact}</li>
+              ))}
             </ul>
-            <dl className={`${styles.metricGrid} ${styles.phoneOnly}`}>
-              <div>
-                <dt>Distance</dt>
-                <dd>
-                  {Math.round(route.standard.distanceM)} m · {route.standard.stairways} stairways
-                </dd>
-              </div>
-              <div>
-                <dt>Stairs</dt>
-                <dd data-tone="barrier">{route.standard.recordedSteps} recorded steps</dd>
-              </div>
-              <div>
-                <dt>Step counts</dt>
-                <dd data-tone="barrier">
-                  {route.standard.recordedSteps} recorded ·{' '}
-                  {route.standard.stairwaysWithoutStepCount} missing
-                </dd>
-              </div>
-              <div>
-                <dt>Detour</dt>
-                <dd>0 m (baseline)</dd>
-              </div>
-            </dl>
-            <p className={styles.tradeStatus} data-tone="barrier">
-              <Icon name="cancel-circle" size={15} />
-              <span className={styles.desktopOnly}>
-                Recorded stairways violate the wheelchair profile
-              </span>
-              <span className={styles.phoneOnly}>
-                {route.standard.stairways} recorded stairways
-              </span>
-            </p>
-          </article>
-
-          <article className={styles.tradeCard} data-variant="accessible">
-            <header className={styles.tradeHead}>
-              <h3>
-                <span className={styles.tradeDot} data-variant="accessible" aria-hidden="true" />
-                Wheelchair route
-              </h3>
-              <span className={styles.tradeTag} data-variant="accessible">
-                <span className={styles.desktopOnly}>Adaptive graph</span>
-                <span className={styles.phoneOnly}>Wheelchair route</span>
-              </span>
-            </header>
-            <p className={styles.tradeFigure} data-tone="good">
-              <span>{Math.round(route.accessible.distanceM)} m</span>
-              <small>
-                +{extra} m <em>(+{percent}% vs shortest)</em>
-              </small>
-            </p>
-            <ul className={`${styles.factList} ${styles.desktopOnly}`}>
-              <Fact
-                icon="check-circle"
-                tone="good"
-                title={`${route.accessible.stairways} recorded stairways`}
-                detail={`Avoids all ${route.standard.stairways} stairways recorded on the shortest route`}
-              />
-              <Fact
-                icon="dash"
-                tone="derived"
-                title="Grade evidence derived from HRDEM"
-                detail="Gradient source: NRCan HRDEM-derived elevation"
-              />
-              <Fact
-                icon="verified"
-                tone="good"
-                title={`At least one accessibility attribute is missing on ${missingShare}% of this route`}
-                detail="Missing data remains explicit in the route evidence"
-              />
-            </ul>
-            <dl className={`${styles.metricGrid} ${styles.phoneOnly}`}>
-              <div>
-                <dt>Distance</dt>
-                <dd>
-                  {Math.round(route.accessible.distanceM)} m · +{extra} m
-                </dd>
-              </div>
-              <div>
-                <dt>Stairs</dt>
-                <dd data-tone="good">{route.accessible.stairways} recorded</dd>
-              </div>
-              <div>
-                <dt>Grade source</dt>
-                <dd data-tone="derived">Derived · HRDEM</dd>
-              </div>
-              <div>
-                <dt>Trade-off</dt>
-                <dd>+{percent}% vs shortest</dd>
-              </div>
-            </dl>
-            <p className={styles.tradeStatus} data-tone="good">
-              <Icon name="shield" size={15} />
-              <span className={styles.desktopOnly}>
-                Profile route avoids all {route.standard.stairways} recorded stairways
-              </span>
-              <span className={styles.phoneOnly}>
-                Data gaps remain explicit · Missing stays explicit
-              </span>
-            </p>
-          </article>
-        </div>
-
-        <p className={styles.callout}>
-          <Icon name="info-small" />
-          Verified Waterloo example ({route.originLabel} → {route.destinationLabel}) recorded from
-          the implemented routing API: {route.standard.distanceM} m shortest vs{' '}
-          {route.accessible.distanceM} m wheelchair route. One journey, not typical of all.
+          </li>
+        ))}
+      </ol>
+      <div className={styles.callout}>
+        <Icon name="info-small" />
+        <p>
+          Verified Waterloo example ({ROUTE.originLabel} → {ROUTE.destinationLabel}) recorded from
+          the implemented routing API: {ROUTE.standard.distanceM} m shortest vs{' '}
+          {ROUTE.accessible.distanceM} m wheelchair route. One journey, not typical of all. Across a
+          20-journey corpus fixed before any route was computed, 18 route differently (median detour
+          86.1 m) and one has no route at all.
         </p>
       </div>
     </section>
@@ -494,255 +313,161 @@ function Comparison() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Evidence model (10:2546, 17:3340)
+// Evidence
 // ---------------------------------------------------------------------------
 
-const STATES: ReadonlyArray<{
-  readonly n: string;
-  readonly title: string;
-  readonly tone: 'good' | 'derived' | 'barrier' | 'neutral';
-  readonly icon: IconName;
-  readonly body: string;
-  readonly phoneBody: string;
-  readonly footLabel: string;
-  readonly foot: string;
-}> = [
+const KINDS: ReadonlyArray<{ readonly kind: EvidenceKind; readonly body: string }> = [
   {
-    n: '01',
-    title: 'Recorded · OSM',
-    tone: 'good',
-    icon: 'dataset',
+    kind: 'recorded',
     body: 'Physical features explicitly tagged in OpenStreetMap: stairways and step counts, surfaces, kerbs at crossings, widths and the rare recorded incline.',
-    phoneBody: 'Explicit map facts such as recorded stairways and surface tags.',
-    footLabel: 'Source',
-    foot: 'OSM tags on each segment',
   },
   {
-    n: '02',
-    title: 'Derived · HRDEM',
-    tone: 'derived',
-    icon: 'terrain',
-    body: 'Slope and elevation profiles calculated deterministically from Natural Resources Canada 1m High-Resolution Digital Elevation Model (HRDEM).',
-    phoneBody:
-      'Segment slope and elevation difference calculated deterministically via NRCan 1m high-resolution DEM.',
-    footLabel: 'Source',
-    foot: 'NRCan LiDAR 1m Grid',
+    kind: 'derived',
+    body: 'Slope calculated deterministically from Natural Resources Canada’s 1 m High-Resolution Digital Elevation Model, and always labelled as an estimate.',
   },
   {
-    n: '03',
-    title: 'Not recorded',
-    tone: 'barrier',
-    icon: 'help',
-    body: 'Gaps where open data contains no kerb or surface tags. PathAble flags these as unconfirmed rather than assuming they are accessible.',
-    phoneBody:
-      'Gaps in open data flagged explicitly as unconfirmed rather than assumed step-free or safe.',
-    footLabel: 'Handling',
-    foot: 'Explicit Unknown (Null)',
+    kind: 'missing',
+    body: 'Gaps where open data contains no tag. PathAble flags them as unconfirmed and costs them, rather than assuming they are accessible.',
   },
   {
-    n: '04',
-    title: 'Your profile rule',
-    tone: 'neutral',
-    icon: 'tune-small',
-    body: 'Limits and constraints of the chosen mobility profile (Wheelchair, Cane, Stroller…) and a custom uphill limit of your own.',
-    phoneBody: 'Profile limits, such as no recorded stairs, and a custom maximum uphill gradient.',
-    footLabel: 'Applied',
-    foot: 'By the routing service, per request',
+    kind: 'profile',
+    body: 'Limits of the chosen mobility profile — wheelchair, walker, stroller, crutches or cane — and a custom uphill limit of your own.',
   },
 ];
 
-function EvidenceModel() {
+function Evidence() {
   return (
-    <section className={styles.sectionMid} id="evidence" aria-labelledby="evidence-heading">
+    <section className={styles.section} id="evidence" aria-labelledby="evidence-heading">
       <div className={styles.container}>
-        <SectionHead
-          id="evidence-heading"
-          eyebrow="Transparent ontology"
-          title="PathAble shows what it knows — and what it doesn't."
-          lead="No aggregate confidence scores or fabricated guarantees. Every accessibility fact is categorized transparently into one of four immutable states."
-        />
-        <ul className={styles.stateGrid}>
-          {STATES.map((state) => (
-            <li key={state.n} className={styles.stateCard} data-tone={state.tone}>
-              <div className={styles.stateHead}>
-                <span className={styles.stateTag} data-tone={state.tone}>
-                  Category {state.n}
-                </span>
-                <span className={styles.stateIcon} data-tone={state.tone}>
-                  <Icon name={state.icon} size={16} />
-                </span>
-                <span className={styles.stateDot} data-tone={state.tone} aria-hidden="true" />
-              </div>
-              <h3 className={styles.stateTitle}>{state.title}</h3>
-              <p className={styles.stateBody}>
-                <span className={styles.desktopOnly}>{state.body}</span>
-                <span className={styles.phoneOnly}>{state.phoneBody}</span>
-              </p>
-              <p className={styles.stateFoot}>
-                {state.footLabel}: <strong>{state.foot}</strong>
-              </p>
+        <div className={styles.sectionHead} data-reveal="">
+          <p className={styles.eyebrow}>Evidence model</p>
+          <h2 className={styles.sectionTitle} id="evidence-heading">
+            PathAble shows what it knows — and what it doesn&rsquo;t.
+          </h2>
+          <p className={styles.sectionLead}>
+            No aggregate confidence score. Every accessibility fact is one of four kinds, kept apart
+            from the database to this page. Pick a lens to see both routes drawn to scale, segment
+            by segment, the way the routing engine reads them.
+          </p>
+        </div>
+        <div data-reveal="">
+          <EvidenceExplorer />
+        </div>
+        <ul className={styles.kinds} data-reveal="">
+          {KINDS.map(({ kind, body }) => (
+            <li key={kind} className={styles.kind}>
+              <EvidenceTag kind={kind} />
+              <p>{body}</p>
             </li>
           ))}
         </ul>
-        <div className={styles.banner}>
-          <span className={styles.bannerIcon} aria-hidden="true">
-            <Icon name="rule" />
-          </span>
-          <div>
-            <p className={styles.bannerTitle}>No synthetic confidence scores.</p>
-            <p className={styles.bannerText}>
-              Missing data is represented as an explicit unknown, never smoothed away or
-              hallucinated.
-            </p>
-          </div>
-          <span className={styles.bannerCode}>DETERMINISTIC_EVIDENCE_ONLY</span>
-        </div>
+        <p className={styles.banner} data-reveal="">
+          <strong>No synthetic confidence scores.</strong> Missing data is represented as an
+          explicit unknown, never smoothed away or guessed.
+        </p>
       </div>
     </section>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 4. Engineering (10:2635) and 5. Architecture (10:2675), phone 17:3387
+// Engineering
 // ---------------------------------------------------------------------------
 
-const FACTS: ReadonlyArray<{
-  readonly title: string;
-  readonly short: string;
-  readonly phoneLabel: string;
+/** Each figure is the claims ledger's wording, with the conditions it carries there. */
+const MEASURES: ReadonlyArray<{
+  readonly figure: string;
+  readonly label: string;
   readonly body: string;
-  readonly tone: 'good' | 'derived' | 'neutral';
 }> = [
   {
-    title: '180,554 physical pedestrian segments',
-    short: '180,554',
-    phoneLabel: 'Pedestrian segments',
+    figure: '180,554',
+    label: 'pedestrian segments',
     body: 'The Waterloo pilot network from OpenStreetMap: 155,714 nodes and 361,108 directed routing edges.',
-    tone: 'good',
   },
   {
-    title: 'PostgreSQL / PostGIS',
-    short: 'PostGIS',
-    phoneLabel: 'GiST spatial index',
-    body: 'Geospatial graph stored and queried in PostgreSQL/PostGIS with GiST spatial indexes.',
-    tone: 'neutral',
+    figure: '46 of 180,554',
+    label: 'segments with an OSM incline',
+    body: 'Just 0.03% — so grade comes from NRCan’s 1 m HRDEM, chosen by measuring that a 30 m model’s error exceeds the signal: RMSE 4.06 pp against a 1.78% median grade over 50 m.',
   },
   {
-    title: '1 m NRCan HRDEM elevation',
-    short: '1 m',
-    phoneLabel: 'NRCan HRDEM elevation',
-    body: 'Deterministic grade derived from NRCan HRDEM 1 m LiDAR over the Waterloo pilot. A bare-earth model: it cannot see a ramp or a step.',
-    tone: 'derived',
+    figure: '1,970 / 7,409',
+    label: 'nodes expanded at the median, A* / Dijkstra',
+    body: 'They agree on optimal cost on every routable journey of the corpus. A* is not faster here: 195 ms against 213 ms at p50, one laptop, warm graph.',
   },
   {
-    title: 'Dijkstra + A* routing',
-    short: 'Dijkstra+A*',
-    phoneLabel: 'Profile cost weights',
-    body: 'Both agree on optimal cost on every routable journey of the twenty-journey corpus. Costs use distance, profile rules, derived grade and missing evidence.',
-    tone: 'good',
+    figure: '18 of 20',
+    label: 'corpus journeys route differently',
+    body: 'Median detour 86.1 m across those 18. One journey has no route at all: its connection leaves the pilot area, and PathAble says so instead of inventing one.',
   },
   {
-    title: 'Versioned datasets',
-    short: 'Versioned',
-    phoneLabel: 'Activation + rollback',
-    body: 'Sealed dataset snapshots; a candidate goes live only on a stored route regression, and rollback reactivates the previous one.',
-    tone: 'neutral',
-  },
-  {
-    title: 'Provenance & uncertainty',
-    short: 'Per-segment',
-    phoneLabel: 'Provenance & evidence basis',
-    body: 'Source provenance and evidence basis are preserved into every route explanation.',
-    tone: 'derived',
+    figure: '46.83 s → 22.14 s',
+    label: 'median graph load',
+    body: 'After profiling found ORM entity construction to be the bottleneck. Peak Python heap 1,381.3 MB → 700.7 MB, with identical node and segment fingerprints. Same laptop, under memory pressure.',
   },
 ];
 
-const PIPELINE: ReadonlyArray<{
-  readonly stage: string;
-  readonly title: string;
-  readonly body: string;
-  readonly tone: 'good' | 'derived';
-}> = [
+const LINE: ReadonlyArray<{ readonly title: string; readonly body: string }> = [
   {
-    stage: 'Input data',
-    title: 'OpenStreetMap + NRCan 1m DEM',
-    body: 'Raw geometries & elevation tiles',
-    tone: 'good',
+    title: 'Sealed, versioned graph',
+    body: 'PostGIS, checksummed; live only after a stored route regression',
   },
-  {
-    stage: 'Topology',
-    title: 'Versioned PostGIS Graph',
-    body: 'Noded pedestrian edges & intersections',
-    tone: 'derived',
-  },
-  {
-    stage: 'Classifier',
-    title: 'Accessibility Evidence Layer',
-    body: 'Recorded, derived and missing, per segment',
-    tone: 'good',
-  },
-  {
-    stage: 'Solver',
-    title: 'Routing Engine (A* / Dijkstra)',
-    body: 'Profile costs and hard limits',
-    tone: 'derived',
-  },
-  { stage: 'API layer', title: 'FastAPI Backend', body: 'Typed JSON over OpenAPI', tone: 'good' },
-  {
-    stage: 'Client',
-    title: 'PathAble Interface',
-    body: 'Interactive Route Comparison HUD',
-    tone: 'good',
-  },
+  { title: 'Evidence per segment', body: 'Recorded, derived and missing, kept apart' },
+  { title: 'Dijkstra + A*', body: 'Profile costs and hard limits' },
+  { title: 'FastAPI', body: 'Typed OpenAPI; contract drift fails CI' },
+  { title: 'This interface', body: 'The comparison, with its evidence' },
 ];
 
 function Engineering() {
   return (
-    <section className={styles.sectionDark} aria-labelledby="engineering-heading">
+    <section className={styles.section} id="engineering" aria-labelledby="engineering-heading">
       <div className={styles.container}>
-        <SectionHead
-          id="engineering-heading"
-          eyebrow="System architecture"
-          title="Measured Engineering Facts"
-          lead="Verifiable figures and invariants of the Waterloo pilot, each traceable to evidence in the repository."
-          phoneTitle="Engineering Proof & Pipeline"
-          phoneLead="Deterministic spatial computing over open civic infrastructure."
-        />
-        <ul className={styles.factGrid}>
-          {FACTS.map((fact) => (
-            <li key={fact.title} className={styles.factCard}>
-              <p className={styles.factCardTitle} data-tone={fact.tone}>
-                <span className={styles.desktopOnly}>{fact.title}</span>
-                <span className={styles.phoneOnly}>{fact.short}</span>
-              </p>
-              <p className={styles.factCardBody}>
-                <span className={styles.desktopOnly}>{fact.body}</span>
-                <span className={styles.phoneOnly}>{fact.phoneLabel}</span>
-              </p>
+        <div className={styles.sectionHead} data-reveal="">
+          <p className={styles.eyebrow}>Engineering</p>
+          <h2 className={styles.sectionTitle} id="engineering-heading">
+            Measured, with the conditions attached.
+          </h2>
+          <p className={styles.sectionLead}>
+            Figures from runs recorded in the repository&rsquo;s evidence. Wall-clock numbers come
+            from one laptop: a shape, not a service level.
+          </p>
+        </div>
+
+        <ul className={styles.measures} data-reveal="">
+          {MEASURES.map((measure) => (
+            <li key={measure.label} className={styles.measure}>
+              <p className={styles.measureFigure}>{measure.figure}</p>
+              <p className={styles.measureLabel}>{measure.label}</p>
+              <p className={styles.measureBody}>{measure.body}</p>
             </li>
           ))}
         </ul>
 
-        {/* 17:3426 — the phone folds the architecture into this section. */}
-        <div className={`${styles.flowCard} ${styles.phoneOnly}`}>
-          <p className={styles.flowTitle}>Deterministic graph flow</p>
-          <ol className={styles.flowList}>
-            <li>
-              <span>01</span>OpenStreetMap + NRCan 1m DEM
-            </li>
-            <li>
-              <span>02</span>Versioned PostGIS Graph
-            </li>
-            <li>
-              <span>03</span>Accessibility Evidence Layer &amp; Routing Engine
-            </li>
-            <li data-tone="good">
-              <span>04</span>FastAPI Backend → PathAble Interface
-            </li>
+        <div className={styles.lineCard} data-reveal="">
+          <h3 className={styles.lineTitle}>From open data to a route</h3>
+          <div className={styles.lineSources}>
+            <span>OpenStreetMap extract</span>
+            <span>NRCan HRDEM 1 m</span>
+          </div>
+          <ol className={styles.line}>
+            {LINE.map((station) => (
+              <li key={station.title} className={styles.station}>
+                <span className={styles.stationDot} aria-hidden="true" />
+                <span className={styles.stationTitle}>{station.title}</span>
+                <span className={styles.stationBody}>{station.body}</span>
+              </li>
+            ))}
           </ol>
-          <p className={styles.flowNote}>
-            Municipal research datasets stay isolated from the production routing graph until
-            licensing and validation gates pass.
+          <div className={styles.spur}>
+            <span className={styles.spurLine} aria-hidden="true" />
+            <p>
+              The <strong>City of Kitchener Active Transportation inventory</strong> is kept in a
+              separate research pipeline. Its assertions do not enter the production routing graph.
+            </p>
+          </div>
+          <p className={styles.noModel}>
+            <Icon name="check-circle-outline" size={14} />
+            No machine-learning prediction currently affects PathAble routing.
           </p>
         </div>
       </div>
@@ -750,101 +475,44 @@ function Engineering() {
   );
 }
 
-function Architecture() {
-  return (
-    <section
-      className={`${styles.sectionMid} ${styles.desktopOnly}`}
-      id="architecture"
-      aria-labelledby="architecture-heading"
-    >
-      <div className={styles.container}>
-        <SectionHead
-          id="architecture-heading"
-          eyebrow="Dataflow specification"
-          title="Implemented Routing Architecture"
-          lead="Deterministic transformation pipeline from raw geographic data products to request-time accessibility routing."
-        />
-        <ol className={styles.pipeline}>
-          {PIPELINE.map((step, index) => (
-            <li key={step.title} className={styles.pipelineItem}>
-              <div className={styles.step} data-last={index === PIPELINE.length - 1}>
-                <p className={styles.stepStage} data-tone={step.tone}>
-                  {step.stage}
-                </p>
-                <p className={styles.stepTitle}>{step.title}</p>
-                <p className={styles.stepBody}>{step.body}</p>
-              </div>
-              {index < PIPELINE.length - 1 ? (
-                <span className={styles.stepArrow} aria-hidden="true">
-                  <Icon name="arrow-right-small" />
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ol>
-        <div className={styles.researchNote}>
-          <Icon name="science" />
-          <div>
-            <p className={styles.researchTitle}>Research vs. Production:</p>
-            <p className={styles.researchText}>
-              The City of Kitchener Active Transportation inventory is maintained separately in a
-              research pipeline. Its assertions do not enter the production routing graph.
-            </p>
-            <p className={styles.researchCheck}>
-              <span aria-hidden="true">✓</span> No machine-learning prediction currently affects
-              PathAble routing.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ---------------------------------------------------------------------------
-// 6. Integrity (10:2762, 17:3467)
+// Integrity
 // ---------------------------------------------------------------------------
 
 const PRINCIPLES = [
   {
-    n: '01',
-    title: 'Missing ≠ accessible',
+    left: 'Missing',
+    right: 'accessible',
     body: 'A crossing lacking a kerb tag in OpenStreetMap is not assumed ramped. Absence of recorded barriers is never treated as proof of accessibility.',
   },
   {
-    n: '02',
-    title: 'Agreement ≠ independent confirmation',
-    body: 'Multiple community maps repeating the same untagged or copied feature do not constitute independent ground truth.',
+    left: 'Agreement',
+    right: 'independent confirmation',
+    body: 'Several community maps repeating the same untagged or copied feature do not make independent ground truth.',
   },
   {
-    n: '03',
-    title: 'Research evidence ≠ production evidence',
-    body: 'Experimental civic datasets and exploratory barrier audits remain segregated in research until validation standards are met.',
+    left: 'Research evidence',
+    right: 'production evidence',
+    body: 'Experimental civic datasets and exploratory barrier audits stay in research until validation standards are met.',
   },
 ] as const;
 
 function Integrity() {
   return (
-    <section className={styles.sectionDark} id="integrity" aria-labelledby="integrity-heading">
+    <section className={styles.section} id="integrity" aria-labelledby="integrity-heading">
       <div className={styles.container}>
-        <SectionHead
-          id="integrity-heading"
-          eyebrow="Core ethos"
-          title="What PathAble refuses to assume"
-          lead="Accessibility systems fail when they substitute optimistic assumptions for physical verification. We adhere strictly to three refusal principles."
-          phoneLead="Core axioms behind every calculated segment."
-        />
+        <div className={styles.sectionHead} data-reveal="">
+          <p className={styles.eyebrow}>Principles</p>
+          <h2 className={styles.sectionTitle} id="integrity-heading">
+            What PathAble refuses to assume.
+          </h2>
+        </div>
         <ol className={styles.principles}>
-          {PRINCIPLES.map((principle) => (
-            <li key={principle.n} className={styles.principle}>
+          {PRINCIPLES.map((principle, index) => (
+            <li key={principle.left} className={styles.principle} data-reveal="">
+              <span className={styles.principleNumber}>{String(index + 1).padStart(2, '0')}</span>
               <h3 className={styles.principleTitle}>
-                <span className={styles.desktopOnly}>
-                  {principle.n} / {principle.title}
-                </span>
-                <span className={styles.phoneOnly}>{principle.title}</span>
-                <span className={`${styles.principleNumber} ${styles.phoneOnly}`}>
-                  {principle.n}
-                </span>
+                {principle.left} <span className={styles.notEqual}>≠</span> {principle.right}
               </h3>
               <p className={styles.principleBody}>{principle.body}</p>
             </li>
@@ -856,37 +524,55 @@ function Integrity() {
 }
 
 // ---------------------------------------------------------------------------
-// 7. CTA (10:2790) and footer (10:2809)
+// Into the planner, and the footer
 // ---------------------------------------------------------------------------
+
+/** The same two recorded routes, small: the journey the buttons below open. */
+function JourneyMark() {
+  const g = journeyGeometry();
+  const box = bounds([...g.standard, ...g.accessible], 6);
+  return (
+    <svg
+      className={styles.ctaRoutes}
+      viewBox={`${box.x} ${box.y} ${box.width} ${box.height}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={pathData(g.standard)} data-kind="standard" />
+      <path d={pathData(g.accessible)} data-kind="accessible" />
+      {g.stairs.map((group, index) => (
+        <circle key={index} cx={group.at[0]} cy={group.at[1]} r={3.2} />
+      ))}
+    </svg>
+  );
+}
 
 function FinalCta() {
   return (
     <section className={styles.ctaSection} aria-labelledby="cta-heading">
-      <div className={styles.ctaCard}>
-        <div className={styles.ctaGlow} aria-hidden="true" />
+      <div className={styles.ctaCard} data-reveal="">
+        <JourneyMark />
         <div className={styles.ctaCopy}>
           <h2 className={styles.ctaTitle} id="cta-heading">
-            Ready to evaluate PathAble?
+            See it compute.
           </h2>
           <p className={styles.ctaText}>
-            Explore the route comparison planner in Waterloo, or audit the graph pipeline and
-            routing architecture on GitHub.
+            The planner routes the same journey live against the Waterloo network, or any two points
+            you place inside the pilot area — with its reasons and its gaps shown.
           </p>
         </div>
         <div className={styles.ctaActions}>
-          <Link href="/planner" className={styles.primaryCta}>
-            Explore Planner
+          <Link href={PLANNER_EXAMPLE} className={styles.primaryCta} transitionTypes={INTO_PLANNER}>
+            Open the verified journey
             <Icon name="arrow-right" />
           </Link>
-          <a
-            className={styles.secondaryCta}
-            href={LINKS.repository}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            <span className={styles.monoGreen}>src/</span> View GitHub
-          </a>
+          <Link href={PLANNER} className={styles.secondaryCta} transitionTypes={INTO_PLANNER}>
+            Plan your own route
+          </Link>
         </div>
+        <p className={styles.ctaNote}>
+          Runs locally against the real Waterloo dataset. Not deployed.
+        </p>
       </div>
     </section>
   );
