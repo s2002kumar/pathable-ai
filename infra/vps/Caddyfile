@@ -5,13 +5,21 @@
 # NEXT_PUBLIC_API_BASE_URL set to this same origin, so the browser never makes a
 # cross-origin call.
 #
-# PATHABLE_PUBLIC_URL is the site address, scheme included (https://host).
+# PATHABLE_HOST is the public host name or IP address, without a scheme.
 # PATHABLE_TLS_PROFILE picks the Let's Encrypt profile: "classic" (90-day) for
 # a domain name; "shortlived" (6-day) is the only profile Let's Encrypt issues
 # IP-address certificates under. Caddy renews either on its own.
 
 {
 	# Caddy's admin API listens inside the container only; nothing publishes it.
+
+	# A client connecting to an IP address sends no SNI (RFC 6066 forbids an IP
+	# there), and Caddy then picks a certificate by the connection's local
+	# address, which inside Docker is the container's private IP. The handshake
+	# fails with an internal-error alert. Naming the host fixes certificate
+	# selection for every client that sends no SNI.
+	default_sni {$PATHABLE_HOST}
+
 	servers {
 		timeouts {
 			read_header 10s
@@ -21,7 +29,7 @@
 	}
 }
 
-{$PATHABLE_PUBLIC_URL} {
+https://{$PATHABLE_HOST} {
 	tls {
 		issuer acme {
 			profile {$PATHABLE_TLS_PROFILE}

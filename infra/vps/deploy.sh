@@ -10,6 +10,9 @@
 #   deploy.sh rollback       switch back to the previous release's images
 #   deploy.sh status         what is running, and from which revision
 #
+# RECREATE=1 with `up` restarts the API even if the revision is unchanged, which
+# is how a cold start is measured.
+#
 # <ref> is anything `git rev-parse` resolves (origin/main, a tag, a SHA). It must
 # be reachable from origin/main — the public pilot serves merged code only —
 # unless ALLOW_UNMERGED=1.
@@ -23,7 +26,7 @@
 #   /srv/pathable/repo                  clone of the public repository
 #   /srv/pathable/stack                 compose.yaml, Caddyfile, db-init/ in use
 #   /srv/pathable/secrets/pathable.env  database passwords (0600)
-#   /srv/pathable/site.env              PATHABLE_PUBLIC_URL, PATHABLE_TLS_PROFILE
+#   /srv/pathable/site.env              PATHABLE_HOST, PATHABLE_TLS_PROFILE
 #   /srv/pathable/release.env           current release; .previous is the one before
 #   /srv/pathable/deployments.log       one line per switch
 
@@ -48,7 +51,12 @@ elapsed() { awk -v a="$1" -v b="$2" 'BEGIN { printf "%.1f", b - a }'; }
 [ -f "$SITE" ] || die "missing $SITE"
 # shellcheck disable=SC1090
 . "$SITE"
-[ -n "${PATHABLE_PUBLIC_URL:-}" ] || die "PATHABLE_PUBLIC_URL is not set in $SITE"
+[ -n "${PATHABLE_HOST:-}" ] || die "PATHABLE_HOST is not set in $SITE"
+case "$PATHABLE_HOST" in
+    *[!A-Za-z0-9.:-]*) die "PATHABLE_HOST must be a bare host name or IP address" ;;
+esac
+# The one origin the site is served from, the web bundle calls and CORS allows.
+PATHABLE_PUBLIC_URL="https://$PATHABLE_HOST"
 
 compose() {
     docker compose --project-directory "$STACK" -f "$STACK/compose.yaml" \
@@ -173,8 +181,16 @@ switch_to() {
     previous="$(release_value "$RELEASE" PATHABLE_REVISION)"
     write_release "$sha"
     log "switching to $sha ($(release_value "$RELEASE" PATHABLE_APP_VERSION))"
+    compose up -d db
+    # The API on its own first, so live and ready are timed from its own start
+    # rather than from whenever Compose finished waiting on health checks.
     started="$(now)"
-    compose up -d --remove-orphans
+    # RECREATE=1 restarts the API even when nothing changed: a cold start, measured.
+    if [ "${RECREATE:-0}" = "1" ]; then
+        compose up -d --no-deps --force-recreate api
+    else
+        compose up -d --no-deps api
+    fi
 
     live_at=""
     deadline=$(( $(date +%s) + READY_TIMEOUT ))
@@ -187,6 +203,8 @@ switch_to() {
             ready_at="$(elapsed "$started" "$(now)")"
             log "  ready after ${ready_at}s"
             log "  $body"
+            # Web and Caddy follow only once the API can route.
+            compose up -d --remove-orphans
             printf '%s %s previous=%s live_s=%s ready_s=%s by=%s\n' \
                 "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$sha" "${previous:-none}" \
                 "$live_at" "$ready_at" "$(id -un)" >> "$HISTORY"

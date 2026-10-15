@@ -5,7 +5,7 @@
 # revision is running. See docs/deployment/VPS.md.
 #
 #   /srv/pathable/secrets/pathable.env  database passwords (0600, never leaves the host)
-#   /srv/pathable/site.env              public URL and TLS profile (not secret)
+#   /srv/pathable/site.env              public host and TLS profile (not secret)
 #   /srv/pathable/release.env           the revision being served (written by deploy.sh)
 #
 # The same images as infra/production-smoke/compose.yaml, with the production
@@ -89,7 +89,7 @@ services:
       API_HOST: 0.0.0.0
       API_PORT: 8000
       DATABASE_URL: postgresql+psycopg://pathable_app:${PATHABLE_DB_PASSWORD}@db:5432/pathable
-      ALLOWED_ORIGINS: ${PATHABLE_PUBLIC_URL:?set in /srv/pathable/site.env}
+      ALLOWED_ORIGINS: https://${PATHABLE_HOST:?set in /srv/pathable/site.env}
       LOG_LEVEL: INFO
       LOG_FORMAT: json
       READINESS_TIMEOUT_SECONDS: "2.0"
@@ -161,7 +161,7 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      PATHABLE_PUBLIC_URL: ${PATHABLE_PUBLIC_URL}
+      PATHABLE_HOST: ${PATHABLE_HOST}
       PATHABLE_TLS_PROFILE: ${PATHABLE_TLS_PROFILE:-classic}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
