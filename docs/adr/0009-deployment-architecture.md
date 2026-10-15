@@ -1,16 +1,60 @@
 # ADR 0009 — Deployment architecture, sized from the measured production envelope
 
-- **Status**: Proposed — architecture settled from measurements; **no spending approved**
-- **Date**: 2026-09-11, revised 2026-09-12 (frontend tier measured, managed-hosting restore)
+- **Status**: Accepted 2026-10-14 — **one self-managed VPS**, the founder's choice; deployed
+- **Date**: 2026-09-11, revised 2026-09-12 (frontend tier measured, managed-hosting restore),
+  2026-10-15 (deployed)
 - **Related**: [0004 PostGIS and the runtime graph](0004-postgis-and-runtime-graph.md),
   [0005 map and geocoding providers](0005-map-and-geocoding-providers.md),
-  [KI-6](../development/KNOWN_ISSUES.md), [production smoke procedure](../deployment/PRODUCTION_SMOKE.md),
-  [measurements](../evidence/production-envelope.json)
+  [KI-6](../development/KNOWN_ISSUES.md), [KI-12, KI-13](../development/KNOWN_ISSUES.md),
+  [production smoke procedure](../deployment/PRODUCTION_SMOKE.md),
+  [VPS runbook](../deployment/VPS.md), [measurements](../evidence/production-envelope.json),
+  [deployment measurements](../evidence/vps-deployment.json)
 
-Nothing has been deployed, purchased or signed up for. This document records
-what the production containers actually need, which hosting shapes can and
-cannot supply it, and one recommendation with one fallback. The decision
-itself — provider, tier, and therefore money — is the founder's.
+## Decision (2026-10-14): one VPS, Compose, Caddy
+
+The founder provided an OVH VPS — 2 vCPU, 3.7 GiB RAM, 38 GB disk, Ubuntu
+26.04 — and asked for the pilot to run on it. That is the shape the September
+comparison below called Option D and did not recommend _yet_, for one stated
+reason: on a self-managed host, backups, restore, rollback and metrics are all
+ours to build and to prove. Three of the four now are, on this host:
+
+| Piece        | Choice                                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------------------- |
+| Topology     | One Compose project: PostGIS, the API, the web server, Caddy. Only Caddy publishes ports (80, 443)       |
+| Database     | `postgis/postgis:17-3.5` on an internal network; the API connects as a role that is not a superuser      |
+| API          | **One worker**, `GRAPH_PRELOAD_REGIONS=waterloo`, 1.5 GiB limit                                          |
+| Web          | The standalone Next.js image, 512 MiB limit, built with the public origin                                |
+| TLS          | Caddy with Let's Encrypt; a 6-day IP-address certificate until a domain exists                           |
+| Images       | Built on the host from `git archive` of a SHA on `main`, tagged with it                                  |
+| Backups      | Daily and pre-deploy `pg_dump`, 14 days, on the host's own disk — **not off-host**                       |
+| Restore      | Exercised twice: into a throwaway container, and as disaster recovery of the live database               |
+| Rollback     | Exercised: to the previous `main` merge and back, guarded by a migration-head check                      |
+| Metrics      | **None.** JSON logs with rotation; no metrics, no alerting, nobody paged                                 |
+| Availability | One host, one API process. **No high-availability claim**, and about a minute without routing per deploy |
+
+Measured on that host ([evidence](../evidence/vps-deployment.json)): API ready
+a median 51.2 s after a cold start, of which the graph load is 33.9 s (the
+laptop's was 14.6 s); 997 MiB resident, 1,085 MiB at most against the 1.5 GiB
+limit; the whole host at 2,021 of 3,814 MiB with swap unused; one route
+comparison 128–137 ms of server time at the median, about six a second from
+the single worker. The dataset on the host reproduces the content checksum
+`4a179dc0…` the lifecycle evidence records.
+
+Why it is acceptable now when it was not in September: the safety nets that
+were missing exist and have been run, not just written. What it still lacks
+is the fourth — metrics and alerting — and backups off the host; both are
+recorded as known issues rather than implied. The managed options below
+remain the path if the pilot needs more than one host can give, and their
+measurements still describe what the containers need anywhere.
+
+The rest of this record is the September analysis, unchanged except where it
+said nothing was deployed.
+
+---
+
+The analysis below records what the production containers actually need,
+which hosting shapes can and cannot supply it, and the recommendation made on
+2026-09-12, before any host existed.
 
 ## Context
 
@@ -395,7 +439,7 @@ or Netlify's free credits; Vercel's Hobby plan is restricted to
 and is not relied on. Whether the app can be exported statically was not
 tested and is not assumed: the totals above pay for a container.
 
-## Decision (proposed)
+## Recommendation of 2026-09-12 (superseded by the decision at the top)
 
 **Primary: Option A**, DigitalOcean App Platform in Toronto. Precisely:
 
@@ -418,7 +462,9 @@ the three trials above are why it does not.
 
 **Nothing is approved and nothing is spent.** No account exists, no resource
 has been created, and this card did not ask for either. Paid deployment is
-deferred to a later card and a separate decision.
+deferred to a later card and a separate decision. _(True on 2026-09-12. None
+of these accounts was ever opened; the pilot runs on the VPS in the decision
+at the top.)_
 
 **Fallback: Option B**, Fly.io in Toronto at about USD 59 / CAD 81, on the
 explicit condition that PostGIS on a PostgreSQL 17 Managed Postgres cluster is
@@ -436,6 +482,9 @@ above the 30% this decision was required to keep, and it is the smallest tier
 either recommended provider sells above 1.41 GB.
 
 ## What the founder decides
+
+Decided 2026-10-14: a self-managed VPS the founder provided, one worker. The
+list is kept as it was asked.
 
 1. Provider and tier: A as proposed, B, or something else.
 2. Whether a Canadian region is a requirement or a preference. If it is not,

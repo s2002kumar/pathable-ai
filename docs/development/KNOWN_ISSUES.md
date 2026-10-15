@@ -310,8 +310,15 @@ now makes the load part of startup and holds readiness at 503 until it is
 done, so an orchestrator no longer routes users into the load window; the
 window itself is unchanged.
 
-**Check when:** a deployment target with a memory budget exists, or a second
-region is added.
+**On the pilot's VPS** (2 vCPU, measured 2026-10-15,
+[`vps-deployment.json`](../evidence/vps-deployment.json)): three cold starts
+reached readiness at a median **51.2 s**, the graph load itself 33.9 s — about
+twice the laptop's 14.6 s on a slower CPU — with **997 MiB** resident and a
+**1,085 MiB** cgroup peak under a 1.5 GiB limit. The load window is now a
+real, user-visible cost: about a minute without routing per deploy
+([KI-12](#ki-12--the-public-pilot-is-one-host-unmonitored-with-its-backups-on-the-same-disk)).
+
+**Check when:** a second region is added, or the deploy outage starts to matter.
 
 ---
 
@@ -381,6 +388,9 @@ whether an idle transaction is cut short mid-restore, and how long a 31 MB
 archive takes over the network rather than over a loopback socket. Any of those
 could need a change to
 [`infra/production-smoke/restore-dataset.sh`](../../infra/production-smoke/restore-dataset.sh).
+
+The pilot's VPS ran the same restore for real on 2026-10-15, as a role that is
+not a superuser — but on a self-managed PostgreSQL, so it does not close this.
 
 **Check when:** the first real managed database exists. Run the script against
 it before believing the bootstrap works, and record what differed.
@@ -509,3 +519,58 @@ coordinate, snapped to the network like a map click. They can make the
 _endpoint_ wrong — the middle of a street is not the door somebody meant — which
 is why the chosen place is named in its field and labelled on the map before
 anything is routed.
+
+---
+
+## KI-12 — The public pilot is one host, unmonitored, with its backups on the same disk
+
+**Status: Open** · 2026-10-15 · [ADR 0009](../adr/0009-deployment-architecture.md) · [runbook](../deployment/VPS.md)
+
+The pilot at <https://51.222.36.79> is one OVH VPS. What that means, measured
+([`vps-deployment.json`](../evidence/vps-deployment.json)):
+
+1. **Nobody is told when it is down.** There are JSON logs with rotation and
+   nothing else: no metrics, no uptime check, no alerting. An outage lasts until
+   someone happens to look.
+2. **Backups live on the host's own disk.** Daily and pre-deploy `pg_dump`s, 14
+   days, restore exercised twice — but losing the VPS loses them too. They are
+   copied off only by hand.
+3. **About a minute without routing per deploy or restart.** One API process
+   holds the graph: the old one takes ~9 s to exit, the new one ~42 s to load
+   and become ready, and the landing page drops for a few seconds when its own
+   container is replaced. Unattended security upgrades may reboot the host at
+   08:30 UTC; after the measured reboot routing was back in 66 s, unattended.
+4. **While the graph loads, the API barely answers.** Readiness requests timed
+   out after 5 s during most of the ~34 s load rather than returning 503; Docker's
+   60 s start period covers it, an external monitor would see timeouts.
+5. **The certificate is for an IP address**, so it is Let's Encrypt's 6-day
+   profile and Caddy must renew it twice a week. A failed renewal is visible
+   within days, and nothing would report it (see 1).
+6. **The deployed `a3f6448` images cannot start the `pathable` CLI** (fixed in
+   the Dockerfile afterwards); operator commands on the host use the release
+   image plus `libexpat1` until the next deploy.
+
+**Check when:** anyone is pointed at the URL, a domain is bought, or a second
+host is considered. Off-host backups and an uptime check are the two cheapest
+items; both need an account or a decision outside this repository.
+
+---
+
+## KI-13 — The public API has no rate limit
+
+**Status: Open** · 2026-10-15
+
+`POST /api/v1/routes/compare` costs about 130 ms of CPU on the pilot's host,
+and one process serves about six a second. Nothing limits how many a client
+may send: Caddy's standard build has no rate limiter, and the API has none.
+A single script could hold routing busy for everyone else. It cannot read or
+change data — requests are not stored, and the database is unreachable from
+outside — so the exposure is availability, not integrity.
+
+Bodies are capped at 1 MB by Caddy and at 64 KiB by the API itself, and slow
+clients are cut off by Caddy's header and body timeouts.
+
+**Check when:** the URL is shared beyond individuals, or the access log shows
+one network sending most of the traffic. A rate limit in front of
+`/api/v1/routes/*` (Caddy with the rate-limit module, or in the API) is the fix;
+a second worker is not, at ~1 GB each.
