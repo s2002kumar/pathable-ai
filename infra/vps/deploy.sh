@@ -2,6 +2,9 @@
 # Build and serve one Git revision of PathAble on this host.
 #
 #   deploy.sh build <ref>    build the two images for <ref>, serve nothing
+#   deploy.sh init <ref>     first deployment only: build, start the database and
+#                            migrate it to <ref>'s head, serve nothing. Restore
+#                            the dataset next, then `up`.
 #   deploy.sh up <ref>       build if needed, back up the database, switch, wait
 #                            until the API is ready, record the release
 #   deploy.sh rollback       switch back to the previous release's images
@@ -138,7 +141,7 @@ sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8000/api/v1/health/live",
 ' >/dev/null 2>&1
 }
 
-switch_to() {
+write_release() {
     sha="$1"
     version="$(git -C "$REPO" show "$sha:services/api/pyproject.toml" \
         | sed -n 's/^version = "\(.*\)"/\1/p' | head -n 1)"
@@ -163,8 +166,13 @@ switch_to() {
         echo "PATHABLE_DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     } > "$tmp"
     mv "$tmp" "$RELEASE"
+}
 
-    log "switching to $sha (APP_VERSION ${version}+${short})"
+switch_to() {
+    sha="$1"
+    previous="$(release_value "$RELEASE" PATHABLE_REVISION)"
+    write_release "$sha"
+    log "switching to $sha ($(release_value "$RELEASE" PATHABLE_APP_VERSION))"
     started="$(now)"
     compose up -d --remove-orphans
 
@@ -196,6 +204,20 @@ case "${1:-}" in
     build)
         [ -n "${2:-}" ] || die "usage: $0 build <ref>"
         build "$(resolve "$2")"
+        ;;
+    init)
+        [ -n "${2:-}" ] || die "usage: $0 init <ref>"
+        [ ! -f "$RELEASE" ] || die "refusing: $RELEASE exists, so this host is already initialised"
+        sha="$(resolve "$2")"
+        build "$sha"
+        write_release "$sha"
+        compose up -d db
+        until [ "$(docker inspect --format '{{.State.Health.Status}}' pathable-db-1)" = "healthy" ]; do
+            sleep 2
+        done
+        # The entrypoint migrates to head before it runs the command it is given.
+        compose run --rm --no-deps api alembic current
+        log "database migrated. Restore the dataset (docs/deployment/VPS.md), then: $0 up $2"
         ;;
     up)
         [ -n "${2:-}" ] || die "usage: $0 up <ref>"

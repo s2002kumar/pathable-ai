@@ -87,19 +87,23 @@ systemctl reload ssh
 log "sshd: $(sshd -T | grep -E '^(passwordauthentication|permitrootlogin|allowusers) ' | tr '\n' ' ')"
 
 # ---------------------------------------------------------------------------
-# Firewall: SSH (rate-limited), HTTP, HTTPS (TCP, and UDP for HTTP/3)
+# Firewall: SSH, HTTP, HTTPS (TCP, and UDP for HTTP/3)
 # ---------------------------------------------------------------------------
 # Docker publishes ports through its own iptables chains, which ufw does not
 # see. That is why the Compose file publishes only Caddy's 80 and 443 — the
 # database, API and web server have no host port at all.
 ufw default deny incoming >/dev/null
 ufw default allow outgoing >/dev/null
-ufw limit 22/tcp >/dev/null
+# SSH is allowed, not `ufw limit`ed: with passwords off there is nothing to
+# guess, fail2ban bans addresses that fail authentication, and `limit` (six
+# connections in 30 s) blocks the operator's own scripted deploys.
+ufw delete limit 22/tcp >/dev/null 2>&1 || true
+ufw allow 22/tcp >/dev/null
 ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
 ufw allow 443/udp >/dev/null
 ufw --force enable >/dev/null
-log "ufw: $(ufw status | grep -c ALLOW) allow/limit rules, default deny incoming"
+log "ufw: $(ufw status | grep -c ALLOW) allow rules, default deny incoming"
 
 cat > /etc/fail2ban/jail.d/pathable.local <<'EOF'
 [sshd]
