@@ -180,7 +180,7 @@ function Hero() {
       </div>
 
       <p className={styles.truthLine}>
-        <span>Local demo · Not deployed</span>
+        <span>Public pilot · Waterloo only</span>
         <span aria-hidden="true">·</span>
         <span>It advises; it does not certify.</span>
       </p>
@@ -571,7 +571,7 @@ function FinalCta() {
           </Link>
         </div>
         <p className={styles.ctaNote}>
-          Runs locally against the real Waterloo dataset. Not deployed.
+          Runs against the real Waterloo dataset, as a public pilot on one server.
         </p>
       </div>
     </section>
