@@ -84,12 +84,12 @@ SQL
     docker exec -i "$container" sh -c 'cat > /tmp/pathable-restore.dump' < "$DUMP"
     docker exec "$container" sh -c \
         "pg_restore --list /tmp/pathable-restore.dump | grep -v ' EXTENSION ' > /tmp/pathable-restore.list"
-    started="$(now)"
+    restore_started="$(now)"
     docker exec "$container" pg_restore -U postgres -d pathable \
         --exit-on-error --single-transaction \
         --use-list /tmp/pathable-restore.list /tmp/pathable-restore.dump
     docker exec "$container" rm -f /tmp/pathable-restore.dump /tmp/pathable-restore.list
-    log "  pg_restore took $(elapsed "$started" "$(now)")s"
+    log "  pg_restore took $(elapsed "$restore_started" "$(now)")s"
     docker exec "$container" psql -q -U postgres -d pathable -c "vacuum analyze" >/dev/null
 }
 
@@ -121,11 +121,11 @@ verify() {
     # The checksum is recomputed by the release's own code, in its own container,
     # connected as the application role — the path the API itself reads through.
     log "  recomputing the content checksum with $API_IMAGE"
-    started="$(now)"
+    checksum_started="$(now)"
     if docker run --rm --network "$network" --memory 1g \
         -e DATABASE_URL="postgresql+psycopg://pathable_app:${PATHABLE_DB_PASSWORD}@${host}:5432/pathable" \
         "$API_IMAGE" pathable datasets checksum "$active"; then
-        log "  ok    content checksum matches ($(elapsed "$started" "$(now)")s)"
+        log "  ok    content checksum matches ($(elapsed "$checksum_started" "$(now)")s)"
     else
         log "  FAIL  content checksum does not match, or none is recorded"
         FAILED=1
@@ -141,7 +141,7 @@ if [ "$INTO" = "scratch" ]; then
     cleanup
     docker network create --internal "$SCRATCH_NETWORK" >/dev/null
     scratch_password="$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')"
-    started="$(now)"
+    total_started="$(now)"
     docker run -d --name "$SCRATCH_DB" --network "$SCRATCH_NETWORK" --network-alias scratch \
         --memory 768m --shm-size 256m \
         -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD="$scratch_password" -e POSTGRES_DB=postgres \
@@ -159,12 +159,12 @@ SQL
     log "restoring into a throwaway container ($SCRATCH_DB); production is not touched"
     recreate_and_restore "$SCRATCH_DB"
     verify "$SCRATCH_DB" "$SCRATCH_NETWORK" scratch
-    log "scratch restore and verification took $(elapsed "$started" "$(now)")s in all"
+    log "scratch restore and verification took $(elapsed "$total_started" "$(now)")s in all"
 else
     [ "$YES" = "1" ] || die "--into production replaces the live database; add --yes"
     log "safety backup of the database being replaced"
     "$HERE/backup.sh" pre-restore
-    started="$(now)"
+    total_started="$(now)"
     docker stop "$PROD_API" >/dev/null
     log "API stopped; restoring into $PROD_DB"
     recreate_and_restore "$PROD_DB"
@@ -176,7 +176,7 @@ else
     until docker exec "$PROD_API" python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8000/api/v1/health/ready", timeout=5).status==200 else 1)' >/dev/null 2>&1; do
         sleep 1
     done
-    log "API ready again; outage $(elapsed "$started" "$(now)")s from stop to ready"
+    log "API ready again; outage $(elapsed "$total_started" "$(now)")s from stop to ready"
 fi
 
 [ "$FAILED" = "0" ] || die "VERIFICATION FAILED"
