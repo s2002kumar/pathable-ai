@@ -32,6 +32,14 @@
 #     route_regression_runs          -> pilot_regions, dataset_versions
 #     route_regression_acceptances   -> route_regression_runs
 #     dataset_activation_events      -> the three above
+#   and the place index (optional, from migration 0007):
+#     gazetteer_builds               -> pilot_regions
+#     gazetteer_entries              -> gazetteer_builds
+#
+# gazetteer_entries has an identity column, so pg_dump also writes the value of
+# its sequence (a SEQUENCE SET entry). That one entry is accepted and restored
+# after the rows, so a later `pathable gazetteer build` cannot collide with a
+# restored id. Any other sequence, like any other schema object, is refused.
 #
 # Migration 0006 freezes a sealed dataset: its rows cannot be written, and a
 # dataset cannot be *created* active. A restore has to do exactly that, so it
@@ -46,7 +54,7 @@
 #
 # Requires: the dump was produced by `pg_dump --data-only --no-owner
 # --no-privileges --format=custom` over the five map tables, optionally with the
-# three evidence tables.
+# three evidence tables and the two place-index tables.
 
 set -eu
 
@@ -88,7 +96,9 @@ done
 # foreign keys, so it is one list in one place.
 TABLE_ORDER="pilot_regions dataset_versions ingestion_runs graph_nodes graph_edges"
 # Restored after the map when present; an archive made before 0006 has none.
-OPTIONAL_ORDER="route_regression_runs route_regression_acceptances dataset_activation_events"
+OPTIONAL_ORDER="route_regression_runs route_regression_acceptances dataset_activation_events gazetteer_builds gazetteer_entries"
+# The only sequence values an archive may carry: identity columns of the tables above.
+SEQUENCES="gazetteer_entries_id_seq"
 # Lets this one connection write sealed rows; see the header.
 RESTORE_OPTIONS="-c pathable.allow_sealed_writes=on"
 
@@ -141,7 +151,23 @@ if [ -n "$UNEXPECTED" ]; then
     exit 1
 fi
 
+SEQUENCE_SETS="$(printf '%s\n' "$TOC" | grep -E '^[0-9]+; [0-9]+ [0-9]+ SEQUENCE SET ' || true)"
+UNEXPECTED_SEQUENCES="$(printf '%s\n' "$SEQUENCE_SETS" \
+    | sed -nE 's/.*SEQUENCE SET [^ ]+ ([^ ]+) .*/\1/p' \
+    | while read -r sequence; do
+        case " $SEQUENCES " in
+            *" $sequence "*) ;;
+            *) echo "$sequence" ;;
+        esac
+    done)"
+if [ -n "$UNEXPECTED_SEQUENCES" ]; then
+    log "refusing: the archive sets sequences this bootstrap does not support:"
+    printf '  %s\n' $UNEXPECTED_SEQUENCES >&2
+    exit 1
+fi
+
 SCHEMA_ENTRIES="$(printf '%s\n' "$TOC" | grep -vE '^;' | grep -vE ' TABLE DATA ' \
+    | grep -vE ' SEQUENCE SET ' \
     | grep -E ' (TABLE|INDEX|CONSTRAINT|FK CONSTRAINT|SEQUENCE|TRIGGER|EXTENSION|SCHEMA) ' || true)"
 if [ -n "$SCHEMA_ENTRIES" ]; then
     log "refusing: the archive contains schema objects; the schema must come from"
@@ -173,7 +199,8 @@ EXISTING="$(psql_q "select coalesce(sum(n), 0) from (
     select count(*) n from graph_edges
     union all select count(*) from graph_nodes
     union all select count(*) from dataset_versions
-    union all select count(*) from pilot_regions) t")"
+    union all select count(*) from pilot_regions
+    union all select count(*) from gazetteer_builds) t")"
 if [ "$EXISTING" != "0" ]; then
     log "refusing: the target already holds ${EXISTING} rows across the map-fact tables."
     log "This bootstrap loads into an empty database so a partial or doubled"
@@ -201,6 +228,10 @@ for table in $OPTIONAL_ORDER; do
         RESTORED_TABLES="$RESTORED_TABLES $table"
     fi
 done
+# After the rows they number, so the sequence ends past every restored id.
+if [ -n "$SEQUENCE_SETS" ]; then
+    printf '%s\n' "$SEQUENCE_SETS" >> "${LIST}.local"
+fi
 log "restoring tables: $RESTORED_TABLES"
 if [ -n "$CONTAINER" ]; then
     docker exec -i "$CONTAINER" sh -c "cat > $LIST" < "${LIST}.local"
@@ -283,6 +314,17 @@ check "incline_direction check constraint"       "$(psql_q "select count(*) from
 check "rows violating the incline_direction check"       "$(psql_q "select count(*) from graph_edges where incline_direction not in ('up','down','unknown')")" "0"
 check "sealed-dataset triggers present" \
       "$(psql_q "select count(*) from pg_trigger where tgname in ('graph_nodes_immutable_once_sealed','graph_edges_immutable_once_sealed','dataset_versions_lifecycle')")" "3"
+
+case " $RESTORED_TABLES " in
+    *" gazetteer_entries "*)
+        check "place index entries against the build's counts" \
+              "$(psql_q "select count(*) from gazetteer_entries")" \
+              "$(psql_q "select coalesce(sum(place_count + address_count + street_count), 0) from gazetteer_builds")"
+        check "place index ids below the sequence" \
+              "$(psql_q "select (select coalesce(max(id), 0) from gazetteer_entries) <= (select last_value from gazetteer_entries_id_seq)")" "t"
+        log "  place index read from $(psql_q "select file_name || ' sha256 ' || file_sha256 || ', data as of ' || coalesce(source_timestamp::text, 'unknown') from gazetteer_builds")"
+        ;;
+esac
 
 log "  foreign keys on graph_edges: $(psql_q "select count(*) from pg_constraint where conrelid='graph_edges'::regclass and contype='f'")"
 log "  check constraints on graph_edges: $(psql_q "select count(*) from pg_constraint where conrelid='graph_edges'::regclass and contype='c'")"

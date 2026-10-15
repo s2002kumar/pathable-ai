@@ -1,0 +1,120 @@
+{
+  "what": "The first public deployment of PathAble: the Waterloo pilot on one OVH VPS, built from nothing on 2026-10-14/15. Every figure below was measured on that host or against its public address during the deployment; none is estimated. Procedure in docs/deployment/VPS.md, decision in ADR 0009.",
+  "captured_at": "2026-10-15T00:41:00+00:00",
+  "public_url": "https://51.222.36.79",
+  "deployed_revision": {
+    "sha": "a3f6448aab55e4b81f0dab805f2e71bd311af189",
+    "is": "main after PR #90 (the PA-GEO-09 merge), unmodified",
+    "reported_version": "0.1.0+a3f6448aab55",
+    "images": "pathable-api and pathable-web tagged with the full SHA, built on the host from `git archive` of it, OCI revision label set"
+  },
+  "deployment_tooling": "infra/vps/ on branch ops/vps-deploy (PR #102); the application images contain none of it",
+  "host": {
+    "provider": "OVH VPS",
+    "os": "Ubuntu 26.04.1 LTS, kernel 7.0.0-38-generic",
+    "cpu": "2 vCPU",
+    "memory_mib": 3814,
+    "swap_mib": 2047,
+    "disk": "38 GB root; 14 GB used after the deployment, mostly images and build cache",
+    "public_ports": ["22/tcp (keys only)", "80/tcp", "443/tcp", "443/udp"]
+  },
+  "software": {
+    "docker": "29.1.3 (Ubuntu archive)",
+    "compose": "2.40.3 (Ubuntu archive)",
+    "caddy": "caddy:2.11.7-alpine",
+    "postgresql": "17.5, PostGIS 3.5.2 (postgis/postgis:17-3.5)",
+    "image_sizes_mb": { "api": 999, "web": 401, "caddy": 93.1, "postgis": 887 }
+  },
+  "tls": {
+    "issuer": "Let's Encrypt YE1, profile shortlived (the only one that issues for an IP address)",
+    "subject_alt_name": "IP Address:51.222.36.79",
+    "first_certificate": { "not_before": "2026-10-14T23:11:49Z", "not_after": "2026-10-21T15:11:48Z" },
+    "fault_found": "Verifying clients send no SNI to an IP address; inside Docker the connection's local address is the container's, so Caddy found no certificate and sent a TLS internal-error alert. Fixed with default_sni. Before the fix only `openssl s_client -servername 51.222.36.79` (an IP in SNI, which RFC 6066 forbids) completed a handshake; after it, Windows schannel and OpenSSL both verify."
+  },
+  "build_on_host": {
+    "cold_no_cache": { "api_s": 79.8, "web_s": 88.5, "total_s": 169, "host_used_peak_mib": 1831, "swap_peak_mib": 0, "serving": false },
+    "second_revision_465bab7_while_serving": { "api_s": 66.7, "web_s": 1.6, "total_s": 70, "host_used_peak_mib": 2114, "swap_peak_mib": 21, "note": "web came from build cache: apps/ is identical between the two commits" },
+    "memory_sampling": "`free -m` every 2 s on the host"
+  },
+  "dataset": {
+    "dataset_id": "51585450-8ff5-409d-a02e-66d5a3c5e260",
+    "archive": { "bytes": 32523725, "sha256": "c29854e7ba52ccce85597a545473400fa7a9a5059e31bbb525744afbc60e95e3", "tables": ["pilot_regions", "dataset_versions", "ingestion_runs", "graph_nodes", "graph_edges", "gazetteer_builds", "gazetteer_entries"], "plus": "the gazetteer_entries_id_seq value", "source": "data-only pg_dump of the local production-smoke database, which holds the verified dataset at migration 0007" },
+    "migration_from_empty": "0007_place_search (head) as pathable_app, about 3 s",
+    "restore": { "pg_restore_s": 22, "with_verification_s": 28.4, "role": "pathable_app, superuser false", "database_mb": 199 },
+    "verified": { "nodes": 155714, "segments": 180554, "orphaned_rows": 0, "invalid_geometries": 0, "place_index_entries": 33225, "place_index_extract_sha256": "cee90e3725139c41ef939f726730b4dfb6fd45e624d2797dac4be38a69145ef3", "place_index_data_as_of": "2026-08-16T20:21:06Z" },
+    "content_checksum": {
+      "recomputed_from_restored_rows": "4a179dc08319a1d8524dfb949a3cec42b02988b40a71e4fbc869870bc5238f00",
+      "expected": "4a179dc08319a1d8524dfb949a3cec42b02988b40a71e4fbc869870bc5238f00, from docs/evidence/waterloo-dataset-lifecycle.json",
+      "matches": true,
+      "seconds": 21.74,
+      "then": "recorded with `pathable datasets checksum --record`, and verified again: matches"
+    }
+  },
+  "api_cold_start": {
+    "how": "infra/vps/measure.sh 3: force-recreate the API container alone, poll /health/live and /health/ready through `docker exec` every 0.25 s, host clock; then 30 s settle and the container's cgroup memory",
+    "runs": [
+      { "run": 1, "live_s": 19.01, "ready_s": 50.63, "graph_load_s": 33.8, "memory_current_mib": 999.4, "memory_peak_mib": 1084.7 },
+      { "run": 2, "live_s": 20.12, "ready_s": 54.91, "graph_load_s": 36.2, "memory_current_mib": 988.3, "memory_peak_mib": 1069.2 },
+      { "run": 3, "live_s": 19.46, "ready_s": 51.18, "graph_load_s": 33.9, "memory_current_mib": 997.4, "memory_peak_mib": 1082.1 }
+    ],
+    "median": { "live_s": 19.46, "ready_s": 51.18, "graph_load_s": 33.9 },
+    "breakdown_run_3": "9.1 s for the previous API process to exit after SIGTERM (exit 0, not killed); 4 s entrypoint (database wait, migrations at head); 3.5 s imports; 33.6 s graph load. From the new container's start to ready: 41.7 s",
+    "against_the_laptop": "PA-RR-03 measured 18.7 s to ready and a 14.6 s graph load on the laptop (production-envelope.json); this 2-vCPU host loads the same graph in about 34 s",
+    "memory_limit_mib": 1536,
+    "headroom_at_peak": "1084.7 of 1536 MiB, 29% free"
+  },
+  "memory_steady": {
+    "at": "2026-10-15T00:28Z, after the cold starts",
+    "containers_mib": {
+      "db": { "current": 474.5, "peak": 851.6, "limit": 1024, "note": "cgroup figures include page cache; the peak is from the 22 s restore and two checksum reads" },
+      "api": { "current": 997.4, "peak": 1082.1, "limit": 1536 },
+      "web": { "current": 108.0, "peak": 117.3, "limit": 512 },
+      "caddy": { "current": 11.9, "peak": 25.3, "limit": 256 }
+    },
+    "host_mib": { "total": 3814, "used": 2021, "available": 1793, "swap_used": 0 }
+  },
+  "smoke": {
+    "script": "infra/vps/smoke.py, 16 checks; exits non-zero on any failure",
+    "runs": [
+      { "from": "the founder's laptop over the public internet", "at": "2026-10-15T00:15:17Z", "passed": "16/16" },
+      { "from": "the VPS itself, through Caddy on the public address", "at": "2026-10-15T00:40:31Z", "passed": "16/16", "after": "a reboot" },
+      { "from": "the founder's laptop over the public internet", "at": "2026-10-15T00:40:59Z", "passed": "16/16", "after": "a reboot" }
+    ],
+    "journey": "Davis Centre Library to Student Life Centre, both found by place search: shortest 406.4 m with 4 stairways, wheelchair 490.2 m with 0, dataset 51585450, ml_predictions_used false — identical to docs/evidence/waterloo-place-search.json",
+    "ports_not_answering_from_outside": [5432, 8000, 3000]
+  },
+  "browser": {
+    "suite": "apps/web playwright.fullstack.config.ts with FULLSTACK_TARGET=compose against https://51.222.36.79, Chromium, from the laptop",
+    "first_run": "15 passed, 2 failed. Both asserted the local topology, not the product: readiness from a different origin to the page, and the constant version 'v0.1.0'. Fixed in the suite (f78095c).",
+    "second_run": "17 passed, 0 skipped, 1.4 min — including the 10 that need the real Waterloo network or place index"
+  },
+  "route_latency": {
+    "what": "One journey (the smoke journey, wheelchair profile), each request a new HTTPS connection. server_computation_ms is the sum of the two routes' own computation_ms. One worker.",
+    "from_the_host": { "at": "2026-10-15T00:40:31Z", "sequential_round_trip_ms": { "n": 50, "p50": 159.3, "p95": 189.9, "max": 205.8 }, "server_computation_ms": { "n": 50, "p50": 128.4, "p95": 153.3, "max": 173.9 }, "search_round_trip_ms": { "n": 50, "p50": 48.2, "p95": 62.7 }, "four_clients": { "requests": 50, "routes_per_s": 6.36, "round_trip_ms": { "p50": 615.1, "p95": 669.1 } } },
+    "from_the_laptop": { "at": "2026-10-15T00:40:59Z", "sequential_round_trip_ms": { "n": 50, "p50": 303.6, "p95": 355.2, "max": 374.3 }, "server_computation_ms": { "n": 50, "p50": 137.4, "p95": 166.7, "max": 196.5 }, "search_round_trip_ms": { "n": 50, "p50": 140.2, "p95": 225.2 }, "four_clients": { "requests": 50, "routes_per_s": 6.28, "round_trip_ms": { "p50": 612.2, "p95": 764.4 } } },
+    "reading": "One process computes about seven route comparisons a second; four clients queue behind each other. Not a capacity or service-level figure."
+  },
+  "backup_restore": {
+    "backup": { "format": "pg_dump custom, whole database", "bytes": 32584363, "seconds": "5-6", "schedule": "systemd timer daily 07:15 UTC, plus before every deploy and production restore", "retention": "14 days, never fewer than three files", "location": "/var/backups/pathable on the same disk" },
+    "scratch_restore": { "at": "2026-10-15T00:28Z", "of": "the timer-triggered backup", "pg_restore_s": 6.5, "checks": "revision 0007, 155,714 nodes, 180,554 segments, 33,225 place entries, 3 sealed-dataset triggers, pathable_app not a superuser", "content_checksum": "recomputed 4a179dc0…bc5238f00, matches", "host_used_peak_mib": 2328, "swap_peak_mib": 0, "left_behind": "nothing: container and network removed" },
+    "production_restore": { "at": "2026-10-15T00:29Z", "safety_backup": "taken first, 6 s", "pg_restore_s": 6.5, "content_checksum": "matches", "outage_s": 94.9, "outage_from_outside": "readiness unavailable for about 89 s across 2-s samples; the landing page answered 200 throughout (72 of 72 samples)" }
+  },
+  "rollback": {
+    "forward": { "to": "465bab7929717fddacb90fcd726ac5bd8d7d320b (the previous merge on main, same migration head 0007)", "pre_deploy_backup_s": 5, "live_s": 20.2, "ready_s": 53.1, "public_version_after": "0.1.0+465bab792971" },
+    "rollback": { "to": "a3f6448aab55e4b81f0dab805f2e71bd311af189", "migration_check": "passed (database 0007 = target head)", "live_s": 18.9, "ready_s": 51.6, "public_version_after": "0.1.0+a3f6448aab55" },
+    "from_outside": "per switch, routing unavailable for about 55 s (502 while the old process exited, then 503 and 5-s timeouts while the graph loaded), and the landing page 502 for two consecutive 2-s samples when its container was recreated",
+    "not_exercised": "the refusal when the database is past the previous release's head: no release since 0007 changes the schema"
+  },
+  "reboot": {
+    "at": "2026-10-15T00:39:13Z",
+    "from_outside": "landing page answering again within 59 s of the reboot command and routing within 66 s, 2-s samples; nothing was started by hand",
+    "after": "docker, fail2ban, ufw, swap and the backup timer active; all four containers healthy; smoke 16/16 from the host and from the laptop"
+  },
+  "faults_found_and_fixed": [
+    "The API image could not start the `pathable` CLI: ImportError libexpat.so.1. The python:3.13-slim-bookworm base no longer carries libexpat1 now that Python bundles expat, and pyosmium links the system library. The server was unaffected. Fixed in services/api/Dockerfile; CI now starts the CLI inside the built image. The deployed a3f6448 images predate the fix, so checksums on this host ran in pathable-api-cli:<sha>, the release image plus libexpat1.",
+    "Caddy served no certificate to clients that send no SNI (see tls).",
+    "deploy.sh skipped its pre-deploy backup silently when the previous stack's compose.yaml no longer interpolated; it now reads the database directly and refuses to deploy without a backup.",
+    "Two full-stack browser assertions encoded the local topology (see browser)."
+  ],
+  "attribution": "Route and place data © OpenStreetMap contributors, ODbL 1.0. Elevation: Contains information licensed under the Open Government Licence – Canada (NRCan HRDEM)."
+}

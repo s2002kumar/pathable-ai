@@ -13,6 +13,20 @@ The repository has been public and source-visible since 2026-09-14
 
 ### Added
 
+- **A public pilot at <https://51.222.36.79>.** `main` at `a3f6448` runs on one
+  OVH VPS (2 vCPU, 3.7 GiB) — the founder's choice of host, recorded in
+  ADR 0009 — from `infra/vps/`: a Compose stack where only Caddy has ports,
+  PostGIS sits on a network with no route out and the API connects as a role
+  that is not a superuser; host provisioning (key-only SSH, ufw, fail2ban,
+  swap, unattended upgrades); `deploy.sh` (images from `git archive` of a SHA
+  on `main`, pre-deploy backup, timed switch, rollback with a migration-head
+  check); daily backups with a non-destructive and a disaster-recovery
+  restore, both recomputing the dataset's content checksum; and `smoke.py`, a
+  16-check test run from outside the host. Backup, both restores, a rollback
+  and a reboot were exercised on the host before it was called working.
+  Runbook in `docs/deployment/VPS.md`, measurements in
+  `docs/evidence/vps-deployment.json`, limits in KI-12 and KI-13.
+
 - **Place search that works, from a local Waterloo place index.** The
   planner's origin and destination fields looked searchable and were not: the
   only provider was public Nominatim, off by default because its usage policy
@@ -212,6 +226,17 @@ The repository has been public and source-visible since 2026-09-14
 
 ### Fixed
 
+- **The `pathable` CLI could not start in a freshly built API image.** The
+  `python:3.13-slim-bookworm` base stopped carrying `libexpat1` once Python
+  bundled its own expat, and pyosmium links the system library: `ImportError:
+libexpat.so.1`. The server, which never imports osmium, was unaffected, so
+  nothing noticed until the first deployment needed `pathable datasets
+checksum`. The runtime image installs `libexpat1`, and CI now starts the CLI
+  inside the built image.
+- **Two full-stack browser tests encoded the local topology.** They required
+  readiness to come from a different origin to the page and the version to be
+  the constant `0.1.0`; behind the pilot's reverse proxy both are legitimately
+  otherwise. They now check the API's own path and the version the API reports.
 - **A live dataset could change, and nothing proved a new one before it went
   live (KI-10).** Elevation had been sampled into the live Waterloo dataset
   seven minutes after activation; the checksum could not see elevation or

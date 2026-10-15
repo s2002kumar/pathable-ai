@@ -56,12 +56,13 @@ test.describe('full stack', () => {
 
     expect(readiness.status).toBe(200);
 
-    // The response came from a genuinely different origin to the page — a real
-    // cross-origin call to the API, not something served by the web app. Asserted
-    // on origins rather than a hard-coded host, because the same suite runs
-    // against locally started servers and against the Compose stack.
-    expect(new URL(readiness.url).origin).not.toBe(new URL(page.url()).origin);
+    // The page called the API's own readiness endpoint, and the body below is one
+    // only the API can produce. Not asserted as "a different origin to the
+    // page": locally and in the Compose stack the API has its own origin, but the
+    // public deployment serves both from one origin behind a reverse proxy, where
+    // /api/v1/* is routed to the API process.
     expect(readiness.url).toMatch(/^https?:\/\//);
+    expect(new URL(readiness.url).pathname).toBe(READINESS_PATH);
 
     expect(readiness.body.status).toBe('ready');
     expect(readiness.body.service).toBe('pathable-api');
@@ -83,13 +84,24 @@ test.describe('full stack', () => {
     expect(body.checks.database?.latency_ms).toBeGreaterThan(0);
   });
 
-  test('the status strip carries the version the API actually reports', async ({ page }) => {
+  test('the status strip carries the version the API actually reports', async ({
+    page,
+    request,
+  }) => {
+    // Read from the API rather than written down here: a deployment reports its
+    // revision in the version (0.1.0+<sha>), and a constant would only ever
+    // prove the default.
+    const live = await request.get(`${API_BASE_URL}/api/v1/health/live`);
+    expect(live.status()).toBe(200);
+    const { version } = (await live.json()) as { version: string };
+    expect(version).toMatch(/^\d+\.\d+\.\d+/);
+
     await page.goto(PLANNER);
 
     const strip = page.getByTestId('system-status');
     await expect(strip).toHaveAttribute('data-status', 'ready');
     await expect(strip).toContainText('Ready to route');
-    await expect(strip).toHaveAttribute('title', 'pathable-api v0.1.0');
+    await expect(strip).toHaveAttribute('title', `pathable-api v${version}`);
   });
 
   test('the map and the shell work alongside the live backend', async ({ page }) => {

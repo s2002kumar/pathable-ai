@@ -396,15 +396,25 @@ docs are disabled.
 
 ---
 
-## 19. The proposed deployment architecture
+## 19. The deployment
 
-[ADR 0009](adr/0009-deployment-architecture.md), sized from the container measurements: DigitalOcean App Platform
-in Toronto, one 2 GiB API container with one worker, one 512 MiB frontend, one 1 GiB Managed PostgreSQL with
-PostGIS, the provider's hostname, single node throughout. **USD 45.15 / CAD 62.61 a month.**
+The pilot runs at **<https://51.222.36.79>** on one OVH VPS — 2 vCPU, 3.7 GiB — that the founder chose
+([ADR 0009](adr/0009-deployment-architecture.md), [runbook](deployment/VPS.md)). One Compose project: PostGIS on a
+network with no route out, one API worker holding the graph, the web server, and Caddy, the only process with ports.
+The API connects as a role that is not a superuser. Images are built on the host from `git archive` of a SHA on
+`main` and report it in `/api/v1/health/live`.
 
-**It is a proposal. Nothing is deployed, no account exists, nothing has been purchased.** Four candidate
-architectures were compared from official pricing pages with access dates; scale-to-zero hosting, serverless
-functions and free database tiers that pause were ruled out on the measurements before price was considered.
+In September the comparison recommended managed hosting and set this shape aside for one reason: on a self-managed
+host, backups, restore, rollback and metrics are yours to build and prove. Three of those four were built and run on
+this host before it was called working — a daily and pre-deploy `pg_dump`, a restore into a scratch container and a
+disaster-recovery restore of the live database (both recomputing the dataset's content checksum), and a rollback to
+the previous `main` merge and back. The fourth, metrics and alerting, does not exist yet, and backups are on the
+host's own disk.
+
+Measured there ([evidence](evidence/vps-deployment.json)): ready 51 s after a cold start (graph load 34 s on this
+CPU, 15 s on the laptop), ~1 GB resident, 2.0 of 3.7 GiB used on the host; a route comparison takes 128–137 ms of
+server time at the median and one process serves about six a second. Routing is unavailable for about a minute per
+deploy. That is a pilot's envelope, not a service level.
 
 ---
 
@@ -424,7 +434,8 @@ functions and free database tiers that pause were ruled out on the measurements 
 ## 21. Limitations, stated plainly
 
 - **One city.** Waterloo. The architecture is region-configurable and has never been run on a second region.
-- **Not deployed.** No hosting, no URL, no users, no production traffic.
+- **One host, no monitoring.** A public pilot on one VPS, with no metrics, no alerting and backups on its own disk.
+  No users or production traffic are claimed.
 - **The cost weights are unvalidated** against real mobility-aid users.
 - **Nobody has walked these routes.**
 - **Evidence freshness is dataset-level** ([KI-7](development/KNOWN_ISSUES.md)): the product can say the extract
