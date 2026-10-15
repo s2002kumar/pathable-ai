@@ -120,8 +120,14 @@ build() {
     rm -rf "$src"
 }
 
+# Straight to the container, not through Compose: before a switch, the stack's
+# compose.yaml is still the previous release's and may not interpolate against
+# the current env files.
+db_running() {
+    [ "$(docker inspect --format '{{.State.Running}}' pathable-db-1 2>/dev/null)" = "true" ]
+}
 db_revision() {
-    compose exec -T db psql -U postgres -d pathable -At \
+    docker exec pathable-db-1 psql -U postgres -d pathable -At \
         -c "select version_num from alembic_version" 2>/dev/null || true
 }
 
@@ -241,7 +247,10 @@ case "${1:-}" in
         [ -n "${2:-}" ] || die "usage: $0 up <ref>"
         sha="$(resolve "$2")"
         build "$sha"
-        if [ -n "$(db_revision)" ]; then
+        # Never switch a live database without a backup taken just before it.
+        if db_running; then
+            [ -n "$(db_revision)" ] \
+                || die "the database is running but its revision cannot be read; not deploying without a backup"
             "$HERE/backup.sh" "pre-deploy"
         fi
         switch_to "$sha"

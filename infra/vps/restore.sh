@@ -66,7 +66,10 @@ log "dump $(basename "$DUMP") ($(du -h "$DUMP" | cut -f1), sha256 $(sha256sum "$
 # shellcheck disable=SC1090
 . "$SECRETS"
 REVISION="$(sed -n 's/^PATHABLE_REVISION=//p' "$RELEASE")"
-API_IMAGE="pathable-api:$REVISION"
+# The release's own image runs the checksum. PATHABLE_CLI_IMAGE overrides it for
+# a release whose image cannot start the CLI: images built before the libexpat1
+# fix in services/api/Dockerfile (see docs/deployment/VPS.md).
+API_IMAGE="${PATHABLE_CLI_IMAGE:-pathable-api:$REVISION}"
 
 # --- the restore itself, into database `pathable` of a running container ------
 recreate_and_restore() {
