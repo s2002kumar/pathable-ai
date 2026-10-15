@@ -25,9 +25,9 @@ API's answer, and the [full-stack test suite](apps/web/tests/fullstack/recruiter
 are. The landing page is static, so its example is one recorded response, dated and with its dataset checksum, and
 it says so.
 
-**PathAble is not deployed anywhere.** There is no live URL, no hosting account and no public service: this is a
-local production build, run with `docker compose` on one laptop. [Running the demo](docs/evidence/DEMO.md)
-reproduces it.
+**A public pilot runs at <https://51.222.36.79>** — Waterloo only, on one small VPS, with no monitoring and no
+availability promise ([how it runs](docs/deployment/VPS.md)). The recording above was made against local production
+containers before it existed; [running the demo](docs/evidence/DEMO.md) reproduces it.
 
 ## What the comparison actually says
 
@@ -66,6 +66,7 @@ is estimated.
 | **A\* is not faster here**: 1,970 expanded nodes against Dijkstra's 7,409, but 195 ms against 213 ms at p50 — reported as a wash, not a win                                                                                                                                                               | [`waterloo-performance.json`](docs/evidence/waterloo-performance.json)                                                                                                             |
 | **Production container envelope**: one API worker holds 997 MB steady / 1,064 MB peak and is routable 18.7 s after start; the frontend fits 512 MiB with 92% headroom over three cold starts                                                                                                              | [`production-envelope.json`](docs/evidence/production-envelope.json) · [ADR 0009](docs/adr/0009-deployment-architecture.md)                                                        |
 | **Dataset bootstrap needs no PostgreSQL superuser** — verified against a role with `superuser=f`, after the obvious `pg_restore --disable-triggers` was shown to fail on one                                                                                                                              | [`restore-dataset.sh`](infra/production-smoke/restore-dataset.sh) · [KI-8](docs/development/KNOWN_ISSUES.md)                                                                       |
+| **The public pilot, measured on its own 2-vCPU host**: ready 51.2 s after a cold start, 997 MiB resident; a route comparison takes 128–137 ms of server time at the median; backup, restore into a scratch database, disaster-recovery restore and rollback all exercised there                           | [`vps-deployment.json`](docs/evidence/vps-deployment.json) · [runbook](docs/deployment/VPS.md)                                                                                     |
 
 ## How it fits together
 
@@ -99,12 +100,11 @@ flowchart LR
   GAZ --> PG
   PG -->|"loaded once at startup"| GRAPH
 
-  classDef future stroke-dasharray: 5 5
-  DEPLOY["Proposed hosting — not deployed<br/>see ADR 0009"]:::future
+  DEPLOY["Public pilot: one VPS<br/>Caddy · Compose · see ADR 0009"]
 ```
 
-Solid boxes are implemented and measured. The dashed box is a costed proposal in
-[ADR 0009](docs/adr/0009-deployment-architecture.md) and nothing has been bought or provisioned.
+Every box is implemented and measured. The pilot's hosting is in
+[ADR 0009](docs/adr/0009-deployment-architecture.md) and the [VPS runbook](docs/deployment/VPS.md).
 
 The backend's Pydantic models are the single source of truth for the HTTP contract: they generate
 `openapi.json`, which generates the frontend's TypeScript types, and CI fails if the committed output drifts.
@@ -136,8 +136,9 @@ real browser through real containers. Ten of its seventeen tests need the real W
 ## What it is not
 
 - **One city.** Waterloo, Ontario. The pilot region is configuration, but no second region has been run.
-- **Not deployed.** No URL, no users, no production traffic. The hosting plan in
-  [ADR 0009](docs/adr/0009-deployment-architecture.md) is costed and has not been bought.
+- **A pilot on one host.** One VPS, one API process, no metrics or alerting, backups on the same disk, and about a
+  minute without routing whenever it is redeployed ([ADR 0009](docs/adr/0009-deployment-architecture.md),
+  [KI-12](docs/development/KNOWN_ISSUES.md)). No users or traffic are claimed.
 - **Not validated with the people it is for.** The cost weights are engineering judgement, not tested with
   people who use mobility aids, and nobody has walked these routes.
 - **Advice, not certification.** No route is certified accessible. PathAble separates what is recorded, what is
@@ -146,8 +147,8 @@ real browser through real containers. Ten of its seventeen tests need the real W
   never as clear. Freshness is known per extract, not per element on a route
   ([KI-7](docs/development/KNOWN_ISSUES.md)). Place search finds what the extract names and numbers — no address
   interpolation ([KI-11](docs/development/KNOWN_ISSUES.md)).
-- **No manual screen-reader pass yet.** The browser suite runs automated axe checks; a screen-reader session is a
-  pre-deployment item.
+- **No manual screen-reader pass yet.** The browser suite runs automated axe checks. A screen-reader session was
+  listed as a pre-deployment item; the pilot went public without one, and it is still owed.
 
 ## Where to go next
 

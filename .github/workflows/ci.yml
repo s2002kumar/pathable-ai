@@ -372,3 +372,18 @@ jobs:
             exit 1
           fi
           echo "No .env present in the API image"
+
+      - name: The operator CLI starts inside the API image
+        run: |
+          # Regression: a rebuilt base image dropped libexpat1, and `pathable`
+          # failed with "ImportError: libexpat.so.1" while the server still
+          # started, so nothing noticed until a deployment needed the CLI.
+          docker compose run --rm --no-deps --entrypoint pathable api --help > /dev/null
+          docker compose run --rm --no-deps --entrypoint python api -c "import osmium, pathable_api.cli"
+          echo "pathable CLI imports cleanly in the API image"
+
+      - name: VPS compose configuration is valid
+        run: |
+          POSTGRES_SUPERUSER_PASSWORD=ci PATHABLE_DB_PASSWORD=ci PATHABLE_REVISION=ci \
+          PATHABLE_APP_VERSION=ci PATHABLE_HOST=pilot.example.invalid \
+            docker compose -f infra/vps/compose.yaml config --quiet

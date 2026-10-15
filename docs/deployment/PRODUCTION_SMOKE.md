@@ -188,11 +188,14 @@ afterwards.
 
 ### Place search
 
-The data-only restore above carries the routing tables, not the place index,
-and `restore-dataset.sh` refuses an archive with tables it does not know. Build
-the index once from the same extract, from the host, against this stack's
-database. The API needs no restart: each search reads the current index, and a
-rebuild replaces it in one transaction.
+The export above carries the routing tables, not the place index. Either add
+`--table=gazetteer_builds --table=gazetteer_entries` to it —
+`restore-dataset.sh` accepts those two tables and the one identity-sequence
+value pg_dump writes for them, restores them after the map, and checks the
+entry count against the build's own counts; that is how the public pilot got
+its index ([VPS.md](VPS.md)) — or build the index once from the same extract,
+from the host, against this stack's database. The API needs no restart: each
+search reads the current index, and a rebuild replaces it in one transaction.
 
 ```bash
 cd services/api

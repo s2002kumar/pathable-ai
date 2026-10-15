@@ -48,8 +48,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # is exactly when the image scan fails on a package this service never calls
 # (libpcre2, in the case that added this line). Nothing is pinned on purpose:
 # the point is to pick up whatever bookworm-security has published.
+#
+# libexpat1 is installed by name because pyosmium links against it and the
+# base image no longer carries it: Python now bundles its own expat, so the
+# official image dropped the system library. Without it the server still
+# starts — it never imports osmium — but the `pathable` CLI cannot (ImportError:
+# libexpat.so.1), which took every operator command in the image with it.
 RUN apt-get update \
     && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends libexpat1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

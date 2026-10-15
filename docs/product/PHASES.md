@@ -714,11 +714,41 @@ envelope. The 2026-10-13 record reproduced the 2026-10-05 one.
 rationale, before and after captures, interleaved performance measurement,
 accessibility verification, a recording of one session.
 
-**Branch.** `feat/premium-landing`, from `main` at `a3f6448`. Draft PR; not
-merged.
+**Branch.** `feat/premium-landing`, from `main` at `a3f6448`, with `main` merged
+in at `490c8a7` (the VPS deployment) on 2026-10-15. Draft PR; not merged.
 
 **Not verified here.** A manual screen-reader pass; Safari and Firefox (the
 browser suites run Chromium only).
+
+---
+
+## Public pilot on one VPS (2026-10-14)
+
+`main` at `a3f6448` is served at **<https://51.222.36.79>** from one OVH VPS
+(2 vCPU, 3.7 GiB), the founder's choice of host
+([ADR 0009](../adr/0009-deployment-architecture.md),
+[runbook](../deployment/VPS.md), [evidence](../evidence/vps-deployment.json)).
+It adds no routing capability. It is part of what Gate D asks for, not Gate D.
+
+| Area     | What exists                                                                                                              |
+| -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Host     | Key-only SSH, ufw (22, 80, 443), fail2ban, unattended security upgrades, 2 GiB swap; came back unattended after a reboot |
+| Stack    | PostGIS on an internal network, one API worker, the web server, Caddy with Let's Encrypt — only Caddy has ports          |
+| Data     | The verified Waterloo dataset and place index, restored as a role that is not a superuser; content checksum reproduced   |
+| Revision | Images built from `git archive` of the SHA and tagged with it; `/api/v1/health/live` reports it                          |
+| Safety   | Daily and pre-deploy backups; restore exercised into a scratch container and as disaster recovery; rollback exercised    |
+| Proof    | `infra/vps/smoke.py` 16/16 from outside; the full-stack browser suite 17/17 against the public address                   |
+
+**Still does not exist.**
+
+- Metrics, alerting, uptime monitoring. Nobody is told when the site is down.
+- Backups anywhere but the host's own disk.
+- A domain name; the certificate is a 6-day IP-address certificate.
+- Rate limiting ([KI-13](../development/KNOWN_ISSUES.md)), and any capacity or
+  availability figure: one process serves about six route comparisons a second.
+- Zero-downtime deploys: routing is unavailable for about a minute per switch.
+- Users, traffic or external validation. A manual screen-reader pass, which the
+  README lists as a pre-deployment item, has still not been done.
 
 ---
 
