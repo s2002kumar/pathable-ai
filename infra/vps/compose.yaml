@@ -95,6 +95,10 @@ services:
       READINESS_TIMEOUT_SECONDS: "2.0"
       GRAPH_PRELOAD_REGIONS: waterloo
       GEOCODING_PROVIDER: local
+      # Caddy is the only way in (no host port, see below), so the client a rate
+      # limit counts is the X-Forwarded-For entry Caddy wrote. Caddy discards any
+      # X-Forwarded-For a client sends; verified against caddy:2.11.7.
+      TRUSTED_PROXY_HOPS: "1"
     # One worker: every worker holds its own ~1 GB copy of the graph (ADR 0009).
     command: ["python", "-m", "pathable_api"]
     networks: [data, edge]

@@ -2,7 +2,7 @@
 """Smoke-test the public PathAble deployment from outside the host.
 
     python infra/vps/smoke.py --url https://51.222.36.79 \
-        --expect-revision a3f6448aab55 --runs 30 --concurrency 4 --json out.json
+        --expect-revision a3f6448aab55 --runs 10 --concurrency 4 --json out.json
 
 Standard library only, so it runs from any machine with Python 3.11+. Every
 request goes over the public internet through Caddy, which is the point: a check
@@ -27,6 +27,16 @@ Then latency: the route repeated sequentially, then the same with N clients in
 parallel, recording the client's round trip and the server's own
 ``computation_ms``. Round trips include the network path from wherever this
 runs, so they describe that path as much as the server.
+
+Last, the rate limit: route requests are sent until one is refused, which must
+be an HTTP 429 with a ``Retry-After`` and the ``rate_limited`` error body.
+
+**One client's budget.** The API allows each client 30 route comparisons a
+minute (KI-13), and this script is one client. The defaults spend 21 before the
+rate-limit check — one for the journey, ``--runs`` sequential and ``--runs``
+parallel — so ``--runs`` above 14 is refused part-way through, as is a second
+run from the same address within about a minute: wait for the ``Retry-After``
+the failure reports. ``--skip-rate-limit-check`` leaves the budget unspent.
 
 Exit status is non-zero if any check failed.
 """
@@ -163,8 +173,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--url", required=True, help="Public origin, e.g. https://51.222.36.79")
     parser.add_argument("--expect-revision", default="", help="Short or full SHA to require")
-    parser.add_argument("--runs", type=int, default=30)
+    parser.add_argument("--runs", type=int, default=10)
     parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument(
+        "--skip-rate-limit-check",
+        action="store_true",
+        help="Do not spend this address's route budget proving the limit",
+    )
     parser.add_argument("--json", type=Path, default=None)
     args = parser.parse_args()
 
@@ -293,7 +308,7 @@ def main() -> int:
         f"{args.runs} sequential routes",
         all(s == 200 for s in statuses),
         f"round trip {report.latency['route_sequential_round_trip_ms']}, "
-        f"server {report.latency['route_server_computation_ms']}",
+        f"server {report.latency['route_server_computation_ms']}{refusals(statuses)}",
     )
 
     for _ in range(max(0, args.runs - len(search_ms))):
@@ -319,10 +334,47 @@ def main() -> int:
         report.record(
             f"{args.runs} routes, {args.concurrency} clients",
             all(s == 200 for _, _, s in parallel),
-            json.dumps(report.latency["route_parallel"]),
+            json.dumps(report.latency["route_parallel"]) + refusals([s for _, _, s in parallel]),
         )
 
+    if not args.skip_rate_limit_check:
+        check_rate_limit(report, f"{base}/api/v1/routes/compare", route_body)
+
     return finish(report, args.json)
+
+
+def refusals(statuses: list[int]) -> str:
+    limited = statuses.count(429)
+    if not limited:
+        return ""
+    return (
+        f"; {limited} refused with 429 — this address has used its route budget, "
+        "wait for the Retry-After and run again"
+    )
+
+
+def check_rate_limit(
+    report: Report, url: str, route_body: dict[str, Any], attempts: int = 60
+) -> None:
+    """Spend route requests until one is refused, and check the refusal is the standard one."""
+    for sent in range(1, attempts + 1):
+        status, headers, body, _ = request(url, route_body)
+        if status == 429:
+            payload = json.loads(body) if body else {}
+            retry_after = headers.get("retry-after", "")
+            report.record(
+                "rate limit",
+                retry_after.isdigit()
+                and int(retry_after) >= 1
+                and payload.get("code") == "rate_limited",
+                f"429 after {sent} more route requests, Retry-After {retry_after or 'missing'}, "
+                f"code {payload.get('code')}",
+            )
+            return
+        if status != 200:
+            report.record("rate limit", False, f"request {sent} answered {status}, not 200 or 429")
+            return
+    report.record("rate limit", False, f"{attempts} more route requests and none was refused")
 
 
 def finish(report: Report, path: Path | None) -> int:
