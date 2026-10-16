@@ -10,10 +10,11 @@ export const metadata: Metadata = {
   description:
     'PathAble compares the shortest walking route with one that suits how you ' +
     'travel, and explains the difference using what OpenStreetMap actually records. ' +
-    'A local engineering build for Waterloo, Ontario: it advises, it does not certify.',
+    'A public pilot for Waterloo, Ontario, on one server: it advises, it does not certify.',
   applicationName: 'PathAble',
-  // Not deployed and not certified. An early build being surfaced by a search
-  // engine as a working accessibility tool would be actively harmful.
+  // A pilot, and not certified. A search engine presenting it as a working
+  // accessibility tool would be actively harmful, so it still asks not to be
+  // indexed now that it is public.
   robots: { index: false, follow: false },
 };
 
