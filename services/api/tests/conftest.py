@@ -40,6 +40,10 @@ SETTINGS_ENV_VARS = (
     "GEOCODING_PROVIDER",
     "GEOCODING_CONTACT",
     "GRAPH_PRELOAD_REGIONS",
+    "RATE_LIMIT_ENABLED",
+    "RATE_LIMIT_ROUTES_PER_MINUTE",
+    "RATE_LIMIT_SEARCHES_PER_MINUTE",
+    "TRUSTED_PROXY_HOPS",
 )
 
 
@@ -82,6 +86,10 @@ def build_settings(
     geocoding_provider: GeocodingProviderName = "none",
     geocoding_contact: str = "",
     graph_preload_regions: tuple[str, ...] = (),
+    rate_limit_enabled: bool = True,
+    rate_limit_routes_per_minute: int = 30,
+    rate_limit_searches_per_minute: int = 60,
+    trusted_proxy_hops: int = 0,
 ) -> Settings:
     """Construct settings for a test, ignoring the ambient environment."""
     return Settings(
@@ -99,6 +107,10 @@ def build_settings(
         geocoding_provider=geocoding_provider,
         geocoding_contact=geocoding_contact,
         graph_preload_regions=graph_preload_regions,
+        rate_limit_enabled=rate_limit_enabled,
+        rate_limit_routes_per_minute=rate_limit_routes_per_minute,
+        rate_limit_searches_per_minute=rate_limit_searches_per_minute,
+        trusted_proxy_hops=trusted_proxy_hops,
     )
 
 

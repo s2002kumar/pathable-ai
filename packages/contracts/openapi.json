@@ -1522,6 +1522,16 @@
             },
             "description": "The request did not match the expected schema."
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "This client has used its searches for now (code `rate_limited`). `Retry-After` says how many seconds until the next is accepted."
+          },
           "500": {
             "content": {
               "application/json": {
@@ -1666,6 +1676,16 @@
           },
           "422": {
             "description": "The request could not be routed as given."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "This client has used its route requests for now (code `rate_limited`). `Retry-After` says how many seconds until the next is accepted."
           },
           "500": {
             "content": {

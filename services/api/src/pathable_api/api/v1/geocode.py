@@ -23,6 +23,7 @@ from pathable_api.core.errors import ApiError
 from pathable_api.core.logging import get_logger
 from pathable_api.geo.geocoding import MAX_QUERY_LENGTH, MAX_RESULTS, GeocodingError
 from pathable_api.geo.regions import region_definition
+from pathable_api.schemas.errors import ApiErrorResponse
 
 logger = get_logger(__name__)
 
@@ -94,6 +95,13 @@ class GeocodeResponse(BaseModel):
     responses={
         HTTPStatus.NOT_FOUND: {"description": "The region does not exist."},
         HTTPStatus.SERVICE_UNAVAILABLE: {"description": "The geocoding provider failed."},
+        HTTPStatus.TOO_MANY_REQUESTS: {
+            "model": ApiErrorResponse,
+            "description": (
+                "This client has used its searches for now (code `rate_limited`). "
+                "`Retry-After` says how many seconds until the next is accepted."
+            ),
+        },
     },
 )
 async def search(payload: GeocodeRequest, request: Request) -> GeocodeResponse:
