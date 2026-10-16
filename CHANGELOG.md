@@ -13,6 +13,17 @@ The repository has been public and source-visible since 2026-09-14
 
 ### Added
 
+- **Per-client rate limits on route comparison and place search (closes
+  KI-13).** Each client may make 30 route comparisons and 60 searches a minute;
+  beyond that the API answers 429 with `Retry-After` and code `rate_limited`
+  before reading the body, and the planner shows the message. Health, readiness
+  and the profile list are never limited. The token buckets live in the one API
+  process — no extra service — bounded at 10,000 clients per endpoint, IPv6
+  counted per /64. Behind Caddy the client is the `X-Forwarded-For` entry Caddy
+  writes (`TRUSTED_PROXY_HOPS=1`); measured against `caddy:2.11.7`, a forged
+  header buys nothing. Configurable with `RATE_LIMIT_*`. `smoke.py` now stays
+  within one client's budget and checks the refusal.
+
 - **A public pilot at <https://51.222.36.79>.** `main` at `a3f6448` runs on one
   OVH VPS (2 vCPU, 3.7 GiB) — the founder's choice of host, recorded in
   ADR 0009 — from `infra/vps/`: a Compose stack where only Caddy has ports,
@@ -226,6 +237,9 @@ The repository has been public and source-visible since 2026-09-14
 
 ### Fixed
 
+- **The site's search description still called it "a local engineering build".**
+  It now says it is a public pilot for Waterloo on one server that advises and
+  does not certify; it still asks search engines not to index it.
 - **The `pathable` CLI could not start in a freshly built API image.** The
   `python:3.13-slim-bookworm` base stopped carrying `libexpat1` once Python
   bundled its own expat, and pyosmium links the system library: `ImportError:

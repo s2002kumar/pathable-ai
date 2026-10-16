@@ -744,8 +744,9 @@ It adds no routing capability. It is part of what Gate D asks for, not Gate D.
 - Metrics, alerting, uptime monitoring. Nobody is told when the site is down.
 - Backups anywhere but the host's own disk.
 - A domain name; the certificate is a 6-day IP-address certificate.
-- Rate limiting ([KI-13](../development/KNOWN_ISSUES.md)), and any capacity or
-  availability figure: one process serves about six route comparisons a second.
+- Any capacity or availability figure: one process serves about six route
+  comparisons a second. (Per-client rate limits came on 2026-10-16,
+  [KI-13](../development/KNOWN_ISSUES.md).)
 - Zero-downtime deploys: routing is unavailable for about a minute per switch.
 - Users, traffic or external validation. A manual screen-reader pass, which the
   README lists as a pre-deployment item, has still not been done.

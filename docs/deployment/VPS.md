@@ -236,13 +236,31 @@ journalctl -u pathable-backup.service           # backups
 There is no metrics collection and no alerting. Nobody is told when the site
 is down ([KI-12](../development/KNOWN_ISSUES.md)).
 
+## Rate limits
+
+Each client may make **30 route comparisons and 60 searches a minute** (each
+figure is both the burst and the refill a minute). Past that the API answers
+HTTP 429 with `Retry-After` and code `rate_limited`, and the planner shows that
+message. Health, readiness and the profile list are never limited. The limiter
+lives in the API process
+([`core/rate_limit.py`](../../services/api/src/pathable_api/core/rate_limit.py),
+[KI-13](../development/KNOWN_ISSUES.md)), so there is nothing to run beside it.
+
+The client is the `X-Forwarded-For` entry Caddy writes (`TRUSTED_PROXY_HOPS=1`
+in [`compose.yaml`](../../infra/vps/compose.yaml)); Caddy discards any a client
+sends. That is only safe because the API has no host port — **never publish
+port 8000 while `TRUSTED_PROXY_HOPS` is set**, or anyone could choose their own
+client address. To change a limit, set `RATE_LIMIT_ROUTES_PER_MINUTE` or
+`RATE_LIMIT_SEARCHES_PER_MINUTE` in the API's environment and redeploy; a
+refusal appears in the API log as a `Request completed` line with status 429.
+
 ## Smoke test and measurements
 
 From any machine with Python 3.11+:
 
 ```bash
 python infra/vps/smoke.py --url https://51.222.36.79 --expect-revision a3f6448aab55 \
-  --runs 50 --concurrency 4 --json smoke.json
+  --runs 10 --concurrency 4 --json smoke.json
 ```
 
 Sixteen checks: the certificate, the HTTP redirect, that 5432, 8000 and 3000
@@ -251,8 +269,14 @@ readiness, the profiles, search for both ends of the journey recorded in
 [`waterloo-place-search.json`](../evidence/waterloo-place-search.json), and
 that journey's recorded answer — 406.4 m with 4 stairways, against 490.2 m
 with none for a wheelchair, from dataset `51585450`, with no model
-predictions. Then sequential and parallel route latency. It exits non-zero if
+predictions. Then sequential and parallel route latency, and last, that the
+rate limit refuses this client with a standard 429. It exits non-zero if
 anything failed.
+
+The script is one client, so it lives within one client's 30 routes a minute:
+the defaults spend 21 before the rate-limit check, and a second run from the
+same address within about a minute is refused — wait for the `Retry-After` it
+reports. `--skip-rate-limit-check` leaves the budget unspent.
 
 The real browser, against the public site:
 
