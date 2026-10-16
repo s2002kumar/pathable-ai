@@ -163,13 +163,20 @@ body.
 Readiness still has a bounded timeout, so a hung database cannot hold a request
 open indefinitely.
 
-**Still required before public deployment.**
+Each client may make 30 route comparisons and 60 place searches a minute
+(`core/rate_limit.py`, [KI-13](../development/KNOWN_ISSUES.md)); beyond that the
+API answers 429 with `Retry-After` before reading the body. Behind the public
+pilot's reverse proxy the client is the `X-Forwarded-For` entry the proxy wrote,
+which a caller cannot forge, and IPv6 clients are counted per /64. Nothing in
+this service authenticates callers, so the limit is per address: many addresses
+together can still fill the single API process.
 
-- **Chunked bodies without a `Content-Length` are not bounded here.** Measuring
-  one means consuming the stream, which is the cost the middleware exists to
-  avoid; bounding it belongs to the reverse proxy in front of the service.
-- Rate limiting. There is none, and nothing in this service authenticates
-  callers.
+On the public pilot, Caddy caps every request body at 1 MB, chunked or not, and
+cuts off slow headers and bodies — the bound the middleware above leaves to a
+reverse proxy.
+
+**Still required.**
+
 - A wall-clock timeout per request, in addition to the edge budget. The budget
   bounds work, not time, and a heavily loaded machine can be slow within it.
 

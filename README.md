@@ -116,12 +116,12 @@ the cached graph relies on ([ADR 0010](docs/adr/0010-dataset-lifecycle.md)).
 
 Counted separately on purpose — these suites overlap in what they cover, and adding them up would be a bigger
 number describing less. The counts change with every card; these are from CI run
-[38640723270](https://github.com/s2002kumar/pathable-ai/actions/runs/38640723270), on commit `8d379aa`.
+[38908538697](https://github.com/s2002kumar/pathable-ai/actions/runs/38908538697), on commit `d1e63c9`.
 
 | Suite                                   | Count                                                                              | Command                                                    |
 | --------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Backend, unit + PostGIS integration     | **1,531 passed, 1 skipped**, 88.28% coverage against an 86% floor                  | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
-| Frontend unit (Vitest)                  | **512 passed**, 93.71% statements against an 80% floor                             | `pnpm --filter @pathable/web test:unit`                    |
+| Backend, unit + PostGIS integration     | **1,562 passed, 1 skipped**, 88.35% coverage against an 86% floor                  | `uv run pytest --cov=src/pathable_api --cov-fail-under=86` |
+| Frontend unit (Vitest)                  | **514 passed**, 93.71% statements against an 80% floor                             | `pnpm --filter @pathable/web test:unit`                    |
 | Browser, stubbed API (Playwright + axe) | **172 passed, 2 skipped**: the 2 are desktop-only layouts, skipped on the phone    | `pnpm --filter @pathable/web test:e2e`                     |
 | Browser, full stack, nothing stubbed    | **7 passed, 10 skipped**: the 10 need the real Waterloo network or its place index | `pnpm --filter @pathable/web test:e2e:fullstack`           |
 

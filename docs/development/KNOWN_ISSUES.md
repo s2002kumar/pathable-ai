@@ -546,9 +546,9 @@ The pilot at <https://51.222.36.79> is one OVH VPS. What that means, measured
 5. **The certificate is for an IP address**, so it is Let's Encrypt's 6-day
    profile and Caddy must renew it twice a week. A failed renewal is visible
    within days, and nothing would report it (see 1).
-6. **The deployed `a3f6448` images cannot start the `pathable` CLI** (fixed in
-   the Dockerfile afterwards); operator commands on the host use the release
-   image plus `libexpat1` until the next deploy.
+6. **Images built from `a3f6448` cannot start the `pathable` CLI** (fixed in
+   the Dockerfile in `490c8a7`, and every release since has a working CLI);
+   only a rollback that far back needs the release image plus `libexpat1`.
 
 **Check when:** anyone is pointed at the URL, a domain is bought, or a second
 host is considered. Off-host backups and an uptime check are the two cheapest
@@ -556,21 +556,47 @@ items; both need an account or a decision outside this repository.
 
 ---
 
-## KI-13 — The public API has no rate limit
+## KI-13 — The public API had no rate limit
 
-**Status: Open** · 2026-10-15
+**Status: Closed** · opened 2026-10-15 · closed 2026-10-16 by per-client limits in the API
 
 `POST /api/v1/routes/compare` costs about 130 ms of CPU on the pilot's host,
-and one process serves about six a second. Nothing limits how many a client
-may send: Caddy's standard build has no rate limiter, and the API has none.
-A single script could hold routing busy for everyone else. It cannot read or
-change data — requests are not stored, and the database is unreachable from
-outside — so the exposure is availability, not integrity.
+computed on the event loop of the one API process, which serves about six a
+second. Nothing limited how many a client could send, so a single script could
+hold routing busy for everyone else. The exposure was availability, not
+integrity: requests are not stored, and the database is unreachable from
+outside.
 
-Bodies are capped at 1 MB by Caddy and at 64 KiB by the API itself, and slow
-clients are cut off by Caddy's header and body timeouts.
+**What closed it.** [`core/rate_limit.py`](../../services/api/src/pathable_api/core/rate_limit.py)
+gives each client a token bucket per endpoint — **30 route comparisons and 60
+searches a minute**, each figure both the burst and the refill — and answers an
+empty bucket with HTTP 429, a `Retry-After` in seconds and the API's ordinary
+error body (code `rate_limited`), before the request body is read. Health,
+readiness and the profile list are never limited. One client can now hold under
+a tenth of what the process serves — 0.5 a second against about 6.3 measured; the planner shows the
+refusal's message as it shows any other routing error.
 
-**Check when:** the URL is shared beyond individuals, or the access log shows
-one network sending most of the traffic. A rate limit in front of
-`/api/v1/routes/*` (Caddy with the rate-limit module, or in the API) is the fix;
-a second worker is not, at ~1 GB each.
+- **In-process, deliberately.** One API process means a dictionary in it is the
+  exact count, with no service to add. A second worker would give each client
+  twice the limit; that is when a shared store would earn its place.
+- **Who a client is.** Behind Caddy the socket peer is always Caddy, so the VPS
+  stack sets `TRUSTED_PROXY_HOPS=1` and the client is the right-most
+  `X-Forwarded-For` entry, the one Caddy wrote. Measured against
+  `caddy:2.11.7`: Caddy discards whatever `X-Forwarded-For` a client sends; 31
+  requests through it, each with a different forged header, were refused at the
+  31st, while the same requests sent straight to an API configured that way were
+  never refused. That is why the setting is only correct where the API has no
+  other way in — on the VPS it has no host port, and `smoke.py` checks 8000 is
+  closed from outside. IPv6 clients are counted per /64.
+- **Bounded.** At most 10,000 clients are tracked per endpoint, least recently
+  seen dropped first.
+
+**What it does not do.** Many addresses together can still fill the one
+process — about a dozen clients each at their limit — and people behind one
+shared address share one budget. Both are the price of counting per address
+without accounts. Bodies remain capped at 1 MB by Caddy and 64 KiB by the API,
+and slow clients are cut off by Caddy's header and body timeouts.
+
+**Check when:** a second API worker is added, the access log shows refusals for
+ordinary use (raise `RATE_LIMIT_ROUTES_PER_MINUTE`), or traffic from many
+addresses saturates routing.

@@ -13,12 +13,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from pathable_api import __version__
-from pathable_api.api.v1.router import api_router
+from pathable_api.api.v1.router import API_V1_PREFIX, api_router
 from pathable_api.core.config import Settings, get_settings
 from pathable_api.core.errors import register_exception_handlers
 from pathable_api.core.event_loop import configure_event_loop_policy
 from pathable_api.core.logging import configure_logging, get_logger
 from pathable_api.core.middleware import RequestContextMiddleware, RequestSizeLimitMiddleware
+from pathable_api.core.rate_limit import RETRY_AFTER_HEADER, RateLimitMiddleware, RateLimitPolicy
 from pathable_api.core.request_context import REQUEST_ID_HEADER
 from pathable_api.db.session import Database, build_database
 from pathable_api.geo.geocoding import build_geocoder
@@ -143,6 +144,26 @@ def _build_lifespan(
     return lifespan
 
 
+def rate_limit_policies(settings: Settings) -> list[RateLimitPolicy]:
+    """The two endpoints whose cost a single client could monopolise."""
+    return [
+        RateLimitPolicy(
+            name="routes",
+            method="POST",
+            path=f"{API_V1_PREFIX}/routes/compare",
+            per_minute=settings.rate_limit_routes_per_minute,
+            noun="route requests",
+        ),
+        RateLimitPolicy(
+            name="search",
+            method="POST",
+            path=f"{API_V1_PREFIX}/geocode/search",
+            per_minute=settings.rate_limit_searches_per_minute,
+            noun="searches",
+        ),
+    ]
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     """Build the application.
 
@@ -174,6 +195,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.state.settings = resolved
 
+    # Registered before CORS, so it runs inside it: a refusal still carries the
+    # CORS headers a browser on an allowed origin needs to read it, and a
+    # preflight is answered by CORS without spending a token.
+    if resolved.rate_limit_enabled:
+        app.add_middleware(
+            RateLimitMiddleware,
+            policies=rate_limit_policies(resolved),
+            trusted_proxy_hops=resolved.trusted_proxy_hops,
+        )
+
     if resolved.allowed_origins:
         app.add_middleware(
             CORSMiddleware,
@@ -181,7 +212,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             allow_credentials=resolved.cors_allow_credentials,
             allow_methods=["GET", "POST", "OPTIONS"],
             allow_headers=["Content-Type", REQUEST_ID_HEADER],
-            expose_headers=[REQUEST_ID_HEADER],
+            expose_headers=[REQUEST_ID_HEADER, RETRY_AFTER_HEADER],
             max_age=600,
         )
 

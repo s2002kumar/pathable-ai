@@ -32,6 +32,7 @@ from pathable_api.routing.profiles import (
     build_custom_profile,
     get_profile,
 )
+from pathable_api.schemas.errors import ApiErrorResponse
 from pathable_api.schemas.routing import (
     CautionModel,
     CostComponentModel,
@@ -104,6 +105,13 @@ def _evidence_age_days(source_timestamp: dt.datetime | None) -> int | None:
         HTTPStatus.NOT_FOUND: {"description": "The region has no active network dataset."},
         HTTPStatus.UNPROCESSABLE_CONTENT: {
             "description": "The request could not be routed as given."
+        },
+        HTTPStatus.TOO_MANY_REQUESTS: {
+            "model": ApiErrorResponse,
+            "description": (
+                "This client has used its route requests for now (code `rate_limited`). "
+                "`Retry-After` says how many seconds until the next is accepted."
+            ),
         },
     },
 )

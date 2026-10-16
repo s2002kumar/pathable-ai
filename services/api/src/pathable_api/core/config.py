@@ -95,6 +95,19 @@ class Settings(BaseSettings):
     #: A deployment should set this; a developer's machine need not.
     graph_preload_regions: Annotated[tuple[str, ...], NoDecode] = ()
 
+    # --- Abuse bounds -----------------------------------------------------
+    #: Per-client token buckets on route comparison and place search; see
+    #: core/rate_limit.py. Each value is both the burst and the refill a minute.
+    #: Sized for people, not scripts: 30 routes a minute is one every two
+    #: seconds, and still leaves a group behind one shared address room to work.
+    rate_limit_enabled: bool = True
+    rate_limit_routes_per_minute: Annotated[int, Field(ge=1, le=6000)] = 30
+    rate_limit_searches_per_minute: Annotated[int, Field(ge=1, le=6000)] = 60
+    #: Reverse proxies in front of the API. 0, the default, ignores
+    #: X-Forwarded-For; 1 believes only its right-most entry, the one the proxy
+    #: appended. Set it only where the API is reachable through nothing else.
+    trusted_proxy_hops: Annotated[int, Field(ge=0, le=3)] = 0
+
     # --- Observability ----------------------------------------------------
     log_level: LogLevel = "INFO"
     log_format: LogFormat = "json"

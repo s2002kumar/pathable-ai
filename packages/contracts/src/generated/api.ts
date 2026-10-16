@@ -967,6 +967,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description This client has used its searches for now (code `rate_limited`). `Retry-After` says how many seconds until the next is accepted. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Unexpected server error. Quote the request id when reporting. */
             500: {
                 headers: {
@@ -1105,6 +1114,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description This client has used its route requests for now (code `rate_limited`). `Retry-After` says how many seconds until the next is accepted. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
             };
             /** @description Unexpected server error. Quote the request id when reporting. */
             500: {
