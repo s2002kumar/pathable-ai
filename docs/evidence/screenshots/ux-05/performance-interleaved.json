@@ -1,0 +1,394 @@
+{
+  "what": "Landing page (/) load and scroll, before and after PA-UX-05, measured interleaved on one machine",
+  "before": {
+    "build": "main a3f6448 (production build, next start)",
+    "url": "http://127.0.0.1:3201"
+  },
+  "after": {
+    "build": "feat/premium-landing 43b7851 (production build, next start)",
+    "url": "http://127.0.0.1:3200"
+  },
+  "method": {
+    "browser": "Playwright Chromium, headless, SwiftShader WebGL",
+    "profiles": {
+      "desktop": "1440x900, no CPU throttle",
+      "mobile-4x-cpu": "Pixel 7 emulation, CDP CPU throttling x4"
+    },
+    "runs": "8 cold loads per build per profile, alternating builds, medians",
+    "loadPhase": "from navigation to 4.5 s after the load event",
+    "scrollPhase": "one pass down the whole page in 0.8-viewport steps every 150 ms",
+    "tbt": "sum over long tasks of (duration - 50 ms), from PerformanceObserver longtask entries",
+    "bytes": "encodedDataLength of every response, CDP Network domain",
+    "build_env": "NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:9 and the offline map style, as the browser suite builds it"
+  },
+  "conditions": "One Windows laptop, about 0.7 GB of physical memory free, other applications open. Run-to-run spread is wide (see samples); a shape, not a service level.",
+  "measuredAt": "2026-10-14T03:25:43.150Z",
+  "summary": {
+    "before/desktop": {
+      "fcp": 480,
+      "lcp": 688,
+      "tbtLoad": 58.5,
+      "longestTask": 81,
+      "tbtScroll": 0,
+      "cls": 0.001,
+      "bytes": 283106
+    },
+    "after/desktop": {
+      "fcp": 398,
+      "lcp": 416,
+      "tbtLoad": 72.5,
+      "longestTask": 101,
+      "tbtScroll": 0,
+      "cls": 0.003,
+      "bytes": 281538
+    },
+    "before/mobile-4x-cpu": {
+      "fcp": 730,
+      "lcp": 802,
+      "tbtLoad": 442,
+      "longestTask": 492,
+      "tbtScroll": 0,
+      "cls": 0,
+      "bytes": 275140
+    },
+    "after/mobile-4x-cpu": {
+      "fcp": 904,
+      "lcp": 904,
+      "tbtLoad": 367,
+      "longestTask": 339,
+      "tbtScroll": 167.5,
+      "cls": 0.002,
+      "bytes": 287642.5
+    }
+  },
+  "samples": {
+    "before/desktop": [
+      {
+        "fcp": 500,
+        "lcp": 528,
+        "tbtLoad": 0,
+        "longestTask": 0,
+        "scrollStart": 4879.5,
+        "cls": 0.0007528374398523233,
+        "tbtScroll": 0,
+        "bytes": 283487
+      },
+      {
+        "fcp": 560,
+        "lcp": 764,
+        "tbtLoad": 38,
+        "longestTask": 70,
+        "scrollStart": 5157.899999976158,
+        "cls": 0.0007528374398523233,
+        "tbtScroll": 0,
+        "bytes": 281962
+      },
+      {
+        "fcp": 476,
+        "lcp": 712,
+        "tbtLoad": 59,
+        "longestTask": 83,
+        "scrollStart": 5098.5,
+        "cls": 0.0007528374398523233,
+        "tbtScroll": 0,
+        "bytes": 282729
+      },
+      {
+        "fcp": 356,
+        "lcp": 584,
+        "tbtLoad": 58,
+        "longestTask": 79,
+        "scrollStart": 5004.5,
+        "cls": 0.0007528374398523233,
+        "tbtScroll": 0,
+        "bytes": 285007
+      },
+      {
+        "fcp": 308,
+        "lcp": 492,
+        "tbtLoad": 34,
+        "longestTask": 73,
+        "scrollStart": 4921.800000011921,
+        "cls": 0.0007528374398523233,
+        "tbtScroll": 0,
+        "bytes": 281962
+      },
+      {
+        "fcp": 600,
+        "lcp": 936,
+        "tbtLoad": 134,
+        "longestTask": 125,
+        "scrollStart": 5265.799999982119,
+        "cls": 0.0007528374398523233,
+        "tbtScroll": 0,
+        "bytes": 284255
+      },
+      {
+        "fcp": 484,
+        "lcp": 752,
+        "tbtLoad": 89,
+        "longestTask": 100,
+        "scrollStart": 5120.300000011921,
+        "cls": 0.0007528374398523233,
+        "tbtScroll": 0,
+        "bytes": 281962
+      },
+      {
+        "fcp": 432,
+        "lcp": 664,
+        "tbtLoad": 73,
+        "longestTask": 105,
+        "scrollStart": 5036,
+        "cls": 0.0007528374398523233,
+        "tbtScroll": 0,
+        "bytes": 283483
+      }
+    ],
+    "after/desktop": [
+      {
+        "fcp": 1256,
+        "lcp": 2644,
+        "tbtLoad": 33,
+        "longestTask": 72,
+        "scrollStart": 5310.800000011921,
+        "cls": 0.002711587428130894,
+        "tbtScroll": 0,
+        "bytes": 283061
+      },
+      {
+        "fcp": 952,
+        "lcp": 988,
+        "tbtLoad": 85,
+        "longestTask": 99,
+        "scrollStart": 5567.4000000059605,
+        "cls": 0.002699886863091028,
+        "tbtScroll": 0,
+        "bytes": 281538
+      },
+      {
+        "fcp": 232,
+        "lcp": 232,
+        "tbtLoad": 53,
+        "longestTask": 103,
+        "scrollStart": 4755.5,
+        "cls": 0.002699886863091028,
+        "tbtScroll": 0,
+        "bytes": 281538
+      },
+      {
+        "fcp": 296,
+        "lcp": 324,
+        "tbtLoad": 21,
+        "longestTask": 71,
+        "scrollStart": 4954.5999999940395,
+        "cls": 0.0027248229645570774,
+        "tbtScroll": 0,
+        "bytes": 281538
+      },
+      {
+        "fcp": 340,
+        "lcp": 340,
+        "tbtLoad": 127,
+        "longestTask": 171,
+        "scrollStart": 4876.5,
+        "cls": 0.002699886863091028,
+        "tbtScroll": 0,
+        "bytes": 281538
+      },
+      {
+        "fcp": 388,
+        "lcp": 424,
+        "tbtLoad": 83,
+        "longestTask": 104,
+        "scrollStart": 5133.5,
+        "cls": 0.0027423347797576945,
+        "tbtScroll": 685,
+        "bytes": 281538
+      },
+      {
+        "fcp": 408,
+        "lcp": 408,
+        "tbtLoad": 206,
+        "longestTask": 217,
+        "scrollStart": 4957.0999999940395,
+        "cls": 0.0027040964971681027,
+        "tbtScroll": 109,
+        "bytes": 283104
+      },
+      {
+        "fcp": 408,
+        "lcp": 440,
+        "tbtLoad": 62,
+        "longestTask": 88,
+        "scrollStart": 5009,
+        "cls": 0.0027040964971681027,
+        "tbtScroll": 0,
+        "bytes": 283056
+      }
+    ],
+    "before/mobile-4x-cpu": [
+      {
+        "fcp": 792,
+        "lcp": 792,
+        "tbtLoad": 472,
+        "longestTask": 522,
+        "scrollStart": 7157.200000017881,
+        "cls": 0,
+        "tbtScroll": 0,
+        "bytes": 275141
+      },
+      {
+        "fcp": 1016,
+        "lcp": 1016,
+        "tbtLoad": 1012,
+        "longestTask": 892,
+        "scrollStart": 8599.300000011921,
+        "cls": 0,
+        "tbtScroll": 0,
+        "bytes": 275140
+      },
+      {
+        "fcp": 812,
+        "lcp": 812,
+        "tbtLoad": 709,
+        "longestTask": 560,
+        "scrollStart": 7185.4000000059605,
+        "cls": 0,
+        "tbtScroll": 0,
+        "bytes": 275140
+      },
+      {
+        "fcp": 400,
+        "lcp": 400,
+        "tbtLoad": 205,
+        "longestTask": 255,
+        "scrollStart": 5637.5,
+        "cls": 0,
+        "tbtScroll": 0,
+        "bytes": 275140
+      },
+      {
+        "fcp": 1036,
+        "lcp": 1036,
+        "tbtLoad": 412,
+        "longestTask": 462,
+        "scrollStart": 6941.800000011921,
+        "cls": 0,
+        "tbtScroll": 0,
+        "bytes": 275140
+      },
+      {
+        "fcp": 484,
+        "lcp": 484,
+        "tbtLoad": 128,
+        "longestTask": 178,
+        "scrollStart": 5399.9000000059605,
+        "cls": 0,
+        "tbtScroll": 0,
+        "bytes": 275140
+      },
+      {
+        "fcp": 516,
+        "lcp": 888,
+        "tbtLoad": 242,
+        "longestTask": 186,
+        "scrollStart": 5413.9000000059605,
+        "cls": 0,
+        "tbtScroll": 0,
+        "bytes": 273620
+      },
+      {
+        "fcp": 668,
+        "lcp": 668,
+        "tbtLoad": 493,
+        "longestTask": 543,
+        "scrollStart": 7055.800000011921,
+        "cls": 0,
+        "tbtScroll": 0,
+        "bytes": 275140
+      }
+    ],
+    "after/mobile-4x-cpu": [
+      {
+        "fcp": 1128,
+        "lcp": 1128,
+        "tbtLoad": 1001,
+        "longestTask": 952,
+        "scrollStart": 8206,
+        "cls": 0.0033599541620285807,
+        "tbtScroll": 1096,
+        "bytes": 287641
+      },
+      {
+        "fcp": 1272,
+        "lcp": 1272,
+        "tbtLoad": 1065,
+        "longestTask": 808,
+        "scrollStart": 9208.699999988079,
+        "cls": 0.0033599541620285807,
+        "tbtScroll": 123,
+        "bytes": 287642
+      },
+      {
+        "fcp": 844,
+        "lcp": 844,
+        "tbtLoad": 358,
+        "longestTask": 339,
+        "scrollStart": 6664.699999988079,
+        "cls": 0.0033599541620285807,
+        "tbtScroll": 170,
+        "bytes": 287644
+      },
+      {
+        "fcp": 1408,
+        "lcp": 1408,
+        "tbtLoad": 307,
+        "longestTask": 269,
+        "scrollStart": 7212.4000000059605,
+        "cls": 0.0033599541620285807,
+        "tbtScroll": 85,
+        "bytes": 287640
+      },
+      {
+        "fcp": 768,
+        "lcp": 768,
+        "tbtLoad": 329,
+        "longestTask": 339,
+        "scrollStart": 6609.600000023842,
+        "cls": 0.0011383669308764968,
+        "tbtScroll": 189,
+        "bytes": 287641
+      },
+      {
+        "fcp": 708,
+        "lcp": 708,
+        "tbtLoad": 376,
+        "longestTask": 270,
+        "scrollStart": 5945,
+        "cls": 0.0011383669308764968,
+        "tbtScroll": 6,
+        "bytes": 287645
+      },
+      {
+        "fcp": 488,
+        "lcp": 488,
+        "tbtLoad": 234,
+        "longestTask": 189,
+        "scrollStart": 5407.5,
+        "cls": 0.0011383669308764968,
+        "tbtScroll": 165,
+        "bytes": 287644
+      },
+      {
+        "fcp": 964,
+        "lcp": 964,
+        "tbtLoad": 918,
+        "longestTask": 750,
+        "scrollStart": 8105.199999988079,
+        "cls": 0.0011383669308764968,
+        "tbtScroll": 286,
+        "bytes": 287643
+      }
+    ]
+  }
+}

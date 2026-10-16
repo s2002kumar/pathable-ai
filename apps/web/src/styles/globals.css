@@ -215,6 +215,42 @@ a:hover {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* View-transition pseudo-elements are not matched by `*`. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* --- Landing → planner ----------------------------------------------------
+ * Set by <PageTransition> on the two pages, and only for navigations the
+ * landing page's own links start (`transitionTypes`). The landing page
+ * recedes quickly; the planner arrives a beat later and a little slower, so
+ * the two never compete. Browsers without the View Transitions API simply
+ * navigate.
+ */
+::view-transition-old(.pa-leave-landing) {
+  animation: pa-leave-landing 240ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(.pa-enter-planner) {
+  animation: pa-enter-planner 460ms var(--ease-out) 120ms both;
+}
+
+@keyframes pa-leave-landing {
+  to {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes pa-enter-planner {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
 }
 
 /* --- MapLibre overrides --------------------------------------------------
