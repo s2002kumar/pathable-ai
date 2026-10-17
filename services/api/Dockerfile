@@ -10,7 +10,7 @@ FROM ghcr.io/astral-sh/uv:0.12.1 AS uv
 # -----------------------------------------------------------------------------
 # Builder — resolve and install dependencies into a self-contained virtualenv
 # -----------------------------------------------------------------------------
-FROM python:3.13-slim-bookworm AS builder
+FROM python:3.14-slim-bookworm AS builder
 
 COPY --from=uv /uv /usr/local/bin/uv
 
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # -----------------------------------------------------------------------------
 # Runtime — no build tools, no dev dependencies, no uv
 # -----------------------------------------------------------------------------
-FROM python:3.13-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
