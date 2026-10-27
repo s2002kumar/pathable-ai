@@ -96,15 +96,33 @@ test.describe('planner shell', () => {
     ).toBeVisible();
   });
 
-  test('serves the MapLibre worker from our own origin', async ({ request }) => {
-    // KI-1: MapLibre computes its worker URL from `import.meta.url` and yields an
-    // empty string once bundled, so `new Worker("")` loads the HTML page as the
-    // worker. The fix depends on this asset existing.
-    const response = await request.get('/maplibre/maplibre-gl-worker.mjs');
+  test('starts the MapLibre worker from our own origin', async ({ page }) => {
+    // KI-1: the original failure was behavioral: bundling made MapLibre create
+    // an empty worker URL, which loaded the HTML page instead of the worker and
+    // left the map blank. Assert the browser actually starts our worker rather
+    // than coupling this test to MapLibre's internal chunk names.
+    const workerUrls: string[] = [];
+    page.on('worker', (worker) => workerUrls.push(worker.url()));
 
-    expect(response.status()).toBe(200);
-    expect(await response.text()).toContain('maplibre-gl-shared.mjs');
-    expect((await request.get('/maplibre/maplibre-gl-shared.mjs')).status()).toBe(200);
+    await page.goto(PLANNER);
+    await expect(page.getByTestId('map-frame')).toHaveAttribute('data-map-state', 'ready', {
+      timeout: 20_000,
+    });
+
+    const pageOrigin = new URL(page.url()).origin;
+    await expect
+      .poll(
+        () =>
+          workerUrls.some((workerUrl) => {
+            const parsed = new URL(workerUrl);
+            return (
+              parsed.origin === pageOrigin &&
+              parsed.pathname === '/maplibre/maplibre-gl-worker.mjs'
+            );
+          }),
+        { timeout: 20_000 },
+      )
+      .toBe(true);
   });
 
   test('the map container actually fills the map frame', async ({ page }) => {
