@@ -21,8 +21,11 @@
  * That was KI-1: a completely blank map with no console error.
  *
  * The fix is to serve the worker ourselves and hand MapLibre an absolute URL via
- * `setWorkerUrl()`. Both files are required and must sit side by side, because
- * the worker does `import ... from "./maplibre-gl-shared.mjs"`.
+ * `setWorkerUrl()`. MapLibre 6.7 imported a sibling
+ * `maplibre-gl-shared.mjs` chunk; 6.15 ships a self-contained worker instead.
+ * We still copy the sibling when the installed package provides it, but runtime
+ * correctness is verified by the browser starting the same-origin worker rather
+ * than by depending on MapLibre's private chunk layout.
  *
  * The copies are generated rather than committed, so they can never drift from
  * the installed version. Run automatically by the web package's predev/prebuild.
@@ -37,8 +40,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const webDir = path.join(repoRoot, 'apps', 'web');
 const outDir = path.join(webDir, 'public', 'maplibre');
 
-/** Files MapLibre's module worker needs at runtime, relative to its dist dir. */
-const REQUIRED = ['maplibre-gl-worker.mjs', 'maplibre-gl-shared.mjs'];
+/** The worker is required. A sibling shared chunk is copied when MapLibre ships one. */
+const REQUIRED = ['maplibre-gl-worker.mjs'];
+const OPTIONAL = ['maplibre-gl-shared.mjs'];
 
 const requireFromWeb = createRequire(pathToFileURL(path.join(webDir, 'package.json')).href);
 
@@ -62,10 +66,18 @@ for (const file of REQUIRED) {
     console.error(
       `✗ ${file} is missing from the installed maplibre-gl ${version}.\n` +
         '  The worker layout changed between versions; update this script and\n' +
-        '  re-verify that the map still requests vector tiles.',
+        '  re-verify that the browser starts the intended worker.',
     );
     process.exit(1);
   }
+  const destination = path.join(outDir, file);
+  await copyFile(source, destination);
+  copied.push(`${file} (${Math.round((await stat(destination)).size / 1024)} KB)`);
+}
+
+for (const file of OPTIONAL) {
+  const source = path.join(distDir, file);
+  if (!existsSync(source)) continue;
   const destination = path.join(outDir, file);
   await copyFile(source, destination);
   copied.push(`${file} (${Math.round((await stat(destination)).size / 1024)} KB)`);
