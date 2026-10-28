@@ -146,3 +146,37 @@ chosen for bounded remote Parquet reads, and PostGIS remains the store.
 **Review trigger:** if `pip-audit` flags it, if a 2.x release changes the
 `httpfs` or GEOMETRY behaviour this relies on, or if PA-GEO-02 moves this data
 into PostGIS and nothing reads Parquet any more.
+
+## 2026-10-28 — `vite` pinned as a devDependency of `apps/web`
+
+**Status:** Accepted · dev-only, unit-test toolchain · verified 2026-10-28
+
+### Problem
+
+Vite reaches the repository only as a peer dependency of `vitest` and
+`@vitejs/plugin-react`. Nothing in `apps/web` imports it and `next build` does
+not use it, so pnpm's `auto-install-peers` supplied it, and the lockfile had
+settled on 8.2.0. Vite 8.2.0 to 8.2.3 carry GHSA-587h-7wmj-h5pm (high) and five
+moderate and low advisories in the dev server and its bundled `launch-editor`;
+8.2.4 fixes all six.
+
+The override pattern used for other transitive advisories in
+`pnpm-workspace.yaml` does not work here. With `"vite@>=8.2.0 <8.2.4": "^8.2.4"`,
+pnpm 11.11.0 rewrote every peer range to `^8.2.4` and still installed 8.2.0,
+reporting an unmet peer. When pnpm fills a missing peer that already has a
+version in the lockfile, it takes the highest version already there, whatever
+range the peer asks for (`hoistPeers` in pnpm's dependency resolver). The
+override changed the ranges, not the result.
+
+### Decision
+
+Declare `vite` in `apps/web` `devDependencies`, pinned exactly like every other
+direct dependency, at 8.2.4: the patch release on the line the lockfile already
+used. A peer resolves to its parent's copy, so `vitest`, `@vitest/mocker` and
+`@vitejs/plugin-react` all get 8.2.4, and `pnpm peers check` is clean.
+
+Not 8.3.x, although 8.3.5 is `latest` and also unaffected: a security fix does
+not need a minor upgrade, and Dependabot proposes one on its own.
+
+**Review trigger:** upgrading `vitest` or `@vitejs/plugin-react`. Keep this pin
+inside both of their peer ranges; `pnpm peers check` reports it when it is not.

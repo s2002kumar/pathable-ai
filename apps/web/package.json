@@ -24,10 +24,10 @@
     "@fontsource-variable/jetbrains-mono": "5.3.0",
     "@pathable/contracts": "workspace:*",
     "maplibre-gl": "6.7.0",
-    "next": "16.3.8",
+    "next": "16.4.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "zod": "4.4.3"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
@@ -41,9 +41,10 @@
     "@vitejs/plugin-react": "6.0.5",
     "@vitest/coverage-v8": "4.1.11",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.1",
     "jsdom": "30.0.1",
     "typescript": "5.9.3",
+    "vite": "8.2.4",
     "vitest": "4.1.11"
   }
 }
